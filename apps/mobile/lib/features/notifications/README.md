@@ -145,3 +145,5 @@ programmatic movement do not. Failures retain rows/cursor and require explicit
 Retry or refresh before automatic paging resumes. Short-content/accessibility
 navigation offers a deliberate fallback. Count reconciliation, read mutations
 and destination navigation retain their separate owners.
+
+Inbox revalidation rereads the loaded keyset range atomically and serializes with paging/read mutations. See [MSGREFRESH01](../../../../../docs/development/msgrefresh01-stable-refresh.md). No new Realtime/push service or private disk persistence is introduced.

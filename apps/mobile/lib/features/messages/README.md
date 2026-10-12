@@ -261,3 +261,5 @@ keyboard/layout changes and realtime updates never authorize history fetches.
 Older loading temporarily withholds the newest read boundary from the viewport.
 Short-content/accessibility fallback controls sit above the history viewport so
 they remain reachable without first scrolling into negative sliver offsets.
+
+Protected-list lifecycle and loaded-window invariants are documented in [MSGREFRESH01](../../../../../docs/development/msgrefresh01-stable-refresh.md). Warm refresh preserves continuation pages and unchanged cards; cold start uses RAM-only initial loading.

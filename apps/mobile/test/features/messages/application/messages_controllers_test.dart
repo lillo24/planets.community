@@ -18,6 +18,74 @@ import '../../../support/fake_messages.dart';
 import '../../../support/fake_participation.dart';
 
 void main() {
+  test('warm revalidation retains 60 rows, coalesces opens, removes revoked rows and continues paging', () async {
+    final gateway = FakeMessagesGateway()
+      ..items = [
+        for (var index = 1; index <= 81; index++)
+          messageItemFixture(
+            requestId:
+                '00000000-0000-4000-8000-${index.toString().padLeft(12, '0')}',
+            createdAt: DateTime.utc(
+              2026,
+              10,
+              1,
+            ).subtract(Duration(minutes: index)),
+          ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(messagesInboxProvider.notifier);
+    await controller.load('user-1');
+    await controller.loadMore('user-1');
+    await controller.loadMore('user-1');
+    final previous = session.container.read(messagesInboxProvider).items;
+    expect(previous, hasLength(60));
+    final pending = Completer<void>();
+    gateway.listDelay = pending.future;
+    final callCount = gateway.calls.length;
+    final first = controller.load('user-1', refresh: true);
+    final second = controller.load('user-1', refresh: true);
+    expect(session.container.read(messagesInboxProvider).items, same(previous));
+    expect(gateway.calls.length, callCount + 1);
+    pending.complete();
+    expect(await first, isTrue);
+    expect(await second, isTrue);
+    expect(session.container.read(messagesInboxProvider).items, same(previous));
+    gateway.listDelay = null;
+    final deleted = gateway.items[35];
+    gateway.items = [
+      for (var index = 0; index <= 81; index++)
+        if (index != 36)
+          messageItemFixture(
+            requestId:
+                '00000000-0000-4000-8000-${index.toString().padLeft(12, '0')}',
+            createdAt: DateTime.utc(
+              2026,
+              10,
+              1,
+            ).subtract(Duration(minutes: index)),
+          ),
+    ];
+    expect(await controller.load('user-1', refresh: true), isTrue);
+    final refreshed = session.container.read(messagesInboxProvider).items;
+    expect(refreshed.length, greaterThanOrEqualTo(60));
+    expect(
+      refreshed.any((item) => item.compositeId == deleted.compositeId),
+      isFalse,
+    );
+    expect(
+      refreshed.any((item) => item.compositeId == previous.last.compositeId),
+      isTrue,
+    );
+    expect(await controller.loadMore('user-1'), isTrue);
+    while (session.container.read(messagesInboxProvider).hasMore) {
+      expect(await controller.loadMore('user-1'), isTrue);
+    }
+    expect(session.container.read(messagesInboxProvider).items, hasLength(81));
+    expect(gateway.requestedLimits.toSet(), {20});
+  });
+
   test(
     'inbox uses an exact activity/id cursor and appends the next page',
     () async {

@@ -13,6 +13,107 @@ import '../../../support/fake_auth.dart';
 import '../../../support/fake_notifications.dart';
 
 void main() {
+  test('older unread response cannot undo successful read counts', () async {
+    final gateway = FakeNotificationsGateway()..unreadCount = 2;
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      notificationsUnreadProvider.notifier,
+    );
+    await controller.load('user-1');
+    final pending = Completer<void>();
+    gateway.unreadDelay = pending.future;
+    final loading = controller.load('user-1', refresh: true);
+    controller.noteOneRead('user-1');
+    pending.complete();
+    expect(await loading, isFalse);
+    expect(session.container.read(notificationsUnreadProvider).count, 1);
+    gateway.unreadDelay = null;
+    gateway.unreadError = StateError('offline');
+    expect(await controller.load('user-1', refresh: true), isFalse);
+    expect(session.container.read(notificationsUnreadProvider).count, 1);
+  });
+
+  test('warm revalidation retains 60 rows, coalesces opens, removes revoked rows and continues paging', () async {
+    final gateway = FakeNotificationsGateway()
+      ..items = [
+        for (var index = 1; index <= 81; index++)
+          notificationFixture(
+            index: index,
+            createdAt: DateTime.utc(
+              2026,
+              10,
+              1,
+            ).subtract(Duration(minutes: index)),
+          ),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      notificationsInboxProvider.notifier,
+    );
+    await controller.load('user-1');
+    await controller.loadMore('user-1');
+    await controller.loadMore('user-1');
+    final previous = session.container.read(notificationsInboxProvider).items;
+    expect(previous, hasLength(60));
+    final pending = Completer<void>();
+    gateway.listDelay = pending.future;
+    final callCount = gateway.calls.length;
+    final first = controller.load('user-1', refresh: true);
+    final second = controller.load('user-1', refresh: true);
+    expect(
+      session.container.read(notificationsInboxProvider).items,
+      same(previous),
+    );
+    expect(gateway.calls.length, callCount + 1);
+    pending.complete();
+    expect(await first, isTrue);
+    expect(await second, isTrue);
+    expect(
+      session.container.read(notificationsInboxProvider).items,
+      same(previous),
+    );
+    gateway.listDelay = null;
+    final deleted = gateway.items[35];
+    gateway.items = [
+      for (var index = 0; index <= 81; index++)
+        if (index != 36)
+          notificationFixture(
+            index: index,
+            createdAt: DateTime.utc(
+              2026,
+              10,
+              1,
+            ).subtract(Duration(minutes: index)),
+          ),
+    ];
+    expect(await controller.load('user-1', refresh: true), isTrue);
+    final refreshed = session.container.read(notificationsInboxProvider).items;
+    expect(refreshed.length, greaterThanOrEqualTo(60));
+    expect(
+      refreshed.any((item) => item.notificationId == deleted.notificationId),
+      isFalse,
+    );
+    expect(
+      refreshed.any(
+        (item) => item.notificationId == previous.last.notificationId,
+      ),
+      isTrue,
+    );
+    expect(await controller.loadMore('user-1'), isTrue);
+    while (session.container.read(notificationsInboxProvider).hasMore) {
+      expect(await controller.loadMore('user-1'), isTrue);
+    }
+    expect(
+      session.container.read(notificationsInboxProvider).items,
+      hasLength(81),
+    );
+    expect(gateway.requestedLimits.toSet(), {20});
+  });
+
   test(
     'inbox uses created-at/id cursor and appends without duplicates',
     () async {

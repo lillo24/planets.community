@@ -10,6 +10,7 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../core/widgets/pagination_control.dart';
 import '../../../core/widgets/user_scroll_pagination.dart';
+import '../../../core/widgets/stable_list_view.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../application/notifications_controllers.dart';
@@ -161,8 +162,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 child: LayoutBuilder(
                   builder: (context, constraints) => SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    child: SizedBox(
-                      height: constraints.maxHeight,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
                       child: EmptyState(
                         title: l10n.notificationsEmptyTitle,
                         message: l10n.notificationsEmptyMessage,
@@ -184,13 +187,25 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       state.failure == null,
                   requestKey: (_expectedProfileId, items.length),
                   onLoad: _loadMore,
-                  builder: (context, showFallback) => ListView.builder(
+                  builder: (context, showFallback) => StableListView(
                     key: const Key('notifications-list'),
+                    storageKey: ('notifications-list', _expectedProfileId),
+                    rowIds: [
+                      if (state.failure != null) 'error',
+                      for (final item in items) item.notificationId,
+                      if (state.hasMore) 'more',
+                    ],
+                    rowValues: [
+                      if (state.failure != null) state.failure,
+                      for (final item in items)
+                        (
+                          item,
+                          state.pendingReadIds.contains(item.notificationId),
+                        ),
+                      if (state.hasMore)
+                        (state.phase, state.failure, showFallback),
+                    ],
                     padding: const EdgeInsets.all(AppSpacing.medium),
-                    itemCount:
-                        items.length +
-                        (state.failure != null ? 1 : 0) +
-                        (state.hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (state.failure != null && index == 0) {
                         return Padding(

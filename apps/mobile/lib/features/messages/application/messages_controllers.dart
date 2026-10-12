@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/backend/revalidate_window.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../participation/application/participation_controllers.dart';
@@ -13,7 +14,14 @@ const messagesPageSize = 20;
 
 enum MessagesFailureKind { forbidden, conflict, notFound, unavailable }
 
-enum MessagesInboxPhase { idle, loading, ready, loadingMore, failure }
+enum MessagesInboxPhase {
+  idle,
+  loading,
+  refreshing,
+  ready,
+  loadingMore,
+  failure,
+}
 
 class MessagesInboxState {
   const MessagesInboxState({
@@ -32,6 +40,7 @@ class MessagesInboxState {
 
   bool get isBusy =>
       phase == MessagesInboxPhase.loading ||
+      phase == MessagesInboxPhase.refreshing ||
       phase == MessagesInboxPhase.loadingMore;
 }
 
@@ -40,40 +49,107 @@ class MessagesInboxController extends Notifier<MessagesInboxState> {
 
   @override
   MessagesInboxState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const MessagesInboxState();
-    });
+    ref.listen(
+      authSessionProvider.select(
+        (session) =>
+            (session.identity?.id, session.phase == AuthSessionPhase.ready),
+      ),
+      (_, _) {
+        _revision++;
+        _activeRefresh = null;
+        _activeMore = null;
+        state = const MessagesInboxState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const MessagesInboxState();
   }
 
+  Future<bool>? _activeRefresh;
+  Future<bool>? _activeMore;
+
   Future<bool> load(String expectedProfileId, {bool refresh = false}) async {
+    final active = _activeRefresh;
+    if (active != null && state.expectedProfileId == expectedProfileId) {
+      return active;
+    }
+    final more = _activeMore;
+    if (more != null && state.expectedProfileId == expectedProfileId) {
+      await more;
+    }
+    final queued = _activeRefresh;
+    if (queued != null && state.expectedProfileId == expectedProfileId) {
+      return queued;
+    }
+    if (!ref.mounted ||
+        ref.read(authSessionProvider).identity?.id != expectedProfileId) {
+      return false;
+    }
+    final pending = _load(expectedProfileId, refresh: refresh);
+    _activeRefresh = pending;
+    try {
+      return await pending;
+    } finally {
+      if (identical(_activeRefresh, pending)) _activeRefresh = null;
+    }
+  }
+
+  Future<bool> _load(String expectedProfileId, {bool refresh = false}) async {
     if (state.isBusy && !refresh) return false;
     final revision = ++_revision;
     final preserve = state.expectedProfileId == expectedProfileId;
     state = MessagesInboxState(
-      phase: MessagesInboxPhase.loading,
+      phase:
+          preserve &&
+              (state.items.isNotEmpty ||
+                  state.phase == MessagesInboxPhase.ready ||
+                  state.phase == MessagesInboxPhase.refreshing)
+          ? MessagesInboxPhase.refreshing
+          : MessagesInboxPhase.loading,
       expectedProfileId: expectedProfileId,
       items: preserve ? state.items : const [],
       hasMore: preserve && state.hasMore,
     );
+    final previous = state.items;
     try {
       _requireReadyIdentity(expectedProfileId);
-      final page = await ref
-          .read(messagesGatewayProvider)
-          .listItems(
-            expectedProfileId: expectedProfileId,
-            limit: messagesPageSize,
-          );
+      final page = await revalidateWindow(
+        previous: previous,
+        id: (item) => item.compositeId,
+        value: (item) => item.refreshValue,
+        compare: (a, b) => compareDescendingKey(
+          a.activityAt,
+          a.compositeId,
+          b.activityAt,
+          b.compositeId,
+          aKind: a.kind.index,
+          bKind: b.kind.index,
+        ),
+        isCurrent: () => _isCurrent(revision, expectedProfileId),
+        fetch: (item) async {
+          final page = await ref
+              .read(messagesGatewayProvider)
+              .listItems(
+                expectedProfileId: expectedProfileId,
+
+                limit: messagesPageSize,
+                cursor: item == null
+                    ? null
+                    : MessageCursor(
+                        activityAt: item.activityAt,
+                        itemKind: item.kind,
+                        requestId: item.requestId,
+                      ),
+              );
+          return (items: page.items, hasMore: page.hasMore);
+        },
+      );
+      if (page == null) return false;
       if (!_isCurrent(revision, expectedProfileId)) return false;
       state = MessagesInboxState(
         phase: MessagesInboxPhase.ready,
         expectedProfileId: expectedProfileId,
-        items: List.unmodifiable(page.items),
+        items: page.items,
         hasMore: page.hasMore,
       );
       return true;
@@ -82,7 +158,11 @@ class MessagesInboxController extends Notifier<MessagesInboxState> {
       state = MessagesInboxState(
         phase: MessagesInboxPhase.failure,
         expectedProfileId: expectedProfileId,
-        items: state.items,
+        items:
+            mapMessagesFailure(error) == MessagesFailureKind.forbidden ||
+                mapMessagesFailure(error) == MessagesFailureKind.notFound
+            ? const []
+            : state.items,
         hasMore: state.hasMore,
         failure: mapMessagesFailure(error),
       );
@@ -91,6 +171,17 @@ class MessagesInboxController extends Notifier<MessagesInboxState> {
   }
 
   Future<bool> loadMore(String expectedProfileId) async {
+    if (_activeRefresh != null || _activeMore != null) return false;
+    final pending = _loadMore(expectedProfileId);
+    _activeMore = pending;
+    try {
+      return await pending;
+    } finally {
+      if (identical(_activeMore, pending)) _activeMore = null;
+    }
+  }
+
+  Future<bool> _loadMore(String expectedProfileId) async {
     if (state.isBusy ||
         state.expectedProfileId != expectedProfileId ||
         !state.hasMore ||
@@ -134,10 +225,14 @@ class MessagesInboxController extends Notifier<MessagesInboxState> {
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId)) return false;
       state = MessagesInboxState(
-        phase: MessagesInboxPhase.ready,
+        phase: mapMessagesFailure(error) == MessagesFailureKind.forbidden
+            ? MessagesInboxPhase.failure
+            : MessagesInboxPhase.ready,
         expectedProfileId: expectedProfileId,
-        items: existing,
-        hasMore: true,
+        items: mapMessagesFailure(error) == MessagesFailureKind.forbidden
+            ? const []
+            : existing,
+        hasMore: mapMessagesFailure(error) != MessagesFailureKind.forbidden,
         failure: mapMessagesFailure(error),
       );
       return false;
@@ -147,6 +242,7 @@ class MessagesInboxController extends Notifier<MessagesInboxState> {
   bool _isCurrent(int revision, String profileId) =>
       ref.mounted &&
       revision == _revision &&
+      ref.read(authSessionProvider).phase == AuthSessionPhase.ready &&
       ref.read(authSessionProvider).identity?.id == profileId;
 
   void _requireReadyIdentity(String profileId) {
@@ -200,13 +296,16 @@ class MessagesDetailController extends Notifier<MessagesDetailState> {
 
   @override
   MessagesDetailState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      state = const MessagesDetailState();
-    });
+    ref.listen(
+      authSessionProvider.select(
+        (session) =>
+            (session.identity?.id, session.phase == AuthSessionPhase.ready),
+      ),
+      (_, _) {
+        _revision++;
+        state = const MessagesDetailState();
+      },
+    );
     ref.onDispose(() => _revision++);
     return const MessagesDetailState();
   }

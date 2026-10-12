@@ -74,6 +74,54 @@ sealed class MessageChatItem {
   final String? lastVisibleSenderProfileId;
   final String? lastVisibleSenderDisplayName;
 
+  Object get refreshValue => (
+    (
+      unreadCount,
+      kind,
+      chatId,
+      activityAt,
+      displayTitle,
+      isReadOnly,
+      lastVisibleMessageId,
+      lastVisibleMessageBody,
+      lastVisibleMessageAt,
+      lastVisibleSenderProfileId,
+      lastVisibleSenderDisplayName,
+    ),
+    switch (this) {
+      ProjectMessageChatItem item => (
+        item.projectId,
+        item.projectKind,
+        item.viewerRole,
+        item.latestSystemEventLabel,
+      ),
+      ResourceMessageChatItem item => (
+        item.requestId,
+        item.agreementId,
+        item.listingId,
+        item.counterpartyProfileId,
+        item.counterpartyDisplayName,
+        item.viewerRole,
+        item.agreementLifecycle,
+        item.coordinationClosedAt,
+      ),
+      ProjectRequestMessageChatItem item => (
+        item.requestId,
+        item.projectId,
+        item.projectKind,
+        item.projectTitle,
+        item.counterpartyProfileId,
+        item.counterpartyDisplayName,
+        item.viewerRole,
+        item.requestStatus,
+        item.requestMessage,
+        item.resolvedAt,
+        item.acceptedProjectGroupChatId,
+        item.pendingCount,
+        item.latestRequestActivityStatus,
+      ),
+    },
+  );
   String get compositeId => '${kind.wireValue}:$chatId';
 }
 

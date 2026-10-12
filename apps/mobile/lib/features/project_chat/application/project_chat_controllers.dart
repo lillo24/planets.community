@@ -359,17 +359,20 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
 
   @override
   ProjectChatDetailState build() {
-    ref.listen(authSessionProvider.select((session) => session.identity?.id), (
-      _,
-      _,
-    ) {
-      _revision++;
-      _signalsEnabled = false;
-      _reconcilePending = false;
-      _isReconciling = false;
-      _closeSubscription();
-      state = const ProjectChatDetailState();
-    });
+    ref.listen(
+      authSessionProvider.select(
+        (session) =>
+            (session.identity?.id, session.phase == AuthSessionPhase.ready),
+      ),
+      (_, _) {
+        _revision++;
+        _signalsEnabled = false;
+        _reconcilePending = false;
+        _isReconciling = false;
+        _closeSubscription();
+        state = const ProjectChatDetailState();
+      },
+    );
     ref.listen(projectChatRefreshProvider, (_, _) {
       final profileId = state.expectedProfileId;
       final chatId = state.chatId;
@@ -529,6 +532,18 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
       return true;
     } catch (error) {
       if (!_isCurrent(revision, expectedProfileId, chatId)) return false;
+      final failure = mapProjectChatFailure(error);
+      if (failure == ProjectChatFailureKind.forbidden ||
+          failure == ProjectChatFailureKind.notFound) {
+        _closeSubscription();
+        state = ProjectChatDetailState(
+          phase: ProjectChatDetailPhase.failure,
+          expectedProfileId: expectedProfileId,
+          chatId: chatId,
+          failure: failure,
+        );
+        return false;
+      }
       state = ProjectChatDetailState(
         readBoundary: state.readBoundary,
         phase: ProjectChatDetailPhase.ready,

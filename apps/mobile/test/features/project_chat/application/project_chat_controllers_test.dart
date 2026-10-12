@@ -17,6 +17,35 @@ import '../../../support/fake_project_chat.dart';
 import '../../../support/fake_project_needs.dart';
 
 void main() {
+  test(
+    'revoked canonical chat clears retained history on warm refresh',
+    () async {
+      final gateway = FakeProjectChatGateway()
+        ..summaries = [projectChatSummaryFixture()]
+        ..histories['chat-1'] = [projectChatMessageFixture()];
+      final session = _readyContainer(gateway);
+      addTearDown(session.dispose);
+      final controller = session.container.read(
+        projectChatDetailProvider.notifier,
+      );
+      await controller.load(expectedProfileId: 'user-1', chatId: 'chat-1');
+      expect(
+        session.container.read(projectChatDetailProvider).feedItems,
+        isNotEmpty,
+      );
+      gateway.summaries = [];
+      expect(
+        await controller.refresh(expectedProfileId: 'user-1', chatId: 'chat-1'),
+        isFalse,
+      );
+      expect(
+        session.container.read(projectChatDetailProvider).feedItems,
+        isEmpty,
+      );
+      expect(session.container.read(projectChatDetailProvider).summary, isNull);
+    },
+  );
+
   test('chat list uses keyset pagination and dedupes IDs', () async {
     final gateway = FakeProjectChatGateway()
       ..summaries = [
