@@ -28,7 +28,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   createWebProfileGateway,
   type WebProfileGateway,
@@ -37,9 +36,7 @@ import {
   hasProfileValidationErrors,
   normalizeProfileUpdate,
   validateProfileUpdate,
-  type ProfileAudience,
   type ProfileEditorData,
-  type ProfileFieldKey,
   type ProfileValidationErrors,
 } from "@/features/profile/profile-models";
 
@@ -76,7 +73,6 @@ export function ProfileFormView({
   const [selectedSkillIds, setSelectedSkillIds] = useState(
     () => new Set(initialData.profile.selectedSkillIds),
   );
-  const [visibility, setVisibility] = useState(initialData.profile.visibility);
   const [errors, setErrors] = useState<ProfileValidationErrors>({});
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -92,7 +88,6 @@ export function ProfileFormView({
       displayName,
       bio,
       selectedSkillIds: [...selectedSkillIds],
-      visibility,
     });
     const validation = validateProfileUpdate(update);
     setErrors(validation);
@@ -137,14 +132,6 @@ export function ProfileFormView({
     });
   }
 
-  function setAudience(field: ProfileFieldKey, values: string[]) {
-    const audience = values[0];
-    if (audience !== "public" && audience !== "private") {
-      return;
-    }
-    setVisibility((current) => ({ ...current, [field]: audience }));
-  }
-
   const incomplete = initialData.profile.displayName === null;
 
   return (
@@ -160,7 +147,7 @@ export function ProfileFormView({
         <CardDescription>
           {nameOnly
             ? "Add your name to continue. You can personalize your profile in the app."
-            : "Display name is required. Bio and controlled skills are optional, and each field can be public or private."}
+            : "Display name is required. Bio and controlled skills are optional. Manage public visibility in the mobile app Settings."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -243,35 +230,6 @@ export function ProfileFormView({
                     </FieldSet>
                   ))}
                 </FieldSet>
-
-                <FieldSet>
-                  <FieldLegend>Public profile visibility</FieldLegend>
-                  <FieldDescription>
-                    Public viewers see only fields marked public. You always see
-                    your complete profile.
-                  </FieldDescription>
-                  <VisibilityField
-                    field="display_name"
-                    label="Display name"
-                    value={visibility.display_name}
-                    disabled={busy}
-                    onChange={setAudience}
-                  />
-                  <VisibilityField
-                    field="bio"
-                    label="Bio"
-                    value={visibility.bio}
-                    disabled={busy}
-                    onChange={setAudience}
-                  />
-                  <VisibilityField
-                    field="skills"
-                    label="Skills"
-                    value={visibility.skills}
-                    disabled={busy}
-                    onChange={setAudience}
-                  />
-                </FieldSet>
               </>
             ) : null}
 
@@ -292,7 +250,7 @@ export function ProfileFormView({
                 <AlertDescription>
                   {nameOnly
                     ? "Your name is saved. You can personalize your profile in the app."
-                    : "Your profile and visibility choices are up to date."}
+                    : "Your profile is up to date. Public profile visibility is managed in the mobile app Settings."}
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -306,37 +264,5 @@ export function ProfileFormView({
         </Button>
       </CardFooter>
     </Card>
-  );
-}
-
-function VisibilityField({
-  field,
-  label,
-  value,
-  disabled,
-  onChange,
-}: Readonly<{
-  field: ProfileFieldKey;
-  label: string;
-  value: ProfileAudience;
-  disabled: boolean;
-  onChange(field: ProfileFieldKey, values: string[]): void;
-}>) {
-  return (
-    <Field>
-      <FieldLabel id={`${field}-visibility-label`}>{label}</FieldLabel>
-      <ToggleGroup
-        aria-labelledby={`${field}-visibility-label`}
-        value={[value]}
-        onValueChange={(values) => onChange(field, values)}
-        multiple={false}
-        variant="outline"
-        spacing={0}
-        disabled={disabled}
-      >
-        <ToggleGroupItem value="public">Public</ToggleGroupItem>
-        <ToggleGroupItem value="private">Private</ToggleGroupItem>
-      </ToggleGroup>
-    </Field>
   );
 }

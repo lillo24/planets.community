@@ -14,14 +14,11 @@ export class SupabaseWebProfileGateway implements WebProfileGateway {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
   async updateOwnProfile(update: ProfileUpdate): Promise<void> {
-    const { error } = await this.client.rpc("update_own_profile", {
+    const { error } = await this.client.rpc("update_own_profile_content_v1", {
       p_expected_profile_id: update.expectedProfileId,
       p_display_name: update.displayName,
       p_bio: update.bio,
       p_skill_ids: [...update.selectedSkillIds],
-      p_display_name_audience: update.visibility.display_name,
-      p_bio_audience: update.visibility.bio,
-      p_skills_audience: update.visibility.skills,
     });
     if (error) {
       throw error;

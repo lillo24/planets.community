@@ -5,7 +5,6 @@ import {
   render,
   screen,
   waitFor,
-  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -55,7 +54,6 @@ describe("ProfileForm", () => {
       displayName: "Casey",
       bio: "",
       selectedSkillIds: [],
-      visibility: initialData.profile.visibility,
     });
   });
 
@@ -90,7 +88,6 @@ describe("ProfileForm", () => {
         displayName: "Casey",
         bio: profile.bio,
         selectedSkillIds: profile.selectedSkillIds,
-        visibility: profile.visibility,
       }),
     );
   });
@@ -177,7 +174,7 @@ describe("ProfileForm", () => {
     expect(profileGateway.updateOwnProfile).not.toHaveBeenCalled();
   });
 
-  it("saves selected skills and visibility through the canonical gateway", async () => {
+  it("saves content and skills without sending stale audiences", async () => {
     const profileGateway = gateway();
     const refresh = vi.fn();
     render(
@@ -191,10 +188,12 @@ describe("ProfileForm", () => {
       target: { value: "  Casey  " },
     });
     fireEvent.click(screen.getByRole("checkbox", { name: "Mural painting" }));
-    const bioVisibility = screen.getByRole("group", { name: "Bio" });
-    fireEvent.click(
-      within(bioVisibility).getByRole("button", { name: "Private" }),
-    );
+    expect(
+      screen.queryByText("Public profile visibility"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Private" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
 
     await waitFor(() => {
@@ -203,11 +202,6 @@ describe("ProfileForm", () => {
         displayName: "Casey",
         bio: "",
         selectedSkillIds: ["skill-mural"],
-        visibility: {
-          display_name: "public",
-          bio: "private",
-          skills: "public",
-        },
       });
       expect(refresh).toHaveBeenCalledOnce();
     });

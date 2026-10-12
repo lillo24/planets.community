@@ -94,13 +94,11 @@ class ProfileUpdate {
     required this.displayName,
     required this.bio,
     required this.selectedSkillIds,
-    required this.visibility,
   });
 
   final String displayName;
   final String bio;
   final Set<String> selectedSkillIds;
-  final Map<ProfileFieldKey, ProfileAudience> visibility;
 }
 
 enum ProfileFailureKind { invalidInput, unavailable, unexpected }
