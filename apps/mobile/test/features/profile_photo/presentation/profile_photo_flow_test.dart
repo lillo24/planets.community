@@ -11,7 +11,6 @@ import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
-import 'package:planets_mobile/features/profile/domain/profile_models.dart';
 import 'package:planets_mobile/features/profile_photo/application/profile_photo_path_generator.dart';
 import 'package:planets_mobile/features/profile_photo/application/profile_photo_processor.dart';
 import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';

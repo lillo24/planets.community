@@ -165,7 +165,11 @@ void main() {
         await tester.pumpAndSettle();
         expect(_path(app), '/settings');
         await _tapSettings(tester, 'settings-profile-privacy-row');
-        await tester.scrollUntilVisible(bio, 150, scrollable: find.byType(Scrollable).last);
+        await tester.scrollUntilVisible(
+          bio,
+          150,
+          scrollable: find.byType(Scrollable).last,
+        );
         expect(tester.widget<SegmentedButton<ProfileAudience>>(bio).selected, {
           ProfileAudience.private,
         });

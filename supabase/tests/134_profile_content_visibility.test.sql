@@ -28,7 +28,7 @@ select throws_ok($$select public.update_own_profile_content_v1('81000000-0000-40
 select results_eq($$select display_name,bio from public.profiles$$, $$values ('New name'::text,'New bio'::text)$$, 'invalid calls leave previous content intact');
 select set_config('request.jwt.claim.sub', '82000000-0000-4000-8000-000000000002', true);
 select throws_ok($$select public.update_own_profile_content_v1('81000000-0000-4000-8000-000000000001','Cross user','Overwrite','{}'::uuid[])$$, '42501', 'The authenticated user does not match the expected profile.', 'stale owner rejected');
-select is((with changed as (update public.profile_field_visibility set audience='public' where profile_id='81000000-0000-4000-8000-000000000001' returning field_key) select count(*) from changed), 0::bigint, 'cross user audience write affects zero rows');
+select results_eq($$update public.profile_field_visibility set audience='public' where profile_id='81000000-0000-4000-8000-000000000001' returning field_key$$, $$select 'bio'::text where false$$, 'cross user audience write affects zero rows');
 select throws_ok($$select public.update_own_profile_content_v1('82000000-0000-4000-8000-000000000002','No anchor','','{}'::uuid[])$$, '55000', 'The current user does not have a profile anchor.', 'missing anchor is explicit failure');
 reset role;
 set local role anon;
