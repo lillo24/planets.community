@@ -17,7 +17,7 @@ The owner screens compose the independent `profile_photo` feature. Owners can
 add, change, or remove a profile photo from the edit form and see the current
 avatar on their Profile screen without coupling those actions to the ordinary
 profile Save operation. Photo mutations do not reconstruct this form, so
-unsaved name, bio, skill, and field-visibility edits remain intact.
+unsaved name, bio and skill edits remain intact.
 
 Setup and edit use the shared `core/widgets/tag_multi_select.dart` control. Its
 closed state shows removable selected tags without expanding the catalog; the
@@ -91,3 +91,8 @@ stale. Current mobile and Web clients never send those audience arguments.
 Deploy the new migration before activating these updated clients. No hosted
 migration deployment is part of this source change. Photo audience stays owned
 by `profile_photo`, independent of these three fields.
+
+The dedicated visibility edit route retains Edit Profile's Terms/Rules
+acceptance guard. Settings itself, legal documents, reporting/blocking and
+sign-out keep their existing pre-acceptance access. Relocation never records
+consent automatically; only the explicit policy acceptance flow opens editing.
