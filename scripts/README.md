@@ -27,6 +27,11 @@ domain verification and change-scoped validation tooling.
   local data. Root `package.json` maps commands; the
   [database guide](../docs/development/database.md) maps setup and checks.
   Run pgTAP before verifiers populate the stack.
+- `verify-local-proposal-skills.mjs` is composed by `proposal:verify:local`.
+  It requires an explicitly disposable loopback stack, uses real OTP/JWT calls,
+  proves both queued skills/details save orders and skill conflicts with actual
+  row locks, and checks queued revocation and unchanged resource privileges.
+  See [UI02 contract](../docs/development/ui02-skills-resources.md).
 - `verify-local-public-ideas.mjs` exports the IDEA01A OTP/JWT and concurrency
   scenarios, composed by `verify-local-proposals.mjs`. It requires explicitly
   disposable loopback API/database/mailbox targets; it never resets or targets

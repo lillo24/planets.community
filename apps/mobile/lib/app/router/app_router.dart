@@ -63,6 +63,7 @@ import '../../features/participation/presentation/join_request_screen.dart';
 import '../../features/participation/presentation/participation_routes.dart';
 import '../../features/proposals/presentation/own_proposals_screen.dart';
 import '../../features/proposals/presentation/proposal_editor_screen.dart';
+import '../../features/proposals/presentation/proposal_needs_screen.dart';
 import '../../features/proposals/presentation/proposal_creation_choice.dart';
 import '../../features/proposals/presentation/public_proposals_screen.dart';
 import '../../features/template_workshop/presentation/template_workshop_screens.dart';
@@ -848,6 +849,16 @@ RoutingConfig _routingConfig(
                             proposalId: state.pathParameters['id'],
                             returnToHub: state.extra == DraftEditorOrigin.hub,
                           ),
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'needs',
+                        onExit: draftDeparture?.onExit,
+                        builder: (context, state) => ProposalNeedsScreen(
+                          key: ValueKey(
+                            'proposal-needs-${state.pathParameters['id']}',
+                          ),
+                          projectId: state.pathParameters['id']!,
                         ),
                       ),
                       GoRoute(

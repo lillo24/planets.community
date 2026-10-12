@@ -68,6 +68,7 @@ void main() {
 
   for (final destination in [
     '/proposals/proposal-1/resources',
+    '/proposals/proposal-1/needs',
     '/tavoli/tavolo-1/resources',
   ]) {
     testWidgets('signed out $destination preserves exact returnTo', (
@@ -132,7 +133,14 @@ void main() {
         result.router.routeInformationProvider.value.uri.path,
         destination,
       );
-      expect(find.text('Project resources and materials'), findsOneWidget);
+      expect(
+        find.text(
+          destination.endsWith('/needs')
+              ? 'Manage skills & resources'
+              : 'Project resources and materials',
+        ),
+        findsOneWidget,
+      );
     });
   }
 

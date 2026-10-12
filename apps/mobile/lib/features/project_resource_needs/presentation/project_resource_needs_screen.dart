@@ -19,11 +19,19 @@ class ProjectResourceNeedsScreen extends ConsumerStatefulWidget {
   const ProjectResourceNeedsScreen({
     required this.projectId,
     required this.projectKind,
+    this.header,
+    this.title,
+    this.onRefresh,
     super.key,
   });
 
   final String projectId;
   final ProjectKind projectKind;
+
+  /// A shared hub can compose an independently loading skills section.
+  final Widget? header;
+  final String? title;
+  final Future<void> Function()? onRefresh;
 
   @override
   ConsumerState<ProjectResourceNeedsScreen> createState() =>
@@ -69,69 +77,91 @@ class _ProjectResourceNeedsScreenState
     return Scaffold(
       appBar: pageAppBar(
         context,
-        title: Text(l10n.projectResourcesManageTitle),
+        title: Text(widget.title ?? l10n.projectResourcesManageTitle),
       ),
       body: SafeArea(
-        child: initiallyLoading
-            ? LoadingState(message: l10n.projectResourcesLoading)
-            : state.phase == OwnProjectResourceNeedsPhase.failure &&
-                  items.isEmpty
-            ? ErrorState(
-                message: _failureMessage(l10n, state.failure),
-                onRetry: _load,
-              )
-            : RefreshIndicator(
-                onRefresh: _load,
-                child: ListView(
-                  padding: const EdgeInsets.all(AppSpacing.large),
-                  children: [
-                    if (state.failure case final failure?) ...[
-                      Semantics(
-                        liveRegion: true,
-                        child: Text(
-                          _failureMessage(l10n, failure),
-                          key: const Key('project-resource-owner-error'),
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.medium),
-                    ],
-                    if (items.isEmpty)
-                      EmptyState(
-                        title: l10n.projectResourcesEmptyTitle,
-                        message: l10n.projectResourcesEmptyMessage,
-                      )
-                    else ...[
-                      _NeedGroup(
-                        title: l10n.projectResourcesOpen,
-                        items: open,
-                        state: state,
-                        onEdit: _edit,
-                        onClose: _close,
-                        onMatch: _openMatches,
-                      ),
-                      if (closed.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.large),
-                        _NeedGroup(
-                          title: l10n.projectResourcesClosed,
-                          items: closed,
-                          state: state,
-                          onEdit: _edit,
-                          onClose: _close,
-                          onMatch: _openMatches,
-                        ),
-                      ],
-                    ],
-                    const SizedBox(height: AppSpacing.large * 4),
-                  ],
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await widget.onRefresh?.call();
+            if (mounted) await _load();
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.large),
+            children: [
+              if (widget.header case final header?) ...[
+                header,
+                const SizedBox(height: AppSpacing.large),
+                Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.projectResourcesNeededTitle,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
-              ),
+                const SizedBox(height: AppSpacing.medium),
+              ],
+              if (initiallyLoading)
+                LoadingState(message: l10n.projectResourcesLoading)
+              else if (state.phase == OwnProjectResourceNeedsPhase.failure &&
+                  items.isEmpty)
+                ErrorState(
+                  message: _failureMessage(l10n, state.failure),
+                  onRetry: _load,
+                )
+              else ...[
+                if (state.failure case final failure?) ...[
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      _failureMessage(l10n, failure),
+                      key: const Key('project-resource-owner-error'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.medium),
+                ],
+                if (items.isEmpty)
+                  EmptyState(
+                    title: l10n.projectResourcesEmptyTitle,
+                    message: l10n.projectResourcesEmptyMessage,
+                  )
+                else ...[
+                  _NeedGroup(
+                    title: l10n.projectResourcesOpen,
+                    items: open,
+                    state: state,
+                    onEdit: _edit,
+                    onClose: _close,
+                    onMatch: _openMatches,
+                  ),
+                  if (closed.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.large),
+                    _NeedGroup(
+                      title: l10n.projectResourcesClosed,
+                      items: closed,
+                      state: state,
+                      onEdit: _edit,
+                      onClose: _close,
+                      onMatch: _openMatches,
+                    ),
+                  ],
+                ],
+              ],
+              const SizedBox(height: AppSpacing.large * 4),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('project-resource-add'),
-        onPressed: state.isBusy ? null : () => _edit(null),
+        onPressed:
+            state.isBusy ||
+                state.failure == ProjectResourceNeedsFailureKind.forbidden
+            ? null
+            : () => _edit(null),
         icon: const Icon(Icons.add),
         label: Text(l10n.projectResourcesAddNeed),
       ),

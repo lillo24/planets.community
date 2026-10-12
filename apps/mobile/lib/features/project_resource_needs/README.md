@@ -48,3 +48,10 @@ The first matcher remains creator-only and lexical/explainable. It has no
 numeric score, synonym/taxonomy layer, private availability inference, saved
 search, or direct Project-need-to-Resource-request relation. A match never
 closes or covers a Project need and never creates a Resource request.
+
+UI02 composes the original Creator-only `presentation/project_resource_needs_screen.dart`
+with an optional independently loading skill header and refresh callback.
+`project_resource_need_routes.dart` also owns the protected one-time `/needs`
+route; Tavoli retain their resources-only destination. Public section options
+allow a parent section header and an explicit empty state without ownership reads.
+Add/edit/close/matches still use the same controllers, gateway and permissions.

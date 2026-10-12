@@ -1340,49 +1340,51 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                     lines: 3,
                   ),
                 ],
-                const SizedBox(height: AppSpacing.large),
-                Text(
-                  l10n.proposalSkillsTitle,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: AppSpacing.small),
-                ProposalSkillsControl(
-                  categories: widget.categories,
-                  values: _skills,
-                  enabled: !busy && contentEditable,
-                  onChanged: (values) {
-                    setState(() {
-                      _skills
-                        ..clear()
-                        ..addAll(values);
-                    });
-                    _syncMatching();
-                  },
-                ),
-                const SizedBox(height: AppSpacing.large),
-                Text(
-                  l10n.projectResourcesNeededTitle,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                if (widget.proposal == null)
-                  Text(l10n.projectResourcesAfterDraft)
-                else if (contentEditable)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: OutlinedButton.icon(
-                      key: const Key('proposal-manage-resources'),
-                      onPressed: busy
-                          ? null
-                          : () => context.push(
-                              ProjectResourceNeedRoutes.manage(
-                                ProjectKind.oneTime,
-                                widget.proposal!.id,
-                              ),
-                            ),
-                      icon: const Icon(Icons.inventory_2_outlined),
-                      label: Text(l10n.projectResourcesManage),
-                    ),
+                if (isDraft || !contentEditable) ...[
+                  const SizedBox(height: AppSpacing.large),
+                  Text(
+                    l10n.proposalSkillsTitle,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
+                  const SizedBox(height: AppSpacing.small),
+                  ProposalSkillsControl(
+                    categories: widget.categories,
+                    values: _skills,
+                    enabled: !busy && contentEditable,
+                    onChanged: (values) {
+                      setState(() {
+                        _skills
+                          ..clear()
+                          ..addAll(values);
+                      });
+                      _syncMatching();
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.large),
+                  Text(
+                    l10n.projectResourcesNeededTitle,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  if (widget.proposal == null)
+                    Text(l10n.projectResourcesAfterDraft)
+                  else if (contentEditable)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: OutlinedButton.icon(
+                        key: const Key('proposal-manage-resources'),
+                        onPressed: busy
+                            ? null
+                            : () => context.push(
+                                ProjectResourceNeedRoutes.manage(
+                                  ProjectKind.oneTime,
+                                  widget.proposal!.id,
+                                ),
+                              ),
+                        icon: const Icon(Icons.inventory_2_outlined),
+                        label: Text(l10n.projectResourcesManage),
+                      ),
+                    ),
+                ],
                 if (state.coverPartialSave != null) ...[
                   const SizedBox(height: AppSpacing.medium),
                   Semantics(
