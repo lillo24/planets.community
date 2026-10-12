@@ -282,8 +282,8 @@ RoutingConfig _routingConfig(
         ).toString();
       }
 
-      // UI-only acknowledgement. Reporting, blocking, Help, public browsing,
-      // deletion requests and Settings/sign-out deliberately bypass this gate.
+      // Client-side policy gate. Reporting, blocking, Help, public browsing,
+      // deletion requests and the Settings shell/sign-out bypass this gate.
       if (isAuthRoute &&
           (session.phase == AuthSessionPhase.ready ||
               session.phase == AuthSessionPhase.profileSetupRequired)) {
@@ -317,6 +317,7 @@ RoutingConfig _routingConfig(
           ProjectDelegateRoutes.isInvitePath(path);
       final needsPolicy =
           isProfileEditRoute ||
+          path == profileVisibilityPath ||
           isInvite ||
           (isActivityManagementRoute &&
               !isModerationRoute &&
