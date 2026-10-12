@@ -66,3 +66,8 @@ Profile model.
 Photo trust prompts reuse the editor in a native Material route. That route
 guards Back/Cancel locally; router pages use the shared departure hook. Native
 photo-prompt Back waits for Keep editing/Discard before popping the form.
+
+The completed owner Profile exposes Edit Profile as an accessible AppBar icon.
+Incomplete profiles retain their setup flow. My Reports and Blocked Users now
+live in Settings > Account and push the existing protected Profile destinations,
+so Back returns to Settings. My Groups and Review Requests remain on Profile.

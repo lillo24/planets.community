@@ -498,17 +498,21 @@ void main() {
   );
 
   testWidgets(
-    'Browse preference keeps labelled Messages reachable in Settings',
+    'Browse preference leaves only the saved navigation option in Sandbox',
     (tester) async {
       final app = await _pump(tester, destination: BottomTabDestination.browse);
       await _tap(tester, 'welcome-explore');
       await _tap(tester, 'open-settings-button');
-      await _tap(tester, 'settings-messages-row');
+      expect(find.byKey(const Key('settings-messages-row')), findsNothing);
+      await _tap(tester, 'settings-navigation-row');
       expect(
         app.read(appRouterProvider).routerDelegate.state.uri.path,
-        '/messages',
+        '/settings/navigation',
       );
-      expect(find.byKey(const Key('nav-messages')), findsOneWidget);
+      expect(
+        find.byKey(const Key('navigation-messages-option')),
+        findsOneWidget,
+      );
     },
   );
 

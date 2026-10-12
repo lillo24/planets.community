@@ -34,12 +34,10 @@ void main() {
     expect(english.settingsAppSection, 'General');
     expect(italian.settingsAppSection, 'Generale');
     expect(english.settingsSandbox, 'Sandbox');
-    expect(italian.settingsMessagesPreview, 'Anteprima Messaggi');
     expect(
       english.settingsPersistentTab('Browse'),
       contains('Saved on device'),
     );
-    expect(italian.settingsMessagesPreviewNotice, contains('inventate'));
     expect(english.settingsBottomRightTab, 'Bottom-right tab');
     expect(italian.settingsBottomRightTab, 'Scheda in basso a destra');
     expect(english.projectRegistrationCapacityLabel, 'Registration capacity');
