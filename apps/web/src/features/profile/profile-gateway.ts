@@ -14,8 +14,6 @@ export class SupabaseWebProfileGateway implements WebProfileGateway {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
   async updateOwnProfile(update: ProfileUpdate): Promise<void> {
-    // Temporary bootstrap: database CI will emit the canonical new RPC type.
-    // @ts-expect-error Remove after importing generated database types.
     const { error } = await this.client.rpc("update_own_profile_content_v1", {
       p_expected_profile_id: update.expectedProfileId,
       p_display_name: update.displayName,
