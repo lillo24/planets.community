@@ -5,7 +5,16 @@
 Mobile jobs. Workflow/root-tooling changes select every area. Manual dispatch
 selects the complete suite. There is no duplicate main-push validation trigger.
 
-The Database job replays a disposable local stack, runs lint/advisors/pgTAP and
+The Database job replays a disposable local stack and runs lint/advisors/pgTAP.
+
+GRP03A adds `group:membership:upgrade:verify:local` before fresh replay and
+`group:membership:verify:local` after GRP01. The populated check reuses existing
+group/Project verifiers as bounded fixture producers and verifies the blocking
+hook survives warmed calls; the HTTP check observes independent lock waits.
+Both run in `check:db`. These backend authorization/upgrade checks are required
+for group changes; no extra platform jobs or trigger boundaries are introduced.
+
+The Database job also runs
 named authenticated verifiers, then checks generated types. TW03 adds explicit
 `moderation:verify:local` (including TW02) and `template:apply:verify:local`
 steps. TW02's historical run #37188652377 omitted the moderation command;
