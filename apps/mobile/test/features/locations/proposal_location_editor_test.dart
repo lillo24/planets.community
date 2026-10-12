@@ -21,16 +21,18 @@ class Harness extends StatefulWidget {
     required this.handle,
     required this.formKey,
     this.fresh = false,
+    this.initialCity,
   });
   final LocationEditorHandle handle;
   final GlobalKey<FormState> formKey;
   final bool fresh;
+  final String? initialCity;
   @override
   State<Harness> createState() => HarnessState();
 }
 
 class HarnessState extends State<Harness> {
-  late String city = widget.fresh ? '' : 'Trento';
+  late String city = widget.initialCity ?? (widget.fresh ? '' : 'Trento');
   late String? savedId = widget.fresh ? null : 'proposal-1';
   final directions = TextEditingController();
   int saves = 0;
@@ -85,6 +87,8 @@ setup(
   String language = 'en',
   double scale = 1,
   bool fresh = false,
+  String? initialCity,
+  bool settle = true,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -110,12 +114,21 @@ setup(
           child: child!,
         ),
         home: Scaffold(
-          body: Harness(handle: handle, formKey: formKey, fresh: fresh),
+          body: Harness(
+            handle: handle,
+            formKey: formKey,
+            fresh: fresh,
+            initialCity: initialCity,
+          ),
         ),
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
   return (
     container,
     tester.state<HarnessState>(find.byType(Harness)),
@@ -128,6 +141,14 @@ Future<void> tap(WidgetTester tester, String key) async {
   final finder = find.byKey(Key(key));
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
+  final panel = find.byKey(const Key('proposal-location-results-panel'));
+  if (find.descendant(of: panel, matching: finder).evaluate().isNotEmpty) {
+    // Settle the nested result scroll before bringing its viewport back into
+    // view. Always-visible directions let the outer page scroll farther now.
+    await tester.ensureVisible(panel);
+    await tester.pumpAndSettle();
+  }
+  expect(finder.hitTestable(), findsOneWidget);
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }
@@ -148,6 +169,85 @@ Future<void> query(WidgetTester tester, String value) async {
 }
 
 void main() {
+  testWidgets('saved blank location has no credits before or after hydration', (
+    tester,
+  ) async {
+    final db = FakeItemLocationGateway()
+      ..value = const ItemLocation(3, publicLabel: '');
+    final pending = Completer<void>();
+    db.readDelay = pending.future;
+    await setup(
+      tester,
+      db,
+      FakeEditorPlaceFactory(),
+      initialCity: '',
+      settle: false,
+    );
+    expect(find.byType(LocationAttribution), findsNothing);
+    pending.complete();
+    await tester.pumpAndSettle();
+    expect(find.byType(LocationAttribution), findsNothing);
+    expect(find.byKey(const Key('directions')), findsOneWidget);
+    expect(db.mutations, isEmpty);
+  });
+
+  testWidgets(
+    'cleared provider query removes credits; cancel restores selection credits',
+    (tester) async {
+      final db = FakeItemLocationGateway()
+        ..value = const ItemLocation(
+          3,
+          exactPlace: syntheticExact,
+          publicLabel: 'Trento',
+          publicTextSource: 'geoapify',
+        );
+      await setup(tester, db, FakeEditorPlaceFactory());
+      expect(find.byType(LocationAttribution), findsOneWidget);
+      await query(tester, '');
+      expect(find.byType(LocationAttribution), findsNothing);
+      await tap(tester, 'proposal-cancel-place-edit');
+      expect(find.byType(LocationAttribution), findsOneWidget);
+      expect(db.mutations, isEmpty);
+    },
+  );
+
+  for (final source in ['manual', 'geoapify', 'unknown']) {
+    testWidgets(
+      'stored text-only $source credits survive foreground and identity invalidation correctly',
+      (tester) async {
+        final db = FakeItemLocationGateway()
+          ..value = ItemLocation(
+            3,
+            publicLabel: 'Trento',
+            publicTextSource: source,
+            supportsTextProvenance: true,
+          );
+        final factory = FakeEditorPlaceFactory()..gateway.available = false;
+        final (container, _, _, _) = await setup(tester, db, factory);
+        final expected = source == 'manual' ? findsNothing : findsOneWidget;
+        expect(find.byType(LocationAttribution), expected);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        await tester.pump();
+        expect(find.byType(LocationAttribution), expected);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(LocationAttribution), expected);
+        container
+            .read(authSessionProvider.notifier)
+            .markProfileReady(const AuthIdentity(id: 'user-2'));
+        await tester.pump();
+        expect(find.byType(LocationAttribution), expected);
+        expect(find.byKey(const Key('directions')), findsNothing);
+        expect(factory.gateway.requests, isEmpty);
+        expect(db.mutations, isEmpty);
+      },
+    );
+  }
+
   for (final language in ['en', 'it']) {
     testWidgets(
       '$language manual city saves provenance and reopened editor has no provider credit',
@@ -362,7 +462,8 @@ void main() {
       expect(form.currentState!.validate(), isTrue);
       expect(db.mutations.single.$1.slot, 'place');
       expect(state.saves, 1);
-      await tap(tester, 'proposal-optional-exact');
+      expect(find.byKey(const Key('proposal-optional-exact')), findsNothing);
+      expect(find.byKey(const Key('directions')), findsOneWidget);
       await tester.enterText(
         find.byKey(const Key('directions')),
         'Private gate, bell 4',
@@ -509,7 +610,8 @@ void main() {
     (tester) async {
       final db = FakeItemLocationGateway(), factory = FakeEditorPlaceFactory();
       final (container, state, _, _) = await setup(tester, db, factory);
-      await tap(tester, 'proposal-optional-exact');
+      expect(find.byKey(const Key('proposal-optional-exact')), findsNothing);
+      expect(find.byKey(const Key('directions')), findsOneWidget);
       await tester.enterText(
         find.byKey(const Key('directions')),
         'Private gate',
@@ -641,7 +743,8 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.space);
       await tester.pumpAndSettle();
       expect(db.value.exactIsPublic, isTrue);
-      await tap(tester, 'proposal-optional-exact');
+      expect(find.byKey(const Key('proposal-optional-exact')), findsNothing);
+      expect(find.byKey(const Key('directions')), findsOneWidget);
       expect(find.byKey(const Key('directions')), findsOneWidget);
       expect(tester.takeException(), isNull);
       semantics.dispose();

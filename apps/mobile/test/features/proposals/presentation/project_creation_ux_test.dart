@@ -94,7 +94,7 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await draft.pumpEditor(tester);
       final picker = find.byKey(const Key('proposal-skills-trigger'));
-      final previewFinder = find.byKey(const Key('proposal-optional-exact'));
+      final previewFinder = find.byKey(const Key('proposal-exact-location'));
       await draft.reveal(tester, previewFinder);
       final position = tester
           .state<ScrollableState>(
