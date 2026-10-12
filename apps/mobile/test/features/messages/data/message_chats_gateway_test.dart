@@ -9,7 +9,7 @@ import 'package:planets_mobile/features/resource_chat/domain/resource_chat_model
 
 void main() {
   test(
-    'v4 request preview status is independent of route context and strict',
+    'v5 request preview status is independent of route context and strict',
     () {
       const parser = MessageChatsPayloadParser();
       for (final status in JoinRequestStatus.values) {
@@ -47,6 +47,43 @@ void main() {
       );
     },
   );
+
+  test('v5 optional cover is parent-bound, group-only and part of refresh equality', () {
+    const parser = MessageChatsPayloadParser();
+    const path =
+        '00000000-0000-4000-8000-000000000101/projects/$_projectId/00000000-0000-4000-8000-000000000802.webp';
+    final plain = parser.item(_projectRow()) as ProjectMessageChatItem;
+    final covered = parser.item(
+      _projectRow()..['group_cover_object_path'] = path,
+    ) as ProjectMessageChatItem;
+    expect(covered.coverObjectPath, path);
+    expect(covered.refreshValue, isNot(plain.refreshValue));
+    for (final row in [_resourceRow(), _projectRequestRow()]) {
+      expect(
+        () => parser.item(row..['group_cover_object_path'] = path),
+        throwsFormatException,
+      );
+    }
+    expect(
+      () => parser.item(_projectRow()..remove('group_cover_object_path')),
+      throwsFormatException,
+    );
+    expect(
+      () => parser.item(_projectRow()..['group_cover_object_path'] = 42),
+      throwsFormatException,
+    );
+    for (final invalid in [
+      'https://example.invalid/image',
+      path.replaceAll(_projectId, _chatId),
+    ]) {
+      expect(
+        (parser.item(
+          _projectRow()..['group_cover_object_path'] = invalid,
+        ) as ProjectMessageChatItem).coverObjectPath,
+        isNull,
+      );
+    }
+  });
 
   const parser = MessageChatsPayloadParser();
 
@@ -153,7 +190,7 @@ void main() {
     final source = File('lib/features/messages/data/message_chats_gateway.dart')
         .readAsStringSync();
 
-    expect(source, contains("'list_own_scoped_conversation_items_v4'"));
+    expect(source, contains("'list_own_scoped_conversation_items_v5'"));
     expect(source, contains("'p_scope'"));
     expect(source, contains("'p_cursor_activity_at'"));
     expect(source, contains("'p_cursor_item_kind'"));
@@ -203,6 +240,7 @@ Map<String, dynamic> _commonRow({String chatId = _chatId}) => {
 
 Map<String, dynamic> _projectRow({String viewerRole = 'current_member'}) => {
   ..._commonRow(),
+  'group_cover_object_path': null,
   'item_kind': 'project_chat',
   'viewer_role': viewerRole,
   'project_id': _projectId,
@@ -221,6 +259,7 @@ Map<String, dynamic> _resourceRow({
   bool? forceReadOnly,
 }) => {
   ..._commonRow(chatId: chatId),
+  'group_cover_object_path': null,
   'item_kind': 'resource_chat',
   'viewer_role': viewerRole,
   'is_read_only': forceReadOnly ?? lifecycle.isClosed,
@@ -237,6 +276,7 @@ Map<String, dynamic> _resourceRow({
 
 Map<String, dynamic> _projectRequestRow() => {
   ..._commonRow(),
+  'group_cover_object_path': null,
   'item_kind': 'project_request_chat',
   'unread_count': 0,
   'pending_count': 1,
