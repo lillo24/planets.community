@@ -194,8 +194,155 @@ async function verifyProfileVisibility() {
     throw new Error("The rejected cross-user update changed user A's profile.");
   }
 
+  // PROFILEPRIV01: both current clients save content independently; the old
+  // combined operation above remains wire-compatible for installed clients.
+  const content = {
+    p_expected_profile_id: userA.id,
+    p_display_name: "Content only owner",
+    p_bio: "Independent content edit",
+    p_skill_ids: skillIds,
+  };
+  const contentResult = await userA.client.rpc(
+    "update_own_profile_content_v1",
+    content,
+  );
+  if (contentResult.error)
+    throw safeDatabaseFailure(
+      "save content independently",
+      contentResult.error,
+    );
+  const narrow = await userA.client
+    .from("profile_field_visibility")
+    .update({ audience: "private" })
+    .eq("profile_id", userA.id)
+    .eq("field_key", "display_name")
+    .select("field_key,audience");
+  if (
+    narrow.error ||
+    narrow.data?.length !== 1 ||
+    narrow.data[0].audience !== "private"
+  ) {
+    throw new Error(
+      "Targeted owner visibility save did not confirm exactly one row.",
+    );
+  }
+  const secondContent = await userA.client.rpc(
+    "update_own_profile_content_v1",
+    { ...content, p_bio: "New content after Settings" },
+  );
+  if (secondContent.error)
+    throw safeDatabaseFailure(
+      "save content after Settings",
+      secondContent.error,
+    );
+  const finalContent = await userA.client
+    .from("profiles")
+    .select("display_name,bio")
+    .eq("id", userA.id)
+    .single();
+  const finalSkills = await userA.client
+    .from("profile_skills")
+    .select("skill_id")
+    .eq("profile_id", userA.id);
+  const finalVisibility = await userA.client
+    .from("profile_field_visibility")
+    .select("field_key,audience")
+    .eq("profile_id", userA.id);
+  if (
+    finalContent.error ||
+    finalSkills.error ||
+    finalVisibility.error ||
+    finalContent.data.display_name !== content.p_display_name ||
+    finalContent.data.bio !== "New content after Settings" ||
+    finalSkills.data.length !== 2 ||
+    finalVisibility.data.length !== 3 ||
+    finalVisibility.data.find((row) => row.field_key === "display_name")
+      ?.audience !== "private" ||
+    finalVisibility.data.find((row) => row.field_key === "bio")?.audience !==
+      "private"
+  ) {
+    throw new Error(
+      "Independent content and visibility writes clobbered unrelated state.",
+    );
+  }
+  const crossVisibility = await userB.client
+    .from("profile_field_visibility")
+    .update({ audience: "public" })
+    .eq("profile_id", userA.id)
+    .eq("field_key", "bio")
+    .select("field_key");
+  if (crossVisibility.error || crossVisibility.data?.length !== 0)
+    throw new Error("Cross-user visibility write was not blocked.");
+  const staleContent = await userB.client.rpc(
+    "update_own_profile_content_v1",
+    content,
+  );
+  if (staleContent.error?.code !== "42501")
+    throw new Error("New content RPC accepted a stale owner.");
+  const anonContent = await anonymous.rpc(
+    "update_own_profile_content_v1",
+    content,
+  );
+  if (!anonContent.error)
+    throw new Error("Anonymous content write was accepted.");
+  const anonVisibility = await anonymous
+    .from("profile_field_visibility")
+    .update({ audience: "public" })
+    .eq("profile_id", userA.id)
+    .eq("field_key", "bio")
+    .select("field_key");
+  if (!anonVisibility.error)
+    throw new Error("Anonymous visibility write was accepted.");
+  const invalidAudience = await userA.client
+    .from("profile_field_visibility")
+    .update({ audience: "friends" })
+    .eq("profile_id", userA.id)
+    .eq("field_key", "bio");
+  if (invalidAudience.error?.code !== "23514")
+    throw new Error("Invalid audience was accepted.");
+  const invalidField = await userA.client
+    .from("profile_field_visibility")
+    .update({ field_key: "invented" })
+    .eq("profile_id", userA.id)
+    .eq("field_key", "bio");
+  if (invalidField.error?.code !== "42501")
+    throw new Error("Field identity mutation was not blocked.");
+  const projected = await anonymous.rpc("get_public_profile", {
+    p_profile_id: userA.id,
+  });
+  if (
+    projected.error ||
+    projected.data?.length !== 1 ||
+    projected.data[0].display_name !== null ||
+    projected.data[0].bio !== null ||
+    projected.data[0].skills.length !== 2
+  ) {
+    throw new Error(
+      "Public projection did not honor independent audience changes.",
+    );
+  }
+  await userA.client.auth.signOut({ scope: "local" });
+  const relogged = await signInWithLocalOtp(userAEmail);
+  const reopened = await relogged.client
+    .from("profile_field_visibility")
+    .select("field_key,audience")
+    .eq("profile_id", relogged.id);
+  if (
+    reopened.error ||
+    JSON.stringify(
+      [...reopened.data].sort((a, b) => a.field_key.localeCompare(b.field_key)),
+    ) !==
+      JSON.stringify(
+        [...finalVisibility.data].sort((a, b) =>
+          a.field_key.localeCompare(b.field_key),
+        ),
+      )
+  ) {
+    throw new Error("Visibility did not persist through a fresh sign-in.");
+  }
+
   console.log(
-    "Confirmed owner access, stale-form rejection, cross-user isolation, and exact-ID mixed-visibility sanitization.",
+    "Confirmed legacy/new RPC compatibility, independent content and visibility, fresh login persistence, owner isolation and public sanitization.",
   );
 }
 

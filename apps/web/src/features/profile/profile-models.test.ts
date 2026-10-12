@@ -12,11 +12,6 @@ const validUpdate: ProfileUpdate = {
   displayName: "Casey",
   bio: "Ready to help.",
   selectedSkillIds: ["skill-1"],
-  visibility: {
-    display_name: "public",
-    bio: "private",
-    skills: "public",
-  },
 };
 
 describe("profile update validation", () => {

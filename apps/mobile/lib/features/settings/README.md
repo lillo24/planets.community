@@ -54,3 +54,8 @@ Optional real-font visual captures use `UIFIX02_CAPTURE_DIR` and
 `UIFIX02_CAPTURE_FONTS` (Flutter SDK `bin/cache/artifacts/material_fonts`). Run
 `flutter test test/features/settings/presentation/settings_screen_test.dart
 --plain-name "2x Settings"` from `apps/mobile`. Normal tests write no images.
+
+Profile-ready owners see Public Profile Visibility in Account, separately from
+the Privacy Policy. The nested protected screen is owned by `profile`; guest
+and incomplete sessions redirect to Settings without loading visibility. This
+adds no policy-consent gating to Settings or its legal links.

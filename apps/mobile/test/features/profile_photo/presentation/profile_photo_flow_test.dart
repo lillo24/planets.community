@@ -140,11 +140,7 @@ void main() {
       find.byKey(const Key('profile-skills-option-mural-painting')),
     );
     await _tapVisible(tester, find.byKey(const Key('profile-skills-apply')));
-    final bioVisibility = find.byKey(const Key('profile-visibility-bio'));
-    await _tapVisible(
-      tester,
-      find.descendant(of: bioVisibility, matching: find.text('Private')),
-    );
+    expect(find.byKey(const Key('profile-visibility-bio')), findsNothing);
 
     await _tapVisible(tester, find.byKey(const Key('profile-photo-add')));
     await tester.pumpAndSettle();
@@ -338,14 +334,7 @@ void _expectUnsavedFields(WidgetTester tester) {
     find.byKey(const Key('profile-skills-selected-mural-painting')),
     findsOneWidget,
   );
-  expect(
-    tester
-        .widget<SegmentedButton<ProfileAudience>>(
-          find.byKey(const Key('profile-visibility-bio')),
-        )
-        .selected,
-    {ProfileAudience.private},
-  );
+  expect(find.byKey(const Key('profile-visibility-bio')), findsNothing);
 }
 
 Future<void> _tapVisible(WidgetTester tester, Finder finder) async {

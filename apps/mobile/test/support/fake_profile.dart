@@ -45,7 +45,7 @@ class FakeProfileGateway implements ProfileGateway {
         bio: update.bio.trim().isEmpty ? null : update.bio.trim(),
         updatedAt: DateTime.utc(2026, 9, 2, 20),
         selectedSkillIds: {...update.selectedSkillIds},
-        visibility: {...update.visibility},
+        visibility: {...data.profile.visibility},
       ),
       categories: data.categories,
     );

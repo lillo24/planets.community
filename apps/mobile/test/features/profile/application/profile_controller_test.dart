@@ -59,12 +59,7 @@ void main() {
           .read(profileProvider.notifier)
           .save(
             identity,
-            ProfileUpdate(
-              displayName: 'Casey',
-              bio: '',
-              selectedSkillIds: {},
-              visibility: profile.data.profile.visibility,
-            ),
+            ProfileUpdate(displayName: 'Casey', bio: '', selectedSkillIds: {}),
           );
       session.markSignedOut();
       session.markProfileSetupRequired(identity, hasProfileAnchor: true);
@@ -102,11 +97,6 @@ void main() {
               displayName: 'Casey',
               bio: '',
               selectedSkillIds: {'skill-mural'},
-              visibility: {
-                ProfileFieldKey.displayName: ProfileAudience.public,
-                ProfileFieldKey.bio: ProfileAudience.private,
-                ProfileFieldKey.skills: ProfileAudience.public,
-              },
             ),
           );
 
@@ -135,16 +125,7 @@ void main() {
         .read(profileProvider.notifier)
         .save(
           const AuthIdentity(id: 'user-1'),
-          const ProfileUpdate(
-            displayName: 'X',
-            bio: '',
-            selectedSkillIds: {},
-            visibility: {
-              ProfileFieldKey.displayName: ProfileAudience.public,
-              ProfileFieldKey.bio: ProfileAudience.public,
-              ProfileFieldKey.skills: ProfileAudience.public,
-            },
-          ),
+          const ProfileUpdate(displayName: 'X', bio: '', selectedSkillIds: {}),
         );
 
     expect(saved, isFalse);
@@ -176,11 +157,6 @@ void main() {
             displayName: 'Casey',
             bio: '',
             selectedSkillIds: {},
-            visibility: {
-              ProfileFieldKey.displayName: ProfileAudience.public,
-              ProfileFieldKey.bio: ProfileAudience.public,
-              ProfileFieldKey.skills: ProfileAudience.public,
-            },
           ),
         );
 

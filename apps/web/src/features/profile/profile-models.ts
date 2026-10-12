@@ -35,7 +35,6 @@ export type ProfileUpdate = Readonly<{
   displayName: string;
   bio: string;
   selectedSkillIds: readonly string[];
-  visibility: Readonly<Record<ProfileFieldKey, ProfileAudience>>;
 }>;
 
 export type ProfileValidationErrors = Readonly<{

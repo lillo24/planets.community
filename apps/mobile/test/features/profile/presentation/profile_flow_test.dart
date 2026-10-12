@@ -193,69 +193,40 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
-  testWidgets(
-    'visibility stays in Profile editing while Settings exposes legal privacy only',
-    (tester) async {
-      final auth = FakeAuthGateway(
-        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
-      );
-      addTearDown(auth.close);
-      final anchor = FakeProfileAnchorGateway()
-        ..readiness = ProfileAnchorReadiness.complete;
-      final profile = FakeProfileGateway(data: _competenceLabelFixture());
-      final app = await _pumpApp(tester, auth, anchor, profile);
-      final router = app.read(appRouterProvider);
-      router.go('/profile');
-      await tester.pumpAndSettle();
-      final l10n = AppLocalizations.of(
-        tester.element(find.byKey(const Key('profile-display-name'))),
-      );
-      expect(find.text(l10n.profileVisibilityTitle), findsNothing);
-      expect(find.text(l10n.profileAudiencePublic), findsNothing);
-      expect(find.text(l10n.profileAudiencePrivate), findsNothing);
-      final edit = find.byKey(const Key('profile-edit-button'));
-      expect(
-        find.ancestor(of: edit, matching: find.byType(AppBar)),
-        findsOneWidget,
-      );
-      await _tapVisible(tester, edit);
-      expect(find.text(l10n.profileVisibilityTitle), findsOneWidget);
-      for (final field in ProfileFieldKey.values) {
-        expect(
-          find.byKey(Key('profile-visibility-${field.wireValue}')),
-          findsOneWidget,
-        );
-      }
-      router.go('/settings');
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const Key('settings-profile-privacy-row')),
-        findsNothing,
-      );
-      expect(
-        find.byKey(const Key('settings-privacy-policy-row')),
-        findsOneWidget,
-      );
-      await tester.tap(find.byKey(const Key('nav-profile')));
-      await tester.pumpAndSettle();
-      expect(router.routerDelegate.state.uri.path, '/profile');
-      await _tapVisible(tester, edit);
-      expect(router.routerDelegate.state.uri.path, '/profile/edit');
-      expect(find.text(l10n.profileVisibilityTitle), findsOneWidget);
-      for (final field in ProfileFieldKey.values) {
-        expect(
-          tester
-              .widget<SegmentedButton<ProfileAudience>>(
-                find.byKey(Key('profile-visibility-${field.wireValue}')),
-              )
-              .selected,
-          {profile.data.profile.visibility[field]},
-        );
-      }
-      expect(profile.updateCount, 0);
-      expect(tester.takeException(), isNull);
-    },
-  );
+  testWidgets('Profile content editor has no audience controls', (
+    tester,
+  ) async {
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+    );
+    addTearDown(auth.close);
+    final app = await _pumpApp(
+      tester,
+      auth,
+      FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
+      FakeProfileGateway(data: _competenceLabelFixture()),
+    );
+    final router = app.read(appRouterProvider);
+    router.go('/profile/edit');
+    await tester.pumpAndSettle();
+    final l10n = AppLocalizations.of(
+      tester.element(find.byKey(const Key('profile-bio-field'))),
+    );
+    expect(find.text(l10n.profileVisibilityTitle), findsNothing);
+    expect(find.byType(SegmentedButton<ProfileAudience>), findsNothing);
+    await tester.tap(find.byKey(const Key('profile-cancel-button')));
+    await tester.pumpAndSettle();
+    router.go('/settings');
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('settings-profile-privacy-row')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('settings-privacy-policy-row')),
+      findsOneWidget,
+    );
+  });
 
   for (final scale in [1.0, 2.4]) {
     testWidgets(
@@ -510,89 +481,92 @@ void main() {
       find.byKey(const Key('profile-skills-selected-mural-painting')),
       findsOneWidget,
     );
-    expect(
-      tester
-          .widget<SegmentedButton<ProfileAudience>>(
-            find.byKey(const Key('profile-visibility-bio')),
-          )
-          .selected,
-      {ProfileAudience.private},
-    );
+    expect(find.byType(SegmentedButton<ProfileAudience>), findsNothing);
     expect(profile.updateCount, 0);
   });
 
-  testWidgets('incomplete owner selects categorized skills and visibility', (
-    tester,
-  ) async {
-    final auth = FakeAuthGateway(
-      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
-    );
-    final anchor = FakeProfileAnchorGateway()
-      ..readiness = ProfileAnchorReadiness.incomplete;
-    final profile = FakeProfileGateway();
-    addTearDown(auth.close);
-    await _pumpApp(tester, auth, anchor, profile);
+  testWidgets(
+    'incomplete owner selects categorized skills without audience controls',
+    (tester) async {
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      final anchor = FakeProfileAnchorGateway()
+        ..readiness = ProfileAnchorReadiness.incomplete;
+      final profile = FakeProfileGateway();
+      addTearDown(auth.close);
+      await _pumpApp(tester, auth, anchor, profile);
 
-    expect(find.byKey(const Key('nav-profile')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('nav-profile')));
-    await tester.pumpAndSettle();
+      expect(find.byKey(const Key('nav-profile')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('nav-profile')));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(CheckboxListTile), findsNothing);
-    final skillsTrigger = find.byKey(const Key('profile-skills-trigger'));
-    expect(skillsTrigger, findsOneWidget);
-    expect(
-      find.descendant(of: skillsTrigger, matching: find.text('Select skills')),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: skillsTrigger, matching: find.text('Skills')),
-      findsNothing,
-    );
-    expect(
-      find.byKey(const Key('profile-save-button')).hitTestable(),
-      findsOneWidget,
-    );
-    await tester.enterText(
-      find.byKey(const Key('profile-display-name-field')),
-      '  Casey  ',
-    );
-    await _tapVisible(tester, skillsTrigger);
-    expect(find.text('Art & Creativity'), findsOneWidget);
-    expect(find.text('Music'), findsOneWidget);
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('profile-skills-option-mural-painting')),
-    );
-    expect(profile.updateCount, 0, reason: 'selection stays local until Save');
-    await _tapVisible(tester, find.byKey(const Key('profile-skills-apply')));
-    expect(
-      find.descendant(of: skillsTrigger, matching: find.text('Select skills')),
-      findsNothing,
-    );
-    expect(
-      find.descendant(of: skillsTrigger, matching: find.text('Skills')),
-      findsOneWidget,
-    );
-    final bioVisibility = find.byKey(const Key('profile-visibility-bio'));
-    await _tapVisible(
-      tester,
-      find.descendant(of: bioVisibility, matching: find.text('Private')),
-    );
-    await _tapVisible(tester, find.byKey(const Key('profile-save-button')));
-    await tester.pumpAndSettle();
+      expect(find.byType(CheckboxListTile), findsNothing);
+      final skillsTrigger = find.byKey(const Key('profile-skills-trigger'));
+      expect(skillsTrigger, findsOneWidget);
+      expect(
+        find.descendant(
+          of: skillsTrigger,
+          matching: find.text('Select skills'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: skillsTrigger, matching: find.text('Skills')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('profile-save-button')).hitTestable(),
+        findsOneWidget,
+      );
+      await tester.enterText(
+        find.byKey(const Key('profile-display-name-field')),
+        '  Casey  ',
+      );
+      await _tapVisible(tester, skillsTrigger);
+      expect(find.text('Art & Creativity'), findsOneWidget);
+      expect(find.text('Music'), findsOneWidget);
+      await _tapVisible(
+        tester,
+        find.byKey(const Key('profile-skills-option-mural-painting')),
+      );
+      expect(
+        profile.updateCount,
+        0,
+        reason: 'selection stays local until Save',
+      );
+      await _tapVisible(tester, find.byKey(const Key('profile-skills-apply')));
+      expect(
+        find.descendant(
+          of: skillsTrigger,
+          matching: find.text('Select skills'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: skillsTrigger, matching: find.text('Skills')),
+        findsOneWidget,
+      );
+      expect(find.byType(SegmentedButton<ProfileAudience>), findsNothing);
+      await _tapVisible(tester, find.byKey(const Key('profile-save-button')));
+      await tester.pumpAndSettle();
 
-    expect(profile.updateCount, 1);
-    expect(profile.lastUpdate?.displayName, 'Casey');
-    expect(profile.lastUpdate?.selectedSkillIds, contains('skill-mural'));
-    expect(
-      profile.lastUpdate?.visibility[ProfileFieldKey.bio],
-      ProfileAudience.private,
-    );
-    expect(find.byKey(const Key('profile-display-name')), findsOneWidget);
-    expect(find.text('Casey'), findsOneWidget);
-    expect(find.text('Mural painting'), findsOneWidget);
-    expect(find.byKey(const Key('profile-blocked-users-button')), findsNothing);
-  });
+      expect(profile.updateCount, 1);
+      expect(profile.lastUpdate?.displayName, 'Casey');
+      expect(profile.lastUpdate?.selectedSkillIds, contains('skill-mural'));
+      expect(
+        profile.data.profile.visibility[ProfileFieldKey.bio],
+        ProfileAudience.public,
+      );
+      expect(find.byKey(const Key('profile-display-name')), findsOneWidget);
+      expect(find.text('Casey'), findsOneWidget);
+      expect(find.text('Mural painting'), findsOneWidget);
+      expect(
+        find.byKey(const Key('profile-blocked-users-button')),
+        findsNothing,
+      );
+    },
+  );
 
   testWidgets('invalid display name and oversized bio stay in the form', (
     tester,
