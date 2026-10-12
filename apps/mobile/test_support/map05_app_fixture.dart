@@ -29,7 +29,8 @@ import 'map_discovery_fixture.dart';
 /// Actual List, Map and detail widgets behind synthetic gateways only.
 /// This harness is a test entrypoint, never imported by the shipping application.
 class Map05AppFixture {
-  Map05AppFixture() {
+  Map05AppFixture({bool tilesEnabled = true})
+    : provider = FixtureMapProviderGateway(tilesEnabled: tilesEnabled) {
     proposals.publicItems = [proposalSummaryFixture(id: mapFixtureId(1))];
     proposals.publicDetail = proposalDetailFixture(id: mapFixtureId(1));
     tavoli.publicItems = [publicRecurringSummaryFixture(id: mapFixtureId(3))];
@@ -108,8 +109,9 @@ class Map05AppFixture {
   final tavoli = FakeRecurringActivityGateway();
   final resources = FakeResourceListingGateway();
   final geography = FixtureGeographicGateway();
-  final provider = FixtureMapProviderGateway(tilesEnabled: true);
+  final FixtureMapProviderGateway provider;
   double? textScale;
+  ThemeMode themeMode = ThemeMode.light;
   final locale = ValueNotifier(const Locale('en'));
   late final ProviderContainer container;
   late final GoRouter router;
@@ -119,6 +121,8 @@ class Map05AppFixture {
       valueListenable: locale,
       builder: (_, language, _) => MaterialApp.router(
         theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: themeMode,
         builder: (context, child) => MediaQuery(
           data: textScale == null
               ? MediaQuery.of(context)
