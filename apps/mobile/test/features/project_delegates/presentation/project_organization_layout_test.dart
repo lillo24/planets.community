@@ -137,6 +137,34 @@ void main() {
         tester,
       ) async {
         final h = await _pump(tester, 'manage', role: role, kind: kind);
+        final groups = find.byType(Card);
+        expect(groups, findsNWidgets(2));
+        expect(find.text('Project management'), findsOneWidget);
+        expect(find.text('Organization'), findsOneWidget);
+        expect(
+          find.descendant(
+            of: groups.first,
+            matching: find.byKey(const Key('participant-links-manage')),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: groups.last,
+            matching: find.byKey(const Key('project-manage-workspace')),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.byType(Divider),
+          findsNWidgets(
+            (role.hasStructuralAuthority ? 3 : 1) +
+                (kind == ProjectKind.oneTime ? 1 : 0),
+          ),
+        );
+        if (role.hasStructuralAuthority) {
+          expect(find.text('Manage organizers'), findsOneWidget);
+        }
         expect(
           find.byKey(const Key('project-manage-organization')),
           kind == ProjectKind.oneTime ? findsOneWidget : findsNothing,

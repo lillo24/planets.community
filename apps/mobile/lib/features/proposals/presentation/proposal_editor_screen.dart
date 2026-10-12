@@ -1156,6 +1156,17 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: AppSpacing.large),
+                  const Divider(),
+                  const SizedBox(height: AppSpacing.medium),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      l10n.proposalTimePlaceTitle,
+                      key: const Key('proposal-time-place-section'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.medium),
                   Container(
                     key: _timezoneAnchor,
                     child: _timezone.text != 'Europe/Rome'
@@ -1300,6 +1311,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                       _exactLocation,
                       l10n.proposalArrivalDirectionsLabel,
                       1000,
+                      labelAsHint: true,
                       anchorKey: _exactLocationAnchor,
                       fieldKey: const Key('proposal-exact-location'),
                       lines: 3,
@@ -1310,10 +1322,19 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   const SizedBox(height: AppSpacing.medium),
                   // Directions remain separate protected content. An Idea's
                   // city/schedule/capacity can only be officialized in Organization.
+                  Text(
+                    l10n.proposalArrivalDirections,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    l10n.proposalDirectionsPrivate,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                   _field(
                     _exactLocation,
                     l10n.proposalArrivalDirectionsLabel,
                     1000,
+                    labelAsHint: true,
                     anchorKey: _exactLocationAnchor,
                     fieldKey: const Key('proposal-exact-location'),
                     lines: 3,
@@ -1471,6 +1492,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     int minimumLength = 0,
     int lines = 1,
     String? helper,
+    bool labelAsHint = false,
     Key? fieldKey,
     FormFieldValidator<String>? validator,
     ValueChanged<String>? onChanged,
@@ -1488,7 +1510,9 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       maxLengthEnforcement: MaxLengthEnforcement.none,
       maxLines: lines,
       decoration: InputDecoration(
-        labelText: label,
+        labelText: labelAsHint ? null : label,
+        hintText: labelAsHint ? label : null,
+        hintMaxLines: 3,
         helperText: helper,
         helperMaxLines: 6,
         alignLabelWithHint: lines > 1,

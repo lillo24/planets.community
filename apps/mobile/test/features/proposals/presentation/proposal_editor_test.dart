@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/core/theme/app_theme.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
@@ -25,8 +26,113 @@ import '../../../support/fake_location.dart';
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_proposal.dart';
 import '../../../support/fake_profile_photo.dart';
+import '../../../support/rendered_evidence.dart';
 
 void main() {
+  setUpAll(RenderedEvidence.loadFonts);
+  for (final width in [320.0, 800.0]) {
+    for (final locale in ['en', 'it']) {
+      for (final dark in [false, true]) {
+        for (final scale in [1.0, 2.0]) {
+          for (final editing in [false, true]) {
+            testWidgets(
+              'UI01 Time & Place $width $locale dark=$dark scale=$scale edit=$editing',
+              (tester) async {
+                tester.view.devicePixelRatio = 1;
+                tester.view.physicalSize = Size(width, 800);
+                addTearDown(tester.view.resetPhysicalSize);
+                addTearDown(tester.view.resetDevicePixelRatio);
+                await _pumpEditor(
+                  tester,
+                  null,
+                  proposal: editing
+                      ? ownProposalFixture(
+                          lifecycle: ProposalLifecycle.published,
+                        )
+                      : null,
+                  locale: locale,
+                  scale: scale,
+                  dark: dark,
+                  polishedTheme: true,
+                  locations: FakeItemLocationGateway()
+                    ..value = ItemLocation(
+                      3,
+                      publicLabel: editing ? 'Trento' : '',
+                      publicTextSource: 'manual',
+                      supportsTextProvenance: true,
+                    ),
+                );
+                final capacity = find.byKey(
+                  const Key('proposal-count-organizers-capacity'),
+                );
+                await _seek(tester, capacity);
+                await Scrollable.ensureVisible(
+                  capacity.evaluate().single,
+                  alignment: 0,
+                );
+                await tester.pumpAndSettle();
+                expect(
+                  find.byKey(const Key('proposal-time-place-section')),
+                  findsOneWidget,
+                );
+                expect(
+                  find.text(
+                    locale == 'en' ? 'Time & Place' : 'Data, ora e luogo',
+                  ),
+                  findsOneWidget,
+                );
+                expect(tester.takeException(), isNull);
+                final name =
+                    'editor-$locale-${dark ? 'dark' : 'light'}-${scale}x-${editing ? 'edit' : 'create'}';
+                if (width == 320) {
+                  await RenderedEvidence.capture(tester, '$name-time');
+                }
+                final location = find.byKey(
+                  const Key('proposal-public-location'),
+                );
+                await _seek(tester, location);
+                await Scrollable.ensureVisible(
+                  location.evaluate().single,
+                  alignment: .05,
+                );
+                await tester.pumpAndSettle();
+                expect(
+                  find.byKey(const Key('proposal-optional-exact')),
+                  findsNothing,
+                );
+                expect(
+                  find.byKey(const Key('proposal-exact-location')),
+                  findsOneWidget,
+                );
+                expect(
+                  find.text(
+                    locale == 'en'
+                        ? 'Additional arrival directions (optional)'
+                        : 'Indicazioni aggiuntive (facoltative)',
+                  ),
+                  findsOneWidget,
+                );
+                expect(tester.takeException(), isNull);
+                if (width == 320) {
+                  await RenderedEvidence.capture(tester, '$name-location');
+                }
+                await _reveal(
+                  tester,
+                  find.byKey(const Key('proposal-exact-location')),
+                );
+                expect(
+                  find
+                      .byKey(const Key('proposal-exact-location'))
+                      .hitTestable(),
+                  findsOneWidget,
+                );
+              },
+            );
+          }
+        }
+      }
+    }
+  }
   testWidgets(
     'failed manual provenance keeps saved draft open and retries without duplicate creation',
     (tester) async {
@@ -292,7 +398,7 @@ void main() {
           );
           expect(
             find.byKey(const Key('proposal-exact-location')),
-            findsNothing,
+            findsOneWidget,
           );
           expect(
             find.byKey(const Key('proposal-exact-visibility')),
@@ -303,7 +409,6 @@ void main() {
             tester,
             find.byKey(const Key('proposal-confirm-manual-city')),
           );
-          await _tap(tester, find.byKey(const Key('proposal-optional-exact')));
           expect(
             find.byKey(const Key('proposal-exact-location')),
             findsOneWidget,
@@ -823,6 +928,8 @@ Future<FakeProposalGateway> _pumpEditor(
   FakeEditorPlaceFactory? placeFactory,
   String locale = 'en',
   double scale = 1,
+  bool dark = false,
+  bool polishedTheme = false,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
@@ -887,11 +994,17 @@ Future<FakeProposalGateway> _pumpEditor(
     UncontrolledProviderScope(
       container: container,
       child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        theme: polishedTheme ? AppTheme.light : null,
+        darkTheme: polishedTheme ? AppTheme.dark : null,
+        themeMode: dark ? ThemeMode.dark : ThemeMode.light,
         locale: Locale(locale),
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context)
-              .copyWith(textScaler: TextScaler.linear(scale)),
-          child: child!,
+        builder: (context, child) => RenderedEvidence.wrap(
+          MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(scale)),
+            child: child!,
+          ),
         ),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

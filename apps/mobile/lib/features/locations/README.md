@@ -141,3 +141,5 @@ separate evidence. Ordinary staging builds keep maps disabled; use the existing
 `tool/build_map_live_staging.dart` for an explicitly map-enabled staging artifact.
 Do not change hosted records/configuration to compensate for an older binary.
 See [MAPFIX01 evidence and handoff](../../../../../docs/development/mapfix01-released-location.md).
+
+UI01 never infers provider provenance from a saved Project ID. Blank/cleared visible queries have no credits; canonical manual text has none after hydration or identity/foreground invalidation. Provider selections and text-only provider labels keep credits, and unclassified nonempty legacy text remains conservatively credited. Suggestions own their credits inside the bounded results panel. Arrival directions no longer have disclosure state; denial still removes protected fields.

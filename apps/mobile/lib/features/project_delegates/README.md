@@ -126,3 +126,5 @@ as the Co-creator mutation path.
 
 See the [link setup and QA guide](../../../../../docs/development/project-invite-links.md)
 for the web fallback and native association boundary.
+
+UI01 groups Manage Project into Project management and Organization, with dividers only between visible rows. Checklist remains one-time-only; Shared workspace retains its current component and authority. The organizer destination and screen are labelled Manage organizers; its co-organizers route and structural authority boundary are unchanged.

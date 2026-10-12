@@ -75,7 +75,6 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
   late bool _needsAttribution;
   late String _lastPublicLabel;
   late String _lastQueryText;
-  bool? _directionsExpanded;
   Timer? _debounce;
   Future<bool>? _starting;
   int _generation = 0;
@@ -98,9 +97,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
     _factory = ref.read(editorPlaceGatewayFactoryProvider);
     _query = TextEditingController(text: widget.publicLabel());
     _lastPublicLabel = widget.publicLabel();
-    _needsAttribution =
-        widget.itemId() != null || _lastPublicLabel.trim().isNotEmpty;
-    _directionsExpanded = widget.hasDirections;
+    _needsAttribution = _lastPublicLabel.trim().isNotEmpty;
     _lastQueryText = _query.text;
     _query.addListener(_queryChanged);
     _lastText = widget.contentControllers.map((c) => c.text).toList();
@@ -126,9 +123,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
         _applying = true;
         try {
           _location = value;
-          if (value.publicPlace != null || value.exactPlace != null) {
-            _needsAttribution = true;
-          }
+          _needsAttribution = _canonicalNeedsAttribution(value);
           _dirty = false;
           _manualPendingSave = false;
           _setQuery(
@@ -156,6 +151,9 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
       _dirty = false;
       _queryFocus.unfocus();
       _setQuery(_location?.exactPlace?.label ?? widget.publicLabel());
+      _needsAttribution = _location != null
+          ? _canonicalNeedsAttribution(_location!)
+          : _visiblePublicNeedsAttribution();
       setState(() {});
     };
     for (final c in widget.contentControllers) {
@@ -169,19 +167,8 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
   void _changed() {
     if (!mounted) return;
     final canonical = _session.canonical;
-    if (canonical != null &&
-        (canonical.publicPlace != null ||
-            canonical.exactPlace != null ||
-            (canonical.publicLabel?.isNotEmpty == true &&
-                canonical.publicLabel != widget.publicLabel()))) {
-      _needsAttribution = true;
-    }
     if (canonical != null && !_dirty && !_preparing && !_manualPendingSave) {
-      _needsAttribution =
-          canonical.publicPlace != null ||
-          canonical.exactPlace != null ||
-          ((canonical.publicLabel ?? widget.publicLabel()).trim().isNotEmpty &&
-              canonical.publicTextSource != 'manual');
+      _needsAttribution = _canonicalNeedsAttribution(canonical);
       _denied = false;
       _location = canonical;
       _setQuery(
@@ -192,6 +179,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
       );
     }
     if (_session.problem == PlaceSearchProblem.unauthorized) {
+      _needsAttribution = _visiblePublicNeedsAttribution();
       _denied = true;
       _location = null;
       _setQuery(widget.publicLabel());
@@ -231,10 +219,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
       _location = saved;
       _session.canonical = saved;
       _session.problem = null;
-      _needsAttribution =
-          saved.publicPlace != null ||
-          saved.exactPlace != null ||
-          (saved.supportsTextProvenance && saved.publicTextSource != 'manual');
+      _needsAttribution = _canonicalNeedsAttribution(saved);
       setState(() {});
       return true;
     } on PlaceSearchFailure catch (error) {
@@ -263,7 +248,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
   void _contentChanged() {
     final label = widget.publicLabel();
     if (label != _lastPublicLabel && !_applying && !_preparing) {
-      _needsAttribution = true;
+      _needsAttribution = label.trim().isNotEmpty;
     }
     _lastPublicLabel = label;
     final next = widget.contentControllers.map((c) => c.text).toList();
@@ -277,7 +262,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
     super.didUpdateWidget(oldWidget);
     final label = widget.publicLabel();
     if (label != _lastPublicLabel || oldWidget.actorId != widget.actorId) {
-      _needsAttribution = true;
+      _needsAttribution = label.trim().isNotEmpty;
     }
     _lastPublicLabel = label;
     if (oldWidget.contentVersion != widget.contentVersion &&
@@ -290,7 +275,8 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
     if (_knownId != id) {
       _knownId = id;
       if (!_session.busy) {
-        _needsAttribution = true;
+        _location = null;
+        _needsAttribution = label.trim().isNotEmpty;
         _cancel();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) unawaited(_session.reload());
@@ -313,12 +299,31 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
   }
 
   void _revoke() {
-    _needsAttribution = true;
+    _needsAttribution = _visiblePublicNeedsAttribution();
     _cancel();
     _denied = true;
     _location = null;
     _setQuery(widget.publicLabel());
     _dirty = false;
+  }
+
+  // Credits follow the visible canonical selection/text, including text-only
+  // Geoapify results. Unknown legacy text stays credited until classified.
+  bool _canonicalNeedsAttribution(ItemLocation value) =>
+      value.publicPlace != null ||
+      value.exactPlace != null ||
+      ((value.publicLabel ?? widget.publicLabel()).trim().isNotEmpty &&
+          value.publicTextSource != 'manual');
+
+  bool _visiblePublicNeedsAttribution() {
+    final label = widget.publicLabel().trim();
+    if (label.isEmpty) return false;
+    if (_manualPendingSave) return false;
+    final saved = _location;
+    return saved == null ||
+        saved.publicPlace != null ||
+        saved.publicLabel?.trim() != label ||
+        saved.publicTextSource != 'manual';
   }
 
   @override
@@ -352,6 +357,7 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
     _dirty = true;
     _manualExpanded = false;
     _preparationBlocked = false;
+    if (value.trim().isEmpty) _needsAttribution = false;
     if (value.trim().isEmpty && _location?.exactPlace == null) {
       _applying = true;
       try {
@@ -469,7 +475,6 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
     final l10n = AppLocalizations.of(context);
     final search = _session.search;
     final exact = !_dirty ? _location?.exactPlace : null;
-    final expanded = _directionsExpanded ?? widget.hasDirections;
     return ListenableBuilder(
       listenable: search ?? _session,
       builder: (context, _) => Column(
@@ -532,17 +537,12 @@ class _ProposalLocationEditorState extends ConsumerState<ProposalLocationEditor>
             ),
           ],
           if (!_dirty) ..._operationFeedback(l10n, search),
-          Semantics(
-            expanded: expanded,
-            child: ListTile(
-              key: const Key('proposal-optional-exact'),
-              contentPadding: EdgeInsets.zero,
-              title: Text(l10n.proposalArrivalDirections),
-              trailing: Icon(expanded ? Icons.expand_less : Icons.expand_more),
-              onTap: () => setState(() => _directionsExpanded = !expanded),
+          if (!_denied) ...[
+            const SizedBox(height: AppSpacing.medium),
+            Text(
+              l10n.proposalArrivalDirections,
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-          ),
-          if (expanded && !_denied) ...[
             Text(
               l10n.proposalDirectionsPrivate,
               style: Theme.of(context).textTheme.bodySmall,
