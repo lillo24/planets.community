@@ -7,6 +7,7 @@ import '../../project_chat/domain/project_chat_models.dart';
 import '../../resource_chat/domain/resource_chat_models.dart';
 import '../domain/message_chat_models.dart';
 import '../domain/message_unread_models.dart';
+import '../../../core/backend/cover_media_path.dart';
 
 abstract interface class MessageChatsGateway {
   Future<MessageChatPage> listItems({
@@ -31,7 +32,7 @@ class SupabaseMessageChatsGateway implements MessageChatsGateway {
     MessageChatCursor? cursor,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_scoped_conversation_items_v4',
+      'list_own_scoped_conversation_items_v5',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_scope': scope.wireValue,
@@ -53,6 +54,7 @@ class MessageChatsPayloadParser {
   const MessageChatsPayloadParser();
 
   static const _keys = {
+    'group_cover_object_path',
     'item_kind',
     'chat_id',
     'activity_at',
@@ -115,6 +117,7 @@ class MessageChatsPayloadParser {
       ..._projectRequestKeys,
     });
     return ProjectMessageChatItem(
+      coverObjectPath: _coverPath(row),
       latestSystemEventLabel: _optionalString(
         row,
         'latest_group_system_event_label',
@@ -141,11 +144,27 @@ class MessageChatsPayloadParser {
     );
   }
 
+  String? _coverPath(Map<String, dynamic> row) {
+    final value = _optionalString(row, 'group_cover_object_path');
+    try {
+      return parseCoverObjectPath(
+        value,
+        parentId: _uuid(row, 'project_id'),
+        parentSegment: 'projects',
+      );
+    } on FormatException {
+      // Reject wire-shape/type errors, but discard an unusable optional image
+      // hint so conversation metadata stays available with its placeholder.
+      return null;
+    }
+  }
+
   ResourceMessageChatItem _resourceItem(Map<String, dynamic> row) {
     _requireNulls(row, const {
       'pending_count',
       'latest_request_activity_status',
       'latest_group_system_event_label',
+      'group_cover_object_path',
       'project_id',
       'project_kind',
       ..._projectRequestKeys,
@@ -195,6 +214,7 @@ class MessageChatsPayloadParser {
   ProjectRequestMessageChatItem _projectRequestItem(Map<String, dynamic> row) {
     _requireNulls(row, const {
       'latest_group_system_event_label',
+      'group_cover_object_path',
       'project_id',
       'project_kind',
       'resource_request_id',

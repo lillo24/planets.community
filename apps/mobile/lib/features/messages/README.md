@@ -30,7 +30,7 @@ durable human-message unread state; activity alerts remain in Notifications.
   exact-item reads use the unified 04C4C2 RPCs; Project-only selection and
   mutation operations keep their existing 04C3B1/05A boundaries. Each narrow
   response is parsed strictly and cross-domain field mixtures fail closed.
-- `data/message_chats_gateway.dart` reads `list_own_scoped_conversation_items_v4`,
+- `data/message_chats_gateway.dart` reads `list_own_scoped_conversation_items_v5`,
   the canonical scoped unified Chats RPC with pair pending totals. It strictly
   validates branch XOR fields, request-context lifecycle fields,
   human-preview completeness, and the Resource-only canonical opposite-party
@@ -38,7 +38,7 @@ durable human-message unread state; activity alerts remain in Notifications.
   Two nullable preview fields distinguish the latest pair request status and
   latest visible group system-event label from an older human preview. Pair
   route context remains independent; human activity wins exact timestamp ties.
-  The released v3 shape and function remain unchanged.
+  Released v3/v4 shapes and functions remain unchanged.
 - `domain/message_unread_models.dart` validates complete account/scope counts
   and server-issued newest-feed snapshot tokens.
 - `data/message_unread_gateway.dart` owns expected-identity summary/read RPCs
@@ -263,3 +263,32 @@ Short-content/accessibility fallback controls sit above the history viewport so
 they remain reachable without first scrolling into negative sliver offsets.
 
 Protected-list lifecycle and loaded-window invariants are documented in [MSGREFRESH01](../../../../../docs/development/msgrefresh01-stable-refresh.md). Warm refresh preserves continuation pages and unchanged cards; cold start uses RAM-only initial loading.
+
+## Chat image slots (GROUPCOVER01)
+
+Every Private and Groups row reserves the same 40dp leading slot and spacing.
+Private reuses the authorized batched visible-photo controller/cache and its
+person-outline fallback. Groups never use a member portrait.
+`presentation/chat_cover_thumbnail.dart` reuses the public cover byte provider,
+crops to the same slot and limits decoding to its physical pixel dimensions.
+Null, invalid, loading, failed/denied or removed media retain a neutral landscape
+placeholder and accessible no-cover label. A new path replaces the provider/key
+immediately with no gapless old-image playback; null removes the image even if
+an old download completes later. No private disk cache or new uploader exists.
+
+The additive v5 RPC wraps the already bounded, owner-bound v4 page. Its one new
+`group_cover_object_path` field is null on every Private kind. On a Project or
+Tavolo it joins the current canonical cover only when
+`can_read_public_cover_image_object` permits it. This is the existing Storage
+boundary, not new member/owner cover access. Published one-time Projects and
+publicly viewable Tavoli can show covers. Cancelled/unpublished one-time sources
+and other denied states keep the placeholder even when chat history remains
+readable. Replaced/removed paths disappear on canonical list refresh. Old v4
+consumers retain the exact shape, ordering, unread counts and cursors.
+
+The v5 parser requires the complete exact shape, rejects cross-kind cover
+fields and non-string media hints, and discards unusable optional string paths
+instead of hiding valid chat metadata. Paths remain parent-bound and no arbitrary
+URL is fetched. `refreshValue` includes the cover, so a changed image updates its
+row while unchanged instances and scroll anchors survive refresh. Deploy the
+new migration before activating this client; hosted activation is separate.

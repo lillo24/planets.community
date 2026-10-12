@@ -24,6 +24,7 @@ import '../domain/message_chat_models.dart';
 import '../domain/message_models.dart';
 import 'message_chats_failure_message.dart';
 import 'messages_formatters.dart';
+import 'chat_cover_thumbnail.dart';
 import 'messages_failure_message.dart';
 import 'messages_routes.dart';
 import 'messages_navigation.dart';
@@ -425,20 +426,31 @@ class _ChatCard extends ConsumerWidget {
               builder: (context, constraints) => Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (item is! ProjectMessageChatItem) ...[
-                    VisibleProfilePhotoAvatar(
-                      key: Key(
-                        '${item.kind == MessageChatItemKind.resourceChat ? 'resource' : 'project-request'}-chat-photo-${item.chatId}',
-                      ),
-                      entry: photoEntry,
-                      imageSemanticsLabel: l10n
-                          .resourceChatCounterpartyPhotoLabel(title),
-                      placeholderSemanticsLabel: l10n
-                          .resourceChatCounterpartyPhotoLabel(title),
-                      radius: 20,
-                    ),
-                    const SizedBox(width: AppSpacing.small),
-                  ],
+                  SizedBox.square(
+                    key: Key('chat-thumbnail-${item.compositeId}'),
+                    dimension: ChatCoverThumbnail.size,
+                    child: item is ProjectMessageChatItem
+                        ? ChatCoverThumbnail(
+                            key: Key('project-chat-cover-${item.chatId}'),
+                            projectId:
+                                (item as ProjectMessageChatItem).projectId,
+                            title: title,
+                            objectPath: (item as ProjectMessageChatItem)
+                                .coverObjectPath,
+                          )
+                        : VisibleProfilePhotoAvatar(
+                            key: Key(
+                              '${item.kind == MessageChatItemKind.resourceChat ? 'resource' : 'project-request'}-chat-photo-${item.chatId}',
+                            ),
+                            entry: photoEntry,
+                            imageSemanticsLabel: l10n
+                                .resourceChatCounterpartyPhotoLabel(title),
+                            placeholderSemanticsLabel: l10n
+                                .resourceChatCounterpartyPhotoLabel(title),
+                            radius: ChatCoverThumbnail.size / 2,
+                          ),
+                  ),
+                  const SizedBox(width: AppSpacing.small),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
