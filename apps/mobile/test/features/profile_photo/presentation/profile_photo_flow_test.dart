@@ -11,7 +11,6 @@ import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
-import 'package:planets_mobile/features/profile/domain/profile_models.dart';
 import 'package:planets_mobile/features/profile_photo/application/profile_photo_path_generator.dart';
 import 'package:planets_mobile/features/profile_photo/application/profile_photo_processor.dart';
 import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
@@ -140,11 +139,7 @@ void main() {
       find.byKey(const Key('profile-skills-option-mural-painting')),
     );
     await _tapVisible(tester, find.byKey(const Key('profile-skills-apply')));
-    final bioVisibility = find.byKey(const Key('profile-visibility-bio'));
-    await _tapVisible(
-      tester,
-      find.descendant(of: bioVisibility, matching: find.text('Private')),
-    );
+    expect(find.byKey(const Key('profile-visibility-bio')), findsNothing);
 
     await _tapVisible(tester, find.byKey(const Key('profile-photo-add')));
     await tester.pumpAndSettle();
@@ -338,14 +333,7 @@ void _expectUnsavedFields(WidgetTester tester) {
     find.byKey(const Key('profile-skills-selected-mural-painting')),
     findsOneWidget,
   );
-  expect(
-    tester
-        .widget<SegmentedButton<ProfileAudience>>(
-          find.byKey(const Key('profile-visibility-bio')),
-        )
-        .selected,
-    {ProfileAudience.private},
-  );
+  expect(find.byKey(const Key('profile-visibility-bio')), findsNothing);
 }
 
 Future<void> _tapVisible(WidgetTester tester, Finder finder) async {

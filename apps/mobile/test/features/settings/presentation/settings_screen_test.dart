@@ -19,6 +19,8 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/notifications/data/notifications_gateway.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
+import 'package:planets_mobile/features/profile/data/profile_visibility_gateway.dart';
+import 'package:planets_mobile/features/profile/domain/profile_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
 import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
@@ -38,6 +40,7 @@ import 'package:planets_mobile/features/moderation/data/moderation_gateway.dart'
 
 import '../../../support/fake_notifications.dart';
 import '../../../support/fake_profile.dart';
+import '../../../support/fake_profile_visibility.dart';
 import '../../../support/fake_settings.dart';
 import '../../../support/fake_messages.dart';
 import '../../../support/fake_message_chats.dart';
@@ -89,7 +92,7 @@ void main() {
         );
         expect(
           find.byKey(const Key('settings-profile-privacy-row')),
-          findsNothing,
+          phase == 'ready' ? findsOneWidget : findsNothing,
         );
         expect(
           find.byKey(const Key('settings-notifications-row')),
@@ -111,6 +114,70 @@ void main() {
         );
         expect(messages.calls, isEmpty);
         expect(chats.calls, isEmpty);
+      },
+    );
+  }
+
+  for (final language in [
+    LanguagePreference.english,
+    LanguagePreference.italian,
+  ]) {
+    testWidgets(
+      'visibility settings $language at 320dp/2x persist and return to Settings',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(320, 900);
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        final gateway = FakeProfileVisibilityGateway();
+        final app = await _pump(tester, initial: language, visibility: gateway);
+        app.read(appRouterProvider).go('/settings');
+        await tester.pumpAndSettle();
+        await _tapSettings(tester, 'settings-profile-privacy-row');
+        expect(_path(app), '/settings/profile-visibility');
+        final bio = find.byKey(const Key('profile-visibility-bio'));
+        await tester.scrollUntilVisible(
+          bio,
+          150,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.ensureVisible(bio);
+        await tester.pumpAndSettle();
+        final l = AppLocalizations.of(tester.element(bio));
+        expect(tester.widget<SegmentedButton<ProfileAudience>>(bio).selected, {
+          ProfileAudience.public,
+        });
+        await _capture(tester, 'visibility-${language.name}-320');
+        await tester.tap(
+          find.descendant(
+            of: bio,
+            matching: find.text(l.profileAudiencePrivate),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.widget<SegmentedButton<ProfileAudience>>(bio).selected, {
+          ProfileAudience.private,
+        });
+        expect(find.text(l.profileVisibilitySaved), findsOneWidget);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(_path(app), '/settings');
+        await _tapSettings(tester, 'settings-profile-privacy-row');
+        await tester.scrollUntilVisible(
+          bio,
+          150,
+          scrollable: find.byType(Scrollable).last,
+        );
+        expect(tester.widget<SegmentedButton<ProfileAudience>>(bio).selected, {
+          ProfileAudience.private,
+        });
+        app.read(authSessionProvider.notifier).markSignedOut();
+        await tester.pumpAndSettle();
+        expect(_path(app), '/settings');
+        expect(find.byType(SegmentedButton<ProfileAudience>), findsNothing);
+        expect(tester.takeException(), isNull);
       },
     );
   }
@@ -417,7 +484,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('settings-notifications-row')), findsOneWidget);
-    expect(find.byKey(const Key('settings-profile-privacy-row')), findsNothing);
+    expect(
+      find.byKey(const Key('settings-profile-privacy-row')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('settings-notifications-row')));
     await tester.pumpAndSettle();
@@ -507,6 +577,7 @@ Future<ProviderContainer> _pump(
   FakeAuthGateway? auth,
   FakeMessagesGateway? messages,
   FakeMessageChatsGateway? chats,
+  FakeProfileVisibilityGateway? visibility,
   LanguagePreference initial = LanguagePreference.system,
   FakeLanguagePreferenceStore? store,
   FakeNavigationPreferenceStore? navigationStore,
@@ -552,6 +623,9 @@ Future<ProviderContainer> _pump(
         ),
         profileGatewayProvider.overrideWithValue(
           FakeProfileGateway(data: profileFixture(complete: true)),
+        ),
+        profileVisibilityGatewayProvider.overrideWithValue(
+          visibility ?? FakeProfileVisibilityGateway(),
         ),
         notificationsGatewayProvider.overrideWithValue(
           FakeNotificationsGateway(),

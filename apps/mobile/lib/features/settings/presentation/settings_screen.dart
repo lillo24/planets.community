@@ -7,6 +7,7 @@ import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../app/startup/startup_flow.dart';
 import '../../blocking/presentation/blocking_routes.dart';
+import '../../profile/presentation/profile_visibility_screen.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
@@ -68,6 +69,16 @@ class SettingsScreen extends ConsumerWidget {
                       uri: ref.watch(policyDocumentsProvider).privacy,
                     ),
                   ),
+                  if (showAccountSettings)
+                    Card(
+                      child: ListTile(
+                        key: const Key('settings-profile-privacy-row'),
+                        leading: const Icon(Icons.visibility_outlined),
+                        title: Text(l10n.settingsProfilePrivacy),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push(profileVisibilityPath),
+                      ),
+                    ),
                   if (showAccountSettings)
                     Card(
                       clipBehavior: Clip.antiAlias,

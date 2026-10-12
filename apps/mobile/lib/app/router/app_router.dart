@@ -78,6 +78,7 @@ import '../../features/resource_requests/presentation/resource_request_screen.da
 import '../../features/resource_saved_searches/presentation/resource_saved_search_routes.dart';
 import '../../features/resource_saved_searches/presentation/resource_saved_searches_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/profile/presentation/profile_visibility_screen.dart';
 import '../../features/settings/presentation/navigation_selection_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../foundation_screen.dart';
@@ -264,6 +265,11 @@ RoutingConfig _routingConfig(
       if (session.phase == AuthSessionPhase.restoring ||
           session.phase == AuthSessionPhase.restorationFailed) {
         return null;
+      }
+
+      if (path == profileVisibilityPath &&
+          session.phase != AuthSessionPhase.ready) {
+        return '/settings';
       }
 
       if (session.phase == AuthSessionPhase.signedOut &&
@@ -660,6 +666,11 @@ RoutingConfig _routingConfig(
                     path: 'language',
                     builder: (context, state) =>
                         const LanguageSelectionScreen(),
+                  ),
+                  GoRoute(
+                    path: 'profile-visibility',
+                    builder: (context, state) =>
+                        ProfileVisibilityScreen(key: state.pageKey),
                   ),
                   GoRoute(
                     path: 'navigation',
