@@ -68,7 +68,7 @@ try {
   // The skill writer holds the row first. An older open details form must preserve those skills.
   await queued(coCreator, async (tx) => {
     await tx`select public.update_proposal_skills(${coCreator.id}::uuid, ${project}::uuid,
-      ${JSON.stringify({ [skill]: "useful" })}::jsonb, array[${skill}::uuid], array['required'])`;
+      ${tx.json({ [skill]: "useful" })}::jsonb, array[${skill}::uuid], array['required'])`;
   }, () => creator.client.rpc("update_own_proposal", { ...details, p_description: "Second content save" }));
   assert.equal((await snapshot(project)).skills[0].importance, "required");
   assert.equal((await snapshot(project)).proposal.description, "Second content save");

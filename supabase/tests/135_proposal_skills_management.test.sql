@@ -32,6 +32,8 @@ create temp table ui02_before as select to_jsonb(p)-'updated_at' as data from pu
 create temp table ui02_meeting_before as select to_jsonb(m)-'updated_at' as data from public.proposal_meeting_details m where proposal_id='8e020000-0000-4000-8000-000000000001';
 set local role authenticated;
 select set_config('request.jwt.claim.sub','8e010000-0000-4000-8000-000000000001',true);
+select throws_ok($$select public.update_proposal_skills('8e010000-0000-4000-8000-000000000001','8e020000-0000-4000-8000-000000000001','"{}"'::jsonb,'{}'::uuid[],'{}'::text[])$$,'22023',null,'serialized JSON string cannot replace the expected skill object');
+select throws_ok($$select public.update_proposal_skills('8e010000-0000-4000-8000-000000000001','8e020000-0000-4000-8000-000000000001',null::jsonb,'{}'::uuid[],'{}'::text[])$$,'22023',null,'missing expected skill object rejected');
 select lives_ok($$select public.update_proposal_skills('8e010000-0000-4000-8000-000000000001', '8e020000-0000-4000-8000-000000000001', '{}'::jsonb, array['d0000000-0000-4000-8001-000000000001'::uuid], array['required'])$$, 'Creator changes only skills');
 select throws_ok($$select public.update_proposal_skills('8e010000-0000-4000-8000-000000000001', '8e020000-0000-4000-8000-000000000001', '{}'::jsonb, '{}'::uuid[], '{}'::text[])$$, '40001', null, 'stale skill snapshot rejected');
 reset role;
