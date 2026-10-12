@@ -100,17 +100,12 @@ class SupabaseProfileGateway implements ProfileGateway {
     ProfileUpdate update,
   ) async {
     await _client.rpc<void>(
-      'update_own_profile',
+      'update_own_profile_content_v1',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_display_name': update.displayName,
         'p_bio': update.bio,
         'p_skill_ids': update.selectedSkillIds.toList(growable: false),
-        'p_display_name_audience':
-            update.visibility[ProfileFieldKey.displayName]!.wireValue,
-        'p_bio_audience': update.visibility[ProfileFieldKey.bio]!.wireValue,
-        'p_skills_audience':
-            update.visibility[ProfileFieldKey.skills]!.wireValue,
       },
     );
   }

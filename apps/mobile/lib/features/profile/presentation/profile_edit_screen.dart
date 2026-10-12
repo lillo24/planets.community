@@ -169,7 +169,6 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
   late final TextEditingController _displayNameController;
   late final TextEditingController _bioController;
   late final Set<String> _selectedSkillIds;
-  late final Map<ProfileFieldKey, ProfileAudience> _visibility;
   late ProfileUpdate _acknowledged;
   late final DraftDepartureCoordinator _departure;
   DraftDepartureOwner? _departureOwner;
@@ -185,7 +184,6 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
     );
     _bioController = TextEditingController(text: profile.bio ?? '');
     _selectedSkillIds = {...profile.selectedSkillIds};
-    _visibility = {...profile.visibility};
     _acknowledged = _input();
     _departure = ref.read(draftDepartureProvider);
   }
@@ -216,7 +214,6 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
     displayName: _displayNameController.text.trim(),
     bio: _bioController.text.trim(),
     selectedSkillIds: {..._selectedSkillIds},
-    visibility: {..._visibility},
   );
 
   Future<DraftDepartureOutcome> _prepareDeparture() async {
@@ -224,8 +221,7 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
     final input = _input();
     if (input.displayName == _acknowledged.displayName &&
         input.bio == _acknowledged.bio &&
-        setEquals(input.selectedSkillIds, _acknowledged.selectedSkillIds) &&
-        mapEquals(input.visibility, _acknowledged.visibility)) {
+        setEquals(input.selectedSkillIds, _acknowledged.selectedSkillIds)) {
       return DraftDepartureOutcome.noChange;
     }
     final l10n = AppLocalizations.of(context);
@@ -257,9 +253,6 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
       _selectedSkillIds
         ..clear()
         ..addAll(_acknowledged.selectedSkillIds);
-      _visibility
-        ..clear()
-        ..addAll(_acknowledged.visibility);
     });
     return DraftDepartureOutcome.discarded;
   }
@@ -460,34 +453,6 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
                               }),
                             ),
                             const SizedBox(height: AppSpacing.large),
-                            Text(
-                              l10n.profileVisibilityTitle,
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const SizedBox(height: AppSpacing.xSmall),
-                            Text(l10n.profileVisibilityDescription),
-                            const SizedBox(height: AppSpacing.medium),
-                            _VisibilityControl(
-                              fieldKey: ProfileFieldKey.displayName,
-                              label: l10n.profileDisplayNameLabel,
-                              value: _visibility[ProfileFieldKey.displayName]!,
-                              enabled: !state.isBusy,
-                              onChanged: _setVisibility,
-                            ),
-                            _VisibilityControl(
-                              fieldKey: ProfileFieldKey.bio,
-                              label: l10n.profileBioLabel,
-                              value: _visibility[ProfileFieldKey.bio]!,
-                              enabled: !state.isBusy,
-                              onChanged: _setVisibility,
-                            ),
-                            _VisibilityControl(
-                              fieldKey: ProfileFieldKey.skills,
-                              label: l10n.profileSkillsTitle,
-                              value: _visibility[ProfileFieldKey.skills]!,
-                              enabled: !state.isBusy,
-                              onChanged: _setVisibility,
-                            ),
                           ],
                         ),
                       ),
@@ -502,10 +467,6 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
     );
   }
 
-  void _setVisibility(ProfileFieldKey field, ProfileAudience audience) {
-    setState(() => _visibility[field] = audience);
-  }
-
   void _fillSample() {
     final sampleSkills = widget.data.categories
         .expand((category) => category.skills)
@@ -517,61 +478,7 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
       _selectedSkillIds
         ..clear()
         ..addAll(sampleSkills);
-      _visibility
-        ..[ProfileFieldKey.displayName] = ProfileAudience.public
-        ..[ProfileFieldKey.bio] = ProfileAudience.private
-        ..[ProfileFieldKey.skills] = ProfileAudience.public;
     });
     _formKey.currentState?.validate();
-  }
-}
-
-class _VisibilityControl extends StatelessWidget {
-  const _VisibilityControl({
-    required this.fieldKey,
-    required this.label,
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final ProfileFieldKey fieldKey;
-  final String label;
-  final ProfileAudience value;
-  final bool enabled;
-  final void Function(ProfileFieldKey, ProfileAudience) onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label),
-          const SizedBox(height: AppSpacing.small),
-          SegmentedButton<ProfileAudience>(
-            key: Key('profile-visibility-${fieldKey.wireValue}'),
-            segments: [
-              ButtonSegment(
-                value: ProfileAudience.public,
-                label: Text(l10n.profileAudiencePublic),
-                icon: const Icon(Icons.public_outlined),
-              ),
-              ButtonSegment(
-                value: ProfileAudience.private,
-                label: Text(l10n.profileAudiencePrivate),
-                icon: const Icon(Icons.lock_outline),
-              ),
-            ],
-            selected: {value},
-            onSelectionChanged: enabled
-                ? (selection) => onChanged(fieldKey, selection.single)
-                : null,
-          ),
-        ],
-      ),
-    );
   }
 }

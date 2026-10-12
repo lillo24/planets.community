@@ -98,11 +98,6 @@ it.skipIf(process.env.LINK_HOST03_LOCAL !== "1")(
           displayName: `Adapter ${kind}`,
           bio: "",
           selectedSkillIds: [],
-          visibility: {
-            display_name: "private",
-            bio: "private",
-            skills: "private",
-          },
         });
         await controller.refresh();
         expect(controller.snapshot().auth?.phase).toBe("ready");

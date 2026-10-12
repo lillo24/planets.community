@@ -18,21 +18,13 @@ describe("SupabaseWebProfileGateway", () => {
       displayName: "Casey",
       bio: "Ready to help.",
       selectedSkillIds: ["skill-mural", "skill-musician"],
-      visibility: {
-        display_name: "public",
-        bio: "private",
-        skills: "public",
-      },
     });
 
-    expect(rpc).toHaveBeenCalledWith("update_own_profile", {
+    expect(rpc).toHaveBeenCalledWith("update_own_profile_content_v1", {
       p_expected_profile_id: "user-a",
       p_display_name: "Casey",
       p_bio: "Ready to help.",
       p_skill_ids: ["skill-mural", "skill-musician"],
-      p_display_name_audience: "public",
-      p_bio_audience: "private",
-      p_skills_audience: "public",
     });
   });
 
@@ -47,11 +39,6 @@ describe("SupabaseWebProfileGateway", () => {
         displayName: "Casey",
         bio: "",
         selectedSkillIds: [],
-        visibility: {
-          display_name: "public",
-          bio: "public",
-          skills: "public",
-        },
       }),
     ).rejects.toBe(failure);
   });

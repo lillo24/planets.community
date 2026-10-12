@@ -9,12 +9,12 @@ This folder owns the minimal authenticated `/profile` settings surface.
   later save to that rendered owner; it passes no email. `profile-server.ts`
   supplies the server-only client; the static trial supplies its browser client.
 - `profile-gateway.ts` is the browser-only boundary for the canonical
-  `update_own_profile` operation, including its expected-profile identity.
+  `update_own_profile_content_v1` operation, including its expected-profile identity.
 - `profile-form-view.tsx` composes generated shadcn components for profile fields,
-  categorized controlled skills, and simple public/private choices. It ignores
+  categorized controlled skills. Audience controls live only in mobile Settings. It ignores
   save completion after unmount; `profile-form.tsx` supplies Next navigation.
   Its opt-in `nameOnly` mode asks only for a display name and retains the loaded
-  bio, skills and visibility values when saving through the canonical gateway.
+  bio and skills when saving. Audiences are never sent or overwritten.
   Empty bios are already supported; no generated biography is stored.
 
 The database owns validation, atomicity, RLS, and sanitized public reads. Photo

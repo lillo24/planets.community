@@ -5945,6 +5945,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_own_profile_content_v1: {
+        Args: {
+          p_bio: string
+          p_display_name: string
+          p_expected_profile_id: string
+          p_skill_ids: string[]
+        }
+        Returns: undefined
+      }
       update_own_proposal:
         | {
             Args: {
