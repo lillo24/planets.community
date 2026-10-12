@@ -322,6 +322,8 @@ async function verifyProfileVisibility() {
     );
   }
   await userA.client.auth.signOut({ scope: "local" });
+  // Respect auth.email.max_frequency = 1s before a fresh OTP session.
+  await new Promise((resolve) => setTimeout(resolve, 1100));
   const relogged = await signInWithLocalOtp(userAEmail);
   const reopened = await relogged.client
     .from("profile_field_visibility")
