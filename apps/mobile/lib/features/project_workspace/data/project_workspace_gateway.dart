@@ -5,80 +5,103 @@ import '../../../core/backend/supabase_backend.dart';
 import '../domain/project_workspace_models.dart';
 
 abstract interface class ProjectWorkspaceGateway {
-  Future<ProjectWorkspace?> getWorkspace({
+  Future<List<ProjectWorkspace>> listLinks({
     required String expectedProfileId,
     required String projectId,
   });
-
-  Future<ProjectWorkspace> setWorkspace({
+  Future<void> saveLink({
     required String expectedManagerProfileId,
     required String projectId,
+    required String name,
     required ProjectWorkspaceUrl url,
+    String? linkId,
   });
-
-  Future<bool> clearWorkspace({
+  Future<void> removeLink({
     required String expectedManagerProfileId,
     required String projectId,
+    required String linkId,
   });
 }
 
 class ProjectWorkspaceRpcContract {
   const ProjectWorkspaceRpcContract();
-
   Map<String, dynamic> readParams(String profileId, String projectId) => {
     'p_expected_profile_id': profileId,
     'p_project_id': projectId,
   };
-
-  Map<String, dynamic> setParams(
+  Map<String, dynamic> saveParams(
     String profileId,
     String projectId,
+    String name,
     ProjectWorkspaceUrl url,
+    String? linkId,
   ) => {
     'p_expected_manager_profile_id': profileId,
     'p_project_id': projectId,
+    'p_display_name': name,
     'p_workspace_url': url.value,
+    'p_link_id': linkId,
   };
-
-  Map<String, dynamic> clearParams(String profileId, String projectId) => {
+  Map<String, dynamic> removeParams(
+    String profileId,
+    String projectId,
+    String linkId,
+  ) => {
     'p_expected_manager_profile_id': profileId,
     'p_project_id': projectId,
+    'p_link_id': linkId,
   };
 }
 
 class ProjectWorkspacePayloadParser {
   const ProjectWorkspacePayloadParser();
-
-  ProjectWorkspace? optionalWorkspace(Object? response, String projectId) {
-    if (response is! List || response.length > 1) {
-      throw const FormatException('Project workspace payload was malformed.');
+  List<ProjectWorkspace> links(Object? response, String projectId) {
+    if (response is! List) {
+      throw const FormatException('Workspace list was malformed.');
     }
-    if (response.isEmpty) return null;
-    return workspace(response.single, projectId);
+    final result = response.map((row) => workspace(row, projectId)).toList();
+    if (result.map((link) => link.id).toSet().length != result.length) {
+      throw const FormatException('Workspace link identity was duplicated.');
+    }
+    return List.unmodifiable(result);
   }
 
   ProjectWorkspace workspace(Object? value, String projectId) {
     if (value is! Map) {
-      throw const FormatException('Project workspace row was malformed.');
+      throw const FormatException('Workspace row was malformed.');
     }
-    final row = Map<String, dynamic>.from(value);
-    final responseProjectId = row['project_id'];
-    final workspaceUrl = row['workspace_url'];
-    final updatedAt = row['updated_at'];
-    if (responseProjectId != projectId ||
-        workspaceUrl is! String ||
-        updatedAt is! String) {
-      throw const FormatException('Project workspace row was malformed.');
+    final id = value['id'];
+    final name = value['display_name'];
+    final url = value['workspace_url'];
+    final updatedAt = value['updated_at'];
+    final createdAt = value['created_at'];
+    if (value['project_id'] != projectId ||
+        id is! String ||
+        id.isEmpty ||
+        name is! String ||
+        url is! String ||
+        updatedAt is! String ||
+        createdAt is! String ||
+        DateTime.tryParse(updatedAt) == null ||
+        DateTime.tryParse(createdAt) == null) {
+      throw const FormatException('Workspace row was malformed.');
     }
-    final parsedUpdatedAt = DateTime.tryParse(updatedAt);
-    if (parsedUpdatedAt == null) {
-      throw const FormatException('Project workspace timestamp was malformed.');
+    try {
+      if (validateProjectWorkspaceName(name) != name) {
+        throw const ProjectWorkspaceNameException();
+      }
+      return ProjectWorkspace(
+        id: id,
+        name: name,
+        projectId: projectId,
+        url: ProjectWorkspaceUrl.parse(url),
+        updatedAt: DateTime.parse(updatedAt).toUtc(),
+      );
+    } on ProjectWorkspaceNameException {
+      throw const FormatException('Workspace name was malformed.');
+    } on ProjectWorkspaceUrlException {
+      throw const FormatException('Workspace URL was malformed.');
     }
-    return ProjectWorkspace(
-      projectId: projectId,
-      url: ProjectWorkspaceUrl.parse(workspaceUrl),
-      updatedAt: parsedUpdatedAt.toUtc(),
-    );
   }
 }
 
@@ -88,55 +111,63 @@ class SupabaseProjectWorkspaceGateway implements ProjectWorkspaceGateway {
     this.contract = const ProjectWorkspaceRpcContract(),
     this.parser = const ProjectWorkspacePayloadParser(),
   });
-
   final SupabaseClient _client;
   final ProjectWorkspaceRpcContract contract;
   final ProjectWorkspacePayloadParser parser;
-
   @override
-  Future<ProjectWorkspace?> getWorkspace({
+  Future<List<ProjectWorkspace>> listLinks({
     required String expectedProfileId,
     required String projectId,
-  }) async {
-    final response = await _client.rpc<List<dynamic>>(
-      'get_own_project_shared_workspace',
+  }) async => parser.links(
+    await _client.rpc<List<dynamic>>(
+      'list_project_workspace_links',
       params: contract.readParams(expectedProfileId, projectId),
-    );
-    return parser.optionalWorkspace(response, projectId);
-  }
-
+    ),
+    projectId,
+  );
   @override
-  Future<ProjectWorkspace> setWorkspace({
+  Future<void> saveLink({
     required String expectedManagerProfileId,
     required String projectId,
+    required String name,
     required ProjectWorkspaceUrl url,
+    String? linkId,
   }) async {
-    final response = await _client.rpc<List<dynamic>>(
-      'set_project_shared_workspace',
-      params: contract.setParams(expectedManagerProfileId, projectId, url),
+    final id = await _client.rpc<String>(
+      'save_project_workspace_link',
+      params: contract.saveParams(
+        expectedManagerProfileId,
+        projectId,
+        name,
+        url,
+        linkId,
+      ),
     );
-    final workspace = parser.optionalWorkspace(response, projectId);
-    if (workspace == null) {
-      throw const FormatException('Project workspace result was empty.');
+    if (id.isEmpty) {
+      throw const FormatException('Workspace save returned no identity.');
     }
-    return workspace;
   }
 
   @override
-  Future<bool> clearWorkspace({
+  Future<void> removeLink({
     required String expectedManagerProfileId,
     required String projectId,
+    required String linkId,
   }) async {
-    final response = await _client.rpc<bool>(
-      'clear_project_shared_workspace',
-      params: contract.clearParams(expectedManagerProfileId, projectId),
+    final removed = await _client.rpc<bool>(
+      'remove_project_workspace_link',
+      params: contract.removeParams(
+        expectedManagerProfileId,
+        projectId,
+        linkId,
+      ),
     );
-    return response;
+    if (!removed) {
+      throw const FormatException('Workspace removal was not confirmed.');
+    }
   }
 }
 
-final projectWorkspaceGatewayProvider = Provider<ProjectWorkspaceGateway>((
-  ref,
-) {
-  return SupabaseProjectWorkspaceGateway(ref.watch(supabaseClientProvider));
-});
+final projectWorkspaceGatewayProvider = Provider<ProjectWorkspaceGateway>(
+  (ref) => SupabaseProjectWorkspaceGateway(ref.watch(supabaseClientProvider)),
+);

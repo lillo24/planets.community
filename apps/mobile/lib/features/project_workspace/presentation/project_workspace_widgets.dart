@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../participation/domain/participation_models.dart';
+import '../../auth/application/auth_session_controller.dart';
 import '../application/project_workspace_controller.dart';
 import '../application/project_workspace_launcher.dart';
 import '../domain/project_workspace_models.dart';
@@ -15,6 +16,7 @@ Future<void> confirmAndOpenProjectWorkspace(
   WidgetRef ref,
   ProjectWorkspace workspace,
 ) async {
+  final expectedIdentity = ref.read(authSessionProvider).identity?.id;
   final l10n = AppLocalizations.of(context);
   final confirmed = await showDialog<bool>(
     context: context,
@@ -38,6 +40,27 @@ Future<void> confirmAndOpenProjectWorkspace(
     ),
   );
   if (confirmed != true || !context.mounted) return;
+  final profileId = ref.read(authSessionProvider).identity?.id;
+  if (profileId == null || profileId != expectedIdentity) return;
+  await ref
+      .read(projectWorkspaceProvider.notifier)
+      .load(expectedProfileId: profileId, projectId: workspace.projectId);
+  if (!context.mounted ||
+      ref.read(authSessionProvider).identity?.id != profileId) {
+    return;
+  }
+  final state = ref.read(projectWorkspaceProvider);
+  if (state.phase != ProjectWorkspacePhase.ready ||
+      !state.isFor(profileId, workspace.projectId) ||
+      !state.links.any(
+        (link) =>
+            link.id == workspace.id && link.url.value == workspace.url.value,
+      )) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.projectWorkspaceUnavailable)));
+    return;
+  }
   final opened = await ref
       .read(projectWorkspaceLauncherProvider)
       .open(workspace.url);
@@ -56,12 +79,11 @@ class ProjectWorkspaceManageCard extends ConsumerStatefulWidget {
     this.compact = false,
     super.key,
   });
-
   final String expectedProfileId;
   final String projectId;
   final ProjectKind projectKind;
 
-  /// Organization hubs compose this destination into their own navigation card.
+  /// Organization hubs compose this destination into their navigation card.
   final bool compact;
 
   @override
@@ -84,26 +106,29 @@ class _ProjectWorkspaceManageCardState
         projectId: widget.projectId,
       );
 
+  void _open() => context.push(
+    ProjectWorkspaceRoutes.manage(widget.projectKind, widget.projectId),
+  );
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(projectWorkspaceProvider);
     final current = state.isFor(widget.expectedProfileId, widget.projectId);
-    final workspace = current ? state.workspace : null;
     final loading = !current || state.phase == ProjectWorkspacePhase.loading;
     final failed = current && state.phase == ProjectWorkspacePhase.failure;
     if (widget.compact) {
       return ListTile(
+        key: const Key('project-manage-workspace'),
         minLeadingWidth: 24,
         horizontalTitleGap: 8,
-        key: const Key('project-manage-workspace'),
         leading: const Icon(Icons.folder_shared_outlined),
         title: Text(l10n.projectWorkspaceTitle),
         subtitle: failed
             ? Text(l10n.projectWorkspaceUnavailable)
-            : workspace == null
-            ? null
-            : Text(workspace.url.hostname),
+            : current && state.links.length == 1
+            ? Text(state.links.single.url.hostname)
+            : null,
         trailing: loading
             ? const SizedBox.square(
                 dimension: 20,
@@ -116,16 +141,8 @@ class _ProjectWorkspaceManageCardState
                 icon: const Icon(Icons.refresh),
               )
             : const Icon(Icons.chevron_right),
-        onTap: loading
-            ? null
-            : failed
-            ? _load
-            : () => context.push(
-                ProjectWorkspaceRoutes.manage(
-                  widget.projectKind,
-                  widget.projectId,
-                ),
-              ),
+        // The collection owns empty/loading/error recovery as well as editing.
+        onTap: _open,
       );
     }
     return Card(
@@ -145,63 +162,16 @@ class _ProjectWorkspaceManageCardState
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                if (loading)
-                  const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
               ],
             ),
             const SizedBox(height: AppSpacing.small),
-            Text(
-              failed
-                  ? l10n.projectWorkspaceUnavailable
-                  : workspace == null
-                  ? l10n.projectWorkspaceManageEmptyDescription
-                  : workspace.url.hostname,
+            Text(l10n.projectWorkspaceManageDescription),
+            TextButton.icon(
+              key: const Key('project-manage-workspace-edit'),
+              onPressed: _open,
+              icon: const Icon(Icons.folder_shared_outlined),
+              label: Text(l10n.projectWorkspaceOpenWorkspaceAction),
             ),
-            if (!loading) ...[
-              const SizedBox(height: AppSpacing.small),
-              if (failed)
-                TextButton(
-                  key: const Key('project-manage-workspace-retry'),
-                  onPressed: _load,
-                  child: Text(l10n.retryAction),
-                )
-              else
-                Wrap(
-                  spacing: AppSpacing.small,
-                  runSpacing: AppSpacing.xSmall,
-                  children: [
-                    if (workspace != null)
-                      OutlinedButton.icon(
-                        key: const Key('project-manage-workspace-open'),
-                        onPressed: () => confirmAndOpenProjectWorkspace(
-                          context,
-                          ref,
-                          workspace,
-                        ),
-                        icon: const Icon(Icons.open_in_new),
-                        label: Text(l10n.projectWorkspaceOpenWorkspaceAction),
-                      ),
-                    TextButton.icon(
-                      key: const Key('project-manage-workspace-edit'),
-                      onPressed: () => context.push(
-                        ProjectWorkspaceRoutes.manage(
-                          widget.projectKind,
-                          widget.projectId,
-                        ),
-                      ),
-                      icon: Icon(workspace == null ? Icons.add : Icons.edit),
-                      label: Text(
-                        workspace == null
-                            ? l10n.projectWorkspaceAddWorkspaceAction
-                            : l10n.projectWorkspaceEditWorkspaceAction,
-                      ),
-                    ),
-                  ],
-                ),
-            ],
           ],
         ),
       ),
@@ -218,15 +188,13 @@ class ProjectWorkspaceInfoSection extends ConsumerStatefulWidget {
     this.compact = false,
     super.key,
   });
-
   final String expectedProfileId;
   final String projectId;
   final ProjectKind projectKind;
   final bool isManager;
 
-  /// Opt-in organization layout; keeps the workspace read and action boundary.
+  /// Opt-in organization layout; collection behavior stays shared.
   final bool compact;
-
   @override
   ConsumerState<ProjectWorkspaceInfoSection> createState() =>
       _ProjectWorkspaceInfoSectionState();
@@ -246,17 +214,13 @@ class _ProjectWorkspaceInfoSectionState
         expectedProfileId: widget.expectedProfileId,
         projectId: widget.projectId,
       );
-
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final state = ref.watch(projectWorkspaceProvider);
-    final current = state.isFor(widget.expectedProfileId, widget.projectId);
-    final workspace = current ? state.workspace : null;
     if (widget.compact &&
-        current &&
+        state.isFor(widget.expectedProfileId, widget.projectId) &&
         state.phase == ProjectWorkspacePhase.ready &&
-        workspace == null &&
+        state.links.isEmpty &&
         !widget.isManager) {
       return const SizedBox.shrink();
     }
@@ -266,81 +230,24 @@ class _ProjectWorkspaceInfoSectionState
       children: [
         if (widget.compact) const SizedBox(height: AppSpacing.large),
         Text(
-          l10n.projectWorkspaceTitle,
+          AppLocalizations.of(context).projectWorkspaceTitle,
           style: widget.compact
               ? Theme.of(context).textTheme.titleMedium
               : Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: AppSpacing.small),
-        if (!current || state.phase == ProjectWorkspacePhase.loading)
-          const Center(child: CircularProgressIndicator())
-        else if (state.phase == ProjectWorkspacePhase.failure)
-          OverflowBar(
-            children: [
-              Text(l10n.projectWorkspaceUnavailable),
-              TextButton(onPressed: _load, child: Text(l10n.retryAction)),
-            ],
-          )
-        else if (workspace == null)
-          OverflowBar(
-            children: [
-              if (!widget.compact) Text(l10n.projectWorkspaceNotConfigured),
-              if (widget.isManager)
-                TextButton(
-                  key: const Key('project-workspace-info-add'),
-                  onPressed: () => context.push(
-                    ProjectWorkspaceRoutes.manage(
-                      widget.projectKind,
-                      widget.projectId,
-                    ),
-                  ),
-                  child: Text(l10n.projectWorkspaceAddWorkspaceAction),
-                ),
-            ],
-          )
-        else
-          ListTile(
-            key: const Key('project-workspace-info-open'),
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.folder_shared_outlined),
-            title: Text(workspace.url.hostname),
-            subtitle: Text(l10n.projectWorkspaceExternalNotice),
-            trailing: widget.isManager && !widget.compact
-                ? TextButton(
-                    key: const Key('project-workspace-info-edit'),
-                    onPressed: () => context.push(
-                      ProjectWorkspaceRoutes.manage(
-                        widget.projectKind,
-                        widget.projectId,
-                      ),
-                    ),
-                    child: Text(l10n.projectWorkspaceEditWorkspaceAction),
-                  )
-                : const Icon(Icons.open_in_new),
-            onTap: () =>
-                confirmAndOpenProjectWorkspace(context, ref, workspace),
-          ),
-        if (widget.compact && workspace != null && widget.isManager)
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: TextButton.icon(
-              key: const Key('project-workspace-info-edit'),
-              onPressed: () => context.push(
-                ProjectWorkspaceRoutes.manage(
-                  widget.projectKind,
-                  widget.projectId,
-                ),
-              ),
-              icon: const Icon(Icons.edit_outlined),
-              label: Text(l10n.projectWorkspaceEditWorkspaceAction),
-            ),
-          ),
+        ProjectWorkspaceCollection(
+          expectedProfileId: widget.expectedProfileId,
+          projectId: widget.projectId,
+          isManager: widget.isManager,
+          onRetry: _load,
+        ),
       ],
     );
   }
 }
 
-class ProjectWorkspaceChatControl extends ConsumerWidget {
+class ProjectWorkspaceChatControl extends StatelessWidget {
   const ProjectWorkspaceChatControl({
     required this.expectedProfileId,
     required this.projectId,
@@ -348,41 +255,359 @@ class ProjectWorkspaceChatControl extends ConsumerWidget {
     required this.isManager,
     super.key,
   });
-
   final String expectedProfileId;
   final String projectId;
   final ProjectKind projectKind;
   final bool isManager;
+  @override
+  Widget build(BuildContext context) => ActionChip(
+    key: const Key('project-workspace-chat-control'),
+    avatar: const Icon(Icons.folder_shared_outlined, size: 18),
+    label: Text(AppLocalizations.of(context).projectWorkspaceShortTitle),
+    onPressed: () =>
+        context.push(ProjectWorkspaceRoutes.manage(projectKind, projectId)),
+  );
+}
 
+IconData projectWorkspaceIcon(ProjectWorkspace link) =>
+    switch (classifyProjectWorkspace(link.name, link.url.uri)) {
+      ProjectWorkspaceIconType.document => Icons.description_outlined,
+      ProjectWorkspaceIconType.spreadsheet => Icons.table_chart_outlined,
+      ProjectWorkspaceIconType.video => Icons.videocam_outlined,
+      ProjectWorkspaceIconType.drive => Icons.folder_shared_outlined,
+      ProjectWorkspaceIconType.link => Icons.link,
+    };
+
+// The same private collection serves the existing route and Group info.
+class ProjectWorkspaceCollection extends ConsumerWidget {
+  const ProjectWorkspaceCollection({
+    required this.expectedProfileId,
+    required this.projectId,
+    required this.isManager,
+    required this.onRetry,
+    super.key,
+  });
+  final String expectedProfileId;
+  final String projectId;
+  final bool isManager;
+  final VoidCallback onRetry;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(projectWorkspaceProvider);
-    final current = state.isFor(expectedProfileId, projectId);
-    final workspace = current ? state.workspace : null;
-    if (!current || state.phase == ProjectWorkspacePhase.loading) {
-      return const SizedBox.square(
-        dimension: 32,
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.small),
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
+    if (ref.watch(authSessionProvider).identity?.id != expectedProfileId) {
+      return const SizedBox.shrink();
+    }
+    if (!state.isFor(expectedProfileId, projectId) ||
+        state.phase == ProjectWorkspacePhase.loading ||
+        state.phase == ProjectWorkspacePhase.idle) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (state.phase == ProjectWorkspacePhase.failure) {
+      return Column(
+        children: [
+          Text(
+            state.failure == ProjectWorkspaceFailureKind.forbidden
+                ? l10n.projectWorkspaceForbidden
+                : l10n.projectWorkspaceUnavailable,
+          ),
+          TextButton(onPressed: onRetry, child: Text(l10n.retryAction)),
+        ],
       );
     }
-    if (workspace == null && !isManager) return const SizedBox.shrink();
-    return ActionChip(
-      key: const Key('project-workspace-chat-control'),
-      avatar: const Icon(Icons.folder_shared_outlined, size: 18),
-      label: Text(
-        workspace == null
-            ? l10n.projectWorkspaceAddWorkspaceAction
-            : l10n.projectWorkspaceShortTitle,
-      ),
-      onPressed: workspace == null
-          ? () => context.push(
-              ProjectWorkspaceRoutes.manage(projectKind, projectId),
-            )
-          : () => confirmAndOpenProjectWorkspace(context, ref, workspace),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (state.links.isEmpty) Text(l10n.projectWorkspaceNotConfigured),
+        for (final link in state.links)
+          Padding(
+            key: ValueKey('workspace-link-${link.id}'),
+            padding: const EdgeInsets.only(bottom: AppSpacing.small),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(projectWorkspaceIcon(link)),
+                  title: Text(link.name),
+                  subtitle: Text(link.url.hostname),
+                  trailing: const Icon(Icons.open_in_new),
+                  onTap: state.mutating
+                      ? null
+                      : () =>
+                            confirmAndOpenProjectWorkspace(context, ref, link),
+                ),
+                if (isManager)
+                  Wrap(
+                    spacing: AppSpacing.small,
+                    children: [
+                      TextButton.icon(
+                        key: ValueKey('workspace-edit-${link.id}'),
+                        onPressed: state.mutating
+                            ? null
+                            : () => _edit(context, ref, link),
+                        icon: const Icon(Icons.edit_outlined),
+                        label: Text(l10n.projectWorkspaceEditWorkspaceAction),
+                      ),
+                      TextButton.icon(
+                        key: ValueKey('workspace-remove-${link.id}'),
+                        onPressed: state.mutating
+                            ? null
+                            : () => _remove(context, ref, link),
+                        icon: const Icon(Icons.delete_outline),
+                        label: Text(l10n.projectWorkspaceRemoveAction),
+                      ),
+                    ],
+                  ),
+                const Divider(),
+              ],
+            ),
+          ),
+        if (isManager)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              key: const Key('project-workspace-add'),
+              onPressed: state.mutating
+                  ? null
+                  : () => _edit(context, ref, null),
+              icon: const Icon(Icons.add),
+              label: Text(l10n.projectWorkspaceAddWorkspaceAction),
+            ),
+          ),
+        if (state.mutating) const LinearProgressIndicator(),
+        const SizedBox(height: AppSpacing.small),
+        Text(
+          l10n.projectWorkspaceExternalNotice,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
     );
+  }
+
+  Future<void> _edit(
+    BuildContext context,
+    WidgetRef ref,
+    ProjectWorkspace? link,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _WorkspaceLinkEditor(
+        profileId: expectedProfileId,
+        projectId: projectId,
+        link: link,
+      ),
+    );
+  }
+
+  Future<void> _remove(
+    BuildContext context,
+    WidgetRef ref,
+    ProjectWorkspace link,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.projectWorkspaceRemoveTitle),
+        content: Text(l10n.projectWorkspaceRemoveNamedMessage(link.name)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.projectWorkspaceCancelAction),
+          ),
+          FilledButton(
+            key: const Key('project-workspace-confirm-remove'),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.projectWorkspaceRemoveAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    final removed = await ref
+        .read(projectWorkspaceProvider.notifier)
+        .removeLink(
+          expectedManagerProfileId: expectedProfileId,
+          projectId: projectId,
+          linkId: link.id,
+        );
+    if (!context.mounted ||
+        ref.read(authSessionProvider).identity?.id != expectedProfileId) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          removed
+              ? l10n.projectWorkspaceRemoved
+              : l10n.projectWorkspaceUnavailable,
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkspaceLinkEditor extends ConsumerStatefulWidget {
+  const _WorkspaceLinkEditor({
+    required this.profileId,
+    required this.projectId,
+    this.link,
+  });
+  final String profileId;
+  final String projectId;
+  final ProjectWorkspace? link;
+  @override
+  ConsumerState<_WorkspaceLinkEditor> createState() =>
+      _WorkspaceLinkEditorState();
+}
+
+class _WorkspaceLinkEditorState extends ConsumerState<_WorkspaceLinkEditor> {
+  final _form = GlobalKey<FormState>();
+  late final _name = TextEditingController(text: widget.link?.name ?? '');
+  late final _url = TextEditingController(text: widget.link?.url.value ?? '');
+  bool _saving = false;
+  String? _error;
+  @override
+  void dispose() {
+    _name.dispose();
+    _url.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final state = ref.watch(projectWorkspaceProvider);
+    final authorized =
+        ref.watch(authSessionProvider).identity?.id == widget.profileId &&
+        state.isFor(widget.profileId, widget.projectId) &&
+        state.phase == ProjectWorkspacePhase.ready;
+    return PopScope(
+      canPop: !_saving,
+      child: AlertDialog(
+        title: Text(
+          widget.link == null
+              ? l10n.projectWorkspaceAddWorkspaceAction
+              : l10n.projectWorkspaceEditWorkspaceAction,
+        ),
+        content: SingleChildScrollView(
+          child: Form(
+            key: _form,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!authorized)
+                  Text(l10n.projectWorkspaceUnavailable)
+                else ...[
+                  TextFormField(
+                    key: const Key('project-workspace-name-field'),
+                    controller: _name,
+                    enabled: !_saving,
+                    maxLength: 120,
+                    decoration: InputDecoration(
+                      labelText: l10n.projectWorkspaceNameLabel,
+                    ),
+                    validator: (input) {
+                      try {
+                        validateProjectWorkspaceName(input ?? '');
+                        return null;
+                      } on ProjectWorkspaceNameException {
+                        return l10n.projectWorkspaceNameInvalid;
+                      }
+                    },
+                  ),
+                  TextFormField(
+                    key: const Key('project-workspace-url-field'),
+                    controller: _url,
+                    enabled: !_saving,
+                    keyboardType: TextInputType.url,
+                    autocorrect: false,
+                    maxLength: ProjectWorkspaceUrl.maxLength,
+                    decoration: InputDecoration(
+                      labelText: l10n.projectWorkspaceUrlLabel,
+                      hintText: l10n.projectWorkspaceUrlHint,
+                    ),
+                    validator: (input) {
+                      try {
+                        ProjectWorkspaceUrl.parse(input ?? '');
+                        return null;
+                      } on ProjectWorkspaceUrlException catch (error) {
+                        return switch (error.failure) {
+                          ProjectWorkspaceUrlFailure.empty =>
+                            l10n.projectWorkspaceUrlRequired,
+                          ProjectWorkspaceUrlFailure.tooLong =>
+                            l10n.projectWorkspaceUrlTooLong(
+                              ProjectWorkspaceUrl.maxLength,
+                            ),
+                          ProjectWorkspaceUrlFailure.notHttps =>
+                            l10n.projectWorkspaceUrlHttpsRequired,
+                          ProjectWorkspaceUrlFailure.invalid =>
+                            l10n.projectWorkspaceUrlInvalid,
+                        };
+                      }
+                    },
+                  ),
+                ],
+                if (_error != null)
+                  Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _saving ? null : () => Navigator.pop(context),
+            child: Text(l10n.projectWorkspaceCancelAction),
+          ),
+          FilledButton(
+            key: const Key('project-workspace-save'),
+            onPressed: !authorized || _saving ? null : _save,
+            child: Text(l10n.projectWorkspaceSaveAction),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    if (!_form.currentState!.validate()) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    final saved = await ref
+        .read(projectWorkspaceProvider.notifier)
+        .saveLink(
+          expectedManagerProfileId: widget.profileId,
+          projectId: widget.projectId,
+          name: _name.text,
+          input: _url.text,
+          linkId: widget.link?.id,
+        );
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    setState(() {
+      _saving = false;
+    });
+    if (ref.read(authSessionProvider).identity?.id != widget.profileId) {
+      Navigator.pop(context);
+      return;
+    }
+    if (saved) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.projectWorkspaceSaved)));
+    } else {
+      setState(() {
+        _error = l10n.projectWorkspaceUnavailable;
+      });
+    }
   }
 }

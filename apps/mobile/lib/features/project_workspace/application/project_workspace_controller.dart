@@ -37,9 +37,9 @@ class ProjectWorkspaceController extends Notifier<ProjectWorkspaceState> {
     );
     try {
       _requireIdentity(expectedProfileId);
-      final workspace = await ref
+      final links = await ref
           .read(projectWorkspaceGatewayProvider)
-          .getWorkspace(
+          .listLinks(
             expectedProfileId: expectedProfileId,
             projectId: projectId,
           );
@@ -48,7 +48,7 @@ class ProjectWorkspaceController extends Notifier<ProjectWorkspaceState> {
         phase: ProjectWorkspacePhase.ready,
         expectedProfileId: expectedProfileId,
         projectId: projectId,
-        workspace: workspace,
+        links: links,
       );
     } catch (error) {
       if (!_isCurrent(revision)) return;
@@ -61,109 +61,98 @@ class ProjectWorkspaceController extends Notifier<ProjectWorkspaceState> {
     }
   }
 
-  Future<bool> setWorkspace({
+  Future<bool> saveLink({
     required String expectedManagerProfileId,
     required String projectId,
+    required String name,
     required String input,
+    String? linkId,
   }) async {
-    final revision = ++_revision;
     ProjectWorkspaceUrl url;
+    String validatedName;
     try {
+      validatedName = validateProjectWorkspaceName(name);
       url = ProjectWorkspaceUrl.parse(input);
+    } on ProjectWorkspaceNameException {
+      return false;
     } on ProjectWorkspaceUrlException {
-      state = ProjectWorkspaceState(
-        phase: ProjectWorkspacePhase.ready,
-        expectedProfileId: expectedManagerProfileId,
-        projectId: projectId,
-        workspace: state.isFor(expectedManagerProfileId, projectId)
-            ? state.workspace
-            : null,
-        failure: ProjectWorkspaceFailureKind.invalidUrl,
-      );
       return false;
     }
-    final retained = state.isFor(expectedManagerProfileId, projectId)
-        ? state.workspace
-        : null;
-    state = ProjectWorkspaceState(
-      phase: ProjectWorkspacePhase.ready,
-      expectedProfileId: expectedManagerProfileId,
-      projectId: projectId,
-      workspace: retained,
-      mutating: true,
+    return _mutate(
+      expectedManagerProfileId,
+      projectId,
+      (gateway) => gateway.saveLink(
+        expectedManagerProfileId: expectedManagerProfileId,
+        projectId: projectId,
+        name: validatedName,
+        url: url,
+        linkId: linkId,
+      ),
     );
-    try {
-      _requireIdentity(expectedManagerProfileId);
-      final workspace = await ref
-          .read(projectWorkspaceGatewayProvider)
-          .setWorkspace(
-            expectedManagerProfileId: expectedManagerProfileId,
-            projectId: projectId,
-            url: url,
-          );
-      if (!_isCurrent(revision)) return false;
-      state = ProjectWorkspaceState(
-        phase: ProjectWorkspacePhase.ready,
-        expectedProfileId: expectedManagerProfileId,
-        projectId: projectId,
-        workspace: workspace,
-      );
-      return true;
-    } catch (error) {
-      if (!_isCurrent(revision)) return false;
-      final failure = mapProjectWorkspaceFailure(error);
-      state = ProjectWorkspaceState(
-        phase: ProjectWorkspacePhase.ready,
-        expectedProfileId: expectedManagerProfileId,
-        projectId: projectId,
-        workspace: failure == ProjectWorkspaceFailureKind.forbidden
-            ? null
-            : retained,
-        failure: failure,
-      );
-      return false;
-    }
   }
 
-  Future<bool> clearWorkspace({
+  Future<bool> removeLink({
     required String expectedManagerProfileId,
     required String projectId,
-  }) async {
+    required String linkId,
+  }) => _mutate(
+    expectedManagerProfileId,
+    projectId,
+    (gateway) => gateway.removeLink(
+      expectedManagerProfileId: expectedManagerProfileId,
+      projectId: projectId,
+      linkId: linkId,
+    ),
+  );
+
+  Future<bool> _mutate(
+    String profileId,
+    String projectId,
+    Future<void> Function(ProjectWorkspaceGateway) operation,
+  ) async {
+    if (state.mutating) return false;
     final revision = ++_revision;
-    final retained = state.isFor(expectedManagerProfileId, projectId)
-        ? state.workspace
-        : null;
+    final retained = state.isFor(profileId, projectId)
+        ? state.links
+        : const <ProjectWorkspace>[];
     state = ProjectWorkspaceState(
       phase: ProjectWorkspacePhase.ready,
-      expectedProfileId: expectedManagerProfileId,
+      expectedProfileId: profileId,
       projectId: projectId,
-      workspace: retained,
+      links: retained,
       mutating: true,
     );
+    var committed = false;
     try {
-      _requireIdentity(expectedManagerProfileId);
-      await ref
-          .read(projectWorkspaceGatewayProvider)
-          .clearWorkspace(
-            expectedManagerProfileId: expectedManagerProfileId,
-            projectId: projectId,
-          );
+      _requireIdentity(profileId);
+      final gateway = ref.read(projectWorkspaceGatewayProvider);
+      await operation(gateway);
+      committed = true;
+      if (!_isCurrent(revision)) return false;
+      final links = await gateway.listLinks(
+        expectedProfileId: profileId,
+        projectId: projectId,
+      );
       if (!_isCurrent(revision)) return false;
       state = ProjectWorkspaceState(
         phase: ProjectWorkspacePhase.ready,
-        expectedProfileId: expectedManagerProfileId,
+        expectedProfileId: profileId,
         projectId: projectId,
+        links: links,
       );
       return true;
     } catch (error) {
       if (!_isCurrent(revision)) return false;
       final failure = mapProjectWorkspaceFailure(error);
       state = ProjectWorkspaceState(
-        phase: ProjectWorkspacePhase.ready,
-        expectedProfileId: expectedManagerProfileId,
+        // A failed reconciliation cannot look like a successful stale list.
+        phase: committed || failure == ProjectWorkspaceFailureKind.forbidden
+            ? ProjectWorkspacePhase.failure
+            : ProjectWorkspacePhase.ready,
+        expectedProfileId: profileId,
         projectId: projectId,
-        workspace: failure == ProjectWorkspaceFailureKind.forbidden
-            ? null
+        links: committed || failure == ProjectWorkspaceFailureKind.forbidden
+            ? const []
             : retained,
         failure: failure,
       );
@@ -189,6 +178,9 @@ class ProjectWorkspaceController extends Notifier<ProjectWorkspaceState> {
 ProjectWorkspaceFailureKind mapProjectWorkspaceFailure(Object error) {
   if (error is ProjectWorkspaceIdentityChangedException) {
     return ProjectWorkspaceFailureKind.forbidden;
+  }
+  if (error is ProjectWorkspaceNameException) {
+    return ProjectWorkspaceFailureKind.invalidName;
   }
   if (error is ProjectWorkspaceUrlException) {
     return ProjectWorkspaceFailureKind.invalidUrl;

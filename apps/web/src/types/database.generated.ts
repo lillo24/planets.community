@@ -1634,18 +1634,27 @@ export type Database = {
       project_shared_workspaces: {
         Row: {
           created_at: string
+          display_name: string
+          id: string
+          legacy_slot: boolean
           project_id: string
           updated_at: string
           workspace_url: string
         }
         Insert: {
           created_at?: string
+          display_name?: string
+          id?: string
+          legacy_slot?: boolean
           project_id: string
           updated_at?: string
           workspace_url: string
         }
         Update: {
           created_at?: string
+          display_name?: string
+          id?: string
+          legacy_slot?: boolean
           project_id?: string
           updated_at?: string
           workspace_url?: string
@@ -1654,7 +1663,7 @@ export type Database = {
           {
             foreignKeyName: "project_shared_workspaces_project_id_fkey"
             columns: ["project_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
@@ -5478,6 +5487,10 @@ export type Database = {
           target_profile_id: string
         }[]
       }
+      list_project_workspace_links: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: Json
+      }
       list_public_groups: {
         Args: {
           p_before_created_at?: string
@@ -6097,6 +6110,14 @@ export type Database = {
         Args: { p_expected_manager_profile_id: string; p_membership_id: string }
         Returns: string
       }
+      remove_project_workspace_link: {
+        Args: {
+          p_expected_manager_profile_id: string
+          p_link_id: string
+          p_project_id: string
+        }
+        Returns: boolean
+      }
       replace_project_membership_actual_contributions: {
         Args: {
           p_expected_creator_profile_id: string
@@ -6254,6 +6275,16 @@ export type Database = {
           p_expected_profile_id: string
           p_invitation_id: string
           p_project_id: string
+        }
+        Returns: string
+      }
+      save_project_workspace_link: {
+        Args: {
+          p_display_name: string
+          p_expected_manager_profile_id: string
+          p_link_id?: string
+          p_project_id: string
+          p_workspace_url: string
         }
         Returns: string
       }

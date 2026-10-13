@@ -12,14 +12,14 @@ select has_table(
 select columns_are(
   'public',
   'project_shared_workspaces',
-  array['project_id', 'workspace_url', 'created_at', 'updated_at'],
-  'workspace rows contain only the Project, sensitive URL, and timestamps'
+  array['project_id', 'workspace_url', 'created_at', 'updated_at', 'id', 'display_name', 'legacy_slot'],
+  'workspace rows contain stable item identity, private name and URL, timestamps and legacy slot'
 );
 select col_is_pk(
   'public',
   'project_shared_workspaces',
-  'project_id',
-  'one workspace row is allowed per Project'
+  'id',
+  'each workspace link has a stable identity'
 );
 select col_type_is(
   'public',
@@ -213,6 +213,17 @@ select is(
   0::bigint,
   'workspace storage has no provider or OAuth token columns'
 );
+
+select ok((select bool_and(prosecdef and proconfig @> array['search_path=""'])
+  from pg_proc where oid in (
+    'public.list_project_workspace_links(uuid,uuid)'::regprocedure,
+    'public.save_project_workspace_link(uuid,uuid,text,text,uuid)'::regprocedure,
+    'public.remove_project_workspace_link(uuid,uuid,uuid)'::regprocedure)),
+  'new RPCs use hardened SECURITY DEFINER boundaries');
+select function_privs_are('private','require_project_workspace_manager',array['uuid','uuid'],
+  'authenticated',array[]::text[],'clients cannot directly call the privileged manager helper');
+select has_index('public','project_shared_workspaces','project_shared_workspaces_order_idx','Project list and cascade have an index');
+select has_index('public','project_shared_workspaces','project_shared_workspaces_legacy_idx','legacy designation is unique per Project');
 
 select * from finish();
 rollback;

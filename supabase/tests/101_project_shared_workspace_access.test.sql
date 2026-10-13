@@ -575,5 +575,109 @@ select is(
   'raw workspace URLs never enter generic audit or outbox payloads'
 );
 
+-- WORKSPACE02: new canonical APIs share the existing actor matrix.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'f1100000-0000-4000-8000-000000000001', true);
+select is(jsonb_array_length(public.list_project_workspace_links(
+  'f1100000-0000-4000-8000-000000000001', 'f1200000-0000-4000-8000-000000000001')), 0, 'new list distinguishes genuine empty state');
+select set_config('test.workspace_first', public.save_project_workspace_link(
+  'f1100000-0000-4000-8000-000000000001', 'f1200000-0000-4000-8000-000000000001',
+  '  Documento privato  ', ' https://example.org/document ')::text, true);
+select set_config('request.jwt.claim.sub', 'f1100000-0000-4000-8000-000000000002', true);
+select set_config('test.workspace_second', public.save_project_workspace_link(
+  'f1100000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001',
+  'Sheet Budget', 'https://example.org/sheet')::text, true);
+select is(public.list_project_workspace_links(
+  'f1100000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001')->0->>'display_name',
+  'Documento privato', 'names are trimmed and creation ordering is stable');
+select is(jsonb_array_length(public.list_project_workspace_links(
+  'f1100000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001')), 2, 'two independent named links coexist');
+select is(public.save_project_workspace_link(
+  'f1100000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001',
+  'Budget aggiornato', 'https://example.org/updated', current_setting('test.workspace_second')::uuid),
+  current_setting('test.workspace_second')::uuid, 'editing preserves item identity');
+select is(public.list_project_workspace_links(
+  'f1100000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001')->0->>'workspace_url',
+  'https://example.org/document', 'editing one entry preserves its neighbor');
+select throws_ok($$ select public.save_project_workspace_link(
+  'f1100000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001', '', 'https://example.org') $$,
+  '22023', 'A valid workspace link name is required.', 'empty names fail');
+select throws_ok($$ select public.save_project_workspace_link(
+  'f1100000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001', repeat('x',121), 'https://example.org') $$,
+  '22023', 'A valid workspace link name is required.', 'long names fail');
+select throws_ok($$ select public.save_project_workspace_link(
+  'f1100000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001', 'Doc', 'http://example.org') $$,
+  '22023', 'A valid absolute HTTPS workspace URL is required.', 'new mutation enforces HTTPS');
+select throws_ok($$ select public.list_project_workspace_links(
+  'f1100000-0000-4000-8000-000000000001', 'f1200000-0000-4000-8000-000000000001') $$,
+  '42501', null, 'list rejects expected-identity mismatch');
+select lives_ok($$ select public.set_project_shared_workspace(
+  'f1100000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001', 'https://example.org/legacy') $$,
+  'legacy update shares the canonical entry');
+select is(public.list_project_workspace_links(
+  'f1100000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001')->0->>'display_name',
+  'Documento privato', 'legacy update preserves editable name');
+select is(public.clear_project_shared_workspace(
+  'f1100000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001'), true, 'legacy clear removes only its entry');
+select is(jsonb_array_length(public.list_project_workspace_links(
+  'f1100000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001')), 1, 'legacy clear preserves extra links');
+select is((select count(*) from public.get_own_project_shared_workspace(
+  'f1100000-0000-4000-8000-000000000002', 'f1200000-0000-4000-8000-000000000001')), 0::bigint, 'legacy deletion does not promote an unrelated link');
+select set_config('request.jwt.claim.sub', 'f1100000-0000-4000-8000-000000000003', true);
+select throws_ok($$ select public.list_project_workspace_links('f1100000-0000-4000-8000-000000000003', 'f1200000-0000-4000-8000-000000000001') $$, '42501', null, 'non-current actor 3 cannot read');
+select throws_ok($$ select public.save_project_workspace_link('f1100000-0000-4000-8000-000000000003', 'f1200000-0000-4000-8000-000000000001', 'Doc', 'https://example.org') $$, '42501', null, 'non-manager 3 cannot add');
+select throws_ok($$ select public.remove_project_workspace_link('f1100000-0000-4000-8000-000000000003', 'f1200000-0000-4000-8000-000000000001', current_setting('test.workspace_second')::uuid) $$, '42501', null, 'non-manager 3 cannot remove');
+select set_config('request.jwt.claim.sub', 'f1100000-0000-4000-8000-000000000004', true);
+select is(jsonb_array_length(public.list_project_workspace_links('f1100000-0000-4000-8000-000000000004', 'f1200000-0000-4000-8000-000000000001')), 1, 'current participant 4 can read');
+select throws_ok($$ select public.save_project_workspace_link('f1100000-0000-4000-8000-000000000004', 'f1200000-0000-4000-8000-000000000001', 'Doc', 'https://example.org') $$, '42501', null, 'non-manager 4 cannot add');
+select throws_ok($$ select public.remove_project_workspace_link('f1100000-0000-4000-8000-000000000004', 'f1200000-0000-4000-8000-000000000001', current_setting('test.workspace_second')::uuid) $$, '42501', null, 'non-manager 4 cannot remove');
+select set_config('request.jwt.claim.sub', 'f1100000-0000-4000-8000-000000000005', true);
+select throws_ok($$ select public.list_project_workspace_links('f1100000-0000-4000-8000-000000000005', 'f1200000-0000-4000-8000-000000000001') $$, '42501', null, 'non-current actor 5 cannot read');
+select throws_ok($$ select public.save_project_workspace_link('f1100000-0000-4000-8000-000000000005', 'f1200000-0000-4000-8000-000000000001', 'Doc', 'https://example.org') $$, '42501', null, 'non-manager 5 cannot add');
+select throws_ok($$ select public.remove_project_workspace_link('f1100000-0000-4000-8000-000000000005', 'f1200000-0000-4000-8000-000000000001', current_setting('test.workspace_second')::uuid) $$, '42501', null, 'non-manager 5 cannot remove');
+select set_config('request.jwt.claim.sub', 'f1100000-0000-4000-8000-000000000006', true);
+select throws_ok($$ select public.list_project_workspace_links('f1100000-0000-4000-8000-000000000006', 'f1200000-0000-4000-8000-000000000001') $$, '42501', null, 'non-current actor 6 cannot read');
+select throws_ok($$ select public.save_project_workspace_link('f1100000-0000-4000-8000-000000000006', 'f1200000-0000-4000-8000-000000000001', 'Doc', 'https://example.org') $$, '42501', null, 'non-manager 6 cannot add');
+select throws_ok($$ select public.remove_project_workspace_link('f1100000-0000-4000-8000-000000000006', 'f1200000-0000-4000-8000-000000000001', current_setting('test.workspace_second')::uuid) $$, '42501', null, 'non-manager 6 cannot remove');
+select set_config('request.jwt.claim.sub', 'f1100000-0000-4000-8000-000000000007', true);
+select throws_ok($$ select public.list_project_workspace_links('f1100000-0000-4000-8000-000000000007', 'f1200000-0000-4000-8000-000000000001') $$, '42501', null, 'non-current actor 7 cannot read');
+select throws_ok($$ select public.save_project_workspace_link('f1100000-0000-4000-8000-000000000007', 'f1200000-0000-4000-8000-000000000001', 'Doc', 'https://example.org') $$, '42501', null, 'non-manager 7 cannot add');
+select throws_ok($$ select public.remove_project_workspace_link('f1100000-0000-4000-8000-000000000007', 'f1200000-0000-4000-8000-000000000001', current_setting('test.workspace_second')::uuid) $$, '42501', null, 'non-manager 7 cannot remove');
+select set_config('request.jwt.claim.sub', 'f1100000-0000-4000-8000-000000000008', true);
+select throws_ok($$ select public.list_project_workspace_links('f1100000-0000-4000-8000-000000000008', 'f1200000-0000-4000-8000-000000000001') $$, '42501', null, 'non-current actor 8 cannot read');
+select throws_ok($$ select public.save_project_workspace_link('f1100000-0000-4000-8000-000000000008', 'f1200000-0000-4000-8000-000000000001', 'Doc', 'https://example.org') $$, '42501', null, 'non-manager 8 cannot add');
+select throws_ok($$ select public.remove_project_workspace_link('f1100000-0000-4000-8000-000000000008', 'f1200000-0000-4000-8000-000000000001', current_setting('test.workspace_second')::uuid) $$, '42501', null, 'non-manager 8 cannot remove');
+select set_config('request.jwt.claim.sub', 'f1100000-0000-4000-8000-000000000009', true);
+select throws_ok($$ select public.list_project_workspace_links('f1100000-0000-4000-8000-000000000009', 'f1200000-0000-4000-8000-000000000001') $$, '42501', null, 'non-current actor 9 cannot read');
+select throws_ok($$ select public.save_project_workspace_link('f1100000-0000-4000-8000-000000000009', 'f1200000-0000-4000-8000-000000000001', 'Doc', 'https://example.org') $$, '42501', null, 'non-manager 9 cannot add');
+select throws_ok($$ select public.remove_project_workspace_link('f1100000-0000-4000-8000-000000000009', 'f1200000-0000-4000-8000-000000000001', current_setting('test.workspace_second')::uuid) $$, '42501', null, 'non-manager 9 cannot remove');
+select set_config('request.jwt.claim.sub', 'f1100000-0000-4000-8000-000000000010', true);
+select is(jsonb_array_length(public.list_project_workspace_links('f1100000-0000-4000-8000-000000000010', 'f1200000-0000-4000-8000-000000000001')), 1, 'current participant 10 can read');
+select throws_ok($$ select public.save_project_workspace_link('f1100000-0000-4000-8000-000000000010', 'f1200000-0000-4000-8000-000000000001', 'Doc', 'https://example.org') $$, '42501', null, 'non-manager 10 cannot add');
+select throws_ok($$ select public.remove_project_workspace_link('f1100000-0000-4000-8000-000000000010', 'f1200000-0000-4000-8000-000000000001', current_setting('test.workspace_second')::uuid) $$, '42501', null, 'non-manager 10 cannot remove');
+select set_config('request.jwt.claim.sub', 'f1100000-0000-4000-8000-000000000001', true);
+select is(public.remove_project_workspace_link(
+  'f1100000-0000-4000-8000-000000000001', 'f1200000-0000-4000-8000-000000000001', current_setting('test.workspace_second')::uuid), true,
+  'individual removal succeeds');
+select throws_ok($$ select public.remove_project_workspace_link(
+  'f1100000-0000-4000-8000-000000000001', 'f1200000-0000-4000-8000-000000000001', current_setting('test.workspace_second')::uuid) $$,
+  '42501', null, 'missing items fail explicitly');
+reset role;
+set local role anon;
+select throws_ok($$ select public.list_project_workspace_links(null, null) $$, '42501', null, 'anonymous list denied');
+select throws_ok($$ select public.save_project_workspace_link(null, null, 'Doc','https://example.org') $$, '42501', null, 'anonymous add denied');
+select throws_ok($$ select public.remove_project_workspace_link(null, null, null) $$, '42501', null, 'anonymous removal denied');
+reset role;
+
+update public.project_memberships set removed_at=statement_timestamp(),
+  removed_by_profile_id='f1100000-0000-4000-8000-000000000001'
+  where id='f1600000-0000-4000-8000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','f1100000-0000-4000-8000-000000000004',true);
+select throws_ok($$select public.list_project_workspace_links(
+  'f1100000-0000-4000-8000-000000000004','f1200000-0000-4000-8000-000000000001')$$,
+  '42501',null,'removed member loses list access immediately');
+reset role;
+
 select * from finish();
 rollback;

@@ -3,51 +3,66 @@ import 'package:planets_mobile/features/project_workspace/data/project_workspace
 import 'package:planets_mobile/features/project_workspace/domain/project_workspace_models.dart';
 
 class FakeProjectWorkspaceGateway implements ProjectWorkspaceGateway {
-  ProjectWorkspace? workspace;
+  final links = <ProjectWorkspace>[];
+  ProjectWorkspace? get workspace => links.firstOrNull;
+  set workspace(ProjectWorkspace? value) {
+    links.clear();
+    if (value != null) links.add(value);
+  }
+
   Object? readError;
   Object? mutationError;
   Future<void>? readDelay;
   Future<void>? mutationDelay;
   final calls = <String>[];
-
   @override
-  Future<bool> clearWorkspace({
-    required String expectedManagerProfileId,
-    required String projectId,
-  }) async {
-    calls.add('clear:$expectedManagerProfileId:$projectId');
-    if (mutationDelay case final delay?) await delay;
-    if (mutationError case final error?) throw error;
-    final existed = workspace != null;
-    workspace = null;
-    return existed;
-  }
-
-  @override
-  Future<ProjectWorkspace?> getWorkspace({
+  Future<List<ProjectWorkspace>> listLinks({
     required String expectedProfileId,
     required String projectId,
   }) async {
     calls.add('get:$expectedProfileId:$projectId');
     if (readDelay case final delay?) await delay;
     if (readError case final error?) throw error;
-    return workspace;
+    return List.unmodifiable(links);
   }
 
   @override
-  Future<ProjectWorkspace> setWorkspace({
+  Future<void> saveLink({
     required String expectedManagerProfileId,
     required String projectId,
+    required String name,
     required ProjectWorkspaceUrl url,
+    String? linkId,
   }) async {
     calls.add('set:$expectedManagerProfileId:$projectId:${url.value}');
     if (mutationDelay case final delay?) await delay;
     if (mutationError case final error?) throw error;
-    return workspace = ProjectWorkspace(
+    final id = linkId ?? 'link-${links.length + 1}';
+    final entry = ProjectWorkspace(
+      id: id,
+      name: name,
       projectId: projectId,
       url: url,
       updatedAt: DateTime.utc(2030),
     );
+    final index = links.indexWhere((link) => link.id == id);
+    if (index < 0) {
+      links.add(entry);
+    } else {
+      links[index] = entry;
+    }
+  }
+
+  @override
+  Future<void> removeLink({
+    required String expectedManagerProfileId,
+    required String projectId,
+    required String linkId,
+  }) async {
+    calls.add('clear:$expectedManagerProfileId:$projectId:$linkId');
+    if (mutationDelay case final delay?) await delay;
+    if (mutationError case final error?) throw error;
+    links.removeWhere((link) => link.id == linkId);
   }
 }
 
@@ -65,9 +80,13 @@ class FakeProjectWorkspaceLauncher implements ProjectWorkspaceLauncher {
 }
 
 ProjectWorkspace projectWorkspaceFixture({
+  String id = 'link-1',
+  String name = 'Workspace',
   String projectId = 'proposal-1',
   String url = 'https://drive.google.com/drive/folders/private-token',
 }) => ProjectWorkspace(
+  id: id,
+  name: name,
   projectId: projectId,
   url: ProjectWorkspaceUrl.parse(url),
   updatedAt: DateTime.utc(2030),

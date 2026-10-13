@@ -1,3 +1,7 @@
+import {
+  verifyWorkspaceCollection,
+  verifyWorkspaceUpgrade,
+} from "./lib/project-workspace-multi-verifier.mjs";
 import { createClient } from "@supabase/supabase-js";
 import postgres from "postgres";
 
@@ -26,7 +30,9 @@ const anonymousClient = createClient(apiUrl, publishableKey, {
 });
 
 try {
-  await verifyProjectWorkspace();
+  if (process.argv.includes("--upgrade"))
+    await verifyWorkspaceUpgrade({ sql, repositoryRoot, apiUrl });
+  else await verifyProjectWorkspace();
 } finally {
   await sql.end();
 }
@@ -106,6 +112,16 @@ async function verifyProjectWorkspace() {
     projectId,
   );
   await assertWorkspace(participant, projectId, demotedUrl);
+  await verifyWorkspaceCollection({
+    sql,
+    rpc,
+    denied: assertRpcDenied,
+    creator,
+    manager: coorganizer,
+    member: participant,
+    projectId,
+    createProject: createPublishedProposal,
+  });
   await assertRpcDenied(
     participant.client.rpc("set_project_shared_workspace", {
       p_expected_manager_profile_id: participant.id,
@@ -224,7 +240,7 @@ async function verifyProjectWorkspace() {
   );
 }
 
-async function createPublishedProposal(creator) {
+async function createPublishedProposal(creator, publish = true) {
   const projectId = await rpc(creator, "create_proposal_draft", {
     p_expected_creator_profile_id: creator.id,
     p_title: "Shared workspace verifier Project",
@@ -244,10 +260,12 @@ async function createPublishedProposal(creator) {
     p_skill_importances: [],
     p_people_capacity: 20,
   });
-  await rpc(creator, "publish_proposal", {
-    p_expected_creator_profile_id: creator.id,
-    p_proposal_id: projectId,
-  });
+  if (publish) {
+    await rpc(creator, "publish_proposal", {
+      p_expected_creator_profile_id: creator.id,
+      p_proposal_id: projectId,
+    });
+  }
   return projectId;
 }
 
@@ -303,13 +321,40 @@ async function assertWorkspace(user, projectId, expectedUrl) {
   }
 }
 
-function assertWorkspaceDenied(user, projectId, label) {
-  return assertRpcDenied(
+async function assertWorkspaceDenied(user, projectId, label) {
+  await assertRpcDenied(
     user.client.rpc("get_own_project_shared_workspace", {
       p_expected_profile_id: user.id,
       p_project_id: projectId,
     }),
-    `${label} workspace read`,
+    label,
+    "42501",
+  );
+  await assertRpcDenied(
+    user.client.rpc("list_project_workspace_links", {
+      p_expected_profile_id: user.id,
+      p_project_id: projectId,
+    }),
+    `${label} list`,
+    "42501",
+  );
+  await assertRpcDenied(
+    user.client.rpc("save_project_workspace_link", {
+      p_expected_manager_profile_id: user.id,
+      p_project_id: projectId,
+      p_display_name: "Denied",
+      p_workspace_url: "https://example.org",
+    }),
+    `${label} add`,
+    "42501",
+  );
+  await assertRpcDenied(
+    user.client.rpc("remove_project_workspace_link", {
+      p_expected_manager_profile_id: user.id,
+      p_project_id: projectId,
+      p_link_id: "fa000000-0000-4000-8000-000000000000",
+    }),
+    `${label} remove`,
     "42501",
   );
 }
