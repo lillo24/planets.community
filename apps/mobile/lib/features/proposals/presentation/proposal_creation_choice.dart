@@ -8,7 +8,8 @@ import '../../template_workshop/presentation/template_workshop_screens.dart';
 
 /// Browsing or choosing cannot create a draft; existing commands own mutations.
 class ProposalCreationChoice extends StatefulWidget {
-  const ProposalCreationChoice({super.key});
+  const ProposalCreationChoice({this.groupId, super.key});
+  final String? groupId;
   @override
   State<ProposalCreationChoice> createState() => _ProposalCreationChoiceState();
 }
@@ -19,7 +20,13 @@ class _ProposalCreationChoiceState extends State<ProposalCreationChoice> {
     if (_opening) return;
     setState(() => _opening = true);
     try {
-      await context.push(route);
+      final target = widget.groupId == null
+          ? route
+          : Uri(
+              path: route,
+              queryParameters: {'group': widget.groupId!},
+            ).toString();
+      await context.push(target);
     } finally {
       if (mounted) setState(() => _opening = false);
     }
@@ -61,6 +68,18 @@ class _ProposalCreationChoiceState extends State<ProposalCreationChoice> {
               icon: const Icon(Icons.edit_outlined),
               label: Text(l.proposalFromScratch),
             ),
+            if (widget.groupId != null) ...[
+              const SizedBox(height: AppSpacing.medium),
+              OutlinedButton.icon(
+                key: const Key('group-create-tavolo'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(64),
+                ),
+                onPressed: _opening ? null : () => _open('/tavoli/create'),
+                icon: const Icon(Icons.event_repeat),
+                label: Text(l.tavoliCreateTitle),
+              ),
+            ],
           ],
         ),
       ),

@@ -5,11 +5,16 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { parsePublicProposalDetail } from "../proposals/proposal-models";
 import { parsePublicRecurringActivityDetail } from "../recurring-activities/recurring-activity-models";
 import { ParticipantError, type ProjectContext } from "./participant-models";
+import {
+  parseAttributions,
+  type ProjectGroupAttribution,
+} from "../group-projects/group-project-models";
 
 export type InvitationProject = Readonly<{
   title: string;
   description: string;
   coverObjectPath: string | null;
+  groupAttribution?: ProjectGroupAttribution;
 }>;
 export interface InvitationProjectGateway {
   read(project: ProjectContext): Promise<InvitationProject | null>;
@@ -42,11 +47,20 @@ export class SupabaseInvitationProjectGateway implements InvitationProjectGatewa
         ? detail.proposal_id
         : detail.recurring_activity_id;
     if (id !== project.id) throw new ParticipantError("malformed");
+    const groups = await this.client.rpc("get_public_project_groups", {
+      p_project_ids: [id],
+    });
+    if (groups.error) throw groups.error;
+    const attributions = parseAttributions(groups.data);
+    if ([...attributions.keys()].some((key) => key !== id))
+      throw new ParticipantError("malformed");
+    const groupAttribution = attributions.get(id);
     // Keep only public presentation, never meeting details, identities or offers.
     return {
       title: detail.title,
       description: detail.description ?? detail.summary,
       coverObjectPath: detail.cover_object_path,
+      ...(groupAttribution ? { groupAttribution } : {}),
     };
   }
   async cover(project: ProjectContext, objectPath: string): Promise<Blob> {

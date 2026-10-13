@@ -1,3 +1,4 @@
+import type { ProjectGroupAttribution } from "@/features/group-projects/group-project-models";
 export type PublicRecurringActivityLifecycle = "published" | "paused" | "ended";
 
 export type RecurrenceType = "weekly" | "monthly";
@@ -10,6 +11,7 @@ export interface PublicRecurringActivityOccurrence {
 }
 
 export interface PublicRecurringActivitySummary {
+  groupAttribution?: ProjectGroupAttribution;
   recurring_activity_id: string;
   cover_object_path: string | null;
   title: string;
@@ -51,6 +53,7 @@ export type PublicRecurringExactLocation =
   { kind: "restricted" } | { kind: "public"; text: string };
 
 export interface PublicRecurringActivityDetail {
+  groupAttribution?: ProjectGroupAttribution;
   recurring_activity_id: string;
   cover_object_path: string | null;
   creator_display_name: string | null;

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import '../../group_projects/domain/group_project_failures.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -310,6 +312,7 @@ final templateDetailProvider = NotifierProvider.autoDispose
     );
 
 enum TemplateApplyFailure {
+  groupUnavailable,
   uncertain,
   stale,
   forbidden,
@@ -365,6 +368,7 @@ class TemplateApplications extends Notifier<TemplateApplicationState> {
     TemplateDetail detail,
     bool capacity, {
     bool newUse = false,
+    String? groupId,
   }) async {
     if (!_ready(actor)) return null;
     final pending = latest(actor, detail.id);
@@ -374,6 +378,7 @@ class TemplateApplications extends Notifier<TemplateApplicationState> {
     }
     final attempt = TemplateAttempt(
       actor: actor,
+      groupId: groupId,
       templateId: detail.id,
       token: detail.token,
       prefillCapacity: capacity,
@@ -441,7 +446,10 @@ class TemplateApplications extends Notifier<TemplateApplicationState> {
       return receipt.destinationId;
     } catch (error) {
       if (_ready(attempt.actor) && epoch == _epoch) {
-        final failure = error is PostgrestException
+        final failure =
+            attempt.groupId != null && isGroupRepresentationRejection(error)
+            ? TemplateApplyFailure.groupUnavailable
+            : error is PostgrestException
             ? switch (error.code) {
                 'PT409' => TemplateApplyFailure.stale,
                 '42501' => TemplateApplyFailure.forbidden,
@@ -452,7 +460,11 @@ class TemplateApplications extends Notifier<TemplateApplicationState> {
               }
             : TemplateApplyFailure.uncertain;
         state = TemplateApplicationState(
-          attempts: failure == TemplateApplyFailure.stale
+          attempts:
+              {
+                TemplateApplyFailure.stale,
+                TemplateApplyFailure.groupUnavailable,
+              }.contains(failure)
               ? ({...state.attempts}..remove(key))
               : state.attempts,
           busy: state.busy,

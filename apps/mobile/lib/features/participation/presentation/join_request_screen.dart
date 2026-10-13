@@ -184,7 +184,11 @@ class _JoinRequestScreenState extends ConsumerState<JoinRequestScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                       const SizedBox(width: AppSpacing.small),
-                      Text(l10n.participationContributionLoading),
+                      // Loading is also rendered during real network waits at
+                      // narrow widths and enlarged text; give its label bounds.
+                      Expanded(
+                        child: Text(l10n.participationContributionLoading),
+                      ),
                     ],
                   )
                 else if (options.phase == ContributionOptionsPhase.failure)

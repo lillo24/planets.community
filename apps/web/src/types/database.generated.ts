@@ -1674,25 +1674,43 @@ export type Database = {
       }
       projects: {
         Row: {
+          attributed_group_id: string | null
+          attribution_assigned_at: string | null
+          attribution_assigned_by: string | null
+          attribution_published_by: string | null
+          attribution_version: number
           count_organizers_toward_capacity: boolean
           created_at: string
           creator_profile_id: string
+          first_published_at: string | null
           id: string
           project_kind: string
           registration_capacity: number | null
         }
         Insert: {
+          attributed_group_id?: string | null
+          attribution_assigned_at?: string | null
+          attribution_assigned_by?: string | null
+          attribution_published_by?: string | null
+          attribution_version?: number
           count_organizers_toward_capacity?: boolean
           created_at: string
           creator_profile_id: string
+          first_published_at?: string | null
           id: string
           project_kind: string
           registration_capacity?: number | null
         }
         Update: {
+          attributed_group_id?: string | null
+          attribution_assigned_at?: string | null
+          attribution_assigned_by?: string | null
+          attribution_published_by?: string | null
+          attribution_version?: number
           count_organizers_toward_capacity?: boolean
           created_at?: string
           creator_profile_id?: string
+          first_published_at?: string | null
           id?: string
           project_kind?: string
           registration_capacity?: number | null
@@ -2944,6 +2962,57 @@ export type Database = {
         }
         Returns: string
       }
+      create_group_editor_proposal_draft: {
+        Args: {
+          p_administrative_area: string
+          p_client_request_id: string
+          p_count_organizers_toward_capacity: boolean
+          p_country_code: string
+          p_description: string
+          p_ends_at: string
+          p_event_timezone: string
+          p_exact_location_visibility: string
+          p_exact_meeting_text: string
+          p_expected_creator_profile_id: string
+          p_group_id: string
+          p_locality: string
+          p_public_location_label: string
+          p_registration_capacity: number
+          p_skill_ids: string[]
+          p_skill_importances: string[]
+          p_starts_at: string
+          p_summary: string
+          p_title: string
+        }
+        Returns: string
+      }
+      create_group_editor_recurring_activity_draft: {
+        Args: {
+          p_administrative_area: string
+          p_client_request_id: string
+          p_count_organizers_toward_capacity: boolean
+          p_country_code: string
+          p_day_of_month: number
+          p_description: string
+          p_duration_minutes: number
+          p_effective_from: string
+          p_event_timezone: string
+          p_exact_location_visibility: string
+          p_exact_meeting_text: string
+          p_expected_creator_profile_id: string
+          p_group_id: string
+          p_local_start_time: string
+          p_locality: string
+          p_public_location_label: string
+          p_recurrence_type: string
+          p_registration_capacity: number
+          p_summary: string
+          p_title: string
+          p_topic: string
+          p_weekday: number
+        }
+        Returns: string
+      }
       create_group_join_request: {
         Args: {
           p_client_request_id: string
@@ -2972,6 +3041,28 @@ export type Database = {
           invitation_id: string
           invite_token: string | null
           revoked_at: string | null
+        }[]
+      }
+      create_group_proposal_draft_from_template: {
+        Args: {
+          p_client_request_id: string
+          p_content_version: string
+          p_expected_creator_profile_id: string
+          p_group_id: string
+          p_prefill_capacity: boolean
+          p_template_id: string
+        }
+        Returns: {
+          accepted_at: string
+          accepted_content_version: string
+          capacity_recommendation: number
+          duration_seconds: number
+          outcome: string
+          prefill_capacity: boolean
+          proposal_id: string
+          request_id: string
+          source_proposal_id: string
+          template_id: string
         }[]
       }
       create_group_role_offer: {
@@ -3584,6 +3675,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_own_project_group: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: Json
+      }
       get_own_project_group_chat: {
         Args: { p_expected_profile_id: string; p_project_id: string }
         Returns: {
@@ -3988,6 +4083,10 @@ export type Database = {
           profile_id: string
           skills: Json
         }[]
+      }
+      get_public_project_groups: {
+        Args: { p_project_ids: string[] }
+        Returns: Json
       }
       get_public_proposal: {
         Args: { p_proposal_id: string }
@@ -4408,6 +4507,15 @@ export type Database = {
           target_kind: string
           target_summary: string
         }[]
+      }
+      list_my_publishable_groups: {
+        Args: {
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
       }
       list_own_blocked_profiles: {
         Args: {
@@ -5516,6 +5624,15 @@ export type Database = {
         }
         Returns: Json
       }
+      list_public_group_projects: {
+        Args: {
+          p_cursor_id?: string
+          p_cursor_published_at?: string
+          p_group_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_public_groups: {
         Args: {
           p_before_created_at?: string
@@ -5944,6 +6061,16 @@ export type Database = {
           p_requester_lend_starts_at: string
           p_requester_resource_description: string
           p_requester_transfer_kind: string
+        }
+        Returns: string
+      }
+      publish_project_with_group: {
+        Args: {
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_group_id: string
+          p_idea?: boolean
+          p_project_id: string
         }
         Returns: string
       }
@@ -6461,6 +6588,16 @@ export type Database = {
           previous_object_path: string
           updated_at: string
         }[]
+      }
+      set_project_group: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_group_id: string
+          p_project_id: string
+        }
+        Returns: Json
       }
       set_project_requirement_manual_coverage: {
         Args: {

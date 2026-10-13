@@ -873,7 +873,9 @@ RoutingConfig _routingConfig(
                     path: 'workshop',
                     pageBuilder: (context, state) => MaterialPage<void>(
                       key: state.pageKey,
-                      child: const TemplateWorkshopScreen(),
+                      child: TemplateWorkshopScreen(
+                        groupId: state.uri.queryParameters['group'],
+                      ),
                     ),
                     routes: [
                       GoRoute(
@@ -882,6 +884,7 @@ RoutingConfig _routingConfig(
                           key: state.pageKey,
                           child: TemplateWorkshopDetailScreen(
                             templateId: state.pathParameters['templateId']!,
+                            groupId: state.uri.queryParameters['group'],
                           ),
                         ),
                       ),
@@ -895,7 +898,9 @@ RoutingConfig _routingConfig(
                     path: 'create',
                     pageBuilder: (context, state) => MaterialPage<void>(
                       key: state.pageKey,
-                      child: const ProposalCreationChoice(),
+                      child: ProposalCreationChoice(
+                        groupId: state.uri.queryParameters['group'],
+                      ),
                     ),
                     routes: [
                       GoRoute(
@@ -903,7 +908,9 @@ RoutingConfig _routingConfig(
                         onExit: draftDeparture?.onExit,
                         pageBuilder: (context, state) => MaterialPage<void>(
                           key: state.pageKey,
-                          child: const ProposalEditorScreen(),
+                          child: ProposalEditorScreen(
+                            initialGroupId: state.uri.queryParameters['group'],
+                          ),
                         ),
                       ),
                     ],
@@ -1017,8 +1024,9 @@ RoutingConfig _routingConfig(
                   ),
                   GoRoute(
                     path: 'create',
-                    builder: (context, state) =>
-                        const RecurringActivityEditorScreen(),
+                    builder: (context, state) => RecurringActivityEditorScreen(
+                      initialGroupId: state.uri.queryParameters['group'],
+                    ),
                   ),
                   GoRoute(
                     path: ':id',

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { ProjectGroupBadge } from "../group-projects/project-group-badge";
 import { Flower2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ProjectContext } from "./participant-models";
@@ -92,6 +93,7 @@ export function ParticipantProjectCard({
         <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
           {visible?.detail?.title ?? title}
         </h2>
+        <ProjectGroupBadge group={visible?.detail?.groupAttribution} />
         {visible?.detail ? (
           <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
             {visible.detail.description}

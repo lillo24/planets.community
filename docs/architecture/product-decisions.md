@@ -15,6 +15,12 @@ powers. No Creator membership row, ownership transfer, permanent-group chat or
 Project authority inheritance is implied. See the canonical
 [GRP03A contract](../development/group-membership-and-roles.md).
 
+GRP03C adds explicit publication for one registered group, selected by its
+current Creator or Co-creator. The immutable human Project Creator and accepted
+Project delegates retain their own authority. Draft selection is private and
+freezes at first publication; there is no retrofit, ownership transfer or group
+role/member inheritance. See [group-attributed Projects](../development/group-attributed-projects.md).
+
 PI01's founder-approved policy distinguishes ordinary public sharing/approved
 requests from reusable special links issued and managed by the current Creator,
 Co-creators and Co-organizers. Explicit special-link acceptance creates participant

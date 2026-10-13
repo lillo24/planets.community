@@ -1,3 +1,4 @@
+import 'package:planets_mobile/features/group_projects/domain/group_project_models.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/participation/domain/project_capacity.dart';
@@ -153,6 +154,7 @@ class FakeProposalGateway implements ProposalGateway {
     String expectedCreatorId,
     ProposalInput input, {
     String? clientRequestId,
+    String? groupId,
   }) async {
     _throwIfNeeded();
     calls.add('create');
@@ -244,8 +246,9 @@ class FakeProposalGateway implements ProposalGateway {
   @override
   Future<void> publishProposal(
     String expectedCreatorId,
-    String proposalId,
-  ) async {
+    String proposalId, {
+    ProjectGroupBinding? groupBinding,
+  }) async {
     _throwIfNeeded();
     calls.add('publish:$proposalId');
     if (publishError case final failure?) throw failure;
@@ -289,7 +292,11 @@ class FakeProposalGateway implements ProposalGateway {
   }
 
   @override
-  Future<void> publishIdea(String expectedCreatorId, String proposalId) async {
+  Future<void> publishIdea(
+    String expectedCreatorId,
+    String proposalId, {
+    ProjectGroupBinding? groupBinding,
+  }) async {
     await publishProposal(expectedCreatorId, proposalId);
     calls.add('publish-idea:$proposalId');
     ownItems = [

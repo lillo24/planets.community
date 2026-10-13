@@ -1,3 +1,6 @@
+import '../../group_projects/data/group_project_gateway.dart';
+import '../../group_projects/domain/group_project_models.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -42,13 +45,18 @@ abstract interface class RecurringActivityGateway {
     String expectedCreatorId,
     RecurringActivityInput input, {
     String? clientRequestId,
+    String? groupId,
   });
   Future<void> updateOwnActivity(
     String expectedCreatorId,
     String activityId,
     RecurringActivityInput input,
   );
-  Future<void> publish(String expectedCreatorId, String activityId);
+  Future<void> publish(
+    String expectedCreatorId,
+    String activityId, {
+    ProjectGroupBinding? groupBinding,
+  });
   Future<void> pause(String expectedCreatorId, String activityId);
   Future<void> resume(String expectedCreatorId, String activityId);
   Future<void> end(String expectedCreatorId, String activityId);
@@ -78,6 +86,7 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
       },
     );
     final rows = response.cast<Map<String, dynamic>>();
+    await attachPublicProjectGroups(_client, rows, 'recurring_activity_id');
     final capacities = await _publicCapacities(
       rows.map((row) => row['recurring_activity_id'] as String),
     );
@@ -90,6 +99,7 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
           row['recurring_activity_id'] as String,
           referenceTime: referenceTime,
           occurrenceLimit: 1,
+          includeAttribution: false,
           capacity: capacities[row['recurring_activity_id'] as String],
         ),
       ),
@@ -127,6 +137,7 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
       },
     );
     final rows = response.cast<Map<String, dynamic>>();
+    await attachPublicProjectGroups(_client, rows, 'recurring_activity_id');
     final capacities = await _publicCapacities(
       rows.map((row) => row['recurring_activity_id'] as String),
     );
@@ -166,6 +177,7 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
     required DateTime referenceTime,
     required int occurrenceLimit,
     ProjectCapacitySnapshot? capacity,
+    bool includeAttribution = true,
   }) async {
     final values = await Future.wait<dynamic>([
       _client.rpc<List<dynamic>>(
@@ -179,6 +191,9 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
       if (capacity == null) _publicCapacities([activityId]),
     ]);
     final rows = (values.first as List<dynamic>).cast<Map<String, dynamic>>();
+    if (includeAttribution) {
+      await attachPublicProjectGroups(_client, rows, 'recurring_activity_id');
+    }
     if (rows.isEmpty) return null;
     final resolvedCapacity =
         capacity ??
@@ -239,6 +254,15 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
     if (capacity == null) {
       throw const FormatException('A managed Tavolo had no capacity status.');
     }
+    if (rows.single['lifecycle_state'] == 'draft') {
+      rows.single['_group_binding'] = await _client.rpc(
+        'get_own_project_group',
+        params: {
+          'p_expected_profile_id': expectedCreatorId,
+          'p_project_id': activityId,
+        },
+      );
+    }
     return _ownActivityFromRow(rows.single, capacity);
   }
 
@@ -247,13 +271,17 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
     String expectedCreatorId,
     RecurringActivityInput input, {
     String? clientRequestId,
+    String? groupId,
   }) => _client.rpc<String>(
     clientRequestId == null
         ? 'create_recurring_activity_draft'
-        : 'create_editor_recurring_activity_draft',
+        : groupId == null
+        ? 'create_editor_recurring_activity_draft'
+        : 'create_group_editor_recurring_activity_draft',
     params: {
       ..._contentParams(expectedCreatorId, input),
       'p_client_request_id': ?clientRequestId,
+      'p_group_id': ?groupId,
     },
   );
 
@@ -273,8 +301,22 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
   }
 
   @override
-  Future<void> publish(String expectedCreatorId, String activityId) =>
-      _command('publish_recurring_activity', expectedCreatorId, activityId);
+  Future<void> publish(
+    String expectedCreatorId,
+    String activityId, {
+    ProjectGroupBinding? groupBinding,
+  }) async {
+    if (groupBinding != null) {
+      await GroupProjectGateway(() => _client)
+          .publish(expectedCreatorId, activityId, groupBinding);
+    } else {
+      await _command(
+        'publish_recurring_activity',
+        expectedCreatorId,
+        activityId,
+      );
+    }
+  }
 
   @override
   Future<void> pause(String expectedCreatorId, String activityId) =>
@@ -335,6 +377,7 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
     RecurringSchedule schedule,
     ProjectCapacitySnapshot capacity,
   ) => PublicRecurringActivitySummary(
+    groupAttribution: ProjectGroupAttribution.parse(row['_group_attribution']),
     id: row['recurring_activity_id'] as String,
     title: row['title'] as String,
     summary: row['summary'] as String,
@@ -361,6 +404,7 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
     Map<String, dynamic> row,
     ProjectCapacitySnapshot capacity,
   ) => PublicRecurringActivityDetail(
+    groupAttribution: ProjectGroupAttribution.parse(row['_group_attribution']),
     id: row['recurring_activity_id'] as String,
     creatorProfileId: row['creator_profile_id'] as String,
     creatorDisplayName: row['creator_display_name'] as String?,
@@ -391,6 +435,9 @@ class SupabaseRecurringActivityGateway implements RecurringActivityGateway {
     Map<String, dynamic> row,
     ProjectCapacitySnapshot capacity,
   ) => OwnRecurringActivity(
+    groupBinding: row['_group_binding'] == null
+        ? const ProjectGroupBinding()
+        : ProjectGroupBinding.parse(row['_group_binding']),
     id: row['recurring_activity_id'] as String,
     lifecycle: RecurringActivityLifecycle.fromWire(
       row['lifecycle_state'] as String,

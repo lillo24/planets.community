@@ -1,4 +1,5 @@
 "use client";
+import { GroupProjectFeed } from "@/features/group-projects/group-project-feed";
 import { useEffect, useState } from "react";
 import { UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -90,7 +91,7 @@ export function GroupLanding({
         </>
       ) : (
         <>
-          <h1 className="text-2xl font-semibold">
+          <h1 className="break-words text-2xl font-semibold">
             {read.content?.name ?? "Group page unavailable"}
           </h1>
           {read.content ? (
@@ -104,6 +105,7 @@ export function GroupLanding({
               <p className="whitespace-pre-wrap leading-relaxed">
                 {read.content.description}
               </p>
+              <GroupProjectFeed key={id} groupId={id} />
             </>
           ) : null}
           {confirmation ? (

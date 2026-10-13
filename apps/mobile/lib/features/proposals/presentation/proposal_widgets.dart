@@ -1,3 +1,5 @@
+import '../../group_projects/presentation/group_project_widgets.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_tokens.dart';
@@ -114,6 +116,7 @@ class ProposalCard extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.small),
                   Text(proposal.summary),
+                  ProjectGroupBadge(proposal.groupAttribution),
                   const SizedBox(height: AppSpacing.medium),
                   _IconText(
                     icon: Icons.schedule_outlined,

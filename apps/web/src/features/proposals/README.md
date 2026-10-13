@@ -1,5 +1,10 @@
 # Public proposals
 
+GRP03C enriches each public page/detail through the separate bounded
+[`group-projects`](../group-projects/README.md) projection. It exposes current
+group attribution or a neutral unavailable state and changes no authoring,
+location, participation or Project authority contract.
+
 This feature owns sanitized public one-time Project discovery and detail.
 The website never reads proposal tables directly or authors proposals. Cards
 contain only rough public location. Detail renders exact meeting text only when

@@ -74,10 +74,12 @@ class TemplateAttempt {
     required this.prefillCapacity,
     required this.requestId,
     this.destinationId,
+    this.groupId,
   });
   final String actor, templateId, token, requestId;
   final bool prefillCapacity;
   final String? destinationId;
+  final String? groupId;
   TemplateAttempt accepted(String id) => TemplateAttempt(
     actor: actor,
     templateId: templateId,
@@ -85,6 +87,7 @@ class TemplateAttempt {
     prefillCapacity: prefillCapacity,
     requestId: requestId,
     destinationId: id,
+    groupId: groupId,
   );
 }
 
