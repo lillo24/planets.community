@@ -329,6 +329,7 @@ class _ResponseLossGateway extends SupabaseProposalGateway {
     String actor,
     ProposalInput input, {
     String? clientRequestId,
+    String? groupId,
   }) async {
     creationRequests.add(clientRequestId);
     final id = await super.createDraft(

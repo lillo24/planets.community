@@ -1,3 +1,4 @@
+import { ProjectGroupBadge } from "@/features/group-projects/project-group-badge";
 import { LocationAttribution } from "@/features/locations/location-attribution";
 import Link from "next/link";
 import { CalendarDaysIcon, CircleHelpIcon, MapPinIcon } from "lucide-react";
@@ -48,6 +49,7 @@ export function ProposalCard({
           </Link>
         </CardTitle>
         <CardDescription>{proposal.summary}</CardDescription>
+        <ProjectGroupBadge group={proposal.groupAttribution} />
         <CardAction>
           <ProposalStatusBadge
             status={proposal.derived_status}

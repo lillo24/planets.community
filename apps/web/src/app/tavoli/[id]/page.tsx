@@ -1,3 +1,4 @@
+import { ProjectGroupBadge } from "@/features/group-projects/project-group-badge";
 import { LocationAttribution } from "@/features/locations/location-attribution";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -71,6 +72,7 @@ export default async function TavoloDetailPage({
             />
           </div>
           <p className="text-xl text-muted-foreground">{activity.summary}</p>
+          <ProjectGroupBadge group={activity.groupAttribution} />
           {activity.topic ? (
             <p>
               <span className="font-medium">Topic:</span> {activity.topic}

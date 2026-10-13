@@ -1,3 +1,8 @@
+import '../../group_projects/domain/group_project_models.dart';
+import '../../group_projects/application/group_attribution_draft.dart';
+import '../../group_projects/data/group_project_gateway.dart';
+import '../../group_projects/presentation/group_project_widgets.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,11 +43,13 @@ import '../../project_organization/presentation/project_organization_sheet.dart'
 class ProposalEditorScreen extends ConsumerStatefulWidget {
   const ProposalEditorScreen({
     this.proposalId,
+    this.initialGroupId,
     this.returnToHub = false,
     super.key,
   });
 
   final String? proposalId;
+  final String? initialGroupId;
   final bool returnToHub;
 
   @override
@@ -150,6 +157,7 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
                 proposal: state.proposal,
                 categories: state.categories,
                 returnToHub: widget.returnToHub,
+                initialGroupId: widget.initialGroupId,
               ),
       ),
     );
@@ -163,9 +171,11 @@ class _ProposalForm extends ConsumerStatefulWidget {
     required this.proposal,
     required this.categories,
     required this.returnToHub,
+    this.initialGroupId,
     super.key,
   });
 
+  final String? initialGroupId;
   final String identityId;
   final String sessionId;
   final OwnProposal? proposal;
@@ -178,6 +188,7 @@ class _ProposalForm extends ConsumerStatefulWidget {
 
 class _ProposalFormState extends ConsumerState<_ProposalForm>
     with WidgetsBindingObserver {
+  late final GroupAttributionDraft _attribution;
   final _locationHandle = LocationEditorHandle();
   final _formKey = GlobalKey<FormState>();
   final _titleAnchor = GlobalKey();
@@ -229,6 +240,12 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
   void initState() {
     super.initState();
     final p = widget.proposal;
+    _attribution = GroupAttributionDraft(
+      ref.read(groupProjectGatewayProvider),
+      widget.identityId,
+      binding: p?.groupBinding ?? const ProjectGroupBinding(),
+      initialGroup: p == null ? widget.initialGroupId : null,
+    );
     _title = TextEditingController(text: p?.title ?? '');
     _summary = TextEditingController(text: p?.summary ?? '');
     _description = TextEditingController(text: p?.description ?? '');
@@ -499,12 +516,16 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
     final controller = ref.read(
       proposalEditorSessionProvider(widget.sessionId).notifier,
     );
-    if (current.sameAs(_acknowledged) ||
+    if ((current.sameAs(_acknowledged) &&
+            !_attribution.dirty &&
+            !_attribution.pending) ||
         (controller.boundProposalId == null && !current.meaningful)) {
       return DraftDepartureOutcome.noChange;
     }
     if (await _save(publish: false, navigate: false)) {
-      return _snapshot().sameAs(_acknowledged)
+      return _snapshot().sameAs(_acknowledged) &&
+              !_attribution.dirty &&
+              !_attribution.pending
           ? DraftDepartureOutcome.saved
           : DraftDepartureOutcome.blocked;
     }
@@ -512,6 +533,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
         ref.read(authSessionProvider).identity?.id != widget.identityId) {
       return DraftDepartureOutcome.blocked;
     }
+    if (_attribution.pending) return DraftDepartureOutcome.blocked;
     final partial =
         ref
             .read(proposalEditorSessionProvider(widget.sessionId))
@@ -567,6 +589,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       _publicLocation,
       _exactLocation,
     ];
+    _attribution.select(_attribution.confirmed.groupId);
     final input = _acknowledged.input;
     setState(() {
       for (final entry in controllers.indexed) {
@@ -674,6 +697,7 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
             widget.identityId,
             input,
             coverChange: capturedCover,
+            attribution: publishedEdit ? null : _attribution,
             idea: _ideaMode,
           )
         : publishedEdit
@@ -681,11 +705,13 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
             widget.identityId,
             input,
             coverChange: capturedCover,
+            attribution: publishedEdit ? null : _attribution,
           )
         : await controller.saveDraft(
             widget.identityId,
             input,
             coverChange: capturedCover,
+            attribution: publishedEdit ? null : _attribution,
           );
     if (!mounted ||
         ref.read(authSessionProvider).identity?.id != widget.identityId) {
@@ -1022,6 +1048,12 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
                   required: true,
                   minimumLength: 2,
                 ),
+                if (isDraft)
+                  GroupPublishSelector(
+                    draft: _attribution,
+                    enabled: !busy,
+                    onChanged: () => setState(() {}),
+                  ),
                 if (isDraft)
                   SimilarProposalEntry(
                     sessionId: _similarKey,

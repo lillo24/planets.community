@@ -1,3 +1,5 @@
+import '../../group_projects/presentation/group_project_widgets.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -382,6 +384,7 @@ class _PublicRecurringActivityDetailScreenState
               borderRadius: AppRadii.medium,
             ),
             const SizedBox(height: AppSpacing.large),
+            ProjectGroupBadge(resolvedDetail.groupAttribution),
             Row(
               children: [
                 Expanded(

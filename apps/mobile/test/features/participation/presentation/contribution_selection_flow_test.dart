@@ -23,6 +23,38 @@ import '../../../support/fake_project_resource_needs.dart';
 import '../../../support/fake_proposal.dart';
 
 void main() {
+  for (final locale in ['en', 'it']) {
+    testWidgets('$locale contribution loading wraps at 320dp and 2x text', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 960);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final delay = Completer<void>();
+      final session = await _pumpJoin(
+        tester,
+        projectKind: ProjectKind.oneTime,
+        participation: FakeParticipationGateway(),
+        resources: FakeProjectResourceNeedsGateway()
+          ..publicDelay = delay.future,
+        proposals: FakeProposalGateway()
+          ..publicDetail = proposalDetailFixture(),
+        settle: false,
+        locale: Locale(locale),
+        textScale: 2,
+      );
+      addTearDown(session.dispose);
+      expect(
+        find.byKey(const Key('participation-options-loading')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+      delay.complete();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgets('Proposal submits selected required, useful, and resource IDs', (
     tester,
   ) async {
@@ -351,6 +383,9 @@ Future<ProviderContainer> _pumpJoin(
   required FakeParticipationGateway participation,
   required FakeProjectResourceNeedsGateway resources,
   required FakeProposalGateway proposals,
+  bool settle = true,
+  Locale? locale,
+  double textScale = 1,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-2')),
@@ -389,13 +424,23 @@ Future<ProviderContainer> _pumpJoin(
     UncontrolledProviderScope(
       container: container,
       child: MaterialApp.router(
+        locale: locale,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: router,
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
   return container;
 }
 

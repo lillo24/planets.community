@@ -1,5 +1,11 @@
 # Proposals feature
 
+GRP03C composes the feature-owned [group publication session](../group_projects/README.md)
+with existing draft creation/departure and content/cover/location persistence.
+The gateway carries atomic initial selection and confirmed publication revision;
+public pages enrich badges in bounded batches. The creation chooser and Workshop
+preserve deliberate group context without copying source-template attribution.
+
 UI02 moves published structural skill editing to `presentation/proposal_needs_screen.dart`.
 It composes `ProposalSkillsControl` with the existing resource-management screen
 for Creators, and public material needs with an explicit ownership explanation
@@ -9,7 +15,6 @@ and uses the expected skill collection in a narrow canonical write. The shared
 departure coordinator guards unsaved navigation. Create/draft editors keep their
 skill selectors; published details saves request server-side skill preservation.
 See [UI02 contract](../../../../../docs/development/ui02-skills-resources.md).
-
 
 IDEA01B opts public/own/requested reads into the v2 phase-aware contract and
 delegated reads into the matching sibling gateway. Published Ideas have nullable

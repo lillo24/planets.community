@@ -1,3 +1,4 @@
+import { publicProjectGroups } from "@/features/group-projects/group-project-server";
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -31,7 +32,14 @@ export async function listPublicRecurringActivities(
     p_locality: request.locality,
   });
   if (error) throw new PublicRecurringActivityReadError("list");
-  return (data ?? []).map(parsePublicRecurringActivitySummary);
+  const groups = await publicProjectGroups(
+    client,
+    (data ?? []).map((row) => row.recurring_activity_id),
+  );
+  return (data ?? []).map((row) => ({
+    ...parsePublicRecurringActivitySummary(row),
+    groupAttribution: groups.get(row.recurring_activity_id),
+  }));
 }
 
 export async function getPublicRecurringActivity(
@@ -47,5 +55,10 @@ export async function getPublicRecurringActivity(
   if (error) throw new PublicRecurringActivityReadError("detail");
   const rows = data ?? [];
   if (rows.length > 1) throw new PublicRecurringActivityReadError("detail");
-  return rows.length === 0 ? null : parsePublicRecurringActivityDetail(rows[0]);
+  if (rows.length === 0) return null;
+  const groups = await publicProjectGroups(client, [recurringActivityId]);
+  return {
+    ...parsePublicRecurringActivityDetail(rows[0]),
+    groupAttribution: groups.get(recurringActivityId),
+  };
 }

@@ -23,9 +23,15 @@ select columns_are(
     'creator_profile_id',
     'created_at',
     'registration_capacity',
-    'count_organizers_toward_capacity'
+    'count_organizers_toward_capacity',
+    'attributed_group_id',
+    'attribution_version',
+    'attribution_assigned_by',
+    'attribution_assigned_at',
+    'first_published_at',
+    'attribution_published_by'
   ],
-  'the shared Project registry owns identity and cross-kind capacity only'
+  'the shared Project registry owns identity, capacity and private publication provenance'
 );
 select columns_are(
   'public',

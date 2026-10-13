@@ -1,3 +1,4 @@
+import { ProjectGroupBadge } from "@/features/group-projects/project-group-badge";
 import { LocationAttribution } from "@/features/locations/location-attribution";
 import Link from "next/link";
 import {
@@ -68,6 +69,7 @@ export function RecurringActivityCard({
           </Link>
         </CardTitle>
         <CardDescription>{activity.summary}</CardDescription>
+        <ProjectGroupBadge group={activity.groupAttribution} />
         {activity.topic ? (
           <CardAction>
             <Badge variant="outline">{activity.topic}</Badge>

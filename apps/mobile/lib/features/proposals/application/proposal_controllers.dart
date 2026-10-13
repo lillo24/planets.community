@@ -1,3 +1,6 @@
+import '../../group_projects/application/group_attribution_draft.dart';
+import '../../group_projects/domain/group_project_failures.dart';
+
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -544,6 +547,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
 
   String? _boundProposalId;
   String? _creationRequestId;
+  String? _creationGroupId;
   ProposalInput? _creationIntent;
   String? get boundProposalId => _boundProposalId ?? state.proposal?.id;
 
@@ -581,6 +585,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
         _boundProposalId = null;
         _creationRequestId = null;
         _creationIntent = null;
+        _creationGroupId = null;
         state = const ProposalEditorState();
       },
     );
@@ -597,6 +602,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       _boundProposalId = proposalId;
       _creationRequestId = null;
       _creationIntent = null;
+      _creationGroupId = null;
     }
     proposalId ??= _boundProposalId;
     state = ProposalEditorState(
@@ -656,6 +662,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     String expectedCreatorId,
     ProposalInput input, {
     CoverChange coverChange = const CoverChange.unchanged(),
+    GroupAttributionDraft? attribution,
   }) async {
     if (state.isBusy) return null;
     final existing = state.proposal;
@@ -672,6 +679,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       input,
       publish: false,
       coverChange: coverChange,
+      attribution: attribution,
     );
   }
 
@@ -679,6 +687,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     String expectedCreatorId,
     ProposalInput input, {
     CoverChange coverChange = const CoverChange.unchanged(),
+    GroupAttributionDraft? attribution,
     bool idea = false,
   }) async {
     if (state.isBusy) return null;
@@ -699,6 +708,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       publish: true,
       idea: idea,
       coverChange: coverChange,
+      attribution: attribution,
     );
   }
 
@@ -706,6 +716,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     String expectedStructuralActorId,
     ProposalInput input, {
     CoverChange coverChange = const CoverChange.unchanged(),
+    GroupAttributionDraft? attribution,
   }) async {
     if (state.isBusy) return null;
     final existing = state.proposal;
@@ -736,6 +747,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       input,
       publish: false,
       coverChange: coverChange,
+      attribution: attribution,
     );
   }
 
@@ -759,11 +771,14 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
     required bool publish,
     bool idea = false,
     required CoverChange coverChange,
+    GroupAttributionDraft? attribution,
   }) async {
     input = freezeProposalInput(input);
     final revision = ++_revision;
     final existingProposal = state.proposal;
     String? persistedProposalId;
+    bool attributionStep = false;
+    if (attribution != null) attribution.failed = false;
     state = ProposalEditorState(
       phase: publish
           ? ProposalEditorPhase.publishing
@@ -777,16 +792,22 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       final gateway = ref.read(proposalGatewayProvider);
       var proposalId = boundProposalId;
       if (proposalId == null) {
-        _creationRequestId ??= const Uuid().v4();
+        if (_creationRequestId == null) {
+          _creationRequestId = const Uuid().v4();
+          _creationGroupId = attribution?.groupId;
+        }
         _creationIntent ??= input;
         ref
             .read(draftCreationRecoveryProvider.notifier)
             .remember(expectedCreatorId, _creationRequestId!);
+        attributionStep = _creationGroupId != null;
         proposalId = await gateway.createDraft(
           expectedCreatorId,
           _creationIntent!,
           clientRequestId: _creationRequestId,
+          groupId: _creationGroupId,
         );
+        attributionStep = false;
         if (!_isCurrent(revision)) return null;
         _boundProposalId = proposalId;
         ref
@@ -813,6 +834,14 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
         if (!_isCurrent(revision)) return null;
       }
       persistedProposalId = proposalId;
+      attributionStep = attribution != null;
+      await attribution?.persist(
+        proposalId,
+        created: existingProposal == null,
+        createdGroup: _creationGroupId,
+      );
+      attributionStep = false;
+      if (!_isCurrent(revision)) return null;
       _requireReadyIdentity(expectedCreatorId);
       if (coverChange.kind != CoverChangeKind.unchanged) {
         try {
@@ -848,11 +877,21 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
         _requireReadyIdentity(expectedCreatorId);
       }
       if (publish) {
+        attributionStep = attribution != null;
         if (idea) {
-          await gateway.publishIdea(expectedCreatorId, proposalId);
+          await gateway.publishIdea(
+            expectedCreatorId,
+            proposalId,
+            groupBinding: attribution?.confirmed,
+          );
         } else {
-          await gateway.publishProposal(expectedCreatorId, proposalId);
+          await gateway.publishProposal(
+            expectedCreatorId,
+            proposalId,
+            groupBinding: attribution?.confirmed,
+          );
         }
+        attributionStep = false;
         if (!_isCurrent(revision)) return null;
       }
       final proposal = await gateway.getOwnProposal(
@@ -879,7 +918,27 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
       return proposalId;
     } catch (error) {
       if (!_isCurrent(revision)) return null;
-      final failure = mapProposalFailure(error);
+      final detected = mapProposalFailure(error);
+      final failure =
+          attributionStep && detected == ProposalFailureKind.forbidden
+          ? ProposalFailureKind.unavailable
+          : detected;
+      if (attributionStep && attribution != null) attribution.failed = true;
+      // Atomic group creation cannot have a receipt when live representation
+      // definitively rejects it. Unknown/transport outcomes keep frozen intent.
+      if (attributionStep &&
+          persistedProposalId == null &&
+          boundProposalId == null &&
+          isGroupRepresentationRejection(error)) {
+        if (_creationRequestId != null) {
+          ref
+              .read(draftCreationRecoveryProvider.notifier)
+              .resolved(expectedCreatorId, _creationRequestId!);
+        }
+        _creationRequestId = null;
+        _creationIntent = null;
+        _creationGroupId = null;
+      }
       persistedProposalId ??= boundProposalId;
       var canonical = persistedProposalId == null
           ? existingProposal

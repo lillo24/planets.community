@@ -1,3 +1,6 @@
+import '../../group_projects/application/group_attribution_draft.dart';
+import '../../group_projects/domain/group_project_failures.dart';
+
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -406,7 +409,7 @@ class RecurringActivityEditorController
     extends Notifier<RecurringActivityEditorState> {
   RecurringActivityEditorController([this.sessionId]);
   final String? sessionId;
-  String? _creationRequestId, _boundId;
+  String? _creationRequestId, _boundId, _creationGroupId;
   RecurringActivityInput? _creationIntent;
   var _revision = 0;
 
@@ -418,6 +421,7 @@ class RecurringActivityEditorController
         _revision++;
         _creationRequestId = null;
         _creationIntent = null;
+        _creationGroupId = null;
         _boundId = null;
         state = const RecurringActivityEditorState();
       },
@@ -476,6 +480,7 @@ class RecurringActivityEditorController
     String expectedCreatorId,
     RecurringActivityInput input, {
     CoverChange coverChange = const CoverChange.unchanged(),
+    GroupAttributionDraft? attribution,
   }) {
     if (state.isBusy) return Future<String?>.value();
     final existing = state.activity;
@@ -499,6 +504,7 @@ class RecurringActivityEditorController
       input,
       publishAfterSave: false,
       coverChange: coverChange,
+      attribution: attribution,
     );
   }
 
@@ -506,6 +512,7 @@ class RecurringActivityEditorController
     String expectedCreatorId,
     RecurringActivityInput input, {
     CoverChange coverChange = const CoverChange.unchanged(),
+    GroupAttributionDraft? attribution,
   }) {
     if (state.isBusy) return Future<String?>.value();
     final existing = state.activity;
@@ -529,6 +536,7 @@ class RecurringActivityEditorController
       input,
       publishAfterSave: true,
       coverChange: coverChange,
+      attribution: attribution,
     );
   }
 
@@ -536,6 +544,7 @@ class RecurringActivityEditorController
     String expectedStructuralActorId,
     RecurringActivityInput input, {
     CoverChange coverChange = const CoverChange.unchanged(),
+    GroupAttributionDraft? attribution,
   }) {
     if (state.isBusy) return Future<String?>.value();
     final existing = state.activity;
@@ -567,6 +576,7 @@ class RecurringActivityEditorController
       input,
       publishAfterSave: false,
       coverChange: coverChange,
+      attribution: attribution,
     );
   }
 
@@ -589,11 +599,14 @@ class RecurringActivityEditorController
     RecurringActivityInput input, {
     required bool publishAfterSave,
     required CoverChange coverChange,
+    GroupAttributionDraft? attribution,
   }) async {
     if (state.isBusy) return null;
     final revision = ++_revision;
     final existing = state.activity;
     String? persistedActivityId;
+    bool attributionStep = false;
+    if (attribution != null) attribution.failed = false;
     state = RecurringActivityEditorState(
       phase: publishAfterSave
           ? RecurringActivityEditorPhase.publishing
@@ -606,13 +619,19 @@ class RecurringActivityEditorController
       final gateway = ref.read(recurringActivityGatewayProvider);
       var id = existing?.id ?? _boundId;
       if (id == null) {
-        _creationRequestId ??= const Uuid().v4();
+        if (_creationRequestId == null) {
+          _creationRequestId = const Uuid().v4();
+          _creationGroupId = attribution?.groupId;
+        }
         _creationIntent ??= input;
+        attributionStep = _creationGroupId != null;
         id = await gateway.createDraft(
           expectedCreatorId,
           _creationIntent!,
           clientRequestId: _creationRequestId,
+          groupId: _creationGroupId,
         );
+        attributionStep = false;
         if (!_isCurrent(revision)) return null;
         _boundId = id;
         if (!identical(input, _creationIntent)) {
@@ -625,6 +644,13 @@ class RecurringActivityEditorController
         await gateway.updateOwnActivity(expectedCreatorId, id, input);
       }
       persistedActivityId = id;
+      attributionStep = attribution != null;
+      await attribution?.persist(
+        id,
+        created: existing == null,
+        createdGroup: _creationGroupId,
+      );
+      attributionStep = false;
       if (!_isCurrent(revision)) return null;
       _requireReadyIdentity(expectedCreatorId);
       if (coverChange.kind != CoverChangeKind.unchanged) {
@@ -664,7 +690,13 @@ class RecurringActivityEditorController
             existing?.lifecycle == RecurringActivityLifecycle.published) {
           // Saving active/paused edits must not invoke the draft-only publish RPC.
         } else {
-          await gateway.publish(expectedCreatorId, id);
+          attributionStep = attribution != null;
+          await gateway.publish(
+            expectedCreatorId,
+            id,
+            groupBinding: attribution?.confirmed,
+          );
+          attributionStep = false;
           if (!_isCurrent(revision)) return null;
           _requireReadyIdentity(expectedCreatorId);
         }
@@ -688,7 +720,22 @@ class RecurringActivityEditorController
       return id;
     } catch (error) {
       if (!_isCurrent(revision)) return null;
-      final failure = mapRecurringActivityFailure(error);
+      final detected = mapRecurringActivityFailure(error);
+      final failure =
+          attributionStep && detected == RecurringActivityFailureKind.forbidden
+          ? RecurringActivityFailureKind.unavailable
+          : detected;
+      if (attributionStep && attribution != null) attribution.failed = true;
+      // Atomic group creation cannot have a receipt when live representation
+      // definitively rejects it. Unknown/transport outcomes keep frozen intent.
+      if (attributionStep &&
+          persistedActivityId == null &&
+          _boundId == null &&
+          isGroupRepresentationRejection(error)) {
+        _creationRequestId = null;
+        _creationIntent = null;
+        _creationGroupId = null;
+      }
       var canonical = persistedActivityId == null
           ? existing
           : await _refreshAfterPartialSave(

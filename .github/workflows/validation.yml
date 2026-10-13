@@ -162,6 +162,9 @@ jobs:
       - name: Verify populated group membership upgrade preservation
         run: npm run group:membership:upgrade:verify:local
 
+      - name: Verify populated group Project attribution preservation
+        run: npm run group:projects:upgrade:verify:local
+
       - name: Replay migrations and seed from zero
         run: npm run db:reset
 
@@ -293,6 +296,11 @@ jobs:
       # Both demo histories share one lock/session pool and one combined world.
       - name: Verify combined demo recovery and stability
         run: npm run demo:stack:check:local
+
+      # Attribution fixtures deliberately retain public garden Projects. Run
+      # them after consumers whose matching assertions assume their own corpus.
+      - name: Verify group Project attribution, first publication and lock races
+        run: npm run group:projects:verify:local
 
       - name: Regenerate public database types
         run: npm run db:types

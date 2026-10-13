@@ -1,3 +1,4 @@
+import 'package:planets_mobile/features/group_projects/domain/group_project_models.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/domain/recurring_activity_models.dart';
 import 'package:planets_mobile/features/participation/domain/project_capacity.dart';
@@ -126,6 +127,7 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
     String expectedCreatorId,
     RecurringActivityInput input, {
     String? clientRequestId,
+    String? groupId,
   }) async {
     _throwIfNeeded();
     calls.add('create');
@@ -169,7 +171,11 @@ class FakeRecurringActivityGateway implements RecurringActivityGateway {
   }
 
   @override
-  Future<void> publish(String expectedCreatorId, String activityId) async {
+  Future<void> publish(
+    String expectedCreatorId,
+    String activityId, {
+    ProjectGroupBinding? groupBinding,
+  }) async {
     if (publishError case final failure?) throw failure;
     await _mutation(
       'publish:$activityId',

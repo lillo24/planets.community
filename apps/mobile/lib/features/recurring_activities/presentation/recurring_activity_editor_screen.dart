@@ -1,3 +1,8 @@
+import '../../group_projects/domain/group_project_models.dart';
+import '../../group_projects/application/group_attribution_draft.dart';
+import '../../group_projects/data/group_project_gateway.dart';
+import '../../group_projects/presentation/group_project_widgets.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
@@ -25,8 +30,13 @@ import '../application/recurring_activity_controllers.dart';
 import '../domain/recurring_activity_models.dart';
 
 class RecurringActivityEditorScreen extends ConsumerStatefulWidget {
-  const RecurringActivityEditorScreen({this.activityId, super.key});
+  const RecurringActivityEditorScreen({
+    this.activityId,
+    this.initialGroupId,
+    super.key,
+  });
   final String? activityId;
+  final String? initialGroupId;
 
   @override
   ConsumerState<RecurringActivityEditorScreen> createState() =>
@@ -42,6 +52,7 @@ class _RecurringActivityEditorScreenState
   >
   get _editorProvider => recurringActivityEditorSessionProvider(_sessionId);
   String? _retainedId;
+  GroupAttributionDraft? _attribution;
   final _locationHandle = LocationEditorHandle();
   final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
@@ -81,6 +92,7 @@ class _RecurringActivityEditorScreenState
     _locationHandle.beforeContentSave();
     _sessionId = const Uuid().v4();
     _retainedId = null;
+    _attribution = null;
     _coverChange = const CoverChange.unchanged();
     _attemptPublish = false;
     for (final field in [
@@ -180,6 +192,16 @@ class _RecurringActivityEditorScreenState
       if (activity != null && _hydratedId != activity.id) _hydrate(activity);
     }
     final existing = belongsToIdentity ? state.activity : null;
+    if (belongsToIdentity &&
+        state.phase == RecurringActivityEditorPhase.ready &&
+        _attribution == null) {
+      _attribution = GroupAttributionDraft(
+        ref.read(groupProjectGatewayProvider),
+        identity,
+        binding: existing?.groupBinding ?? const ProjectGroupBinding(),
+        initialGroup: existing == null ? widget.initialGroupId : null,
+      );
+    }
     final isLoading = state.phase == RecurringActivityEditorPhase.loading;
     final isFailure = state.phase == RecurringActivityEditorPhase.failure;
     final structuralAccessDenied =
@@ -213,6 +235,15 @@ class _RecurringActivityEditorScreenState
                   scrollCacheExtent: const ScrollCacheExtent.pixels(1200),
                   padding: const EdgeInsets.all(AppSpacing.large),
                   children: [
+                    if (_attribution != null &&
+                        (existing == null ||
+                            existing.lifecycle ==
+                                RecurringActivityLifecycle.draft))
+                      GroupPublishSelector(
+                        draft: _attribution!,
+                        enabled: !state.isBusy,
+                        onChanged: () => setState(() {}),
+                      ),
                     if (widget.activityId == null && existing == null)
                       Align(
                         alignment: Alignment.centerLeft,
@@ -796,17 +827,20 @@ class _RecurringActivityEditorScreenState
             identity,
             _input(),
             coverChange: _coverChange,
+            attribution: _attribution,
           )
         : existingPublished
         ? await controller.saveChanges(
             identity,
             _input(),
             coverChange: _coverChange,
+            attribution: _attribution,
           )
         : await controller.saveDraft(
             identity,
             _input(),
             coverChange: _coverChange,
+            attribution: _attribution,
           );
     if (id == null &&
         mounted &&

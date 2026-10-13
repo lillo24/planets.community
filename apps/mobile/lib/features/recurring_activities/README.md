@@ -1,5 +1,10 @@
 # Recurring activities (Tavoli)
 
+GRP03C composes [group publication selection](../group_projects/README.md) with
+the existing editor save chain. Draft hydration reads its confirmed private
+binding; atomic creation and first publication keep the human Creator. Public
+badge enrichment is batched separately from the existing schedule enrichment.
+
 The editor shares Project short/full-description labels and the browse-card hint.
 Resource/material/tool needs stay separate from people’s skills and are managed
 only after a canonical draft exists. New forms explain that prerequisite without
