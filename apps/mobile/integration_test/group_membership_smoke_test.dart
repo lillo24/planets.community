@@ -136,8 +136,18 @@ void main() {
       }
 
       Future<void> tapKey(String key) async {
-        await harness.reveal(tester, find.byKey(Key(key)));
-        await tester.tap(find.byKey(Key(key)));
+        final target = find.byKey(Key(key));
+        await harness.reveal(tester, target);
+        await harness.waitUntil(tester, () {
+          final matches = target.evaluate();
+          if (matches.isEmpty) {
+            return false;
+          }
+          final widget = matches.single.widget;
+          return (widget is! ButtonStyleButton || widget.onPressed != null) &&
+              target.hitTestable().evaluate().isNotEmpty;
+        });
+        await tester.tap(target);
         await tester.pump(const Duration(milliseconds: 300));
       }
 
@@ -148,6 +158,8 @@ void main() {
       }
 
       Future<void> shot(String name) async {
+        await tester.pump(const Duration(milliseconds: 500));
+        await binding.endOfFrame;
         expect(tester.takeException(), isNull);
         await binding.takeScreenshot('grp03b-$name');
       }
@@ -413,8 +425,14 @@ void main() {
             '/groups/$group/structural-edit',
       );
       expect(await gateway.publicDetail(group), isNull);
+      expect(
+        (await relations.self(delegate, group)).authority,
+        GroupAuthority.coCreator,
+      );
       router.go('/groups/$group');
-      await harness.waitFor(tester, find.byKey(const Key('group-step-down')));
+      await tester.pump(const Duration(seconds: 1));
+      await harness.reveal(tester, find.byKey(const Key('group-step-down')));
+      await shot('restored-draft-own-exit-en');
       await tapKey('group-step-down');
       await confirm();
       await harness.waitUntil(
@@ -422,6 +440,7 @@ void main() {
         () => find.byKey(const Key('group-step-down')).evaluate().isEmpty,
       );
       expect((await relations.self(delegate, group)).authority, isNull);
+      await shot('restored-draft-exit-complete-en');
       // Creator alone can still read the restored private draft.
       await actor(creator, creatorToken);
       expect(
