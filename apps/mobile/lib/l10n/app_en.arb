@@ -2754,5 +2754,9 @@
   "groupResolved": "Resolved",
   "groupInitialRole": "Initial role",
   "groupIssuer": "Issuer",
-  "groupExpiry": "Expires"
+  "groupExpiry": "Expires",
+  "profileGroupOfferTitle": "Do you represent a group?",
+  "profileGroupOfferBody": "Create its page now, or do it later from My groups.",
+  "profileGroupOfferCreate": "Create a group",
+  "profileGroupOfferSkip": "Not now"
 }

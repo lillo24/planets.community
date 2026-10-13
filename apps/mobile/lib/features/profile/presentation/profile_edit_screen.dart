@@ -15,10 +15,12 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../app/startup/startup_flow.dart';
 import '../../../app/router/draft_departure_coordinator.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../../profile_photo/application/profile_photo_controller.dart';
 import '../../profile_photo/presentation/profile_photo_section.dart';
 import '../application/profile_controller.dart';
 import '../domain/profile_models.dart';
+import 'post_setup_group_offer.dart';
 
 /// Enable native pop/edge gestures only when the actual previous route is the
 /// safe cancel destination. Canonical setup has an incomplete Profile below it,
@@ -39,12 +41,15 @@ class ProfileEditScreen extends ConsumerStatefulWidget {
     this.returnTo = '/profile',
     this.returnByPop = false,
     this.cancelTo = '/profile',
+    this.offerGroupAfterSetup = false,
     super.key,
   });
 
   final String returnTo;
   final bool returnByPop;
   final String cancelTo;
+  // Only the router's ordinary setup entry opts in; native photo/pop flows do not.
+  final bool offerGroupAfterSetup;
 
   @override
   ConsumerState<ProfileEditScreen> createState() => _ProfileEditScreenState();
@@ -98,6 +103,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         returnTo: widget.returnTo,
         returnByPop: widget.returnByPop,
         cancelTo: widget.cancelTo,
+        offerGroupAfterSetup: widget.offerGroupAfterSetup,
       );
     }
 
@@ -151,6 +157,7 @@ class _ProfileEditForm extends ConsumerStatefulWidget {
     required this.returnTo,
     required this.returnByPop,
     required this.cancelTo,
+    required this.offerGroupAfterSetup,
     super.key,
   });
 
@@ -159,6 +166,7 @@ class _ProfileEditForm extends ConsumerStatefulWidget {
   final String returnTo;
   final bool returnByPop;
   final String cancelTo;
+  final bool offerGroupAfterSetup;
 
   @override
   ConsumerState<_ProfileEditForm> createState() => _ProfileEditFormState();
@@ -266,6 +274,7 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
@@ -274,6 +283,16 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
       return;
     }
     final input = _input();
+    final offerGroup =
+        _routerManaged &&
+        !widget.returnByPop &&
+        widget.offerGroupAfterSetup &&
+        !widget.data.profile.isComplete &&
+        ref.read(authSessionProvider).phase ==
+            AuthSessionPhase.profileSetupRequired;
+    final origin = _routerManaged
+        ? GoRouter.of(context).routeInformationProvider.value.uri
+        : null;
     _saving = true;
     final saved = await ref
         .read(profileProvider.notifier)
@@ -285,7 +304,19 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
       // Let that guard settle before issuing this explicit continuation.
       await _departure.whenPrepared;
       if (!mounted ||
-          ref.read(authSessionProvider).identity?.id != identity.id) {
+          ref.read(authSessionProvider).identity?.id != identity.id ||
+          (origin != null &&
+              GoRouter.of(context).routeInformationProvider.value.uri !=
+                  origin)) {
+        return;
+      }
+      if (offerGroup &&
+          ref.read(profileProvider).data?.profile.isComplete == true) {
+        await offerGroupAfterPersonalSetup(
+          context,
+          actorId: identity.id,
+          returnTo: widget.returnTo,
+        );
         return;
       }
       // Save resumes the authorized action; pop belongs exclusively to Cancel.

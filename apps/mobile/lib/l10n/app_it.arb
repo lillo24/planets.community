@@ -2016,5 +2016,9 @@
   "groupResolved": "Concluso",
   "groupInitialRole": "Ruolo iniziale",
   "groupIssuer": "Autore dell’invito",
-  "groupExpiry": "Scade"
+  "groupExpiry": "Scade",
+  "profileGroupOfferTitle": "Rappresenti un gruppo?",
+  "profileGroupOfferBody": "Crea la sua pagina ora, oppure fallo più tardi dalla sezione I miei gruppi.",
+  "profileGroupOfferCreate": "Crea un gruppo",
+  "profileGroupOfferSkip": "Non ora"
 }

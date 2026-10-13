@@ -14,19 +14,307 @@ import 'package:planets_mobile/core/theme/app_tokens.dart';
 import 'package:planets_mobile/core/widgets/error_state.dart';
 import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
+import 'package:planets_mobile/features/auth/application/auth_command_controller.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/auth/presentation/request_code_screen.dart';
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/profile/domain/profile_models.dart';
 import 'package:planets_mobile/features/profile/presentation/profile_edit_screen.dart';
 import 'package:planets_mobile/features/profile_photo/data/profile_photo_gateway.dart';
+import 'package:planets_mobile/features/groups/data/group_gateway.dart';
+import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
+import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
+import 'package:planets_mobile/features/settings/domain/language_preference.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_profile_photo.dart';
+import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  for (final failure in ['write', 'reload']) {
+    testWidgets(
+      'unconfirmed setup $failure never offers; exact retry offers once',
+      (tester) async {
+        final auth = FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+        );
+        addTearDown(auth.close);
+        final profile = FakeProfileGateway();
+        final app = await _pumpApp(
+          tester,
+          auth,
+          FakeProfileAnchorGateway()
+            ..readiness = ProfileAnchorReadiness.incomplete,
+          profile,
+        );
+        app.read(appRouterProvider).go('/profile/edit');
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('profile-display-name-field')),
+          'Casey',
+        );
+        if (failure == 'write') {
+          profile.updateError = StateError('synthetic write failure');
+        } else {
+          profile.loadError = StateError('synthetic canonical reload failure');
+        }
+        await _tapVisible(tester, find.byKey(const Key('profile-save-button')));
+        expect(find.byKey(const Key('profile-group-offer')), findsNothing);
+        expect(find.byKey(const Key('profile-safe-error')), findsOneWidget);
+        profile.updateError = profile.loadError = null;
+        await _tapVisible(tester, find.byKey(const Key('profile-save-button')));
+        expect(find.byKey(const Key('profile-group-offer')), findsOneWidget);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('profile-group-offer')), findsOneWidget);
+      },
+    );
+  }
+  for (final replaceAccount in [false, true]) {
+    testWidgets(
+      'pending setup duplicate taps and late save account replacement=$replaceAccount',
+      (tester) async {
+        final auth = FakeAuthGateway(
+          snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+        );
+        addTearDown(auth.close);
+        final delayed = Completer<void>();
+        final profile = FakeProfileGateway()..updateDelay = delayed.future;
+        final app = await _pumpApp(
+          tester,
+          auth,
+          FakeProfileAnchorGateway()
+            ..readiness = ProfileAnchorReadiness.incomplete,
+          profile,
+        );
+        app.read(appRouterProvider).go('/profile/edit');
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('profile-display-name-field')),
+          'Casey',
+        );
+        final save = find.byKey(const Key('profile-save-button'));
+        await tester.tap(save);
+        await tester.tap(save);
+        await tester.pump();
+        expect(profile.updateCount, 1);
+        expect(find.byKey(const Key('profile-group-offer')), findsNothing);
+        if (replaceAccount) {
+          auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-2')));
+          await tester.pump();
+          auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-1')));
+          await tester.pump();
+        }
+        delayed.complete();
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('profile-group-offer')),
+          replaceAccount ? findsNothing : findsOneWidget,
+        );
+        expect(profile.updateCount, 1);
+      },
+    );
+  }
+  for (final action in ['skip', 'create', 'back', 'dismiss']) {
+    testWidgets('first canonical setup optional group offer: $action', (
+      tester,
+    ) async {
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      final profile = FakeProfileGateway();
+      final app = await _pumpApp(
+        tester,
+        auth,
+        FakeProfileAnchorGateway()
+          ..readiness = ProfileAnchorReadiness.incomplete,
+        profile,
+      );
+      final router = app.read(appRouterProvider)..go('/profile/edit');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('profile-group-offer')), findsNothing);
+      await tester.enterText(
+        find.byKey(const Key('profile-display-name-field')),
+        'Casey',
+      );
+      await _tapVisible(tester, find.byKey(const Key('profile-save-button')));
+      expect(find.byKey(const Key('profile-group-offer')), findsOneWidget);
+      expect(profile.updateCount, 1);
+      expect(
+        tester
+            .widget<EditableText>(find.byType(EditableText).first)
+            .focusNode
+            .hasFocus,
+        isFalse,
+      );
+      if (action == 'back') {
+        await tester.binding.handlePopRoute();
+      } else if (action == 'dismiss') {
+        await tester.tapAt(const Offset(3, 3));
+      } else {
+        await tester.tap(find.byKey(Key('profile-group-offer-$action')));
+      }
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('profile-group-offer')), findsNothing);
+      expect(
+        router.routerDelegate.state.uri.path,
+        action == 'create' ? '/groups/create' : '/profile',
+      );
+      expect(profile.data.profile.displayName, 'Casey');
+      // Canceling group editing cannot roll back the already saved account.
+      router.go('/profile');
+      await tester.pumpAndSettle();
+      expect(find.text('Casey'), findsOneWidget);
+      router.go('/profile/edit');
+      await tester.pumpAndSettle();
+      await _tapVisible(tester, find.byKey(const Key('profile-save-button')));
+      expect(find.byKey(const Key('profile-group-offer')), findsNothing);
+    });
+  }
+
+  for (final destination in [
+    '/proposals/project-1/join',
+    '/tavoli/table-1/join',
+    '/join/group/${'a' * 43}',
+    '/invite/group/${'b' * 43}',
+    '/invite/project/${'c' * 43}',
+    '/profile/reports',
+    '/resources',
+  ]) {
+    testWidgets('setup preserves explicit continuation $destination', (
+      tester,
+    ) async {
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      final profile = FakeProfileGateway();
+      final app = await _pumpApp(
+        tester,
+        auth,
+        FakeProfileAnchorGateway()
+          ..readiness = ProfileAnchorReadiness.incomplete,
+        profile,
+      );
+      final router = app.read(appRouterProvider)
+        ..go(
+          Uri(
+            path: '/profile/edit',
+            queryParameters: {'returnTo': destination},
+          ).toString(),
+        );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('profile-display-name-field')),
+        'Casey',
+      );
+      await _tapVisible(tester, find.byKey(const Key('profile-save-button')));
+      expect(find.byKey(const Key('profile-group-offer')), findsNothing);
+      expect(router.routerDelegate.state.uri.toString(), destination);
+      expect(profile.updateCount, 1);
+    });
+  }
+
+  for (final event in ['route', 'pending', 'account']) {
+    testWidgets('new $event cancels obsolete group offer', (tester) async {
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      final profile = FakeProfileGateway();
+      final app = await _pumpApp(
+        tester,
+        auth,
+        FakeProfileAnchorGateway()
+          ..readiness = ProfileAnchorReadiness.incomplete,
+        profile,
+      );
+      final router = app.read(appRouterProvider)..go('/profile/edit');
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('profile-display-name-field')),
+        'Casey',
+      );
+      await _tapVisible(tester, find.byKey(const Key('profile-save-button')));
+      expect(find.byKey(const Key('profile-group-offer')), findsOneWidget);
+      if (event == 'route') {
+        router.go('/settings');
+      } else if (event == 'pending') {
+        app
+            .read(pendingEmailOtpProvider.notifier)
+            .set(
+              const PendingEmailOtp(
+                email: 'synthetic@example.invalid',
+                returnTo: '/resources',
+              ),
+            );
+      } else {
+        auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-2')));
+        await tester.pumpAndSettle();
+        auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-1')));
+      }
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('profile-group-offer')), findsNothing);
+      expect(router.routerDelegate.state.uri.path, isNot('/groups/create'));
+      if (event == 'route') {
+        expect(router.routerDelegate.state.uri.path, '/settings');
+      }
+    });
+  }
+
+  for (final language in [
+    LanguagePreference.english,
+    LanguagePreference.italian,
+  ]) {
+    testWidgets('optional group offer narrow 2x ${language.name}', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 720);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final auth = FakeAuthGateway(
+        snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+      );
+      addTearDown(auth.close);
+      await _pumpApp(
+        tester,
+        auth,
+        FakeProfileAnchorGateway()
+          ..readiness = ProfileAnchorReadiness.incomplete,
+        FakeProfileGateway(),
+        language: language,
+      );
+      await tester.tap(find.byKey(const Key('nav-profile')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('profile-display-name-field')),
+        'Casey',
+      );
+      await _tapVisible(tester, find.byKey(const Key('profile-save-button')));
+      expect(
+        find.text(
+          language == LanguagePreference.english
+              ? 'Do you represent a group?'
+              : 'Rappresenti un gruppo?',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('profile-group-offer-create')).hitTestable(),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('profile-group-offer-skip')).hitTestable(),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
   for (final destination in ['nav-profile', 'nav-home', 'back']) {
     testWidgets(
       'unsaved Profile protects $destination departure and returns to read-only Profile',
@@ -554,6 +842,10 @@ void main() {
       expect(profile.updateCount, 1);
       expect(profile.lastUpdate?.displayName, 'Casey');
       expect(profile.lastUpdate?.selectedSkillIds, contains('skill-mural'));
+      // First setup now offers the optional group step before Profile.
+      expect(find.byKey(const Key('profile-group-offer')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('profile-group-offer-skip')));
+      await tester.pumpAndSettle();
       expect(
         profile.data.profile.visibility[ProfileFieldKey.bio],
         ProfileAudience.public,
@@ -907,10 +1199,21 @@ Future<ProviderContainer> _pumpApp(
   FakeProfileGateway profile, {
   String enableDemoTools = '',
   FakeProfilePhotoGateway? profilePhoto,
+  LanguagePreference language = LanguagePreference.system,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        initialLanguagePreferenceProvider.overrideWithValue(language),
+        groupGatewayProvider.overrideWithValue(
+          GroupGateway((name, _) async {
+            if (name.startsWith('get_') || name.startsWith('list_')) return [];
+            throw StateError('Unexpected group mutation: $name');
+          }),
+        ),
+        recurringActivityGatewayProvider.overrideWithValue(
+          FakeRecurringActivityGateway(),
+        ),
         preacceptedPolicyFixture,
         // Feature fixtures begin after onboarding; startup tests own first-run.
         initialStartupPreferenceProvider.overrideWithValue(
