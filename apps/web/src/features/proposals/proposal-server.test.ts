@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/features/group-projects/group-project-server", () => ({
+  publicProjectGroups: vi.fn(async () => new Map()),
+}));
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({

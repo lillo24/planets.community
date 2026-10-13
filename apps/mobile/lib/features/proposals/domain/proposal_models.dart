@@ -1,3 +1,4 @@
+import '../../group_projects/domain/group_project_models.dart';
 import '../../cover_media/domain/cover_media_models.dart';
 import '../../participation/domain/project_capacity.dart';
 
@@ -160,6 +161,7 @@ class ProposalSummary {
     required this.skills,
     required this.capacity,
     this.coverObjectPath,
+    this.groupAttribution,
     this.definitionPhase = ProposalDefinitionPhase.defined,
     this.publishedAt,
     this.referenceTime,
@@ -179,6 +181,7 @@ class ProposalSummary {
   final List<ProposalSkill> skills;
   final ProjectCapacitySnapshot capacity;
   final String? coverObjectPath;
+  final ProjectGroupAttribution? groupAttribution;
 
   final ProposalDefinitionPhase definitionPhase;
   final DateTime? publishedAt;
@@ -249,6 +252,7 @@ class OwnProposal {
     required this.cancelledAt,
     required this.capacity,
     this.coverObjectPath,
+    this.groupBinding = const ProjectGroupBinding(),
     this.definitionPhase = ProposalDefinitionPhase.defined,
   });
 
@@ -274,6 +278,7 @@ class OwnProposal {
   final DateTime? cancelledAt;
   final ProjectCapacitySnapshot capacity;
   final String? coverObjectPath;
+  final ProjectGroupBinding groupBinding;
   final ProposalDefinitionPhase definitionPhase;
   bool get isIdea => definitionPhase == ProposalDefinitionPhase.idea;
 

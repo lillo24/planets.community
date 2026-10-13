@@ -44,6 +44,80 @@ void main() {
     await auth.close();
   });
 
+  test(
+    'confirmed group rejection permits a fresh personal template application',
+    () async {
+      final ctrl = c.read(templateApplicationsProvider.notifier);
+      g.applyError = const PostgrestException(
+        message: 'Group unavailable',
+        code: '42501',
+        details: '{"reason":"group_representation_unavailable"}',
+      );
+      await ctrl.use(
+        templateActor,
+        templateDetailFixture(),
+        true,
+        groupId: needId(1),
+      );
+      expect(ctrl.latest(templateActor, templateId), isNull);
+      expect(
+        c.read(templateApplicationsProvider).failures.values,
+        contains(TemplateApplyFailure.groupUnavailable),
+      );
+      g.applyError = null;
+      expect(
+        await ctrl.use(templateActor, templateDetailFixture(), true),
+        templateDestination,
+      );
+      expect(g.commands.first.groupId, needId(1));
+      expect(g.commands.last.groupId, isNull);
+      expect(g.commands.last.requestId, isNot(g.commands.first.requestId));
+    },
+  );
+  test(
+    'unclassified denial cannot retarget an uncertain group template request',
+    () async {
+      final ctrl = c.read(templateApplicationsProvider.notifier);
+      g.applyError = const PostgrestException(
+        message: 'Identity not confirmed',
+        code: '42501',
+      );
+      await ctrl.use(
+        templateActor,
+        templateDetailFixture(),
+        true,
+        groupId: needId(1),
+      );
+      final frozen = g.commands.single;
+      await ctrl.use(
+        templateActor,
+        templateDetailFixture(),
+        true,
+        groupId: needId(2),
+        newUse: true,
+      );
+      expect(g.commands.last, same(frozen));
+      expect(g.commands.last.groupId, needId(1));
+    },
+  );
+  test(
+    'accepted group template recovery preserves its frozen group intent',
+    () async {
+      final ctrl = c.read(templateApplicationsProvider.notifier);
+      g.applyError = TimeoutException('Response lost');
+      await ctrl.use(
+        templateActor,
+        templateDetailFixture(),
+        true,
+        groupId: needId(1),
+      );
+      final frozen = g.commands.single;
+      g.recovered = templateReceiptFixture(frozen);
+      expect(await ctrl.retry(frozen.requestId), templateDestination);
+      expect(ctrl.latest(templateActor, templateId)!.groupId, needId(1));
+      expect(g.commands, hasLength(1));
+    },
+  );
   test('60 templates use 7/15/20/20 and retry the failed 15', () async {
     final rows = List.generate(60, (i) => templateCardFixture(id: needId(i)));
     g.listLoader = (cursor, _, _) async {

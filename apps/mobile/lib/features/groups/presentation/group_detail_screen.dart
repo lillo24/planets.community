@@ -1,3 +1,5 @@
+import '../../group_projects/presentation/group_project_widgets.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -92,6 +94,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                           GroupSummary(snapshot.data!, full: true),
                           const SizedBox(height: 24),
                           Text(l.groupsDeclaration),
+                          GroupProjectFeed(groupId: widget.id),
                           const SizedBox(height: 24),
                           OutlinedButton.icon(
                             key: const Key('group-report'),

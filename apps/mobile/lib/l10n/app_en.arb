@@ -2754,5 +2754,29 @@
   "groupResolved": "Resolved",
   "groupInitialRole": "Initial role",
   "groupIssuer": "Issuer",
-  "groupExpiry": "Expires"
+  "groupExpiry": "Expires",
+  "groupProjectPublishFor": "Publish for",
+  "groupProjectPersonal": "Myself",
+  "groupProjectSelected": "Selected group — review selection",
+  "groupProjectUnavailable": "Published for a group that is currently unavailable",
+  "groupProjectFor": "For {name}",
+  "groupProjectAuthorityBoundary": "You remain the Project Creator. Group roles do not grant access to this Project.",
+  "groupProjectPending": "The attribution save is unresolved. Retry Save before changing this choice.",
+  "groupProjectLoadError": "Could not load group Projects or publication choices. Try again.",
+  "groupProjectMore": "Load more",
+  "groupProjectNoEligible": "You have no available groups to publish for.",
+  "groupProjectFeedTitle": "Projects and Tavoli",
+  "groupProjectFeedEmpty": "No public Projects or Tavoli yet.",
+  "groupProjectCreate": "Create a Project for this group",
+  "@groupProjectFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupProjectSaveError": "The group choice or publication was not confirmed. Your content may already be retained. Review or clear the group choice and retry Save; an unresolved request must be retried first.",
+  "groupProjectReload": "Reload group choice",
+  "groupProjectRepresentationUnavailable": "This group is unavailable for publication. Choose another group or Myself.",
+  "groupProjectAccountChanged": "The account changed or is not ready. Close this chooser and try again."
 }

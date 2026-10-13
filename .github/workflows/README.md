@@ -45,6 +45,14 @@ private retry/recovery, rollback and TW03 draft reopening after removal. It is
 an explicit Database step after the existing TW02/TW03 verifiers; the scoped
 classifier and complete manual suite remain unchanged.
 
+GRP03C adds `group:projects:upgrade:verify:local` before the clean reset and
+`group:projects:verify:local` after group membership verification in Database CI.
+The upgrade populates predecessor histories and compares their original columns;
+the HTTP verifier checks group-attributed first publication and observed lock
+waits. Both are also part of `check:db`. Existing area classification, required
+checks and main-push behavior remain unchanged; this shared workflow/package
+change selects all four areas for its own PR.
+
 SIM01 adds an explicit `proposal:similar:verify:local` Database step after the
 Proposal/TW01 verifier. It covers authenticated bounded matching, canonical
 capacity/blocking/media seams and rollback-only synthetic query plans. It also

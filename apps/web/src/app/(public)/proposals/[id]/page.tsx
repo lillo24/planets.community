@@ -1,3 +1,4 @@
+import { ProjectGroupBadge } from "@/features/group-projects/project-group-badge";
 import { LocationAttribution } from "@/features/locations/location-attribution";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -66,6 +67,7 @@ export default async function ProposalDetailPage({
             />
           </div>
           <p className="text-xl text-muted-foreground">{proposal.summary}</p>
+          <ProjectGroupBadge group={proposal.groupAttribution} />
         </header>
         <Card>
           <CardHeader>

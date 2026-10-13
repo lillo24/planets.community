@@ -1,3 +1,5 @@
+import '../../group_projects/presentation/group_project_widgets.dart';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -94,6 +96,7 @@ class RecurringActivityCard extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xSmall),
                   Text(activity.summary),
+                  ProjectGroupBadge(activity.groupAttribution),
                   const SizedBox(height: AppSpacing.medium),
                   _MetadataRow(
                     icon: Icons.event_repeat_outlined,

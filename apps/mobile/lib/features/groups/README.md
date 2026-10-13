@@ -1,5 +1,9 @@
 # Registered groups
 
+GRP03C's public Project/Tavolo feed and contextual creation belong to
+[`../group_projects/`](../group_projects/README.md). Group participation and
+authority remain independent of each associated Project's own access rules.
+
 Personal Auth remains the actor. Group pages and Project chats are distinct.
 
 - `domain/group_models.dart` owns strict public/owner projections, paired immutable

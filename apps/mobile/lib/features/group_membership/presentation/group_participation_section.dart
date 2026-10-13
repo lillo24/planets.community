@@ -400,6 +400,15 @@ class _GroupParticipationSectionState
                     },
                     child: Text(l.groupsEdit),
                   ),
+                if (widget.publicAvailable && self.structural)
+                  OutlinedButton.icon(
+                    key: const Key('group-create-project'),
+                    onPressed: () => context.push(
+                      '/proposals/create?group=${widget.groupId}',
+                    ),
+                    icon: const Icon(Icons.add),
+                    label: Text(l.groupProjectCreate),
+                  ),
                 if (self.membershipId != null)
                   OutlinedButton(
                     key: const Key('group-leave'),

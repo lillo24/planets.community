@@ -1,5 +1,10 @@
 # Public recurring activities (Tavoli)
 
+GRP03C enriches public pages/details through
+[`group-projects`](../group-projects/README.md), using the same current/neutral
+registered-group badge as one-time Projects. Schedule and lifecycle rules stay
+with this feature; group roles grant no Tavolo powers.
+
 This feature owns the website's signed-out, read-only Tavoli discovery. It is
 separate from one-time Proposals and contains no owner management or authoring.
 

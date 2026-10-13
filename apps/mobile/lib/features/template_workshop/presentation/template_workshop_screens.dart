@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import '../../group_projects/application/group_attribution_draft.dart';
+import '../../group_projects/data/group_project_gateway.dart';
+import '../../group_projects/presentation/group_project_widgets.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,7 +31,8 @@ abstract final class WorkshopRoutes {
 /// Route return, foreground resume and explicit refresh revalidate public data.
 /// There is no polling or promise of instant storage/cache revocation.
 class TemplateWorkshopScreen extends ConsumerStatefulWidget {
-  const TemplateWorkshopScreen({super.key});
+  const TemplateWorkshopScreen({this.groupId, super.key});
+  final String? groupId;
   @override
   ConsumerState<TemplateWorkshopScreen> createState() =>
       _TemplateWorkshopScreenState();
@@ -106,7 +111,14 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
     if (_visiting) return;
     _visiting = true;
     try {
-      await context.push(route);
+      await context.push(
+        widget.groupId == null
+            ? route
+            : Uri(
+                path: route,
+                queryParameters: {'group': widget.groupId!},
+              ).toString(),
+      );
       if (mounted) await _refresh();
     } finally {
       _visiting = false;
@@ -349,7 +361,12 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
 }
 
 class TemplateWorkshopDetailScreen extends ConsumerStatefulWidget {
-  const TemplateWorkshopDetailScreen({required this.templateId, super.key});
+  const TemplateWorkshopDetailScreen({
+    required this.templateId,
+    this.groupId,
+    super.key,
+  });
+  final String? groupId;
   final String templateId;
   @override
   ConsumerState<TemplateWorkshopDetailScreen> createState() =>
@@ -360,6 +377,18 @@ class _TemplateWorkshopDetailScreenState
     extends ConsumerState<TemplateWorkshopDetailScreen>
     with WidgetsBindingObserver {
   bool _capacity = true;
+  GroupAttributionDraft? _publishFor;
+  String? _publishRequest;
+  @override
+  void didUpdateWidget(TemplateWorkshopDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.groupId != widget.groupId ||
+        oldWidget.templateId != widget.templateId) {
+      _publishFor = null;
+      _publishRequest = null;
+    }
+  }
+
   bool _active = false;
   String? _error;
   @override
@@ -437,7 +466,15 @@ class _TemplateWorkshopDetailScreenState
         ? controller.retry(pending.requestId)
         : detail != null &&
               ref.read(templateDetailProvider(widget.templateId)).canUse
-        ? controller.use(actor, detail, _capacity, newUse: newUse)
+        ? controller.use(
+            actor,
+            detail,
+            _capacity,
+            newUse: newUse,
+            groupId: _publishFor != null
+                ? _publishFor!.groupId
+                : widget.groupId,
+          )
         : Future<String?>.value(null);
     final request = controller.latest(actor, widget.templateId)?.requestId;
     final id = await operation;
@@ -457,6 +494,8 @@ class _TemplateWorkshopDetailScreenState
     final l = AppLocalizations.of(context);
     setState(
       () => _error = switch (failure) {
+        TemplateApplyFailure.groupUnavailable =>
+          l.groupProjectRepresentationUnavailable,
         TemplateApplyFailure.stale => l.workshopChanged,
         TemplateApplyFailure.forbidden => l.workshopForbidden,
         TemplateApplyFailure.profile => l.workshopProfileRequired,
@@ -501,6 +540,23 @@ class _TemplateWorkshopDetailScreenState
       (a) => a.actor == actor && a.templateId == widget.templateId,
     );
     final attempt = matches.isEmpty ? null : matches.last;
+    final pending = attempt != null && attempt.destinationId == null
+        ? attempt
+        : null;
+    if (actor == null) {
+      _publishFor = null;
+      _publishRequest = null;
+    } else {
+      if (_publishFor?.actor != actor ||
+          (pending != null && _publishRequest != pending.requestId)) {
+        _publishFor = GroupAttributionDraft(
+          ref.read(groupProjectGatewayProvider),
+          actor,
+          initialGroup: pending != null ? pending.groupId : widget.groupId,
+        );
+      }
+      _publishRequest = pending?.requestId;
+    }
     final busy =
         attempt != null && applications.busy.contains(attempt.requestId);
     final detail = state.detail;
@@ -610,6 +666,12 @@ class _TemplateWorkshopDetailScreenState
                 ),
               ],
               Text(l.workshopCopyHint),
+              if (_publishFor != null)
+                GroupPublishSelector(
+                  draft: _publishFor!,
+                  enabled: !busy && pending == null,
+                  onChanged: () => setState(() => _error = null),
+                ),
             ],
             if (_error != null && actor != null)
               Semantics(

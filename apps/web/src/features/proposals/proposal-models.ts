@@ -1,3 +1,4 @@
+import type { ProjectGroupAttribution } from "@/features/group-projects/group-project-models";
 export type ProposalStatus =
   "upcoming" | "happening" | "just_finished" | "completed";
 
@@ -14,6 +15,7 @@ export interface ProposalSkill {
 }
 
 export interface PublicProposalSummary {
+  groupAttribution?: ProjectGroupAttribution;
   proposal_id: string;
   cover_object_path: string | null;
   title: string;

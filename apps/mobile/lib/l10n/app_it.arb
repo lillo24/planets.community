@@ -2016,5 +2016,29 @@
   "groupResolved": "Concluso",
   "groupInitialRole": "Ruolo iniziale",
   "groupIssuer": "Autore dell’invito",
-  "groupExpiry": "Scade"
+  "groupExpiry": "Scade",
+  "groupProjectPublishFor": "Pubblica per",
+  "groupProjectPersonal": "Me stesso/a",
+  "groupProjectSelected": "Gruppo selezionato — rivedi la scelta",
+  "groupProjectUnavailable": "Pubblicato per un gruppo al momento non disponibile",
+  "groupProjectFor": "Per {name}",
+  "groupProjectAuthorityBoundary": "Rimani il Creatore del Progetto. I ruoli nel gruppo non danno accesso a questo Progetto.",
+  "groupProjectPending": "Il salvataggio del gruppo è da confermare. Riprova a salvare prima di cambiare scelta.",
+  "groupProjectLoadError": "Impossibile caricare i Progetti del gruppo o le scelte di pubblicazione. Riprova.",
+  "groupProjectMore": "Carica altri",
+  "groupProjectNoEligible": "Non hai gruppi disponibili per cui pubblicare.",
+  "groupProjectFeedTitle": "Progetti e Tavoli",
+  "groupProjectFeedEmpty": "Ancora nessun Progetto o Tavolo pubblico.",
+  "groupProjectCreate": "Crea un Progetto per questo gruppo",
+  "@groupProjectFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupProjectSaveError": "La scelta del gruppo o la pubblicazione non è confermata. Il contenuto potrebbe essere già conservato. Rivedi o rimuovi il gruppo e riprova a salvare; una richiesta incerta va prima ritentata.",
+  "groupProjectReload": "Ricarica la scelta del gruppo",
+  "groupProjectRepresentationUnavailable": "Questo gruppo non è disponibile per la pubblicazione. Scegli un altro gruppo o Me stesso/a.",
+  "groupProjectAccountChanged": "L'account è cambiato o non è pronto. Chiudi la scelta e riprova."
 }

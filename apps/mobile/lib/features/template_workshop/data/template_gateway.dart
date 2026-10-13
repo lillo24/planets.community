@@ -275,13 +275,16 @@ class SupabaseTemplateGateway implements TemplateGateway {
   Future<TemplateReceipt> apply(TemplateAttempt attempt) async {
     final row = one(
       await _rpc(
-        'create_proposal_draft_from_template',
+        attempt.groupId == null
+            ? 'create_proposal_draft_from_template'
+            : 'create_group_proposal_draft_from_template',
         params: {
           'p_expected_creator_profile_id': attempt.actor,
           'p_template_id': attempt.templateId,
           'p_content_version': attempt.token,
           'p_client_request_id': attempt.requestId,
           'p_prefill_capacity': attempt.prefillCapacity,
+          if (attempt.groupId != null) 'p_group_id': attempt.groupId,
         },
       ),
     );

@@ -48,9 +48,10 @@ function row(kind: "one_time" | "recurring") {
   };
 }
 function setup() {
-  const rpc = vi
-    .fn()
-    .mockResolvedValue({ data: [row("one_time")], error: null });
+  const rpc = vi.fn().mockImplementation(async (name: string) => ({
+    data: name === "get_public_project_groups" ? [] : [row("one_time")],
+    error: null,
+  }));
   const download = vi.fn().mockResolvedValue({
     data: new Blob(["fixture"], { type: "image/webp" }),
     error: null,
@@ -68,7 +69,10 @@ describe("public invitation project presentation", () => {
     "uses the existing %s public detail API and drops private fields",
     async (kind) => {
       const { rpc, gateway } = setup();
-      rpc.mockResolvedValue({ data: [row(kind)], error: null });
+      rpc.mockImplementation(async (name: string) => ({
+        data: name === "get_public_project_groups" ? [] : [row(kind)],
+        error: null,
+      }));
       const detail = await gateway.read({ ...project, kind });
       expect(rpc).toHaveBeenCalledWith(
         kind === "one_time"

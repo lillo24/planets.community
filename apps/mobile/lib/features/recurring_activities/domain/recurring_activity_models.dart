@@ -1,3 +1,4 @@
+import '../../group_projects/domain/group_project_models.dart';
 import '../../../core/time/event_time.dart';
 import '../../cover_media/domain/cover_media_models.dart';
 import '../../participation/domain/project_capacity.dart';
@@ -118,6 +119,7 @@ class PublicRecurringActivitySummary {
     required this.schedule,
     required this.capacity,
     this.coverObjectPath,
+    this.groupAttribution,
   });
 
   final String id;
@@ -132,6 +134,7 @@ class PublicRecurringActivitySummary {
   final RecurringSchedule schedule;
   final ProjectCapacitySnapshot capacity;
   final String? coverObjectPath;
+  final ProjectGroupAttribution? groupAttribution;
 
   RecurringActivityCursor get cursor =>
       RecurringActivityCursor(nextStartsAt: nextOccurrence.startsAt, id: id);
@@ -169,6 +172,7 @@ class PublicRecurringActivityDetail {
     required this.exactLocationRestricted,
     required this.capacity,
     this.coverObjectPath,
+    this.groupAttribution,
   });
 
   final String id;
@@ -189,6 +193,7 @@ class PublicRecurringActivityDetail {
   final bool exactLocationRestricted;
   final ProjectCapacitySnapshot capacity;
   final String? coverObjectPath;
+  final ProjectGroupAttribution? groupAttribution;
 }
 
 class OwnRecurringActivity {
@@ -215,6 +220,7 @@ class OwnRecurringActivity {
     required this.endedAt,
     required this.capacity,
     this.coverObjectPath,
+    this.groupBinding = const ProjectGroupBinding(),
   });
 
   final String id;
@@ -239,6 +245,7 @@ class OwnRecurringActivity {
   final DateTime? endedAt;
   final ProjectCapacitySnapshot capacity;
   final String? coverObjectPath;
+  final ProjectGroupBinding groupBinding;
 
   bool get isEditable => lifecycle != RecurringActivityLifecycle.ended;
   bool get canPublish => lifecycle == RecurringActivityLifecycle.draft;

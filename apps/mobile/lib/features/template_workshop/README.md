@@ -1,5 +1,11 @@
 # Mobile Template Workshop
 
+GRP03C carries deliberate group context through catalog/detail navigation into
+the immutable application attempt. Its additive atomic wrapper binds only the
+new draft to that selected group. Source association and official organization
+provenance are never inherited. Current selection is reread by the ordinary
+editor; see [`../group_projects/`](../group_projects/README.md).
+
 This feature owns completed community and official starter template discovery,
 reusable previews and independent draft application. It consumes v2 Workshop reads and TW03 application RPCs; the
 database owns eligibility, copying, permissions and receipts.

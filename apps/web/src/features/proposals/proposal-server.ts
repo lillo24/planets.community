@@ -1,3 +1,4 @@
+import { publicProjectGroups } from "@/features/group-projects/group-project-server";
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -28,11 +29,15 @@ export async function listPublicProposals(
     p_skill_ids: filters.skillId ? [filters.skillId] : undefined,
   });
   if (error) throw error;
+  const groups = await publicProjectGroups(
+    client,
+    (data ?? []).map((row) => row.proposal_id),
+  );
   return (data ?? []).map((row) => {
     const proposal = parsePublicProposalSummary(row);
     if (!proposal.published_at || !proposal.reference_time)
       throw new TypeError("Missing publication pagination anchor");
-    return proposal;
+    return { ...proposal, groupAttribution: groups.get(proposal.proposal_id) };
   });
 }
 
@@ -46,7 +51,11 @@ export async function getPublicProposal(
   if (error) throw error;
   const rows = data ?? [];
   if (rows.length === 0) return null;
-  const detail = parsePublicProposalDetail(rows[0]);
+  const groups = await publicProjectGroups(client, [proposalId]);
+  const detail = {
+    ...parsePublicProposalDetail(rows[0]),
+    groupAttribution: groups.get(proposalId),
+  };
   if (
     detail.definition_phase === "idea" ||
     detail.exact_location_restricted ||

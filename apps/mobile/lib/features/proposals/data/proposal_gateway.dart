@@ -1,3 +1,6 @@
+import '../../group_projects/data/group_project_gateway.dart';
+import '../../group_projects/domain/group_project_models.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -41,6 +44,7 @@ abstract interface class ProposalGateway {
     String expectedCreatorId,
     ProposalInput input, {
     String? clientRequestId,
+    String? groupId,
   });
 
   Future<String?> recoverDraftCreation(
@@ -63,9 +67,17 @@ abstract interface class ProposalGateway {
     required Map<String, ProposalSkillImportance> skills,
   });
 
-  Future<void> publishProposal(String expectedCreatorId, String proposalId);
+  Future<void> publishProposal(
+    String expectedCreatorId,
+    String proposalId, {
+    ProjectGroupBinding? groupBinding,
+  });
 
-  Future<void> publishIdea(String expectedCreatorId, String proposalId);
+  Future<void> publishIdea(
+    String expectedCreatorId,
+    String proposalId, {
+    ProjectGroupBinding? groupBinding,
+  });
   Future<ProposalPromotionRequirements> promotionRequirements(
     String expectedProfileId,
     String proposalId,
@@ -90,6 +102,9 @@ class ProposalPayloadParser {
       throw const FormatException('An Idea cannot have an event status.');
     }
     return ProposalSummary(
+      groupAttribution: ProjectGroupAttribution.parse(
+        row['_group_attribution'],
+      ),
       id: _uuid(row, 'proposal_id'),
       title: _string(row, 'title'),
       summary: _string(row, 'summary'),
@@ -279,6 +294,7 @@ class SupabaseProposalGateway implements ProposalGateway {
       },
     );
     final rows = response.cast<Map<String, dynamic>>();
+    await attachPublicProjectGroups(_client, rows, 'proposal_id');
     final capacities = await _publicCapacities(
       rows.map((row) => row['proposal_id'] as String),
     );
@@ -312,6 +328,7 @@ class SupabaseProposalGateway implements ProposalGateway {
       },
     );
     final rows = response.cast<Map<String, dynamic>>();
+    await attachPublicProjectGroups(_client, rows, 'proposal_id');
     final capacities = await _publicCapacities(
       rows.map((row) => row['proposal_id'] as String),
     );
@@ -344,6 +361,7 @@ class SupabaseProposalGateway implements ProposalGateway {
       _publicCapacities([proposalId]),
     ]);
     final rows = (values[0] as List<dynamic>).cast<Map<String, dynamic>>();
+    await attachPublicProjectGroups(_client, rows, 'proposal_id');
     if (rows.isEmpty) return null;
     final capacity =
         (values[1] as Map<String, ProjectCapacitySnapshot>)[proposalId];
@@ -401,6 +419,15 @@ class SupabaseProposalGateway implements ProposalGateway {
     if (capacity == null) {
       throw const FormatException('A managed Proposal had no capacity status.');
     }
+    if (rows.single['lifecycle_state'] == 'draft') {
+      rows.single['_group_binding'] = await _client.rpc(
+        'get_own_project_group',
+        params: {
+          'p_expected_profile_id': expectedCreatorId,
+          'p_project_id': proposalId,
+        },
+      );
+    }
     return _ownProposalFromRow(rows.single, capacity);
   }
 
@@ -409,14 +436,18 @@ class SupabaseProposalGateway implements ProposalGateway {
     String expectedCreatorId,
     ProposalInput input, {
     String? clientRequestId,
+    String? groupId,
   }) async {
     return _client.rpc<String>(
       clientRequestId == null
           ? 'create_proposal_draft'
-          : 'create_editor_proposal_draft',
+          : groupId == null
+          ? 'create_editor_proposal_draft'
+          : 'create_group_editor_proposal_draft',
       params: {
         ..._contentParams(expectedCreatorId, input),
         'p_client_request_id': ?clientRequestId,
+        'p_group_id': ?groupId,
       },
     );
   }
@@ -479,8 +510,14 @@ class SupabaseProposalGateway implements ProposalGateway {
   @override
   Future<void> publishProposal(
     String expectedCreatorId,
-    String proposalId,
-  ) async {
+    String proposalId, {
+    ProjectGroupBinding? groupBinding,
+  }) async {
+    if (groupBinding != null) {
+      await GroupProjectGateway(() => _client)
+          .publish(expectedCreatorId, proposalId, groupBinding, idea: false);
+      return;
+    }
     await _client.rpc<void>(
       'publish_proposal',
       params: {
@@ -505,7 +542,16 @@ class SupabaseProposalGateway implements ProposalGateway {
   }
 
   @override
-  Future<void> publishIdea(String expectedCreatorId, String proposalId) async {
+  Future<void> publishIdea(
+    String expectedCreatorId,
+    String proposalId, {
+    ProjectGroupBinding? groupBinding,
+  }) async {
+    if (groupBinding != null) {
+      await GroupProjectGateway(() => _client)
+          .publish(expectedCreatorId, proposalId, groupBinding, idea: true);
+      return;
+    }
     await _client.rpc<String>(
       'publish_proposal_idea',
       params: {
@@ -590,6 +636,9 @@ class SupabaseProposalGateway implements ProposalGateway {
     Map<String, dynamic> row,
     ProjectCapacitySnapshot capacity,
   ) => OwnProposal(
+    groupBinding: row['_group_binding'] == null
+        ? const ProjectGroupBinding()
+        : ProjectGroupBinding.parse(row['_group_binding']),
     id: row['proposal_id'] as String,
     definitionPhase: ProposalDefinitionPhase.fromWire(
       row['definition_phase'] as String,
