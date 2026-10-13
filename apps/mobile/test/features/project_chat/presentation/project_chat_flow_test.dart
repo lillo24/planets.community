@@ -28,6 +28,7 @@ import 'package:planets_mobile/features/project_chat/data/project_needs_gateway.
 import 'package:planets_mobile/features/project_chat/application/project_chat_controllers.dart';
 import 'package:planets_mobile/features/project_chat/domain/project_chat_models.dart';
 import 'package:planets_mobile/features/project_workspace/data/project_workspace_gateway.dart';
+import 'package:planets_mobile/features/project_workspace/data/project_workspace_pending_add_store.dart';
 import 'package:planets_mobile/features/project_workspace/presentation/project_workspace_screen.dart';
 import 'package:planets_mobile/features/project_workspace/application/project_workspace_launcher.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
@@ -1470,6 +1471,9 @@ Future<ProviderContainer> _pump(
         ),
         projectNeedsGatewayProvider.overrideWithValue(
           needs ?? FakeProjectNeedsGateway(),
+        ),
+        projectWorkspacePendingAddStoreProvider.overrideWithValue(
+          FakeWorkspacePendingAddStore(),
         ),
         projectWorkspaceGatewayProvider.overrideWithValue(
           workspace ?? FakeProjectWorkspaceGateway(),

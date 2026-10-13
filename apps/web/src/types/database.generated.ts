@@ -1639,6 +1639,7 @@ export type Database = {
           legacy_slot: boolean
           project_id: string
           updated_at: string
+          version: number
           workspace_url: string
         }
         Insert: {
@@ -1648,6 +1649,7 @@ export type Database = {
           legacy_slot?: boolean
           project_id: string
           updated_at?: string
+          version?: number
           workspace_url: string
         }
         Update: {
@@ -1657,6 +1659,7 @@ export type Database = {
           legacy_slot?: boolean
           project_id?: string
           updated_at?: string
+          version?: number
           workspace_url?: string
         }
         Relationships: [
@@ -3935,6 +3938,22 @@ export type Database = {
           project_kind: string
         }[]
       }
+      get_project_workspace_add_receipt: {
+        Args: {
+          p_client_request_id: string
+          p_expected_manager_profile_id: string
+          p_project_id: string
+        }
+        Returns: Json
+      }
+      get_project_workspace_link: {
+        Args: {
+          p_expected_profile_id: string
+          p_link_id: string
+          p_project_id: string
+        }
+        Returns: Json
+      }
       get_proposal_promotion_requirements: {
         Args: { p_expected_profile_id: string; p_proposal_id: string }
         Returns: Json
@@ -5488,7 +5507,13 @@ export type Database = {
         }[]
       }
       list_project_workspace_links: {
-        Args: { p_expected_profile_id: string; p_project_id: string }
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_project_id: string
+        }
         Returns: Json
       }
       list_public_groups: {
@@ -6113,6 +6138,7 @@ export type Database = {
       remove_project_workspace_link: {
         Args: {
           p_expected_manager_profile_id: string
+          p_expected_version?: number
           p_link_id: string
           p_project_id: string
         }
@@ -6280,8 +6306,10 @@ export type Database = {
       }
       save_project_workspace_link: {
         Args: {
+          p_client_request_id?: string
           p_display_name: string
           p_expected_manager_profile_id: string
+          p_expected_version?: number
           p_link_id?: string
           p_project_id: string
           p_workspace_url: string

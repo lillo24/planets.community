@@ -229,3 +229,27 @@ accepted response is deliberately dropped. The native gallery/crop itself is not
 covered. Reuse `test_driver/groups_screenshots.dart`; see the exact config, browser
 journey and evidence boundaries in
 [GRP03B QA](../../../docs/development/grp03b-group-membership-ui.md).
+
+## Batch A cumulative native gate
+
+`prepare_batch_a_smoke.mjs` creates five synthetic OTP identities and canonical
+Proposal/Tavolo, membership and group-invitation fixtures on a designated
+loopback disposable stack. It writes private compact defines outside Git;
+compression avoids Windows Gradle command-line limits and is not encryption.
+Never upload or commit that file. With the selected stack's `MAILPIT_URL` and
+`PLANETS_DISPOSABLE_QA=1`, run it from the root, then:
+
+```text
+adb -s <owned-emulator> reverse tcp:<local-api-port> tcp:<local-api-port>
+cd apps/mobile
+flutter drive -d <owned-emulator> --no-dds --driver=test_driver/batch_a_screenshots.dart --target=integration_test/batch_a_smoke_test.dart --dart-define-from-file=<private-temporary-defines>
+```
+
+The journey injects verified starting OTP identities, a recording external
+launcher and explicit transport faults after real server acceptance. Profile,
+group Creator/membership, policy, role, workspace paging/receipts/CAS use actual
+local backend commands/reads. Production cards use clearly synthetic content.
+It is fixture-authenticated native coverage, not inbox-entry UI, physical-device,
+real provider application, iOS or accessibility certification. Screenshots are
+saved under `build/batch-a-screenshots`. Recreate fixtures for each run; cleanup
+only that task's defines, emulator/app and disposable stack.

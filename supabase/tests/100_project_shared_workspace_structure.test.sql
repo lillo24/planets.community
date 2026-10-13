@@ -12,7 +12,7 @@ select has_table(
 select columns_are(
   'public',
   'project_shared_workspaces',
-  array['project_id', 'workspace_url', 'created_at', 'updated_at', 'id', 'display_name', 'legacy_slot'],
+  array['project_id', 'workspace_url', 'created_at', 'updated_at', 'id', 'display_name', 'legacy_slot', 'version'],
   'workspace rows contain stable item identity, private name and URL, timestamps and legacy slot'
 );
 select col_is_pk(
@@ -216,14 +216,19 @@ select is(
 
 select ok((select bool_and(prosecdef and proconfig @> array['search_path=""'])
   from pg_proc where oid in (
-    'public.list_project_workspace_links(uuid,uuid)'::regprocedure,
-    'public.save_project_workspace_link(uuid,uuid,text,text,uuid)'::regprocedure,
-    'public.remove_project_workspace_link(uuid,uuid,uuid)'::regprocedure)),
+    'public.list_project_workspace_links(uuid,uuid,integer,timestamp with time zone,uuid)'::regprocedure,
+    'public.save_project_workspace_link(uuid,uuid,text,text,uuid,uuid,bigint)'::regprocedure,
+    'public.remove_project_workspace_link(uuid,uuid,uuid,bigint)'::regprocedure)),
   'new RPCs use hardened SECURITY DEFINER boundaries');
 select function_privs_are('private','require_project_workspace_manager',array['uuid','uuid'],
   'authenticated',array[]::text[],'clients cannot directly call the privileged manager helper');
 select has_index('public','project_shared_workspaces','project_shared_workspaces_order_idx','Project list and cascade have an index');
 select has_index('public','project_shared_workspaces','project_shared_workspaces_legacy_idx','legacy designation is unique per Project');
 
+select has_table('private','project_workspace_add_receipts','Add recovery is canonical and private');
+select table_privs_are('private','project_workspace_add_receipts','authenticated',array[]::text[],'clients cannot read receipt storage directly');
+select table_privs_are('private','project_workspace_add_receipts','anon',array[]::text[],'guests cannot read receipt storage');
+select ok((select relrowsecurity from pg_class where oid='private.project_workspace_add_receipts'::regclass),'receipt storage has RLS');
+select ok(pg_get_functiondef('public.list_project_workspace_links(uuid,uuid,integer,timestamp with time zone,uuid)'::regprocedure) ilike '%limit p_limit + 1%', 'aggregate input is bounded on server');
 select * from finish();
 rollback;

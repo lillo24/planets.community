@@ -7,7 +7,10 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/project_workspace/application/project_workspace_controller.dart';
 import 'package:planets_mobile/features/project_workspace/data/project_workspace_gateway.dart';
+import 'package:planets_mobile/features/project_workspace/data/project_workspace_pending_add_store.dart';
 import 'package:planets_mobile/features/project_workspace/domain/project_workspace_models.dart';
+import 'package:planets_mobile/features/policies/application/policy_acceptance_controller.dart';
+import 'package:planets_mobile/features/policies/application/policy_documents.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
@@ -38,18 +41,20 @@ void main() {
           name: 'Budget',
           input: 'https://example.org/budget',
           linkId: 'b',
+          expectedVersion: 1,
         ),
         isTrue,
       );
       expect(
         session.container.read(projectWorkspaceProvider).links.map((x) => x.id),
-        ['a', 'b'],
+        ['b', 'a'],
       );
       expect(gateway.links.first.url.hostname, 'drive.google.com');
       await controller.removeLink(
         expectedManagerProfileId: 'user-1',
         projectId: 'proposal-1',
         linkId: 'a',
+        expectedVersion: 1,
       );
       expect(
         session.container.read(projectWorkspaceProvider).links.single.name,
@@ -58,13 +63,14 @@ void main() {
     },
   );
   test('failed canonical refresh clears stale data and retry recovers committed link', () async {
-    final gateway = FakeProjectWorkspaceGateway()
-      ..readError = StateError('offline');
+    final gateway = FakeProjectWorkspaceGateway();
     final session = _readyContainer(gateway);
     addTearDown(session.dispose);
     final controller = session.container.read(
       projectWorkspaceProvider.notifier,
     );
+    await controller.load(expectedProfileId: 'user-1', projectId: 'proposal-1');
+    gateway.onSaved = () => gateway.pageError = StateError('offline');
     expect(
       await controller.saveLink(
         expectedManagerProfileId: 'user-1',
@@ -79,11 +85,23 @@ void main() {
       ProjectWorkspacePhase.failure,
     );
     expect(session.container.read(projectWorkspaceProvider).links, isEmpty);
-    gateway.readError = null;
+    gateway.pageError = null;
     await controller.load(expectedProfileId: 'user-1', projectId: 'proposal-1');
     expect(
       session.container.read(projectWorkspaceProvider).links.single.name,
       'Doc',
+    );
+    expect(
+      await controller.reconcilePendingAdd(
+        expectedManagerProfileId: 'user-1',
+        projectId: 'proposal-1',
+      ),
+      isTrue,
+    );
+    expect(gateway.links, hasLength(1));
+    expect(
+      gateway.calls.where((call) => call.startsWith('set:')),
+      hasLength(1),
     );
   });
   test(
@@ -106,6 +124,7 @@ void main() {
           expectedManagerProfileId: 'user-1',
           projectId: 'proposal-1',
           linkId: 'link-1',
+          expectedVersion: 1,
         ),
         isFalse,
       );
@@ -122,6 +141,7 @@ void main() {
           expectedManagerProfileId: 'user-1',
           projectId: 'proposal-1',
           linkId: 'link-1',
+          expectedVersion: 1,
         ),
         isFalse,
       );
@@ -216,6 +236,7 @@ void main() {
       expect(
         await controller.removeLink(
           linkId: 'link-1',
+          expectedVersion: 1,
           expectedManagerProfileId: 'user-1',
           projectId: 'proposal-1',
         ),
@@ -339,9 +360,13 @@ void main() {
   );
   final container = ProviderContainer(
     overrides: [
+      policyAcceptanceProvider.overrideWith(_AcceptedWorkspacePolicies.new),
       authGatewayProvider.overrideWithValue(auth),
       profileAnchorGatewayProvider.overrideWithValue(
         FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
+      ),
+      projectWorkspacePendingAddStoreProvider.overrideWithValue(
+        FakeWorkspacePendingAddStore(),
       ),
       projectWorkspaceGatewayProvider.overrideWithValue(gateway),
     ],
@@ -355,5 +380,14 @@ void main() {
       container.dispose();
       auth.close();
     },
+  );
+}
+
+class _AcceptedWorkspacePolicies extends PolicyAcceptanceController {
+  @override
+  PolicyAcceptanceState build() => PolicyAcceptanceState(
+    ref.watch(authSessionProvider).identity?.id,
+    ref.watch(policyVersionProvider),
+    PolicyAcceptancePhase.accepted,
   );
 }

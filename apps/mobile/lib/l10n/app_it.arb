@@ -2025,5 +2025,19 @@
   "profileGroupOfferBody": "Crea la sua pagina ora, oppure fallo più tardi dalla sezione I miei gruppi.",
   "profileGroupOfferCreate": "Crea un gruppo",
   "profileGroupOfferSkip": "Non ora",
-  "proposalIdeaRibbon": "Idea"
+  "proposalIdeaRibbon": "Idea",
+  "projectWorkspaceLoadMore": "Carica altri link",
+  "projectWorkspaceRetryPage": "Riprova a caricare altri link",
+  "projectWorkspaceRecoveryNotice": "Un link precedente potrebbe essere stato aggiunto. Controlla il suo stato prima di aggiungerne un altro.",
+  "projectWorkspaceCheckAdd": "Controlla lo stato del link",
+  "projectWorkspaceRetryAdd": "Riprova questo link",
+  "projectWorkspaceResumeAdd": "Rivedi il link precedente",
+  "projectWorkspaceConflict": "Questo link è cambiato. Ricaricalo e controllalo prima di salvarlo o rimuoverlo.",
+  "projectWorkspaceRemovedElsewhere": "Questo link è già stato rimosso.",
+  "projectWorkspaceChangedDestination": "Il link è cambiato. Conferma la destinazione attuale.",
+  "projectWorkspacePolicyRequired": "Prima di modificare i link, rivedi i Termini e le Regole attuali.",
+  "projectWorkspaceReviewPolicy": "Rivedi Termini e Regole",
+  "projectWorkspaceClose": "Chiudi",
+  "projectWorkspaceReconciliationFailed": "Non possiamo confermare questo link. Controlla il suo stato o riprova lo stesso link.",
+  "projectWorkspacePendingAddReadOnly": "Questi dettagli vengono conservati finché il link non è confermato."
 }

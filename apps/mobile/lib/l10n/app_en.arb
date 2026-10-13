@@ -2763,5 +2763,19 @@
   "profileGroupOfferBody": "Create its page now, or do it later from My groups.",
   "profileGroupOfferCreate": "Create a group",
   "profileGroupOfferSkip": "Not now",
-  "proposalIdeaRibbon": "Idea"
+  "proposalIdeaRibbon": "Idea",
+  "projectWorkspaceLoadMore": "Load more links",
+  "projectWorkspaceRetryPage": "Try loading more again",
+  "projectWorkspaceRecoveryNotice": "An earlier link may have been added. Check its status before adding another.",
+  "projectWorkspaceCheckAdd": "Check link status",
+  "projectWorkspaceRetryAdd": "Retry this link",
+  "projectWorkspaceResumeAdd": "Review previous link",
+  "projectWorkspaceConflict": "This link changed. Reload and review it before saving or removing it.",
+  "projectWorkspaceRemovedElsewhere": "This link was already removed.",
+  "projectWorkspaceChangedDestination": "The link changed. Confirm the current destination.",
+  "projectWorkspacePolicyRequired": "Review the current Terms and Rules before changing links.",
+  "projectWorkspaceReviewPolicy": "Review Terms and Rules",
+  "projectWorkspaceClose": "Close",
+  "projectWorkspaceReconciliationFailed": "Couldn't confirm this link. Check its status or retry the same link.",
+  "projectWorkspacePendingAddReadOnly": "These details are kept until this link is confirmed."
 }

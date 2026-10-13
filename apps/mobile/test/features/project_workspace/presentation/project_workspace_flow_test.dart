@@ -1,9 +1,17 @@
+import '../../../support/fake_policy.dart';
+import '../../../support/rendered_evidence.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/core/theme/app_theme.dart';
+import 'package:planets_mobile/features/policies/application/policy_acceptance_controller.dart';
+import 'package:planets_mobile/features/policies/application/policy_documents.dart';
+import 'package:planets_mobile/features/policies/data/policy_acceptance_store.dart';
+import 'package:planets_mobile/features/policies/presentation/policy_acceptance_screen.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
@@ -15,6 +23,8 @@ import 'package:planets_mobile/features/project_workspace/application/project_wo
 import 'package:planets_mobile/features/project_workspace/application/project_workspace_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:planets_mobile/features/project_workspace/data/project_workspace_gateway.dart';
+import 'package:planets_mobile/features/project_workspace/domain/project_workspace_models.dart';
+import 'package:planets_mobile/features/project_workspace/data/project_workspace_pending_add_store.dart';
 import 'package:planets_mobile/features/project_workspace/presentation/project_workspace_screen.dart';
 import 'package:planets_mobile/features/project_workspace/presentation/project_workspace_widgets.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
@@ -24,6 +34,506 @@ import '../../../support/fake_project_delegates.dart';
 import '../../../support/fake_project_workspace.dart';
 
 void main() {
+  setUpAll(RenderedEvidence.loadFonts);
+  for (final locale in ['en', 'it']) {
+    for (final dark in [false, true]) {
+      testWidgets('A04 recovery controls $locale dark=$dark 320dp/2x', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(320, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final workspace = FakeProjectWorkspaceGateway()
+          ..loseNextAddReply = true;
+        final session = _readyContainer(
+          workspace,
+          FakeProjectDelegateGateway()..role = ProjectManagementRole.creator,
+        );
+        addTearDown(session.dispose);
+        await _pumpWorkspace(
+          tester,
+          session.container,
+          locale: locale,
+          scale: 2,
+          dark: dark,
+        );
+        await _tapWorkspace(
+          tester,
+          find.byKey(const Key('project-workspace-add')),
+        );
+        await tester.enterText(
+          find.byKey(const Key('project-workspace-name-field')),
+          locale == 'it' ? 'Documento condiviso' : 'Shared document',
+        );
+        await tester.enterText(
+          find.byKey(const Key('project-workspace-url-field')),
+          'https://docs.example.invalid/retained',
+        );
+        FocusManager.instance.primaryFocus?.unfocus();
+        await _tapWorkspace(
+          tester,
+          find.byKey(const Key('project-workspace-save')),
+        );
+        expect(
+          find.byKey(const Key('project-workspace-save')).hitTestable(),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('project-workspace-editor-check')).hitTestable(),
+          findsOneWidget,
+        );
+        expect(
+          find.text(locale == 'it' ? 'Chiudi' : 'Close').hitTestable(),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+        await RenderedEvidence.capture(
+          tester,
+          'a04-recovery-$locale-${dark ? 'dark' : 'light'}-320-2x',
+        );
+        await _tapWorkspace(
+          tester,
+          find.byKey(const Key('project-workspace-editor-check')),
+        );
+        expect(workspace.requestIds, hasLength(1));
+        expect(workspace.links, hasLength(1));
+      });
+    }
+  }
+  testWidgets(
+    'Load more and page retry require explicit actions and preserve rows',
+    (tester) async {
+      final workspace = FakeProjectWorkspaceGateway()
+        ..links.addAll(
+          List.generate(
+            25,
+            (i) => projectWorkspaceFixture(
+              id: 'id-${i.toString().padLeft(2, '0')}',
+              projectId: 'project-1',
+            ),
+          ),
+        );
+      final session = _readyContainer(workspace, FakeProjectDelegateGateway());
+      addTearDown(session.dispose);
+      await _pumpWorkspace(tester, session.container);
+      expect(
+        session.container.read(projectWorkspaceProvider).links,
+        hasLength(10),
+      );
+      workspace.pageError = StateError('offline');
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-load-more')),
+      );
+      expect(
+        session.container.read(projectWorkspaceProvider).links,
+        hasLength(10),
+      );
+      expect(find.text('Try loading more again'), findsOneWidget);
+      final count = workspace.calls.length;
+      await tester.pump(const Duration(seconds: 2));
+      expect(workspace.calls, hasLength(count));
+      workspace.pageError = null;
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-load-more')),
+      );
+      expect(
+        session.container.read(projectWorkspaceProvider).links,
+        hasLength(20),
+      );
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-load-more')),
+      );
+      expect(
+        session.container.read(projectWorkspaceProvider).links,
+        hasLength(25),
+      );
+      expect(
+        find.byKey(const Key('project-workspace-load-more')),
+        findsNothing,
+      );
+    },
+  );
+  testWidgets(
+    'lost Add response is frozen; explicit status check confirms one item',
+    (tester) async {
+      final workspace = FakeProjectWorkspaceGateway()..loseNextAddReply = true;
+      final session = _readyContainer(
+        workspace,
+        FakeProjectDelegateGateway()..role = ProjectManagementRole.creator,
+      );
+      addTearDown(session.dispose);
+      await _pumpWorkspace(tester, session.container);
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-add')),
+      );
+      await tester.enterText(
+        find.byKey(const Key('project-workspace-name-field')),
+        'Kept document',
+      );
+      await tester.enterText(
+        find.byKey(const Key('project-workspace-url-field')),
+        'https://docs.example.invalid/kept',
+      );
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-save')),
+      );
+      expect(workspace.links, hasLength(1));
+      expect(find.textContaining("Couldn't confirm this link"), findsOneWidget);
+      final field = find.descendant(
+        of: find.byKey(const Key('project-workspace-url-field')),
+        matching: find.byType(TextField),
+      );
+      expect(tester.widget<TextField>(field).readOnly, isTrue);
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.byKey(const Key('project-workspace-url-field')),
+            )
+            .controller!
+            .text,
+        'https://docs.example.invalid/kept',
+      );
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-editor-check')),
+      );
+      expect(find.text('Link saved.'), findsOneWidget);
+      expect(workspace.requestIds, hasLength(1));
+      expect(workspace.links, hasLength(1));
+    },
+  );
+
+  testWidgets(
+    'recreated UI restores outstanding Add before permitting a new one',
+    (tester) async {
+      final workspace = FakeProjectWorkspaceGateway()..loseNextAddReply = true;
+      final pending = FakeWorkspacePendingAddStore();
+      final first = _readyContainer(
+        workspace,
+        FakeProjectDelegateGateway()..role = ProjectManagementRole.creator,
+        pending: pending,
+      );
+      addTearDown(first.dispose);
+      await _pumpWorkspace(tester, first.container);
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-add')),
+      );
+      await tester.enterText(
+        find.byKey(const Key('project-workspace-name-field')),
+        'Restart document',
+      );
+      await tester.enterText(
+        find.byKey(const Key('project-workspace-url-field')),
+        'https://docs.example.invalid/restart',
+      );
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-save')),
+      );
+      final request = workspace.requestIds.single;
+      await tester.pumpWidget(const SizedBox());
+      final restarted = _readyContainer(
+        workspace,
+        FakeProjectDelegateGateway()..role = ProjectManagementRole.creator,
+        pending: pending,
+      );
+      addTearDown(restarted.dispose);
+      await _pumpWorkspace(tester, restarted.container);
+      expect(
+        find.textContaining('An earlier link may have been added'),
+        findsOneWidget,
+      );
+      expect(find.text('Review previous link'), findsOneWidget);
+      expect(workspace.requestIds, [request]);
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-add')),
+      );
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.byKey(const Key('project-workspace-name-field')),
+            )
+            .controller!
+            .text,
+        'Restart document',
+      );
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-editor-check')),
+      );
+      expect(workspace.requestIds, [request]);
+      expect(pending.values, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'a changed URL is reconfirmed before opening its canonical destination',
+    (tester) async {
+      final workspace = FakeProjectWorkspaceGateway()
+        ..workspace = projectWorkspaceFixture(projectId: 'project-1');
+      final launcher = FakeProjectWorkspaceLauncher();
+      final session = _readyContainer(
+        workspace,
+        FakeProjectDelegateGateway(),
+        launcher: launcher,
+      );
+      addTearDown(session.dispose);
+      await _pumpWorkspace(tester, session.container);
+      await _tapWorkspace(
+        tester,
+        find.byKey(const ValueKey('workspace-open-link-1')),
+      );
+      workspace.workspace = projectWorkspaceFixture(
+        projectId: 'project-1',
+        version: 2,
+        url: 'https://changed.example.invalid/current',
+      );
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-confirm-open')),
+      );
+      expect(launcher.calls, 0);
+      expect(
+        find.textContaining('Confirm the current destination'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('changed.example.invalid'), findsWidgets);
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-confirm-open')),
+      );
+      expect(launcher.calls, 1);
+      expect(launcher.opened!.value, 'https://changed.example.invalid/current');
+      expect(
+        workspace.calls.where((call) => call.startsWith('item:')),
+        hasLength(2),
+      );
+    },
+  );
+
+  testWidgets(
+    'A-B-A during hostname confirmation removes old private content and callbacks',
+    (tester) async {
+      final workspace = FakeProjectWorkspaceGateway()
+        ..workspace = projectWorkspaceFixture(projectId: 'project-1');
+      final launcher = FakeProjectWorkspaceLauncher();
+      final session = _readyContainer(
+        workspace,
+        FakeProjectDelegateGateway(),
+        launcher: launcher,
+      );
+      addTearDown(session.dispose);
+      await _pumpWorkspace(tester, session.container);
+      await _tapWorkspace(
+        tester,
+        find.byKey(const ValueKey('workspace-open-link-1')),
+      );
+      session.container
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'user-2'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(
+        find.byKey(const Key('project-workspace-confirm-host')),
+        findsNothing,
+      );
+      session.container
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'user-1'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(
+        find.byKey(const Key('project-workspace-confirm-open')),
+        findsNothing,
+      );
+      expect(launcher.calls, 0);
+    },
+  );
+
+  testWidgets(
+    'remove confirmation cannot delete a concurrently changed version',
+    (tester) async {
+      final workspace = FakeProjectWorkspaceGateway()
+        ..workspace = projectWorkspaceFixture(projectId: 'project-1');
+      final session = _readyContainer(
+        workspace,
+        FakeProjectDelegateGateway()..role = ProjectManagementRole.creator,
+      );
+      addTearDown(session.dispose);
+      await _pumpWorkspace(tester, session.container);
+      await _tapWorkspace(
+        tester,
+        find.byKey(const ValueKey('workspace-remove-link-1')),
+      );
+      final old = workspace.links.single;
+      await workspace.saveLink(
+        expectedManagerProfileId: 'other-manager',
+        projectId: 'project-1',
+        name: 'Changed by another manager',
+        url: old.url,
+        linkId: old.id,
+        expectedVersion: old.version,
+      );
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-confirm-remove')),
+      );
+      expect(workspace.links.single.name, 'Changed by another manager');
+      expect(
+        session.container.read(projectWorkspaceProvider).failure,
+        ProjectWorkspaceFailureKind.conflict,
+      );
+      expect(find.textContaining('This link changed'), findsWidgets);
+      expect(find.text('Link removed.'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'policy review retains unsent input and action without automatic submission',
+    (tester) async {
+      final workspace = FakeProjectWorkspaceGateway();
+      final policies = FakePolicyAcceptanceStore();
+      final session = _readyContainer(
+        workspace,
+        FakeProjectDelegateGateway()..role = ProjectManagementRole.creator,
+        policies: policies,
+      );
+      policies.versions['user-1'] = session.container.read(
+        policyVersionProvider,
+      );
+      addTearDown(session.dispose);
+      await _pumpWorkspace(tester, session.container);
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-add')),
+      );
+      await tester.enterText(
+        find.byKey(const Key('project-workspace-name-field')),
+        'Policy document',
+      );
+      await tester.enterText(
+        find.byKey(const Key('project-workspace-url-field')),
+        'https://docs.example.invalid/policy',
+      );
+      final controller = session.container.read(
+        projectWorkspaceProvider.notifier,
+      );
+      final request = controller
+          .beginDraft('user-1', 'project-1', null)
+          .requestId;
+      policies.versions.clear();
+      await session.container
+          .read(policyAcceptanceProvider.notifier)
+          .retryRead();
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const Key('project-workspace-save')),
+            )
+            .onPressed,
+        isNull,
+      );
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-review-policy')),
+      );
+      expect(find.byType(PolicyAcceptanceScreen), findsOneWidget);
+      expect(workspace.requestIds, isEmpty);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.byKey(const Key('project-workspace-name-field')),
+            )
+            .controller!
+            .text,
+        'Policy document',
+      );
+      expect(
+        controller.beginDraft('user-1', 'project-1', null).requestId,
+        request,
+      );
+      policies.versions['user-1'] = session.container.read(
+        policyVersionProvider,
+      );
+      await session.container
+          .read(policyAcceptanceProvider.notifier)
+          .retryRead();
+      await tester.pumpAndSettle();
+      expect(workspace.requestIds, isEmpty);
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-save')),
+      );
+      expect(workspace.requestIds, [request]);
+    },
+  );
+
+  testWidgets(
+    'route disposal retains an unsent draft and its original action',
+    (tester) async {
+      final workspace = FakeProjectWorkspaceGateway();
+      final session = _readyContainer(
+        workspace,
+        FakeProjectDelegateGateway()..role = ProjectManagementRole.creator,
+      );
+      addTearDown(session.dispose);
+      await _pumpWorkspace(tester, session.container);
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-add')),
+      );
+      await tester.enterText(
+        find.byKey(const Key('project-workspace-name-field')),
+        'Route document',
+      );
+      await tester.enterText(
+        find.byKey(const Key('project-workspace-url-field')),
+        'https://docs.example.invalid/route',
+      );
+      final controller = session.container.read(
+        projectWorkspaceProvider.notifier,
+      );
+      final request = controller
+          .beginDraft('user-1', 'project-1', null)
+          .requestId;
+      await tester.pumpWidget(const SizedBox());
+      await _pumpWorkspace(tester, session.container);
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-add')),
+      );
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.byKey(const Key('project-workspace-name-field')),
+            )
+            .controller!
+            .text,
+        'Route document',
+      );
+      expect(
+        controller.beginDraft('user-1', 'project-1', null).requestId,
+        request,
+      );
+      expect(workspace.requestIds, isEmpty);
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-save')),
+      );
+      expect(workspace.requestIds, [request]);
+    },
+  );
   for (final locale in ['en', 'it']) {
     for (final manager in [false, true]) {
       testWidgets(
@@ -34,11 +544,13 @@ void main() {
           addTearDown(tester.view.resetPhysicalSize);
           addTearDown(tester.view.resetDevicePixelRatio);
           final workspace = FakeProjectWorkspaceGateway()
+            ..canManage = manager
             ..links.addAll(
               List.generate(
                 12,
                 (i) => projectWorkspaceFixture(
                   id: 'link-$i',
+                  createdAt: DateTime.utc(2030).add(Duration(seconds: i)),
                   projectId: 'project-1',
                   name:
                       'Documento organizzazione molto lungo ${'materiali ' * 8}$i',
@@ -65,6 +577,24 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
+          // Reads are now bounded. Older links appear only after explicit paging.
+          expect(
+            session.container.read(projectWorkspaceProvider).links,
+            hasLength(10),
+          );
+          expect(
+            find.byKey(const ValueKey('workspace-link-link-0')),
+            findsNothing,
+          );
+          final more = find.byKey(const Key('project-workspace-load-more'));
+          await tester.ensureVisible(more);
+          await tester.pumpAndSettle();
+          await tester.tap(more);
+          await tester.pumpAndSettle();
+          expect(
+            session.container.read(projectWorkspaceProvider).links,
+            hasLength(12),
+          );
           expect(
             find.byKey(const ValueKey('workspace-link-link-0')),
             findsOneWidget,
@@ -73,10 +603,10 @@ void main() {
             find.byKey(const ValueKey('workspace-edit-link-0')),
             manager ? findsOneWidget : findsNothing,
           );
-          await tester.scrollUntilVisible(
+          await tester.ensureVisible(
             find.byKey(const ValueKey('workspace-link-link-11')),
-            400,
           );
+          await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
         },
       );
@@ -388,7 +918,22 @@ void main() {
       await tester.tap(find.byKey(const Key('project-workspace-save')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('information is unavailable'), findsOneWidget);
+      expect(find.textContaining("Couldn't confirm this link"), findsOneWidget);
+      expect(
+        tester
+            .widget<TextField>(
+              find.descendant(
+                of: find.byKey(const Key('project-workspace-url-field')),
+                matching: find.byType(TextField),
+              ),
+            )
+            .readOnly,
+        isTrue,
+      );
+      expect(
+        find.byKey(const Key('project-workspace-editor-check')),
+        findsOneWidget,
+      );
       expect(find.textContaining('private provider diagnostic'), findsNothing);
     },
   );
@@ -560,15 +1105,23 @@ void main() {
   FakeProjectWorkspaceGateway workspace,
   FakeProjectDelegateGateway delegates, {
   FakeProjectWorkspaceLauncher? launcher,
+  FakeWorkspacePendingAddStore? pending,
+  FakePolicyAcceptanceStore? policies,
 }) {
   final auth = FakeAuthGateway(
     snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
   );
   final container = ProviderContainer(
     overrides: [
+      policyAcceptanceStoreProvider.overrideWithValue(
+        policies ?? FakePolicyAcceptanceStore(preaccepted: true),
+      ),
       authGatewayProvider.overrideWithValue(auth),
       profileAnchorGatewayProvider.overrideWithValue(
         FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
+      ),
+      projectWorkspacePendingAddStoreProvider.overrideWithValue(
+        pending ?? FakeWorkspacePendingAddStore(),
       ),
       projectWorkspaceGatewayProvider.overrideWithValue(workspace),
       projectDelegateGatewayProvider.overrideWithValue(delegates),
@@ -588,20 +1141,59 @@ void main() {
   );
 }
 
-Widget _localized(Widget child, {String locale = 'en', double scale = 1}) =>
-    MaterialApp(
-      locale: Locale(locale),
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context)
-            .copyWith(textScaler: TextScaler.linear(scale)),
-        child: child!,
+Widget _localized(
+  Widget child, {
+  String locale = 'en',
+  double scale = 1,
+  bool dark = false,
+}) => RenderedEvidence.wrap(
+  MaterialApp(
+    debugShowCheckedModeBanner: false,
+    theme: dark ? AppTheme.dark : AppTheme.light,
+    locale: Locale(locale),
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(context)
+          .copyWith(textScaler: TextScaler.linear(scale)),
+      child: child!,
+    ),
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: Scaffold(body: child),
+  ),
+);
+
+Future<void> _pumpWorkspace(
+  WidgetTester tester,
+  ProviderContainer container, {
+  String locale = 'en',
+  double scale = 1,
+  bool dark = false,
+}) async {
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: _localized(
+        const ProjectWorkspaceScreen(
+          projectId: 'project-1',
+          projectKind: ProjectKind.oneTime,
+        ),
+        locale: locale,
+        scale: scale,
+        dark: dark,
       ),
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: child),
-    );
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _tapWorkspace(WidgetTester tester, Finder finder) async {
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}

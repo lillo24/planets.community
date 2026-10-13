@@ -5,6 +5,9 @@ enum ProjectWorkspaceFailureKind {
   invalidName,
   forbidden,
   unavailable,
+  conflict,
+  removed,
+  policyRequired,
 }
 
 enum ProjectWorkspaceUrlFailure { empty, tooLong, notHttps, invalid }
@@ -72,6 +75,8 @@ class ProjectWorkspace {
     required this.projectId,
     required this.url,
     required this.updatedAt,
+    required this.createdAt,
+    required this.version,
   });
 
   final String id;
@@ -79,6 +84,75 @@ class ProjectWorkspace {
   final String projectId;
   final ProjectWorkspaceUrl url;
   final DateTime updatedAt;
+  final DateTime createdAt;
+  final int version;
+}
+
+class ProjectWorkspaceCursor {
+  const ProjectWorkspaceCursor({required this.createdAt, required this.id});
+  final DateTime createdAt;
+  final String id;
+}
+
+class ProjectWorkspacePage {
+  const ProjectWorkspacePage({
+    required this.items,
+    required this.canManage,
+    this.nextCursor,
+  });
+  final List<ProjectWorkspace> items;
+  final bool canManage;
+  final ProjectWorkspaceCursor? nextCursor;
+}
+
+/// Run-only drafts survive policy/route round trips. Only a submitted Add is
+/// persisted before network IO, so a restart can reconcile that exact command.
+class WorkspaceLinkDraft {
+  const WorkspaceLinkDraft({
+    required this.actorId,
+    required this.projectId,
+    required this.name,
+    required this.input,
+    this.requestId,
+    this.linkId,
+    this.expectedVersion,
+    this.submitted = false,
+  });
+  final String actorId;
+  final String projectId;
+  final String name;
+  final String input;
+  final String? requestId;
+  final String? linkId;
+  final int? expectedVersion;
+  final bool submitted;
+
+  WorkspaceLinkDraft withInput(String name, String input, {bool? submitted}) =>
+      WorkspaceLinkDraft(
+        actorId: actorId,
+        projectId: projectId,
+        name: name,
+        input: input,
+        requestId: requestId,
+        linkId: linkId,
+        expectedVersion: expectedVersion,
+        submitted: submitted ?? this.submitted,
+      );
+}
+
+class WorkspaceAddReceipt {
+  const WorkspaceAddReceipt({
+    required this.accepted,
+    this.linkId,
+    this.name,
+    this.url,
+    this.item,
+  });
+  final bool accepted;
+  final String? linkId;
+  final String? name;
+  final ProjectWorkspaceUrl? url;
+  final ProjectWorkspace? item;
 }
 
 class ProjectWorkspaceState {
@@ -89,6 +163,11 @@ class ProjectWorkspaceState {
     this.links = const [],
     this.failure,
     this.mutating = false,
+    this.canManage = false,
+    this.nextCursor,
+    this.loadingMore = false,
+    this.pageFailure,
+    this.pendingAdd,
   });
 
   final ProjectWorkspacePhase phase;
@@ -97,6 +176,39 @@ class ProjectWorkspaceState {
   final List<ProjectWorkspace> links;
   final ProjectWorkspaceFailureKind? failure;
   final bool mutating;
+  final bool canManage;
+  final ProjectWorkspaceCursor? nextCursor;
+  final bool loadingMore;
+  final ProjectWorkspaceFailureKind? pageFailure;
+  final WorkspaceLinkDraft? pendingAdd;
+
+  ProjectWorkspaceState copyWith({
+    ProjectWorkspacePhase? phase,
+    List<ProjectWorkspace>? links,
+    bool? mutating,
+    bool? canManage,
+    bool? loadingMore,
+    ProjectWorkspaceCursor? nextCursor,
+    bool clearCursor = false,
+    ProjectWorkspaceFailureKind? failure,
+    bool clearFailure = false,
+    ProjectWorkspaceFailureKind? pageFailure,
+    bool clearPageFailure = false,
+    WorkspaceLinkDraft? pendingAdd,
+    bool clearPending = false,
+  }) => ProjectWorkspaceState(
+    phase: phase ?? this.phase,
+    expectedProfileId: expectedProfileId,
+    projectId: projectId,
+    links: links ?? this.links,
+    mutating: mutating ?? this.mutating,
+    canManage: canManage ?? this.canManage,
+    loadingMore: loadingMore ?? this.loadingMore,
+    nextCursor: clearCursor ? null : nextCursor ?? this.nextCursor,
+    failure: clearFailure ? null : failure ?? this.failure,
+    pageFailure: clearPageFailure ? null : pageFailure ?? this.pageFailure,
+    pendingAdd: clearPending ? null : pendingAdd ?? this.pendingAdd,
+  );
 
   bool isFor(String profileId, String targetProjectId) =>
       expectedProfileId == profileId && projectId == targetProjectId;

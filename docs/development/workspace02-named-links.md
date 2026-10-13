@@ -26,8 +26,9 @@ identity and timestamp preservation and no duplicate rows.
 
 New clients call `list_project_workspace_links`, `save_project_workspace_link`
 (null link ID adds, an ID edits) and `remove_project_workspace_link`. The list
-is an ordered JSON array, sorted by creation timestamp then ID, so the Data API
-row cap cannot truncate it. Item mutations serialize on the canonical Project
+returns a bounded `{items,can_manage,next_cursor}` page, ordered newest first by
+creation timestamp then ID. Explicit additional pages retain access to every
+entry; the JSON aggregate sees at most the requested page. Item mutations serialize on the canonical Project
 before rechecking current management, scope IDs to that Project and leave all
 other entries intact. The client reconciles through a fresh canonical read.
 
@@ -57,9 +58,11 @@ removed and unrelated actors cannot read or mutate; current members only read.
 The controller rejects stale responses after account/Project/entitlement
 changes and clears protected state on forbidden errors. A mutation followed by
 failed reconciliation presents a read error and Retry, not stale success. The
-editor preserves inputs after ordinary mutation failure. After an ambiguous or
-committed save, reload the collection before adding again. External open
-revalidates current identity and the canonical link after confirmation.
+editor preserves inputs after ordinary mutation failure. An ambiguous Add keeps
+its persisted frozen action and checks its canonical receipt or retries that same
+action before another Add is permitted. External open revalidates current
+identity and the exact canonical item after confirmation; changed destinations
+require fresh confirmation.
 
 ## Validation
 
@@ -105,8 +108,46 @@ Executed results are recorded in the draft PR after final validation.
 - Repeat for a Proposal and a Tavolo, including history-only access.
 
 Native device/emulator visual, external-app and accessibility QA remains manual
-until explicitly executed. This task delivers a **draft PR**, with no automatic
-merge, hosted migration, deployment, store release or account configuration.
+until explicitly executed. The Batch A coordinator authorizes one final cumulative source merge after its
+local, native and CI gates. It authorizes no hosted migration, deployment, store
+release or account configuration.
 Before an approved rollout: review the compatibility policy, run native QA,
 back up the target database, rehearse the populated forward migration, apply it
 before distributing the new client, and smoke-test old/new client coexistence.
+
+## Batch A04 forward hardening
+
+Imported reviewed #216 head `11daa1ba4c9f616e0c63806cdf3a2092994ec822` after
+A03. Integration retained the latest Checklist control and its one-time Project
+visibility, while keeping Workspace lazy and available to current entitled
+users. The original named-links migration is unchanged.
+
+`20261013175400_project_workspace_paging_and_recovery.sql` deliberately evolves
+only the unmerged collection RPCs. The three installed single-link contracts
+retain signatures and results. `list_project_workspace_links` now returns
+`{items,can_manage,next_cursor}`, ordered newest first by `(created_at,id)`, with
+10 default and 50 maximum items. Both cursor fields must be supplied together.
+There is no total collection limit or automatic page drain. Item reads support
+canonical external confirmation without scanning every page.
+
+Adds require a client UUID. Private actor/Project/request receipts bind the
+normalized name/URL and stable item ID. Exact retries return that ID; changed
+payload reuse raises `40001`; deletion leaves a tombstone so replay cannot
+resurrect it. Receipt reads require current management and are actor scoped.
+The mobile journal stores submitted frozen intent before transport and reconciles
+receipt plus current item/page before success. Unknown outcomes, persistence
+failures and failed reconciliation never become a new Add or false success.
+Run-only drafts preserve policy/route inputs; process recovery checks the
+persisted pending action explicitly. Actor/readiness epochs reject late results.
+
+Edits/removals require the integer item version (`40001` conflict, `P0002`
+missing). All updates, including legacy set, advance the version. Project lock
+ordering remains canonical. No direct table/receipt grants, realtime payloads,
+provider reads, generic event URLs or public/template projection fields are added.
+
+The upgrade verifier resets only a designated disposable loopback stack. It
+proves the original pre-migration upgrade and populated latest-main history with
+the earlier named migration missing, using `migration up --include-all`; repeated
+up preserves IDs/timestamps and creates no backfill duplicates. Fresh sorted
+replay is separately covered by `check:db`. Native and final-source results are
+recorded in the Batch A integration handoff, rather than inherited from #216.

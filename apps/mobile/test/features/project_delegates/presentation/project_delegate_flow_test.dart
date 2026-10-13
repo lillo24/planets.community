@@ -16,6 +16,7 @@ import 'package:planets_mobile/features/project_delegates/domain/project_delegat
 import 'package:planets_mobile/features/project_delegates/presentation/project_coorganizers_screen.dart';
 import 'package:planets_mobile/features/project_delegates/presentation/project_manage_screen.dart';
 import 'package:planets_mobile/features/project_workspace/data/project_workspace_gateway.dart';
+import 'package:planets_mobile/features/project_workspace/data/project_workspace_pending_add_store.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/proposals/presentation/own_proposals_screen.dart';
 import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
@@ -859,6 +860,9 @@ void main() {
         FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
       ),
       projectDelegateGatewayProvider.overrideWithValue(gateway),
+      projectWorkspacePendingAddStoreProvider.overrideWithValue(
+        FakeWorkspacePendingAddStore(),
+      ),
       projectWorkspaceGatewayProvider.overrideWithValue(
         FakeProjectWorkspaceGateway(),
       ),

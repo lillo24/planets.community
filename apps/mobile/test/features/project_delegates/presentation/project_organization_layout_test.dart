@@ -28,6 +28,7 @@ import 'package:planets_mobile/features/project_participant_invites/data/partici
 import 'package:planets_mobile/features/project_participant_invites/domain/participant_invitation_models.dart';
 import 'package:planets_mobile/features/project_participant_invites/presentation/participant_link_management_screen.dart';
 import 'package:planets_mobile/features/project_workspace/data/project_workspace_gateway.dart';
+import 'package:planets_mobile/features/project_workspace/data/project_workspace_pending_add_store.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../support/fake_auth.dart';
@@ -590,6 +591,9 @@ _pump(
       ),
       projectDelegateGatewayProvider.overrideWithValue(delegates),
       participantInvitationGatewayProvider.overrideWithValue(invitations),
+      projectWorkspacePendingAddStoreProvider.overrideWithValue(
+        FakeWorkspacePendingAddStore(),
+      ),
       projectWorkspaceGatewayProvider.overrideWithValue(sharedWorkspace),
       participationGatewayProvider.overrideWithValue(participation),
       projectInviteSharingProvider.overrideWithValue(sharing),

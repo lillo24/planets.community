@@ -29,11 +29,30 @@ the collection, including a single-link collection. Group info reuses that same
 list/editor. Individual links require hostname confirmation and a fresh entitled
 read before external launch. No preview/favicons/provider API requests are made.
 
-Each mutation targets one stable link ID, then reloads the canonical list. A
-failed mutation retains the editor for retry; a committed mutation followed by
-a failed reload clears stale data and requires list Retry before further editing
-(avoid blindly adding the same entry again). List JSON is returned as one RPC
-result so PostgREST's row limit cannot silently truncate a large collection.
+Reads use explicit newest-first `(created_at,id)` keyset pages: default 10,
+maximum 50. Load more and its Retry preserve loaded rows and the failed cursor;
+opening chat never preloads this collection. Canonical `can_manage` and the
+parent entitlement must both permit writes.
+
+Each edit/remove carries the item's integer version; legacy updates also advance
+it. Conflict reloads cannot overwrite or delete a changed item. One explicit Add
+has a stable actor/Project/request UUID and frozen name/URL. Before sending, the
+app-private SharedPreferences journal persists that intent. It survives route,
+policy and process round trips; explicit status checking or exact retry uses the
+canonical receipt and never generates another request. Different deliberate Adds
+may have identical content. Removed accepted items are never resurrected.
+Storage/read/receipt failures remain explicit uncertainty and block a new Add.
+Run-only edit input retains its original version during policy/route round trips.
+Account/readiness changes advance an epoch, discard protected state and reject
+late A-to-B-to-A responses. Receipt replay always rechecks current management.
+
+- `data/project_workspace_pending_add_store.dart` owns the versioned private
+  pending-Add journal, scoped to actor and Project; no provider/account tokens.
+- `presentation/project_workspace_link_editor.dart` owns draft/recovery/policy UI.
+- `presentation/project_workspace_open.dart` confirms the current hostname and
+  rereads the exact item after confirmation. A changed URL requires confirmation
+  again; identity/route/entitlement loss cancels opening.
+- `presentation/project_workspace_feedback.dart` maps safe localized failures.
 
 See [WORKSPACE02](../../../../../docs/development/workspace02-named-links.md)
 for migration compatibility, verification and native QA.

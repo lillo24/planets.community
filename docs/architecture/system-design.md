@@ -233,7 +233,9 @@ read unless they independently retain management. The RPC-only table has RLS
 but no client grants/policies. Project-first locks serialize mutations and
 stable link IDs prevent whole-list overwrites. Legacy single-link RPCs share
 one designated entry and cannot erase extra links. External services own their
-content and access policy. See [WORKSPACE02](../development/workspace02-named-links.md).
+content and access policy. Collection reads use bounded keyset pages; actor-scoped
+Add receipts and item versions protect lost-response retries and stale writes.
+See [WORKSPACE02](../development/workspace02-named-links.md).
 
 Mobile and web share `https://planets.community/invite/project/<token>` as the
 canonical invitation route. The website remains a complete fallback and only
