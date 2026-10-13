@@ -225,6 +225,7 @@ select function_privs_are('private','require_project_workspace_manager',array['u
 select has_index('public','project_shared_workspaces','project_shared_workspaces_order_idx','Project list and cascade have an index');
 select has_index('public','project_shared_workspaces','project_shared_workspaces_legacy_idx','legacy designation is unique per Project');
 
+select has_index('private','project_workspace_add_receipts','project_workspace_add_receipts_project_idx','Project receipt cascade has a leading-key index');
 select has_table('private','project_workspace_add_receipts','Add recovery is canonical and private');
 select table_privs_are('private','project_workspace_add_receipts','authenticated',array[]::text[],'clients cannot read receipt storage directly');
 select table_privs_are('private','project_workspace_add_receipts','anon',array[]::text[],'guests cannot read receipt storage');

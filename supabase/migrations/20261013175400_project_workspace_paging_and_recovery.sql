@@ -28,6 +28,10 @@ create table private.project_workspace_add_receipts (
   created_at timestamptz not null default clock_timestamp(),
   primary key (actor_id, project_id, request_id)
 );
+-- Actor cascade is covered by the primary key; Project cascade needs its own
+-- leading key so deleting a Project does not scan every actor's receipt journal.
+create index project_workspace_add_receipts_project_idx
+  on private.project_workspace_add_receipts(project_id);
 alter table private.project_workspace_add_receipts enable row level security;
 revoke all on private.project_workspace_add_receipts from public, anon, authenticated, service_role;
 

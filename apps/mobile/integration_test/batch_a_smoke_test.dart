@@ -30,7 +30,8 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
-import '../test/support/fake_proposal.dart' show proposalSummaryFixture;
+import '../test/support/fake_proposal.dart'
+    show proposalSummaryFixture, projectCapacityFixture;
 import 'groups_smoke_test.dart' as harness show waitUntil, waitFor;
 
 void main() {
@@ -253,11 +254,7 @@ void main() {
               children: [
                 for (final phase in ProposalDefinitionPhase.values)
                   ProposalCard(
-                    proposal: proposalSummaryFixture(
-                      id: 'native-${phase.name}',
-                      definitionPhase: phase,
-                      title: 'Organizziamo insieme il giardino del quartiere',
-                    ),
+                    proposal: nativeCard(phase),
                     isRequested: true,
                     onTap: () {},
                   ),
@@ -272,6 +269,51 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, -650));
     await tester.pump(const Duration(milliseconds: 400));
     await shot('a03-native-defined-it-large');
+    // Checklist remains reachable beside lazy Workspace in the actual chat.
+    final (chatContainer, chatClient, chatGateway) = await mount(3);
+    final chatRouter = chatContainer.read(appRouterProvider);
+    for (final pid in [project, tavolo]) {
+      final rows = await chatClient.rpc(
+        'get_own_project_group_chat',
+        params: {'p_expected_profile_id': actors[3].$1, 'p_project_id': pid},
+      );
+      final chatId = (rows as List).single['chat_id'] as String;
+      final readsBefore = chatGateway.reads;
+      chatRouter.go('/messages/chats/$chatId');
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('project-needs-button')),
+      );
+      expect(
+        find.byKey(const Key('project-workspace-chat-control')),
+        findsOneWidget,
+      );
+      expect(chatGateway.reads, readsBefore);
+      await shot('a04-chat-tools-${pid == project ? 'proposal' : 'tavolo'}');
+      await tap(tester, find.byKey(const Key('project-needs-button')));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('project-needs-drawer')),
+      );
+      await shot('a04-checklist-${pid == project ? 'proposal' : 'tavolo'}');
+      await tester.binding.handlePopRoute();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(chatGateway.reads, readsBefore);
+      await tap(
+        tester,
+        find.byKey(const Key('project-workspace-chat-control')),
+      );
+      await harness.waitUntil(
+        tester,
+        () =>
+            chatContainer.read(projectWorkspaceProvider).phase ==
+            ProjectWorkspacePhase.ready,
+      );
+      expect(chatContainer.read(projectWorkspaceProvider).links, isEmpty);
+      expect(chatGateway.reads, readsBefore + 1);
+      await tester.binding.handlePopRoute();
+      await tester.pump(const Duration(milliseconds: 500));
+    }
     // Proposal and Tavolo share the actual role gateway and collection/editor.
     for (final (pid, kind) in [
       (project, ProjectKind.oneTime),
@@ -497,7 +539,7 @@ class _RecordingLauncher implements ProjectWorkspaceLauncher {
 class _FaultGateway extends SupabaseProjectWorkspaceGateway {
   _FaultGateway(super.client);
   bool loseAdd = false, failPage = false;
-  int acceptedAdds = 0;
+  int acceptedAdds = 0, reads = 0;
   @override
   Future<ProjectWorkspacePage> listLinks({
     required String expectedProfileId,
@@ -505,6 +547,7 @@ class _FaultGateway extends SupabaseProjectWorkspaceGateway {
     ProjectWorkspaceCursor? cursor,
     int limit = 10,
   }) async {
+    reads++;
     if (cursor != null && failPage) {
       failPage = false;
       throw const SocketException('Synthetic page failure.');
@@ -608,4 +651,25 @@ class _LocalIdentity implements AuthGateway {
   }) => throw UnsupportedError('Use prepared local OTP fixture.');
   @override
   Future<void> signOut() async {}
+}
+
+ProposalSummary nativeCard(ProposalDefinitionPhase phase) {
+  final base = proposalSummaryFixture();
+  final idea = phase == ProposalDefinitionPhase.idea;
+  return ProposalSummary(
+    id: 'native-${phase.name}',
+    title: 'Organizziamo insieme il giardino del quartiere',
+    summary: base.summary,
+    definitionPhase: phase,
+    startsAt: idea ? null : base.startsAt,
+    endsAt: idea ? null : base.endsAt,
+    eventTimezone: idea ? null : base.eventTimezone,
+    countryCode: idea ? null : base.countryCode,
+    locality: idea ? null : base.locality,
+    administrativeArea: idea ? null : base.administrativeArea,
+    publicLocationLabel: idea ? null : base.publicLocationLabel,
+    status: idea ? null : base.status,
+    skills: base.skills,
+    capacity: projectCapacityFixture(registrationCapacity: idea ? null : 20),
+  );
 }
