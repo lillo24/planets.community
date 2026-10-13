@@ -3435,6 +3435,21 @@ export type Database = {
           target_summary: string
         }[]
       }
+      get_own_group_membership_context: {
+        Args: { p_expected_profile_id: string; p_group_id: string }
+        Returns: {
+          authority_role: string | null
+          current_membership_id: string | null
+          delegate_id: string | null
+          latest_membership_id: string | null
+          latest_membership_status: string | null
+          latest_request_id: string | null
+          latest_request_status: string | null
+          membership_status: string | null
+          pending_note: string | null
+          pending_request_id: string | null
+        }[]
+      }
       get_own_group_role: {
         Args: { p_expected_profile_id: string; p_group_id: string }
         Returns: {

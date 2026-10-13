@@ -382,6 +382,33 @@ async function verify() {
     "PT409",
   );
   await denied(member, "list_current_group_people", args(member, id));
+  const [selfPending] = await rpc(
+    member,
+    "get_own_group_membership_context",
+    args(member, id),
+  );
+  equal(
+    selfPending.pending_request_id,
+    duplicates[0].relationship_id,
+    "Exact-self pending request lookup",
+  );
+  equal(
+    selfPending.current_membership_id,
+    null,
+    "Pending request is not participation",
+  );
+  const [otherSelf] = await rpc(
+    other,
+    "get_own_group_membership_context",
+    args(other, id),
+  );
+  equal(
+    otherSelf.pending_note,
+    null,
+    "Exact-self read never exposes another requester note",
+  );
+  await denied(other, "get_own_group_membership_context", args(member, id));
+  await denied(guest, "get_own_group_membership_context", args(member, id));
   const pending = duplicates[0];
   const race = await Promise.all([
     attempt(organizer, "accept_group_join_request", {

@@ -37,6 +37,12 @@ export function sanitizeReturnDestination(
       return defaultReturnDestination;
     }
 
+    if (
+      (decodedPath.startsWith("/join/group") ||
+        decodedPath.startsWith("/invite/group")) &&
+      !/^\/(join|invite)\/group\/[A-Za-z0-9_-]{43}$/u.test(candidate)
+    )
+      return defaultReturnDestination;
     return `${destination.pathname}${destination.search}${destination.hash}`;
   } catch {
     return defaultReturnDestination;
@@ -54,12 +60,20 @@ export function participantCancelDestination(
   const returns = parsed.searchParams.getAll("returnTo");
   if (parsed.pathname === "/profile" && returns.length === 1)
     return participantCancelDestination(returns[0], depth + 1);
-  if (/^\/join\/project\/[A-Za-z0-9_-]{43}$/u.test(destination))
+  if (
+    /^\/(?:join|invite)\/group\/[A-Za-z0-9_-]{43}$/u.test(destination) ||
+    /^\/join\/project\/[A-Za-z0-9_-]{43}$/u.test(destination)
+  )
     return destination;
   const joined = /^\/joined\/(proposals|tavoli)\/([0-9a-f-]{36})$/iu.exec(
     destination,
   );
-  return joined ? `/${joined[1]}/${joined[2]}` : "/";
+  const groupJoined = /^\/joined\/groups\/([0-9a-f-]{36})$/iu.exec(destination);
+  return joined
+    ? `/${joined[1]}/${joined[2]}`
+    : groupJoined
+      ? `/groups/${groupJoined[1]}`
+      : "/";
 }
 
 function isAuthPath(pathname: string): boolean {

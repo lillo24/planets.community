@@ -117,11 +117,11 @@ void main() {
               ),
             ),
           );
-          // GRP02 adds a Groups entry below the unchanged family control.
-          // Measure spacing after the complete navigation block.
+          // GRP03B moves Groups to the page toolbar. Filter spacing remains
+          // measured from the activity-family control itself.
           final browseBlock = t.getRect(find.byType(BrowseActivitySwitcher));
           final groups = t.getRect(find.byKey(const Key('browse-groups')));
-          expect(groups.top, greaterThanOrEqualTo(family.bottom));
+          expect(groups.bottom, lessThan(family.top));
           expect(groups.height, greaterThanOrEqualTo(48));
           final gapAbove = selector.top - browseBlock.bottom;
           final gapBelow = nextRow.top - selector.bottom;

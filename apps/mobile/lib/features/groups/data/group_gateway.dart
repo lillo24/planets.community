@@ -60,6 +60,48 @@ class GroupGateway {
     return result;
   }
 
+  Future<OwnGroup> structuralDetail(String actor, String id) async {
+    final row = single(
+      await rpc('get_group_structural_context', {
+        'p_expected_profile_id': groupUuid(actor),
+        'p_group_id': groupUuid(id),
+      }),
+      OwnGroup.new,
+    );
+    if (row == null) throw const FormatException('Missing structural context.');
+    return row;
+  }
+
+  Future<GroupReceipt?> structuralRecover(String actor, String key) async =>
+      single(
+        await rpc('recover_group_structural_command', {
+          'p_expected_profile_id': groupUuid(actor),
+          'p_client_request_id': groupUuid(key),
+        }),
+        GroupReceipt.new,
+      );
+  Future<int> structuralWrite(
+    String actor,
+    String id,
+    String key,
+    int version, {
+    GroupContent? content,
+    GroupPublication? state,
+  }) async => groupVersion(
+    await rpc(
+      state == null
+          ? 'update_managed_group'
+          : 'set_managed_group_publication_state',
+      {
+        'p_expected_profile_id': groupUuid(actor),
+        'p_group_id': groupUuid(id),
+        'p_client_request_id': groupUuid(key),
+        'p_expected_version': version,
+        if (state != null) 'p_publication_state': state.name,
+        if (content != null) 'p_content': content.toJson(),
+      },
+    ),
+  );
   Future<GroupReceipt?> recover(String actor, String key) async => single(
     await rpc('recover_group_command', {
       'p_expected_profile_id': groupUuid(actor),

@@ -40,6 +40,10 @@ import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/profile/presentation/profile_edit_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/groups/presentation/group_directory_screen.dart';
+import '../../features/group_membership/presentation/group_relationship_screens.dart';
+import '../../features/group_membership/presentation/group_link_screen.dart';
+import '../../features/group_membership/presentation/group_invite_screen.dart';
+import '../../features/group_membership/domain/group_relationships.dart';
 import '../../features/groups/presentation/group_detail_screen.dart';
 import '../../features/groups/presentation/group_editor_screen.dart';
 import '../../features/project_chat/presentation/project_chat_info_screen.dart';
@@ -224,8 +228,11 @@ RoutingConfig _routingConfig(
       final isProfileEditRoute = path == '/profile/edit';
       final isGroupProtectedRoute =
           path == '/groups/mine' ||
+          path.startsWith('/groups/mine/') ||
           path == '/groups/create' ||
-          RegExp(r'^/groups/[^/]+/(edit|report)$').hasMatch(path);
+          RegExp(
+            r'^/groups/[^/]+/(edit|structural-edit|report|people|requests|memberships|team|authority-invitations|role-history|participant-links|link-history)$',
+          ).hasMatch(path);
       final isProposalManagementRoute =
           path == DraftRoutes.path ||
           path == WorkshopRoutes.catalog ||
@@ -342,6 +349,11 @@ RoutingConfig _routingConfig(
         return policyAcceptanceDestination(destination);
       }
 
+      if ((path.startsWith('/join/group') ||
+              path.startsWith('/invite/group')) &&
+          !isGroupInvitationDestination(state.uri.toString())) {
+        return '/groups';
+      }
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
           (isParticipationRoute ||
               isProjectResourceNeedManagementRoute ||
@@ -356,7 +368,9 @@ RoutingConfig _routingConfig(
       }
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
-          isGroupProtectedRoute) {
+          (path == '/groups/create' ||
+              RegExp(r'^/groups/[^/]+/(edit|structural-edit|report)$')
+                  .hasMatch(path))) {
         return Uri(
           path: '/profile/edit',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -404,6 +418,7 @@ RoutingConfig _routingConfig(
             ProjectWorkspaceRoutes.isManagementPath(returnTo) ||
             ProjectDelegateRoutes.isInvitePath(returnTo) ||
             ParticipantInvitationRoutes.isInvitePath(returnTo) ||
+            isGroupInvitationDestination(returnTo) ||
             (isMessagesPath(returnTo) &&
                 Uri.parse(returnTo).path != '/messages') ||
             isNotificationsPath(returnTo) ||
@@ -488,7 +503,20 @@ RoutingConfig _routingConfig(
         routes: [
           GoRoute(
             path: 'mine',
-            builder: (context, state) => const OwnGroupsScreen(),
+            builder: (context, state) => const MyGroupRelationshipsScreen(),
+            routes: [
+              for (final entry in {
+                'managed': GroupHistoryKind.managed,
+                'memberships': GroupHistoryKind.memberships,
+                'requests': GroupHistoryKind.requests,
+                'offers': GroupHistoryKind.offers,
+              }.entries)
+                GoRoute(
+                  path: entry.key,
+                  builder: (context, state) =>
+                      GroupRelationshipsScreen(family: entry.value),
+                ),
+            ],
           ),
           GoRoute(
             path: 'create',
@@ -508,6 +536,41 @@ RoutingConfig _routingConfig(
                   id: state.pathParameters['groupId']!,
                 ),
               ),
+              GoRoute(
+                path: 'structural-edit',
+                onExit: draftDeparture?.onExit,
+                builder: (context, state) => GroupEditorScreen(
+                  key: state.pageKey,
+                  id: state.pathParameters['groupId']!,
+                  structural: true,
+                ),
+              ),
+              GoRoute(
+                path: 'people',
+                builder: (context, state) => GroupRelationshipsScreen(
+                  groupId: state.pathParameters['groupId']!,
+                ),
+              ),
+              GoRoute(
+                path: 'participant-links',
+                builder: (context, state) =>
+                    GroupLinkScreen(groupId: state.pathParameters['groupId']!),
+              ),
+              for (final entry in {
+                'requests': GroupHistoryKind.requests,
+                'memberships': GroupHistoryKind.memberships,
+                'team': GroupHistoryKind.delegates,
+                'authority-invitations': GroupHistoryKind.offers,
+                'role-history': GroupHistoryKind.roleChanges,
+                'link-history': GroupHistoryKind.links,
+              }.entries)
+                GoRoute(
+                  path: entry.key,
+                  builder: (context, state) => GroupRelationshipsScreen(
+                    groupId: state.pathParameters['groupId']!,
+                    family: entry.value,
+                  ),
+                ),
               GoRoute(
                 path: 'report',
                 builder: (context, state) => GroupDetailScreen(
@@ -539,6 +602,21 @@ RoutingConfig _routingConfig(
       GoRoute(
         path: '/auth/verify',
         builder: (context, state) => const VerifyCodeScreen(),
+      ),
+      GoRoute(
+        path: '/join/group/:token',
+        builder: (context, state) => GroupInviteScreen(
+          key: state.pageKey,
+          token: state.pathParameters['token']!,
+        ),
+      ),
+      GoRoute(
+        path: '/invite/group/:token',
+        builder: (context, state) => GroupInviteScreen(
+          key: state.pageKey,
+          token: state.pathParameters['token']!,
+          authority: true,
+        ),
       ),
       GoRoute(
         path: '/invite/project/:token',

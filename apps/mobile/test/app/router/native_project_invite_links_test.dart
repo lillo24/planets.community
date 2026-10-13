@@ -14,7 +14,7 @@ void main() {
         .map((m) => m[0]!)
         .where((block) => block.contains('android.intent.action.VIEW'))
         .toList();
-    expect(filters, hasLength(4));
+    expect(filters, hasLength(7));
     final patterns = <RegExp>[];
     for (final filter in filters) {
       expect(filter, contains('android:autoVerify="true"'));
@@ -36,6 +36,9 @@ void main() {
       '/join/project/${'A' * 43}',
       '/proposals/$id',
       '/tavoli/$id',
+      '/groups/$id',
+      '/join/group/${'A' * 43}',
+      '/invite/group/${'A' * 43}',
     ]) {
       expect(claimed(path), isTrue, reason: 'Public path family must match');
       expect(claimed('$path/edit'), isFalse);

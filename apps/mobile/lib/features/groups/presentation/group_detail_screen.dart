@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../group_membership/presentation/group_participation_section.dart';
 import '../../moderation/domain/moderation_models.dart';
 import '../../moderation/presentation/report_form_screen.dart';
 import '../data/group_gateway.dart';
@@ -22,8 +22,6 @@ class GroupDetailScreen extends ConsumerStatefulWidget {
 
 class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   late Future<PublicGroup?> detail;
-  Future<bool>? manager;
-  String? actor;
   @override
   void initState() {
     super.initState();
@@ -32,18 +30,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
   void load() {
     detail = ref.read(groupGatewayProvider).publicDetail(widget.id);
-    manager = null;
-    actor = null;
-  }
-
-  Future<bool> checkManager(String id) async {
-    try {
-      await ref.read(groupGatewayProvider).ownDetail(id, widget.id);
-      return true;
-    } on PostgrestException catch (e) {
-      if (e.code == '42501') return false;
-      rethrow;
-    }
   }
 
   @override
@@ -53,10 +39,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     final current = session.phase == AuthSessionPhase.ready
         ? session.identity?.id
         : null;
-    if (actor != current) {
-      actor = current;
-      manager = current == null ? null : checkManager(current);
-    }
     return FutureBuilder(
       future: detail,
       builder: (context, snapshot) {
@@ -79,14 +61,30 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                 child: snapshot.connectionState != ConnectionState.done
                     ? const Center(child: CircularProgressIndicator())
                     : snapshot.hasError
-                    ? GroupLoadError(
-                        error: snapshot.error,
-                        retry: () => setState(load),
+                    ? ListView(
+                        padding: const EdgeInsets.all(24),
+                        children: [
+                          GroupLoadError(
+                            error: snapshot.error,
+                            retry: () => setState(load),
+                          ),
+                          GroupParticipationSection(
+                            groupId: widget.id,
+                            publicAvailable: false,
+                          ),
+                        ],
                       )
                     : snapshot.data == null
-                    ? Padding(
+                    ? ListView(
                         padding: const EdgeInsets.all(24),
-                        child: Text(l.groupsUnavailable),
+                        children: [
+                          Text(l.groupsUnavailable),
+                          const SizedBox(height: 16),
+                          GroupParticipationSection(
+                            groupId: widget.id,
+                            publicAvailable: false,
+                          ),
+                        ],
                       )
                     : ListView(
                         padding: const EdgeInsets.all(24),
@@ -102,37 +100,11 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                             icon: const Icon(Icons.flag_outlined),
                             label: Text(l.groupsReport),
                           ),
-                          if (manager != null)
-                            FutureBuilder(
-                              future: manager,
-                              builder: (context, access) {
-                                if (actor != current ||
-                                    access.connectionState !=
-                                        ConnectionState.done ||
-                                    ref
-                                            .read(authSessionProvider)
-                                            .identity
-                                            ?.id !=
-                                        current) {
-                                  return const SizedBox.shrink();
-                                }
-                                if (access.hasError) {
-                                  return Text(l.groupsManageError);
-                                }
-                                return access.data == true
-                                    ? TextButton(
-                                        key: const Key('group-manage'),
-                                        onPressed: () async {
-                                          await context.push(
-                                            '/groups/${widget.id}/edit',
-                                          );
-                                          if (mounted) setState(load);
-                                        },
-                                        child: Text(l.groupsEdit),
-                                      )
-                                    : const SizedBox.shrink();
-                              },
-                            ),
+                          GroupParticipationSection(
+                            groupId: widget.id,
+                            publicAvailable: true,
+                            onChanged: () => setState(load),
+                          ),
                         ],
                       ),
               ),

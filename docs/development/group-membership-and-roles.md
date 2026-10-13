@@ -185,9 +185,9 @@ block convergence, so they do not disclose a separate inbound-block cause.
 
 ## GRP03B integration and validation
 
-Future distinct routes: `/join/group/<token>` for participation and
-`/invite/group/<token>` for authority. This stage installs no routes and changes
-no Project handlers/URL claims. Preview, login and profile completion must never
+GRP03B implements distinct routes: `/join/group/<token>` for participation and
+`/invite/group/<token>` for authority. GRP03A installed no routes; the GRP03B client adds group-specific routes and
+native claims while preserving Project handlers. Preview, login and profile completion must never
 automatically accept. Co-creator acceptance needs the high-privilege warning:
 published page editing, archive/restore, requests/member/link management and
 inviting/promoting/demoting/revoking other delegates. It grants no Creator draft
@@ -212,3 +212,18 @@ never use a hosted stack. pgTAP owns direct grants/RLS/actor privacy coverage.
 Run lint/advisors, full pgTAP, existing group/participation/delegate/invitation/
 blocking verifiers and generated-type parity. No device/UI qualification is
 required here. Shared migration activation remains separately authorized.
+
+## Exact-self detail context (GRP03B)
+
+`get_own_group_membership_context(p_expected_profile_id, p_group_id)` returns
+one identity-bound row: current authority/delegate/membership/status, exact own
+pending request/private note, and latest own request/membership IDs/statuses.
+Every result field is explicitly nullable. It never returns group content, names,
+other people or an unbounded history. Unknown group/relationship means null own
+fields; identity/erased-profile denial remains a failure. Anonymous/service-role
+EXECUTE is revoked; authenticated callers must match verified Auth identity.
+No completed-profile/photo requirement blocks own history/exits, including hidden
+or private-draft groups. Client pending state must use this read rather than scan
+pages or infer absence from one own-history page. See migration `20261012152803`,
+pgTAP `132_group_exact_self_context.test.sql`, the real membership HTTP verifier
+and [GRP03B integration/rollout](grp03b-group-membership-ui.md).

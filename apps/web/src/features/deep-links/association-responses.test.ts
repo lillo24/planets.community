@@ -109,6 +109,9 @@ describe("native link association responses", () => {
       `/join/project/${"A".repeat(43)}`,
       `/proposals/${id}`,
       `/tavoli/${id}`,
+      `/groups/${id}`,
+      `/join/group/${"A".repeat(43)}`,
+      `/invite/group/${"A".repeat(43)}`,
     ]) {
       expect(claimed(path)).toBe(true);
       expect(claimed(`${path}?intent=join`)).toBe(true);

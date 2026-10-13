@@ -19,6 +19,11 @@ String sanitizeReturnDestination(String? candidate) {
     return defaultReturnDestination;
   }
 
+  if ((uri.path.startsWith('/join/group') ||
+          uri.path.startsWith('/invite/group')) &&
+      !isGroupInvitationDestination(candidate)) {
+    return defaultReturnDestination;
+  }
   return uri.toString();
 }
 
@@ -28,7 +33,8 @@ String profileEditCancelDestination(
 }) {
   if (continueTo == null) return profileReady ? '/profile' : '/';
   final sanitized = sanitizeReturnDestination(continueTo);
-  if (ParticipantInvitationRoutes.isInvitePath(sanitized) ||
+  if (isGroupInvitationDestination(sanitized) ||
+      ParticipantInvitationRoutes.isInvitePath(sanitized) ||
       ProjectDelegateRoutes.isInvitePath(sanitized)) {
     return sanitized;
   }
@@ -58,7 +64,8 @@ String profileEditCancelDestination(
 // retries a protected action or enters an incomplete Profile/setup loop.
 String authCancelDestination(String? continueTo) {
   final sanitized = sanitizeReturnDestination(continueTo);
-  if (ParticipantInvitationRoutes.isInvitePath(sanitized) ||
+  if (isGroupInvitationDestination(sanitized) ||
+      ParticipantInvitationRoutes.isInvitePath(sanitized) ||
       ProjectDelegateRoutes.isInvitePath(sanitized)) {
     return sanitized;
   }
@@ -79,3 +86,7 @@ String groupCancelDestination(List<String> segments) =>
     segments.length < 2 || const ['mine', 'create'].contains(segments[1])
     ? '/groups'
     : '/groups/${segments[1]}';
+
+/// Capabilities must keep their literal route shape through Auth/Profile cancel.
+bool isGroupInvitationDestination(String value) =>
+    RegExp(r'^/(join|invite)/group/[A-Za-z0-9_-]{43}$').hasMatch(value);

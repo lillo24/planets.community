@@ -101,7 +101,10 @@ class GroupEditorController extends ChangeNotifier {
     required this.authorized,
     required this.policyAllows,
     String? id,
+    this.structural = false,
   }) : groupId = id;
+  final bool structural;
+  bool accessEnded = false;
   final GroupGateway gateway;
   final String actor;
   final bool Function() authorized, policyAllows;
@@ -139,7 +142,9 @@ class GroupEditorController extends ChangeNotifier {
     failure = null;
     notifyListeners();
     try {
-      final row = await gateway.ownDetail(actor, groupId!);
+      final row = await (structural
+          ? gateway.structuralDetail(actor, groupId!)
+          : gateway.ownDetail(actor, groupId!));
       if (!active) return;
       own = row;
       saved = row.content;
@@ -186,7 +191,9 @@ class GroupEditorController extends ChangeNotifier {
     notifyListeners();
     try {
       // Recovery is also safe before first delivery and after later edits.
-      final receipt = await gateway.recover(actor, command.key);
+      final receipt = await (structural
+          ? gateway.structuralRecover(actor, command.key)
+          : gateway.recover(actor, command.key));
       if (!canWrite) {
         if (active) failure = GroupFailure.uncertain;
         return false;
@@ -201,7 +208,16 @@ class GroupEditorController extends ChangeNotifier {
         id = await gateway.create(actor, command.key, command.content);
       } else {
         id = command.id!;
-        if (command.publication != null) {
+        if (structural) {
+          await gateway.structuralWrite(
+            actor,
+            id,
+            command.key,
+            command.version!,
+            content: command.publication == null ? command.content : null,
+            state: command.publication,
+          );
+        } else if (command.publication != null) {
           await gateway.publish(
             actor,
             id,
@@ -221,7 +237,17 @@ class GroupEditorController extends ChangeNotifier {
       }
       if (!active) return false;
       groupId = id;
-      final row = await gateway.ownDetail(actor, id);
+      if (structural && command.publication == GroupPublication.draft) {
+        // Confirmed Restore intentionally removes delegated draft access.
+        accessEnded = true;
+        own = null;
+        content = saved = const GroupContent();
+        pending = null;
+        return true;
+      }
+      final row = await (structural
+          ? gateway.structuralDetail(actor, id)
+          : gateway.ownDetail(actor, id));
       if (!active) return false;
       own = row;
       saved = row.content;

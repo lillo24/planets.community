@@ -8,11 +8,11 @@ Personal Auth remains the actor. Group pages and Project chats are distinct.
   explicit parameters, strict scalar/row parsing. No direct group-table access.
 - `application/group_controllers.dart` owns paging epochs and frozen actor-bound
   commands. Public and owner data are never substituted for each other.
-- `presentation/group_directory_screen.dart` owns public filters/retained scroll
-  and the bounded My groups list. Deliberate-scroll pagination has an explicit
+- `presentation/group_directory_screen.dart` owns public filters/retained scroll.
+  Deliberate-scroll pagination has an explicit
   Load more/Retry fallback; layout never requests another page.
-- `presentation/group_detail_screen.dart` owns public detail, protected per-detail
-  manager checks, and the genuine contextual report route.
+- `presentation/group_detail_screen.dart` owns public detail, the separate exact-self
+  participation feature, and the genuine contextual report route.
 - `presentation/group_editor_screen.dart` owns full content editing, separate
   Save/Publish/lifecycle actions, policy action boundaries, and registration with
   the shared departure coordinator. `group_widgets.dart` owns shared presentation.
@@ -41,8 +41,14 @@ Identity/readiness changes dispose private forms and discard late results.
 
 Published saves change the live page immediately. Archive is reversible through
 Restore to draft. Staff suppression is independent and cannot be cleared by
-managers. No personal photo requirement, membership, logos, exact locations,
-external contacts, verification, group-owned Projects or chat is introduced.
+managers. This original content feature adds no personal photo requirement, logos,
+exact locations, external contacts, verification, group-owned Projects or chat.
 
 Tests are in `test/features/groups/`; real local fixtures and native journey are
 in `integration_test/prepare_groups_smoke.mjs` and `groups_smoke_test.dart`.
+
+GRP03B participation/Team/My groups section ownership is mapped in
+[`../group_membership/README.md`](../group_membership/README.md). The existing
+editor now has an explicit structural mode using managed RPCs for Co-creators;
+Restore-to-draft confirms and exits without reading the Creator draft. Creator
+draft/edit/recovery interfaces remain unchanged.
