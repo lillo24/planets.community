@@ -1,5 +1,15 @@
 # Proposals feature
 
+`presentation/proposal_card_cover.dart` owns the card's 3:2 cover and real
+Idea/Requested composition selected in [Batch A02](../../../../../docs/development/batch-a-card-selection.md).
+Idea uses a 30-degree upper-right ribbon; Requested moves to the upper left on
+Idea cards. Narrow/enlarged layouts stack horizontal essential labels without
+shrinking text. Defined cards retain their upper-right Requested marker and
+lifecycle chip. Other `ProposalStatusBadge` surfaces remain unchanged.
+The card removes only its duplicate Idea chip and opts into fully wrapping,
+inert skill labels at enlarged text. Cover reads, capacity, logistics and taps
+retain their existing owners. No popularity data or extra label reads exist.
+
 UI02 moves published structural skill editing to `presentation/proposal_needs_screen.dart`.
 It composes `ProposalSkillsControl` with the existing resource-management screen
 for Creators, and public material needs with an explicit ownership explanation

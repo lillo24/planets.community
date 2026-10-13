@@ -72,3 +72,28 @@ The baseline and both candidates show pre-existing skill-chip text fading at 2x.
 It is unrelated to ribbon overlap; A03's production validation must account for
 readable controlled-skill labels at that scale. Screen-reader/device behavior
 and the actual native journey remain separate final-batch checks.
+
+## A03 production implementation
+
+`ProposalCardCover` implements the selected real-state composition, using the
+same thresholds, theme pair, 30-degree transform and existing cover loader.
+The visible localized label is Idea; its accessible description also retains
+the existing phase wording (In definition / In definizione). The card omits its
+old Idea chip; details and defined lifecycle chips retain their existing owner.
+Requested's shared widget is unchanged. No synthetic secondary label ships.
+
+The observed 2x skill-chip fading is addressed only for this card: its inert
+skill labels use a wrapping outline at enlarged text, preserving contents,
+importance and ordering. Other consumers retain their existing default. Tests
+assert that the complete label's paragraph does not exceed its visible lines.
+The two old card/tutorial assertions now target the Idea ribbon because the
+requested presentation deliberately replaces that card's Idea chip.
+
+Production evidence is retained at
+`C:\Users\leona\.planets\releases\batch-a-20261013\a03-renders` (six inspected
+Flutter renders with source/image hashes in `manifest.json`). The focused
+card/Idea/tutorial/capacity run passes 282 tests, including 192 production
+layout/semantics/tap cases and all four defined lifecycle labels. Localization,
+standard mobile formatting and analysis also pass. An additional 28 ordinary
+participation-flow tests pass. These renders do not replace
+the final batch's required native source/backend journey.

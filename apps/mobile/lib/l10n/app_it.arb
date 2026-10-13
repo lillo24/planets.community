@@ -2020,5 +2020,6 @@
   "profileGroupOfferTitle": "Rappresenti un gruppo?",
   "profileGroupOfferBody": "Crea la sua pagina ora, oppure fallo più tardi dalla sezione I miei gruppi.",
   "profileGroupOfferCreate": "Crea un gruppo",
-  "profileGroupOfferSkip": "Non ora"
+  "profileGroupOfferSkip": "Non ora",
+  "proposalIdeaRibbon": "Idea"
 }

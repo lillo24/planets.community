@@ -1066,7 +1066,10 @@ void main() {
       await ready(tester);
       if (step == TutorialStep.projectCard) {
         expectFocus(tester, 'proposal-card-idea-1');
-        expect(find.byKey(const Key('proposal-status-idea')), findsOneWidget);
+        expect(
+          find.byKey(const Key('proposal-idea-ribbon-idea-1')),
+          findsOneWidget,
+        );
       }
       if (step == TutorialStep.projectDetail) {
         expect(
