@@ -42,8 +42,11 @@ flutter analyze test_support/proposal_card_comparison.dart test/features/proposa
 
 The bounded matrix covers seven cases, three compositions, EN/IT, light/dark,
 320/360px viewports and 1x/2x text: 336 layout/semantics/tap tests, plus seven
-curated captures. Discovery's actual 16px padding is retained. Fonts are loaded
-through the existing `RenderedEvidence` harness. Each capture presents baseline,
+curated captures. Discovery's actual 16px padding is retained. Roboto and icons
+are loaded through `RenderedEvidence` for this matrix even without capture flags.
+The first hosted run exposed Ahem's wider test-only glyphs; the complete default
+matrix was rerun with the same real typography as the inspected captures, keeping
+all clipping/overlap assertions. Each capture presents baseline,
 opposite ribbons and quiet secondary label from left to right.
 
 Curated PNGs in that directory:

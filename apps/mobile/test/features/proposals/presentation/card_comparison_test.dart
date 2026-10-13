@@ -67,7 +67,8 @@ void main() {
   late Uint8List cover;
   setUpAll(() async {
     cover = await File('assets/tutorial/garden-tools.webp').readAsBytes();
-    await RenderedEvidence.loadFonts();
+    // Compare real app typography in CI too, not Ahem's block glyph metrics.
+    await RenderedEvidence.loadFonts(force: true);
   });
   for (final locale in ['en', 'it']) {
     for (final dark in [false, true]) {
