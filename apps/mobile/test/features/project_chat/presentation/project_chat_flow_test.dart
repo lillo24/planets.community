@@ -398,6 +398,7 @@ void main() {
           await tester.pumpAndSettle();
         }
         expect(find.byKey(const Key('project-needs-button')), findsOneWidget);
+        expect(workspace.calls, isEmpty);
         final chip = find.byKey(const Key('project-workspace-chat-control'));
         expect(tester.widget(chip), isA<ActionChip>());
         expect(
@@ -414,6 +415,10 @@ void main() {
         }
         await tester.pumpAndSettle();
         expect(find.byType(ProjectWorkspaceScreen), findsOneWidget);
+        expect(
+          workspace.calls.where((call) => call.startsWith('get:')),
+          hasLength(1),
+        );
         expect(find.byKey(const Key('project-workspace-add')), findsNothing);
         expect(
           find.text(

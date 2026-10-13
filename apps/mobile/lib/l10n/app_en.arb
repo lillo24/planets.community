@@ -3776,5 +3776,10 @@
   "projectWorkspaceReviewPolicy": "Review Terms and Rules",
   "projectWorkspaceClose": "Close",
   "projectWorkspaceReconciliationFailed": "Couldn't confirm this link. Check its status or retry the same link.",
-  "projectWorkspacePendingAddReadOnly": "These details are kept until this link is confirmed."
+  "projectWorkspacePendingAddReadOnly": "These details are kept until this link is confirmed.",
+  "projectWorkspaceReviewLatest": "Review latest link",
+  "projectWorkspaceLatestTitle": "Latest link",
+  "projectWorkspaceKeepEdits": "Keep my edits",
+  "projectWorkspaceReloadLinks": "Reload links",
+  "projectWorkspaceReviewLatestBody": "Your edits are kept. Review the current link before saving again."
 }

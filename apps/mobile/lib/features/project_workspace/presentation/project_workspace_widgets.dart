@@ -39,19 +39,6 @@ class ProjectWorkspaceManageCard extends ConsumerStatefulWidget {
 
 class _ProjectWorkspaceManageCardState
     extends ConsumerState<ProjectWorkspaceManageCard> {
-  @override
-  void initState() {
-    super.initState();
-    Future<void>.microtask(_load);
-  }
-
-  Future<void> _load() => ref
-      .read(projectWorkspaceProvider.notifier)
-      .load(
-        expectedProfileId: widget.expectedProfileId,
-        projectId: widget.projectId,
-      );
-
   void _open() => context.push(
     ProjectWorkspaceRoutes.manage(widget.projectKind, widget.projectId),
   );
@@ -61,7 +48,7 @@ class _ProjectWorkspaceManageCardState
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(projectWorkspaceProvider);
     final current = state.isFor(widget.expectedProfileId, widget.projectId);
-    final loading = !current || state.phase == ProjectWorkspacePhase.loading;
+    final loading = current && state.phase == ProjectWorkspacePhase.loading;
     final failed = current && state.phase == ProjectWorkspacePhase.failure;
     if (widget.compact) {
       return ListTile(
@@ -83,7 +70,7 @@ class _ProjectWorkspaceManageCardState
             : failed
             ? IconButton(
                 tooltip: l10n.retryAction,
-                onPressed: _load,
+                onPressed: _open,
                 icon: const Icon(Icons.refresh),
               )
             : const Icon(Icons.chevron_right),
@@ -302,11 +289,19 @@ class ProjectWorkspaceCollection extends ConsumerWidget {
             ),
           ),
         ],
-        if (state.failure != null && state.pendingAdd == null)
+        if (state.failure != null && state.pendingAdd == null) ...[
           Semantics(
             liveRegion: true,
             child: Text(projectWorkspaceFailureMessage(l10n, state.failure)),
           ),
+          if (state.failure == ProjectWorkspaceFailureKind.conflict ||
+              state.failure == ProjectWorkspaceFailureKind.removed)
+            TextButton(
+              key: const Key('project-workspace-reload-conflict'),
+              onPressed: onRetry,
+              child: Text(l10n.projectWorkspaceReloadLinks),
+            ),
+        ],
         // Until Add recovery settles, an earlier empty page may be obsolete.
         if (state.pendingAdd == null &&
             state.links.isEmpty &&

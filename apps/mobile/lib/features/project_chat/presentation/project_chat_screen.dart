@@ -109,9 +109,8 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
           .clearProject(summary.projectId);
       return;
     }
-    await ref
-        .read(projectWorkspaceProvider.notifier)
-        .load(expectedProfileId: profileId, projectId: summary.projectId);
+    // The collection route owns reads. Opening or refreshing chat must not
+    // preload its private links; only known entitlement loss clears a cache.
   }
 
   Future<void> _loadOlder() async {

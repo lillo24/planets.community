@@ -63,3 +63,11 @@ a labelled retry. The destination stays usable during those states. Compact
 Group info uses the smaller section heading and omits a canonically empty
 collection only for non-managers; loading/failures and manager Add link remain
 visible. Both compact and standalone layouts reuse the same collection/editor.
+
+Conflict recovery is deliberate: removal conflicts expose Reload links. An edit
+conflict retains its typed inputs and original version, disables Save and offers
+Review latest link. A fresh authority/item read is shown before Keep my edits
+can rebase the expected version; Save remains a separate explicit action. Missing
+items cannot be resurrected. Forbidden replies and identity changes clear editor
+buffers. Chat opening/refresh and the management navigation card never preload
+links; the collection route or opened Group info owns reads.

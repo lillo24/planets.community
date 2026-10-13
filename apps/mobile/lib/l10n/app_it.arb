@@ -2124,5 +2124,10 @@
   "projectWorkspaceReviewPolicy": "Rivedi Termini e Regole",
   "projectWorkspaceClose": "Chiudi",
   "projectWorkspaceReconciliationFailed": "Non possiamo confermare questo link. Controlla il suo stato o riprova lo stesso link.",
-  "projectWorkspacePendingAddReadOnly": "Questi dettagli vengono conservati finché il link non è confermato."
+  "projectWorkspacePendingAddReadOnly": "Questi dettagli vengono conservati finché il link non è confermato.",
+  "projectWorkspaceReviewLatest": "Controlla l'ultima versione del link",
+  "projectWorkspaceLatestTitle": "Ultima versione del link",
+  "projectWorkspaceKeepEdits": "Mantieni le mie modifiche",
+  "projectWorkspaceReloadLinks": "Ricarica i link",
+  "projectWorkspaceReviewLatestBody": "Le tue modifiche vengono conservate. Controlla il link attuale prima di salvare di nuovo."
 }

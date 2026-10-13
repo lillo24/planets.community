@@ -480,6 +480,67 @@ class ProjectWorkspaceController extends Notifier<ProjectWorkspaceState> {
     }
   }
 
+  /// Explicit review refreshes authority and the item without writing or
+  /// replacing the retained edit. Only the later acknowledgement rebases CAS.
+  Future<ProjectWorkspace?> reviewEdit(WorkspaceLinkDraft draft) async {
+    final actor = draft.actorId, project = draft.projectId;
+    final revision = _start(actor, project);
+    try {
+      await _readFirst(actor, project, revision, mutating: true);
+      if (!_isCurrent(revision)) return null;
+      _requireIdentity(actor);
+      if (!state.canManage) {
+        throw const ProjectWorkspaceIdentityChangedException();
+      }
+      final item = await ref
+          .read(projectWorkspaceGatewayProvider)
+          .getLink(
+            expectedProfileId: actor,
+            projectId: project,
+            linkId: draft.linkId!,
+          );
+      if (!_isCurrent(revision)) return null;
+      if (item == null) {
+        state = state.copyWith(
+          mutating: false,
+          failure: ProjectWorkspaceFailureKind.removed,
+        );
+        return null;
+      }
+      state = state.copyWith(mutating: false);
+      return item;
+    } catch (error) {
+      _fail(revision, actor, project, error);
+      return null;
+    }
+  }
+
+  WorkspaceLinkDraft acknowledgeEditReview(
+    WorkspaceLinkDraft draft,
+    ProjectWorkspace latest,
+    int expectedEpoch,
+  ) {
+    _requireIdentity(draft.actorId);
+    if (!_isCurrent(expectedEpoch) ||
+        !state.isFor(draft.actorId, draft.projectId) ||
+        !state.canManage ||
+        draft.linkId != latest.id ||
+        draft.projectId != latest.projectId ||
+        draft.submitted) {
+      throw const ProjectWorkspaceIdentityChangedException();
+    }
+    final reviewed = WorkspaceLinkDraft(
+      actorId: draft.actorId,
+      projectId: draft.projectId,
+      linkId: latest.id,
+      expectedVersion: latest.version,
+      name: draft.name,
+      input: draft.input,
+    );
+    _drafts[_key(draft.actorId, draft.projectId, draft.linkId)] = reviewed;
+    return reviewed;
+  }
+
   Future<ProjectWorkspace?> readForOpen({
     required String expectedProfileId,
     required String projectId,

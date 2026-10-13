@@ -413,6 +413,42 @@ void main() {
         'Foglio aggiornato',
       );
       await hideKeyboard(tester);
+      await client.rpc(
+        'save_project_workspace_link',
+        params: {
+          'p_expected_manager_profile_id': actors[3].$1,
+          'p_project_id': pid,
+          'p_display_name': 'Edited on another device',
+          'p_workspace_url': first.url.value,
+          'p_link_id': first.id,
+          'p_expected_version': first.version,
+        },
+      );
+      await tap(tester, find.byKey(const Key('project-workspace-save')));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('project-workspace-review-latest')),
+      );
+      await tap(
+        tester,
+        find.byKey(const Key('project-workspace-review-latest')),
+      );
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('project-workspace-keep-edits')),
+      );
+      expect(find.text('Edited on another device'), findsOneWidget);
+      await shot('a04-${kind.name}-stale-edit-review');
+      await tap(tester, find.byKey(const Key('project-workspace-keep-edits')));
+      expect(
+        tester
+            .widget<TextFormField>(
+              find.byKey(const Key('project-workspace-name-field')),
+            )
+            .controller!
+            .text,
+        'Foglio aggiornato',
+      );
       await tap(tester, find.byKey(const Key('project-workspace-save')));
       await harness.waitUntil(
         tester,

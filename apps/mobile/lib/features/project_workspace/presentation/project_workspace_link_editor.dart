@@ -32,7 +32,10 @@ class _ProjectWorkspaceLinkEditorState
   late WorkspaceLinkDraft _draft;
   late final TextEditingController _name;
   late final TextEditingController _url;
-  bool _saving = false, _reviewing = false, _obsolete = false;
+  bool _saving = false,
+      _reviewing = false,
+      _obsolete = false,
+      _editConflict = false;
   String? _error;
 
   @override
@@ -47,6 +50,9 @@ class _ProjectWorkspaceLinkEditorState
       if (next.identity?.id != widget.profileId ||
           next.phase != AuthSessionPhase.ready) {
         _obsolete = true;
+        _name.clear();
+        _url.clear();
+        _draft = _draft.withInput('', '');
       }
     });
   }
@@ -77,6 +83,7 @@ class _ProjectWorkspaceLinkEditorState
     final session = ref.watch(authSessionProvider);
     final currentActor =
         !_obsolete &&
+        state.failure != ProjectWorkspaceFailureKind.forbidden &&
         session.identity?.id == widget.profileId &&
         session.phase == AuthSessionPhase.ready;
     final authorized =
@@ -196,10 +203,17 @@ class _ProjectWorkspaceLinkEditorState
               onPressed: _saving || _reviewing ? null : _check,
               child: Text(l10n.projectWorkspaceCheckAdd),
             ),
+          if (_editConflict && currentActor)
+            TextButton(
+              key: const Key('project-workspace-review-latest'),
+              onPressed: _saving || _reviewing ? null : _reviewLatest,
+              child: Text(l10n.projectWorkspaceReviewLatest),
+            ),
           FilledButton(
             key: const Key('project-workspace-save'),
             onPressed:
                 !policyAllows ||
+                    _editConflict ||
                     _saving ||
                     _reviewing ||
                     !(authorized || (pending != null && currentActor))
@@ -236,6 +250,96 @@ class _ProjectWorkspaceLinkEditorState
       );
     } finally {
       if (mounted) setState(() => _reviewing = false);
+    }
+  }
+
+  Future<void> _reviewLatest() async {
+    if (_saving || _reviewing || _obsolete) return;
+    _remember();
+    setState(() => _saving = true);
+    final controller = ref.read(projectWorkspaceProvider.notifier);
+    final operation = controller.reviewEdit(_draft);
+    final epoch = controller.epoch;
+    final latest = await operation;
+    if (!mounted || _obsolete || controller.epoch != epoch) {
+      if (mounted) setState(() => _saving = false);
+      return;
+    }
+    if (latest == null) {
+      _finish(false, epoch);
+      return;
+    }
+    // Network work is complete while the person reviews the current values.
+    setState(() {
+      _saving = false;
+      _reviewing = true;
+    });
+    final l10n = AppLocalizations.of(context);
+    bool valid() =>
+        !_obsolete &&
+        controller.epoch == epoch &&
+        ref.read(authSessionProvider).identity?.id == widget.profileId &&
+        ref.read(projectWorkspaceProvider).canManage;
+    final keep = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => Consumer(
+        builder: (context, ref, _) {
+          ref.watch(authSessionProvider);
+          ref.watch(projectWorkspaceProvider);
+          final current = valid();
+          return AlertDialog(
+            scrollable: true,
+            title: Text(l10n.projectWorkspaceLatestTitle),
+            content: current
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.projectWorkspaceReviewLatestBody),
+                      const SizedBox(height: 12),
+                      Text(
+                        latest.name,
+                        key: const Key('project-workspace-latest-name'),
+                      ),
+                      Text(latest.url.value),
+                    ],
+                  )
+                : Text(l10n.projectWorkspaceUnavailable),
+            actions: [
+              TextButton(
+                key: const Key('project-workspace-cancel-review'),
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(l10n.projectWorkspaceCancelAction),
+              ),
+              if (current)
+                FilledButton(
+                  key: const Key('project-workspace-keep-edits'),
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: Text(l10n.projectWorkspaceKeepEdits),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+    if (!mounted) return;
+    if (keep == true && valid()) {
+      _draft = controller.acknowledgeEditReview(
+        _draft.withInput(_name.text, _url.text),
+        latest,
+        epoch,
+      );
+      setState(() {
+        _editConflict = false;
+        _reviewing = false;
+        _error = null;
+        _saving = false;
+      });
+    } else {
+      setState(() {
+        _saving = false;
+        _reviewing = false;
+      });
     }
   }
 
@@ -296,8 +400,19 @@ class _ProjectWorkspaceLinkEditorState
         state.pendingAdd == null &&
         (state.failure == ProjectWorkspaceFailureKind.removed ||
             state.failure == ProjectWorkspaceFailureKind.conflict);
+    if (state.failure == ProjectWorkspaceFailureKind.forbidden) {
+      _obsolete = true;
+      _name.clear();
+      _url.clear();
+      _draft = _draft.withInput('', '');
+    }
     setState(() {
       _saving = false;
+      if (widget.link != null &&
+          (state.failure == ProjectWorkspaceFailureKind.conflict ||
+              state.failure == ProjectWorkspaceFailureKind.removed)) {
+        _editConflict = true;
+      }
       _error = state.pendingAdd != null
           ? l10n.projectWorkspaceReconciliationFailed
           : projectWorkspaceFailureMessage(l10n, state.failure);

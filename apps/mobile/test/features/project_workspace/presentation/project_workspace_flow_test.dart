@@ -395,8 +395,188 @@ void main() {
       );
       expect(find.textContaining('This link changed'), findsWidgets);
       expect(find.text('Link removed.'), findsNothing);
+      await _tapWorkspace(
+        tester,
+        find.byKey(const Key('project-workspace-reload-conflict')),
+      );
+      expect(session.container.read(projectWorkspaceProvider).failure, isNull);
+      expect(
+        session.container.read(projectWorkspaceProvider).links.single.version,
+        2,
+      );
     },
   );
+
+  for (final locale in ['en', 'it']) {
+    for (final dark in [false, true]) {
+      testWidgets(
+        'stale edit review retains input $locale dark=$dark 320dp/2x',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 900);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final workspace = FakeProjectWorkspaceGateway()
+            ..workspace = projectWorkspaceFixture(projectId: 'project-1');
+          final session = _readyContainer(
+            workspace,
+            FakeProjectDelegateGateway()..role = ProjectManagementRole.creator,
+          );
+          addTearDown(session.dispose);
+          await _pumpWorkspace(
+            tester,
+            session.container,
+            locale: locale,
+            dark: dark,
+            scale: 2,
+          );
+          await _tapWorkspace(
+            tester,
+            find.byKey(const Key('workspace-edit-link-1')),
+          );
+          const typed = 'My retained edit';
+          await tester.enterText(
+            find.byKey(const Key('project-workspace-name-field')),
+            typed,
+          );
+          FocusManager.instance.primaryFocus?.unfocus();
+          final old = workspace.links.single;
+          await workspace.saveLink(
+            expectedManagerProfileId: 'other-manager',
+            projectId: 'project-1',
+            name: 'Changed on another device',
+            url: ProjectWorkspaceUrl.parse('https://example.org/current'),
+            linkId: old.id,
+            expectedVersion: old.version,
+          );
+          await _tapWorkspace(
+            tester,
+            find.byKey(const Key('project-workspace-save')),
+          );
+          expect(
+            tester
+                .widget<FilledButton>(
+                  find.byKey(const Key('project-workspace-save')),
+                )
+                .onPressed,
+            isNull,
+          );
+          final controller = session.container.read(
+            projectWorkspaceProvider.notifier,
+          );
+          expect(
+            controller.beginDraft('user-1', 'project-1', old).expectedVersion,
+            old.version,
+          );
+          await _tapWorkspace(
+            tester,
+            find.byKey(const Key('project-workspace-review-latest')),
+          );
+          expect(
+            tester
+                .widget<Text>(
+                  find.byKey(const Key('project-workspace-latest-name')),
+                )
+                .data,
+            'Changed on another device',
+          );
+          expect(
+            find.byKey(const Key('project-workspace-keep-edits')).hitTestable(),
+            findsOneWidget,
+          );
+          expect(tester.takeException(), isNull);
+          await RenderedEvidence.capture(
+            tester,
+            'a04-edit-review-$locale-${dark ? 'dark' : 'light'}-320-2x',
+          );
+          if (locale == 'en' && !dark) {
+            await _tapWorkspace(
+              tester,
+              find.byKey(const Key('project-workspace-cancel-review')),
+            );
+            expect(
+              controller.beginDraft('user-1', 'project-1', old).expectedVersion,
+              old.version,
+            );
+            expect(
+              tester
+                  .widget<TextFormField>(
+                    find.byKey(const Key('project-workspace-name-field')),
+                  )
+                  .controller!
+                  .text,
+              typed,
+            );
+            await _tapWorkspace(
+              tester,
+              find.byKey(const Key('project-workspace-review-latest')),
+            );
+          }
+          await _tapWorkspace(
+            tester,
+            find.byKey(const Key('project-workspace-keep-edits')),
+          );
+          expect(
+            tester
+                .widget<TextFormField>(
+                  find.byKey(const Key('project-workspace-name-field')),
+                )
+                .controller!
+                .text,
+            typed,
+          );
+          expect(
+            controller.beginDraft('user-1', 'project-1', old).expectedVersion,
+            2,
+          );
+          expect(workspace.links.single.name, 'Changed on another device');
+          await _tapWorkspace(
+            tester,
+            find.byKey(const Key('project-workspace-save')),
+          );
+          expect(workspace.links.single.name, typed);
+          expect(workspace.links.single.version, 3);
+        },
+      );
+    }
+  }
+  testWidgets('authority loss during edit review clears protected input', (
+    tester,
+  ) async {
+    final workspace = FakeProjectWorkspaceGateway()
+      ..workspace = projectWorkspaceFixture(projectId: 'project-1');
+    final session = _readyContainer(
+      workspace,
+      FakeProjectDelegateGateway()..role = ProjectManagementRole.creator,
+    );
+    addTearDown(session.dispose);
+    await _pumpWorkspace(tester, session.container);
+    await _tapWorkspace(tester, find.byKey(const Key('workspace-edit-link-1')));
+    final old = workspace.links.single;
+    await workspace.saveLink(
+      expectedManagerProfileId: 'other-manager',
+      projectId: 'project-1',
+      name: 'Changed',
+      url: old.url,
+      linkId: old.id,
+      expectedVersion: old.version,
+    );
+    await _tapWorkspace(
+      tester,
+      find.byKey(const Key('project-workspace-save')),
+    );
+    workspace.readError = const PostgrestException(
+      message: 'Denied',
+      code: '42501',
+    );
+    await _tapWorkspace(
+      tester,
+      find.byKey(const Key('project-workspace-review-latest')),
+    );
+    expect(find.byKey(const Key('project-workspace-name-field')), findsNothing);
+    expect(find.byKey(const Key('project-workspace-url-field')), findsNothing);
+    expect(session.container.read(projectWorkspaceProvider).links, isEmpty);
+  });
 
   testWidgets(
     'policy review retains unsent input and action without automatic submission',
@@ -962,6 +1142,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(workspace.calls, isEmpty);
+    expect(find.text('drive.google.com'), findsNothing);
+    // A returned collection's cached summary can still be shown by the card.
+    await session.container
+        .read(projectWorkspaceProvider.notifier)
+        .load(expectedProfileId: 'user-1', projectId: 'project-1');
+    await tester.pumpAndSettle();
     expect(find.text('drive.google.com'), findsOneWidget);
     final destination = tester.widget<ListTile>(
       find.byKey(const Key('project-manage-workspace')),
