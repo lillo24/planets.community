@@ -913,7 +913,10 @@ async function verify() {
     "22023",
   );
   const official = (
-    await rpc(guest, "list_public_proposal_templates_v2", { p_limit: 50 })
+    await rpc(guest, "list_public_proposal_templates_v2", {
+      p_limit: 50,
+      p_query: "Repair Café",
+    })
   ).find((t) => t.is_official);
   assert.ok(official, "Official catalog fixture is available");
   const [officialPreview] = await rpc(

@@ -79,6 +79,13 @@ A later full local gate stopped in SQL test 026 on the existing chat
 the complete gate was restarted after the emulator and mobile suite stopped.
 This is recorded separately from the earlier complete 5,053-assertion SQL pass.
 
+The first PR Database run caught an ordering interaction: GRP03C's retained
+public garden fixtures added legitimate matches to SIM01's exact-corpus test.
+The attribution verifier moved after other consumers, immediately before type
+generation in CI and `check:db`; no matching assertion or product search rule
+changed. Its official catalog fixture now uses a bounded Repair Café query so
+the check also remains independent of preceding catalog population.
+
 Android harness attempts initially waited for an offscreen lazy template control
 and then expected public-detail navigation where the established editor returns
 to My Projects. Both test assumptions were corrected. Two large-text attempts

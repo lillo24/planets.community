@@ -46,7 +46,9 @@ an explicit Database step after the existing TW02/TW03 verifiers; the scoped
 classifier and complete manual suite remain unchanged.
 
 GRP03C adds `group:projects:upgrade:verify:local` before the clean reset and
-`group:projects:verify:local` after group membership verification in Database CI.
+`group:projects:verify:local` after other domain consumers, immediately before
+type generation, in both Database CI and `check:db`. It retains public garden
+fixtures, which must not alter earlier SIM01 search-corpus assertions.
 The upgrade populates predecessor histories and compares their original columns;
 the HTTP verifier checks group-attributed first publication and observed lock
 waits. Both are also part of `check:db`. Existing area classification, required

@@ -110,7 +110,10 @@ PostgREST, including independently held transactions with observed lock waits.
 `group:projects:upgrade:verify:local` requires CI or `PLANETS_DISPOSABLE_QA=1`,
 resets only its explicitly selected disposable stack, populates predecessor
 Project/group/template/chat histories and compares every predecessor column.
-Both run in `check:db` and the existing Database CI job. pgTAP checks the private
+Both run in `check:db` and the existing Database CI job. The HTTP verifier runs
+after other domain consumers so its retained public garden fixtures cannot
+alter existing matching corpora; its official starter lookup uses a bounded
+query rather than depending on the first unfiltered catalog page. pgTAP checks the private
 boundary, grants, fixed definer paths, immutable receipts, triggers and bounds.
 Feature unit/widget tests cover command recovery and narrow EN/IT layouts.
 
