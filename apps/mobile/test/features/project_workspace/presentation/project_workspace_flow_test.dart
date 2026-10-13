@@ -184,6 +184,8 @@ void main() {
         find.byKey(const Key('project-workspace-save')),
       );
       expect(workspace.links, hasLength(1));
+      // A cached empty page cannot describe the result of an unresolved Add.
+      expect(find.text('No links shared yet.'), findsNothing);
       expect(find.textContaining("Couldn't confirm this link"), findsOneWidget);
       final field = find.descendant(
         of: find.byKey(const Key('project-workspace-url-field')),

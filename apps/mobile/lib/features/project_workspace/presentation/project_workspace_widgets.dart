@@ -307,7 +307,10 @@ class ProjectWorkspaceCollection extends ConsumerWidget {
             liveRegion: true,
             child: Text(projectWorkspaceFailureMessage(l10n, state.failure)),
           ),
-        if (state.links.isEmpty && state.nextCursor == null)
+        // Until Add recovery settles, an earlier empty page may be obsolete.
+        if (state.pendingAdd == null &&
+            state.links.isEmpty &&
+            state.nextCursor == null)
           Text(l10n.projectWorkspaceNotConfigured),
         for (final link in state.links)
           Padding(
