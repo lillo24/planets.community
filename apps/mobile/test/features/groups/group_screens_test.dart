@@ -14,6 +14,12 @@ import 'package:planets_mobile/features/policies/data/policy_acceptance_store.da
 import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 
 import '../../support/fake_auth.dart';
+import '../../support/fake_proposal.dart';
+import '../../support/fake_recurring_activity.dart';
+
+import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
+import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
+
 import '../../support/fake_policy.dart';
 import '../../support/fake_profile.dart';
 import '../../support/fake_moderation.dart';
@@ -55,6 +61,10 @@ Future<ProviderContainer> pumpGroups(
           policy ?? FakePolicyAcceptanceStore(preaccepted: true),
         ),
         groupGatewayProvider.overrideWithValue(gateway),
+        proposalGatewayProvider.overrideWithValue(FakeProposalGateway()),
+        recurringActivityGatewayProvider.overrideWithValue(
+          FakeRecurringActivityGateway(),
+        ),
         moderationGatewayProvider.overrideWithValue(
           moderation ?? FakeModerationGateway(),
         ),

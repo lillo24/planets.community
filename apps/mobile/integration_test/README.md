@@ -187,7 +187,6 @@ creates a draft. Use the distinct QA package and exact configuration/build/cache
 cleanup above. The [integration record](../../../docs/development/template-stack-integration.md)
 and final draft PR own results and outstanding physical-device/founder gates.
 
-
 ## Interactive tutorial smoke
 
 `flutter test integration_test/tutorial_smoke_test.dart -d <dedicated-emulator>`
@@ -217,3 +216,16 @@ documented in `docs/development/grp02-groups-ui.md` at the repository root.
 Use `prepare_groups_smoke.mjs`, `groups_smoke_test.dart` and
 `test_driver/groups_screenshots.dart` with a confirmed disposable loopback stack.
 Fixtures require no personal photo and never use a hosted account or service role.
+
+## GRP03B permanent-group participation
+
+`prepare_group_membership_smoke.mjs` creates fictional genuine OTP fixtures on a
+designated disposable loopback stack. `group_membership_smoke_test.dart` exercises
+photo preflight/editor/form retention, explicit request, manager review, People,
+Leave, targeted offer decline/accept, independent Leave/Step down, participant and
+authority response-loss recovery, informed Co-creator acceptance, Team,
+structural Archive/Restore and Step down. It uses real canonical APIs; only the
+accepted response is deliberately dropped. The native gallery/crop itself is not
+covered. Reuse `test_driver/groups_screenshots.dart`; see the exact config, browser
+journey and evidence boundaries in
+[GRP03B QA](../../../docs/development/grp03b-group-membership-ui.md).

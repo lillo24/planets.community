@@ -46,9 +46,12 @@ export function AuthStatusCard({ state, returnTo = "/" }: AuthStatusCardProps) {
   const cancelTo = participantCancelDestination(returnTo);
   // A signed-out profile visit wraps its destination in /profile?returnTo=… .
   // Participant setup must return directly to explicit Join after one save.
-  const profileReturnTo = cancelTo.startsWith("/join/project/")
-    ? cancelTo
-    : returnTo;
+  const profileReturnTo =
+    cancelTo.startsWith("/join/project/") ||
+    cancelTo.startsWith("/join/group/") ||
+    cancelTo.startsWith("/invite/group/")
+      ? cancelTo
+      : returnTo;
 
   return (
     <Card className="w-full max-w-md" aria-labelledby="auth-status-title">

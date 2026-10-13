@@ -77,3 +77,13 @@ apply the account/version-bound policy check at the action boundary.
 The report UUID survives OTP redirects in the path. Auth/profile cancellation
 returns to the public directory/detail. Editors register with the existing
 departure coordinator; no bottom branch or stored right-tab preference changes.
+
+GRP03B adds separate `/join/group/:token` and `/invite/group/:token` previews,
+exact literal safe Auth/profile returns, and native duplicate suppression under
+the existing host boundary. `/groups/mine/{managed,memberships,requests,offers}`
+and group People/request/membership/Team/offer/role/link-history routes require
+identity; protected reads and exit actions do not add profile/photo/policy gates.
+Content creation/edit/report retains its readiness boundary. The separate
+`structural-edit` route uses Co-creator RPCs and safely exits after Restore.
+Proposal/Tavolo Groups navigation belongs only to the top-right page toolbar;
+`BrowseActivitySwitcher` owns only activity-family choices.

@@ -9,16 +9,11 @@ class BrowseActivitySwitcher extends StatelessWidget {
   const BrowseActivitySwitcher({
     required this.selected,
     this.onChanged,
-    this.showGroupsEntry = true,
     super.key,
   });
 
   final BrowseActivityType? selected;
   final ValueChanged<BrowseActivityType>? onChanged;
-
-  /// List Browse pages expose Groups; the contextual Map keeps its compact
-  /// family controls so large text still leaves a useful map visible.
-  final bool showGroupsEntry;
 
   @override
   Widget build(BuildContext context) {
@@ -58,16 +53,6 @@ class BrowseActivitySwitcher extends StatelessWidget {
             },
           ),
         ),
-        if (showGroupsEntry)
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: TextButton.icon(
-              key: const Key('browse-groups'),
-              onPressed: () => context.push('/groups'),
-              icon: const Icon(Icons.groups_outlined),
-              label: Text(l10n.groupsTitle),
-            ),
-          ),
       ],
     );
   }

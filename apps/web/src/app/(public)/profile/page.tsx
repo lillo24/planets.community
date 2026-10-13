@@ -50,7 +50,11 @@ export default async function ProfilePage({
             : "Cancel profile setup"}
         </Button>
       </div>
-      <ProfileForm initialData={result.data} returnTo={returnTo} />
+      <ProfileForm
+        initialData={result.data}
+        returnTo={returnTo}
+        nameOnly={/^\/(join|invite)\/group\/[A-Za-z0-9_-]{43}$/u.test(returnTo)}
+      />
     </main>
   );
 }

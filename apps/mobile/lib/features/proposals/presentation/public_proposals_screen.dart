@@ -92,6 +92,13 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
         context,
         title: Text(l10n.proposalsTitle),
         actions: [
+          if (widget.tutorialPlaceholder == null)
+            IconButton(
+              key: const Key('browse-groups'),
+              tooltip: l10n.groupsTitle,
+              onPressed: () => context.push('/groups'),
+              icon: const Icon(Icons.groups_outlined),
+            ),
           IconButton(
             key: const Key('template-workshop-action'),
             tooltip: l10n.workshopTitle,
@@ -139,7 +146,7 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                 const BrowseActivitySwitcher(
                   selected: BrowseActivityType.proposals,
                 ),
-                // The Browse block includes the compact Groups entry.
+                // Groups navigation lives in the page toolbar.
                 const SizedBox(height: AppSpacing.medium),
                 MapViewButton(
                   origin: MapDiscoveryOrigin.projects,

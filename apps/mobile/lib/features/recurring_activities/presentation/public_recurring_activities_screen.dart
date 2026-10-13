@@ -80,6 +80,12 @@ class _PublicRecurringActivitiesScreenState
         title: Text(l10n.tavoliTitle),
         actions: [
           IconButton(
+            key: const Key('browse-groups'),
+            tooltip: l10n.groupsTitle,
+            onPressed: () => context.push('/groups'),
+            icon: const Icon(Icons.groups_outlined),
+          ),
+          IconButton(
             key: const Key('my-tavoli-action'),
             tooltip: l10n.draftsTitle,
             onPressed: () =>

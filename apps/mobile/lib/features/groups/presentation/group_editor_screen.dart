@@ -15,9 +15,11 @@ import '../application/group_controllers.dart';
 import '../data/group_gateway.dart';
 import '../domain/group_models.dart';
 import 'group_widgets.dart';
+import '../../group_membership/presentation/group_membership_widgets.dart';
 
 class GroupEditorScreen extends ConsumerWidget {
-  const GroupEditorScreen({this.id, super.key});
+  const GroupEditorScreen({this.id, this.structural = false, super.key});
+  final bool structural;
   final String? id;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,13 +30,20 @@ class GroupEditorScreen extends ConsumerWidget {
     return _GroupEditor(
       key: ValueKey((session.identity!.id, id)),
       actor: session.identity!.id,
+      structural: structural,
       id: id,
     );
   }
 }
 
 class _GroupEditor extends ConsumerStatefulWidget {
-  const _GroupEditor({required this.actor, this.id, super.key});
+  const _GroupEditor({
+    required this.actor,
+    this.id,
+    required this.structural,
+    super.key,
+  });
+  final bool structural;
   final String actor;
   final String? id;
   @override
@@ -60,6 +69,7 @@ class _GroupEditorState extends ConsumerState<_GroupEditor> {
       gateway: ref.read(groupGatewayProvider),
       actor: widget.actor,
       id: widget.id,
+      structural: widget.structural,
       authorized: () =>
           mounted &&
           ref.read(authSessionProvider).phase == AuthSessionPhase.ready &&
@@ -118,8 +128,38 @@ class _GroupEditorState extends ConsumerState<_GroupEditor> {
     return success;
   }
 
+  void finishRestore() {
+    if (!mounted || !editor.accessEnded) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context).groupRestoreCompleted),
+      ),
+    );
+    closeGroups(context);
+  }
+
   Future<void> state(GroupPublication next) async {
+    if (widget.structural &&
+        !await confirmGroupAction(
+          context,
+          widget.actor,
+          next == GroupPublication.archived
+              ? AppLocalizations.of(context).groupsArchive
+              : AppLocalizations.of(context).groupsRestore,
+        )) {
+      return;
+    }
+    if (!mounted) return;
     if (await editor.publication(next) && mounted) {
+      if (editor.accessEnded) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).groupRestoreCompleted),
+          ),
+        );
+        closeGroups(context);
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -244,7 +284,13 @@ class _GroupEditorState extends ConsumerState<_GroupEditor> {
                           onPressed: editor.busy || !policyAllows
                               ? null
                               : () async {
-                                  if (await editor.retry()) syncFields();
+                                  if (await editor.retry()) {
+                                    if (editor.accessEnded) {
+                                      finishRestore();
+                                    } else {
+                                      syncFields();
+                                    }
+                                  }
                                 },
                           child: Text(l.groupsRetryCommand),
                         ),
@@ -395,7 +441,8 @@ class _GroupEditorState extends ConsumerState<_GroupEditor> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          if (!archived &&
+                          if (!widget.structural &&
+                              !archived &&
                               own.publication != GroupPublication.published)
                             OutlinedButton(
                               key: const Key('group-publish'),
@@ -408,7 +455,8 @@ class _GroupEditorState extends ConsumerState<_GroupEditor> {
                                   : null,
                               child: Text(l.groupsPublish),
                             ),
-                          if (own.publication == GroupPublication.published)
+                          if (!widget.structural &&
+                              own.publication == GroupPublication.published)
                             OutlinedButton(
                               onPressed:
                                   !editor.frozen &&
@@ -419,6 +467,9 @@ class _GroupEditorState extends ConsumerState<_GroupEditor> {
                               child: Text(l.groupsUnpublish),
                             ),
                           OutlinedButton(
+                            key: Key(
+                              archived ? 'group-restore' : 'group-archive',
+                            ),
                             onPressed:
                                 !editor.frozen && policyAllows && !editor.dirty
                                 ? () => state(
@@ -431,7 +482,8 @@ class _GroupEditorState extends ConsumerState<_GroupEditor> {
                               archived ? l.groupsRestore : l.groupsArchive,
                             ),
                           ),
-                          if (own.publication == GroupPublication.published)
+                          if (!widget.structural &&
+                              own.publication == GroupPublication.published)
                             TextButton(
                               key: const Key('group-public-profile'),
                               onPressed: () =>

@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
     return [
       "/invite/project/:token",
       "/join/project/:token",
+      "/join/group/:token",
+      "/invite/group/:token",
+      "/groups/:id",
       "/joined/:kind/:id",
       "/auth",
       "/profile",

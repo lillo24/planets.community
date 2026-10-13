@@ -54,6 +54,8 @@ Future<void> showProfilePhotoTrustGate({
       };
       return AlertDialog(
         key: const Key('profile-photo-trust-gate'),
+        // Large text and an animating keyboard must leave actions reachable.
+        scrollable: true,
         title: Text(title),
         content: Text(description),
         actions: [

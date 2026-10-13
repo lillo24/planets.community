@@ -9,6 +9,8 @@ export function containsInvitationSecret(
       if (
         text.includes("/join/project/") ||
         text.includes("/invite/project/") ||
+        text.includes("/join/group/") ||
+        text.includes("/invite/group/") ||
         /\b(?:p_token|invite_token)\b["']?\s*[:=]/u.test(text) ||
         /(^|[^A-Za-z0-9_-])[A-Za-z0-9_-]{43}($|[^A-Za-z0-9_-])/u.test(text)
       )

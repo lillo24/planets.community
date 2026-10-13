@@ -22,6 +22,18 @@ const ideaOwnFields = [
 ];
 export const participationRpcNullableFields = Object.freeze({
   // GRP03A relationship recovery and contextual reads have explicit null states.
+  get_own_group_membership_context: [
+    "authority_role",
+    "delegate_id",
+    "current_membership_id",
+    "membership_status",
+    "pending_request_id",
+    "pending_note",
+    "latest_request_id",
+    "latest_request_status",
+    "latest_membership_id",
+    "latest_membership_status",
+  ],
   create_group_join_request: [
     "relationship_id",
     "current_status",

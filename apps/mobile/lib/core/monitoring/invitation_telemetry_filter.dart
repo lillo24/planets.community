@@ -13,7 +13,10 @@ bool containsInvitationSecret(Object? value) {
   if (value is! String) return false;
   var text = value;
   for (var i = 0; i < 4; i++) {
-    if (text.contains('/join/project/') || text.contains('/invite/project/')) {
+    if (text.contains('/join/project/') ||
+        text.contains('/invite/project/') ||
+        text.contains('/join/group/') ||
+        text.contains('/invite/group/')) {
       return true;
     }
     // Also suppress standalone opaque invitation tokens in exception messages.

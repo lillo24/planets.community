@@ -186,3 +186,15 @@ required before claiming Universal Links are production-verified.
 - Exercise both cold-start and already-running app links, malformed tokens,
   Projects without a group chat, and browser fallback while associations are
   absent or intentionally disabled.
+
+## Permanent-group extension
+
+GRP03B extends canonical Next/mobile invitation ownership with `/join/group/`
+(participation) and `/invite/group/` (authority), plus token-free `/groups/:id` and
+`/joined/groups/:id` handoff. Group IDs never enter Project handlers. Existing
+privacy headers/referrer controls, redaction, strict native parsing and duplicate
+delivery protection apply. Android source path tuples/AASA claims are extended;
+existing iOS host entitlement and fail-closed identity placeholders remain.
+The provisional static trial does not serve these routes. Separately activate
+reviewed migrations, canonical hosting and verified native identities using the
+[GRP03B rollout guide](grp03b-group-membership-ui.md).
