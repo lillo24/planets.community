@@ -4,7 +4,7 @@
 Proposal card and two ribbon compositions. It reuses the real theme, cover,
 Requested badge, schedule and capacity owners. Synthetic Popular is confined to
 this wrapper and its tests; no production DTO, route or repository receives it.
-The reproducible matrix and six curated Flutter captures are owned by
+The reproducible matrix and seven curated Flutter captures are owned by
 `test/features/proposals/presentation/card_comparison_test.dart`. See the
 [selection record](../../../docs/development/batch-a-card-selection.md).
 
