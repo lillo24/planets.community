@@ -182,8 +182,9 @@ void main() {
               of: find.byType(ListView),
               matching: find.byType(Scrollable),
             );
-            if (scrolls.evaluate().isNotEmpty)
+            if (scrolls.evaluate().isNotEmpty) {
               await tester.drag(scrolls.first, const Offset(0, -200));
+            }
           }
         }
         expect(
