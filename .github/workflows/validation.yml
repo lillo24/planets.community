@@ -165,6 +165,9 @@ jobs:
       - name: Verify populated group Project attribution preservation
         run: npm run group:projects:upgrade:verify:local
 
+      - name: Verify populated Group discussion upgrade preservation
+        run: npm run group:discussions:upgrade:verify:local
+
       - name: Replay migrations and seed from zero
         run: npm run db:reset
 
@@ -301,6 +304,9 @@ jobs:
       # them after consumers whose matching assertions assume their own corpus.
       - name: Verify group Project attribution, first publication and lock races
         run: npm run group:projects:verify:local
+
+      - name: Verify explicit Group discussions, history and lock races
+        run: npm run group:discussions:verify:local
 
       - name: Regenerate public database types
         run: npm run db:types

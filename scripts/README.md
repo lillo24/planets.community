@@ -1,5 +1,12 @@
 # Repository scripts
 
+- `verify-local-group-discussions.mjs` owns C01 real OTP consent, episode/history
+  denial, command receipts, canonical unread/read snapshots, exact staff evidence
+  and observed Group-lock races. `--upgrade` requires CI or
+  `PLANETS_DISPOSABLE_QA=1`, resets the selected loopback stack to C01's predecessor,
+  populates existing demo/Group/moderation histories and compares every old column
+  and row after additive and repeated migration application.
+
 - `verify-local-group-membership.mjs` owns GRP03A genuine Auth/PostgREST
   relationship, role, block, retry and observed multi-connection lock races.
   `--upgrade` resets an explicitly disposable loopback stack, populates GRP01,

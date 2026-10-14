@@ -1,5 +1,14 @@
 # Validation workflow
 
+C01 adds `group:discussions:upgrade:verify:local` before clean replay and
+`group:discussions:verify:local` after Group Project verification. The populated
+check reuses bounded fictional producers, preserves every original public/private
+column and row, and checks repeated additive application. The HTTP check observes
+actual Group-lock waits and tests private admission/history/read/report rules.
+Both also run in `check:db`. This authorization-sensitive upgrade adds one local
+predecessor reset/fixture pass; area classification, required-status aggregation,
+the 25-minute Database budget and main-push behavior remain unchanged.
+
 `validation.yml` classifies the complete PR diff using
 `scripts/classify-validation-paths.mjs` and runs affected Database, Web, Site and
 Mobile jobs. Workflow/root-tooling changes select every area. Manual dispatch

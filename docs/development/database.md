@@ -1,5 +1,10 @@
 # Database development
 
+[C01 Group discussions](group-discussions.md) owns the separate private room,
+explicit episode-bound admission, committed-sequence history/read frontier and
+typed report-evidence domain. C00 remains provisional; isolated tests and draft
+PRs do not authorize main merge or shared activation.
+
 [GRP01 persistent groups](persistent-groups.md) owns durable group identity,
 personal-manager authority, versioned publication, bounded anonymous reads,
 independent staff suppression and genuine group reporting. Its focused HTTP and
