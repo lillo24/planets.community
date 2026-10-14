@@ -29,6 +29,7 @@ import '../../features/group_discussions/presentation/discussion_routes.dart';
 import '../../features/group_discussions/presentation/discussion_group_screen.dart';
 import '../../features/group_discussions/presentation/discussion_chat_screen.dart';
 import '../../features/group_discussions/presentation/discussion_people_screen.dart';
+import '../../features/group_discussions/presentation/discussion_links_screen.dart';
 import '../../features/messages/presentation/messages_landing_screen.dart';
 import '../../features/messages/presentation/participation_request_message_screen.dart';
 import '../../features/moderation/domain/moderation_models.dart';
@@ -804,6 +805,13 @@ RoutingConfig _routingConfig(
                       GoRoute(
                         path: 'people',
                         builder: (context, state) => DiscussionPeopleScreen(
+                          key: state.pageKey,
+                          roomId: state.pathParameters['roomId']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'links',
+                        builder: (context, state) => DiscussionLinksScreen(
                           key: state.pageKey,
                           roomId: state.pathParameters['roomId']!,
                         ),

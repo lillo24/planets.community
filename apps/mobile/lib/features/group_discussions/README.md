@@ -21,6 +21,14 @@ Resource and representative conversations.
   and a 320px / large-text preview; it imports no native transport.
 - `presentation/discussion_routes.dart` defines C destinations and the exact
   own-exit readiness exception. `discussion_feedback.dart` localizes safe errors.
+- `domain/discussion_links.dart`, `data/discussion_links_gateway.dart` and
+  `application/discussion_links_controller.dart` own strict episode-bound link
+  pages, exact rereads and the private loaded window.
+- `presentation/discussion_links_screen.dart`, `discussion_link_editor.dart` and
+  `discussion_link_open.dart` own explicit collection entry, individual versioned
+  edits and destination confirmation before the fresh authorized launch.
+- `presentation/discussion_link_widgets.dart` provides the pure named-link
+  heading and a narrow large-text preview without importing native transport.
 
 The backend is authoritative. See the provisional permissions contract and
 reproduction notes in `docs/development/group-discussions.md`. Controllers do not

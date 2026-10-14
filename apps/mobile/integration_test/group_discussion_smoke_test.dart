@@ -13,6 +13,7 @@ import 'package:planets_mobile/features/auth/application/auth_session_controller
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/group_discussions/application/discussion_controllers.dart';
+import 'package:planets_mobile/features/group_discussions/application/discussion_links_controller.dart';
 import 'package:planets_mobile/features/group_discussions/data/discussion_gateway.dart';
 import 'package:planets_mobile/features/group_discussions/domain/discussion_models.dart';
 import 'package:planets_mobile/features/group_discussions/presentation/discussion_routes.dart';
@@ -171,6 +172,32 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 500));
       await shot('chat-it');
+      router.push(discussionLinksRoute(room));
+      await harness.waitFor(
+        tester,
+        find.text('Non ci sono link disponibili dalla tua ammissione.'),
+      );
+      final creatorRoom = await peer.rpc(
+        'get_group_discussion',
+        params: {'p_expected_profile_id': creator, 'p_room_id': room},
+      ) as Map;
+      await peer.rpc(
+        'add_group_discussion_link',
+        params: {
+          'p_expected_profile_id': creator,
+          'p_client_request_id': const Uuid().v4(),
+          'p_room_id': room,
+          'p_expected_admission_id': creatorRoom['admission_id'],
+          'p_name': 'Documento C native',
+          'p_url': 'https://example.invalid/native',
+        },
+      );
+      container.read(discussionLinksProvider(room))!.pager.invalidate();
+      await harness.waitFor(tester, find.text('Documento C native'));
+      expect(find.byKey(const Key('discussion-link-add')), findsNothing);
+      await shot('links-it');
+      router.pop();
+      await harness.waitFor(tester, find.text('Fictional incoming message.'));
       router.go('/groups/$group');
       await harness.waitFor(tester, find.byKey(const Key('group-discussions')));
       await harness.reveal(tester, find.byKey(const Key('group-discussions')));
