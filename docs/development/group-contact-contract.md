@@ -1,7 +1,9 @@
 # D00 — Purposeful group contact and coordination
 
-Approval status: **PROVISIONAL — REVIEW ONLY**  
-Approval reference: **none**  
+Approval status: **PROVISIONAL — REVIEW ONLY**
+
+Approval reference: **none**
+
 Base inspected: `58c5b18` (14 October 2026); Batch A #243 is merged.
 
 This is the proposed contract for the isolated D00–D03 stack. The request to
