@@ -2865,5 +2865,41 @@
   "contactRecover": "Check delivery status",
   "contactRequestUnavailable": "This request is unavailable in your current context.",
   "contactSender": "Sending as {name}",
-  "@contactSender": { "placeholders": { "name": { "type": "String" } } }
+  "@contactSender": { "placeholders": { "name": { "type": "String" } } },
+  "coordinationTitle": "Group coordination",
+  "coordinationChooseGroups": "Choose additional groups",
+  "coordinationGroupBounds": "Choose one to three public groups. Each seat needs a different person.",
+  "coordinationSearchGroups": "Search public groups, then press Enter",
+  "coordinationMoreGroups": "More groups",
+  "coordinationUseGroups": "Use selected groups",
+  "coordinationPending": "Audience consent pending",
+  "coordinationActive": "Coordination ready",
+  "coordinationCanceled": "Canceled",
+  "coordinationAgree": "Confirm",
+  "coordinationInvitationDisclosure": "This fresh note and your identity are visible to the two original representatives and eligible managers of the invited groups. Write only what you choose to share with them.",
+  "coordinationClaimDisclosure": "Claim one group seat as yourself. Your identity and represented group will be shared with the original representatives so they can review the proposed audience. Claiming does not confirm the final audience or open a chat.",
+  "coordinationConfirmDisclosure": "I agree to share the fresh summary and new messages with exactly these named people representing these groups. Earlier private conversations remain private. Any audience change requires new confirmation.",
+  "coordinationChangeDisclosure": "Replace the additional groups? Their previous seats and all audience confirmations will be invalidated. The two original representatives remain.",
+  "coordinationCancelDisclosure": "Cancel this proposal permanently? This does not change any group membership or other conversation.",
+  "coordinationDeclineDisclosure": "Decline this proposal permanently? It will not create a coordination conversation.",
+  "coordinationFreshHistory": "A new conversation starts with this fresh summary and no earlier messages. Only the explicitly confirmed people can enter.",
+  "coordinationPropose": "Propose group coordination",
+  "coordinationSeatNamed": "Representative selected",
+  "coordinationSeatWaiting": "Waiting for a representative",
+  "coordinationAudienceWithheld": "The original representatives must confirm the complete named audience before it is shared with invitees.",
+  "coordinationConfirmed": "Audience confirmed",
+  "coordinationAwaitingConfirmation": "Awaiting confirmation",
+  "coordinationClaimGroup": "Represent {group}",
+  "coordinationConfirm": "Confirm this exact audience",
+  "coordinationChangeAudience": "Change additional groups",
+  "coordinationCancel": "Cancel proposal",
+  "coordinationSource": "Open original conversation",
+  "coordinationReport": "Report this invitation",
+  "@coordinationClaimGroup": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  }
 }

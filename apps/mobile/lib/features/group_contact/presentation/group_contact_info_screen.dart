@@ -12,6 +12,8 @@ import '../application/contact_attempt.dart';
 import '../application/contact_access_changes.dart';
 import '../data/group_contact_gateway.dart';
 import '../domain/group_contact_models.dart';
+import '../../group_coordination/data/coordination_gateway.dart';
+import '../../group_coordination/presentation/coordination_routes.dart';
 
 class GroupContactInfoScreen extends ConsumerStatefulWidget {
   const GroupContactInfoScreen({required this.chatId, super.key});
@@ -218,6 +220,37 @@ class _GroupContactInfoScreenState
             ] else ...[
               Text(c.title, style: Theme.of(context).textTheme.titleLarge),
               Text(c.summary),
+              if (c.kind == 'bilateral' && !c.readOnly)
+                OutlinedButton(
+                  key: const Key('contact-coordinate'),
+                  onPressed: () => context.push(coordinationComposeRoute(c.id)),
+                  child: Text(l.coordinationPropose),
+                ),
+              if (c.kind == 'coordination')
+                TextButton(
+                  key: const Key('contact-coordination-context'),
+                  onPressed: () async {
+                    final id = actor, generation = epoch;
+                    if (id == null) return;
+                    try {
+                      final result = await ref
+                          .read(coordinationGatewayProvider)
+                          .context(id, c.id);
+                      if (!current(id, generation) || !context.mounted) return;
+                      if (result == null) {
+                        throw const FormatException(
+                          'Missing coordination origin.',
+                        );
+                      }
+                      context.push(coordinationProposalRoute(result.id));
+                    } catch (_) {
+                      if (current(id, generation)) {
+                        setState(() => failed = true);
+                      }
+                    }
+                  },
+                  child: Text(l.coordinationTitle),
+                ),
               const SizedBox(height: 16),
               for (final person in c.audience)
                 Padding(
@@ -258,6 +291,7 @@ class _GroupContactInfoScreenState
                 liveRegion: true,
                 child: Text(l.contactDeliveryPending),
               ),
+            if (failed && attempt?.ambiguous != true) Text(l.contactFailure),
             if (attempt?.ambiguous == true)
               FilledButton(
                 onPressed: busy

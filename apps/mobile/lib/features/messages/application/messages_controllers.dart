@@ -61,7 +61,9 @@ class MessagesInboxController extends Notifier<MessagesInboxState> {
         expectedProfileId: actor,
         items: state.items
             .where(
-              (i) => i.kind != StructuredRequestItemKind.groupContactRequest,
+              (i) =>
+                  i.kind != StructuredRequestItemKind.groupContactRequest &&
+                  i.kind != StructuredRequestItemKind.groupCoordinationProposal,
             )
             .toList(),
         hasMore: state.hasMore,

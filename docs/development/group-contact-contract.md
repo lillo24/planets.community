@@ -118,6 +118,12 @@ private links and note text never enter a URL, audit or realtime payload.
 
 ## D03: exact audience consent and fresh history
 
+D03's [provisional protocol](group-coordination-protocol.md) specifies staged
+identity disclosure: new claimants share their own identity/group with the two
+original people; both originals must confirm the exact named version before new
+claimants receive the complete human audience. Claim/replacement invalidates all
+confirmations. This clarification is included in the same founder approval gate.
+
 An admitted bilateral participant proposes a new room with both existing human/
 group seats plus one to three additional public groups. Added groups' eligible
 managers may claim one seat by explicit acceptance; no public People picker.

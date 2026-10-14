@@ -198,7 +198,8 @@ export async function readModerationCase(
         })
       : Promise.resolve(null),
     detail.targetKind === "group_contact_request" ||
-    detail.targetKind === "group_contact_message"
+    detail.targetKind === "group_contact_message" ||
+    detail.targetKind === "group_coordination_proposal"
       ? access.client.rpc("get_moderation_case_group_contact", {
           p_expected_staff_profile_id: access.profileId,
           p_case_id: caseId,

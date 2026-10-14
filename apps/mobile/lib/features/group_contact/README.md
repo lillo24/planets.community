@@ -33,7 +33,8 @@ are independent.
   continuations and exact request/chat/info routes. Private note text never enters
   a URL. Entry buttons live on public group and group-attributed Project details.
 
-The central Messages owners use Requests v2, scoped Chats v6 and unread/read v2.
+The central Messages owners use Requests v3 (including explicit coordination),
+scoped Chats v6 and unread/read v2. Installed Requests v2 stays available.
 D adds typed kinds with compound paging keys. Legacy parsers/RPCs remain separate.
 Request management does not create human-message unread. No new photo trust gate,
 general direct messaging, Workspace, Checklist or permanent group room is added.
@@ -41,3 +42,7 @@ general direct messaging, Workspace, Checklist or permanent group room is added.
 Validation and real loopback native setup are in
 `docs/development/group-contact-mobile.md`. `test/features/group_contact` covers
 strict contracts, actor changes, exact retry, access loss and narrow EN/IT layouts.
+
+The `group_coordination` feature owns fresh multi-group invitations and consent.
+Conversation info exposes its context/actions without copying history or adding
+an acknowledgement. Human messages in its activated rooms still use this owner.

@@ -49,6 +49,8 @@ import '../../features/group_contact/presentation/group_contact_compose_screen.d
 import '../../features/group_contact/presentation/group_contact_request_screen.dart';
 import '../../features/group_contact/presentation/group_contact_chat_screen.dart';
 import '../../features/group_contact/presentation/group_contact_info_screen.dart';
+import '../../features/group_coordination/presentation/coordination_routes.dart';
+import '../../features/group_coordination/presentation/coordination_screen.dart';
 import '../../features/groups/presentation/group_detail_screen.dart';
 import '../../features/groups/presentation/group_editor_screen.dart';
 import '../../features/project_chat/presentation/project_chat_info_screen.dart';
@@ -425,6 +427,7 @@ RoutingConfig _routingConfig(
             ParticipantInvitationRoutes.isInvitePath(returnTo) ||
             isGroupInvitationDestination(returnTo) ||
             isGroupContactContinuation(returnTo) ||
+            isCoordinationContinuation(returnTo) ||
             (isMessagesPath(returnTo) &&
                 Uri.parse(returnTo).path != '/messages') ||
             isNotificationsPath(returnTo) ||
@@ -811,12 +814,26 @@ RoutingConfig _routingConfig(
                     ),
                   ),
                   GoRoute(
+                    path: 'requests/group-coordination/:proposalId',
+                    builder: (context, state) => CoordinationScreen(
+                      key: ValueKey(state.pathParameters['proposalId']),
+                      proposalId: state.pathParameters['proposalId']!,
+                    ),
+                  ),
+                  GoRoute(
                     path: 'chats/group-contact/:chatId',
                     builder: (context, state) => GroupContactChatScreen(
                       key: ValueKey(state.pathParameters['chatId']),
                       chatId: state.pathParameters['chatId']!,
                     ),
                     routes: [
+                      GoRoute(
+                        path: 'coordinate',
+                        builder: (context, state) => CoordinationScreen(
+                          key: ValueKey(state.pathParameters['chatId']),
+                          sourceChatId: state.pathParameters['chatId']!,
+                        ),
+                      ),
                       GoRoute(
                         path: 'info',
                         builder: (context, state) => GroupContactInfoScreen(
