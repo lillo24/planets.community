@@ -21,13 +21,7 @@
   "organizationNoParticipantLink": "Nessun link partecipanti",
   "organizationRoleDetails": "Dettagli del ruolo",
   "organizationInvitationExpiry": "Scade il {date}",
-  "@organizationInvitationExpiry": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
+  "@organizationInvitationExpiry": {"placeholders": {"date": {"type": "String"}}},
   "organizationLinkHelp": "Informazioni sui link partecipanti",
   "organizationLinkActions": "Azioni del link",
   "organizationDirectAdmissionWarning": "Chiunque abbia il link può partecipare direttamente finché il Progetto accetta partecipanti e ci sono posti. Non viene assegnato un ruolo organizzativo.",
@@ -506,13 +500,7 @@
   "settingsAppSection": "Generale",
   "settingsSandbox": "Sandbox",
   "settingsPersistentTab": "{destination} · Salvato sul dispositivo. Cambia la scheda in basso.",
-  "@settingsPersistentTab": {
-    "placeholders": {
-      "destination": {
-        "type": "String"
-      }
-    }
-  },
+  "@settingsPersistentTab": {"placeholders": {"destination": {"type": "String"}}},
   "settingsAccountSection": "Account",
   "settingsLanguage": "Lingua",
   "settingsLanguageSystem": "Predefinita di sistema",
@@ -1336,21 +1324,9 @@
   "projectOrganizerCapacityConflict": "Aumenta la capienza iscrizioni prima di conteggiare gli organizzatori.",
   "projectCapacityNotSet": "Capienza iscrizioni non impostata",
   "projectCapacityUpToParticipants": "Fino a {capacity} partecipanti",
-  "@projectCapacityUpToParticipants": {
-    "placeholders": {
-      "capacity": {
-        "type": "int"
-      }
-    }
-  },
+  "@projectCapacityUpToParticipants": { "placeholders": { "capacity": { "type": "int" } } },
   "projectCapacityLimit": "Capienza {capacity}",
-  "@projectCapacityLimit": {
-    "placeholders": {
-      "capacity": {
-        "type": "int"
-      }
-    }
-  },
+  "@projectCapacityLimit": { "placeholders": { "capacity": { "type": "int" } } },
   "projectCapacityUsage": "{used} / {capacity} posti utilizzati",
   "projectCapacityParticipantUsage": "{participants} / {capacity} posti partecipante utilizzati",
   "projectOrganizerIncludedCount": "{count} organizzatori inclusi",
@@ -1584,13 +1560,7 @@
   "proposalScheduleZone": "Orari mostrati in {zone}",
   "proposalDemoReplaceTitle": "Sostituire i dati inseriti?",
   "proposalDemoReplaceMessage": "I dati di esempio sostituiranno i valori inseriti. Nulla viene salvato finché non scegli di salvare o pubblicare.",
-  "@proposalScheduleZone": {
-    "placeholders": {
-      "zone": {
-        "type": "String"
-      }
-    }
-  },
+  "@proposalScheduleZone": {"placeholders": {"zone": {"type": "String"}}},
   "locationManualEntryNotice": "La ricerca dei luoghi non è disponibile. Inserisci il luogo qui sotto.",
   "locationMapUnavailable": "Anteprima della mappa non disponibile. Usa le informazioni sul luogo qui sopra.",
   "locationRestrictedPreview": "Tutti vedono la zona indicativa pubblica. Le istruzioni precise sono disponibili solo agli organizzatori autorizzati e ai partecipanti attuali.",
@@ -1749,21 +1719,9 @@
   "mapCreate": "Crea annuncio",
   "mapOptions": "Area e filtri",
   "mapSearchReference": "Riferimento: {place} · non GPS",
-  "@mapSearchReference": {
-    "placeholders": {
-      "place": {
-        "type": "String"
-      }
-    }
-  },
+  "@mapSearchReference": {"placeholders": {"place": {"type": "String"}}},
   "mapAppliedFilters": "Filtri elenco ({count})",
-  "@mapAppliedFilters": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
+  "@mapAppliedFilters": {"placeholders": {"count": {"type": "int"}}},
   "mapEditListFilters": "Modifica filtri in Elenco",
   "mapPublicReference": "Trento è il riferimento iniziale di ricerca, non la tua posizione. Scegli un altro centro o sposta la mappa.",
   "mapSearchPlace": "Scegli un luogo in Italia",
@@ -1912,13 +1870,7 @@
   "organizationRemoveWarning": "Rimuovere questa attività e le sue sottoattività?",
   "organizationReadOnly": "Questo Progetto è in sola lettura.",
   "organizationOfficialValue": "Attualmente pubblico: {value}",
-  "@organizationOfficialValue": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      }
-    }
-  },
+  "@organizationOfficialValue": {"placeholders": {"value": {"type": "String"}}},
   "organizationSuggestionOnly": "Area indicativa",
   "organizationCountry": "Paese (due lettere)",
   "organizationCountryEdit": "Cambia paese",
@@ -1983,14 +1935,7 @@
   "groupsManageError": "Impossibile verificare l’accesso del gestore. Riprova a caricare questa pagina.",
   "groupsLimit": "Massimo 120 caratteri Unicode.",
   "messageGroupCoverPlaceholder": "Nessuna copertina del gruppo per {title}",
-  "@messageGroupCoverPlaceholder": {
-    "description": "Accessible empty/loading/unavailable group cover thumbnail.",
-    "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
+  "@messageGroupCoverPlaceholder": {"description": "Accessible empty/loading/unavailable group cover thumbnail.", "placeholders": {"title": {"type": "String"}}},
   "groupPeople": "Persone",
   "groupTeam": "Team",
   "groupRequests": "Richieste di partecipazione",
