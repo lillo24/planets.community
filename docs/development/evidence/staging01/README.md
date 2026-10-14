@@ -15,6 +15,9 @@ tester content, OTPs, keys or sessions.
 - `routine-comparison.json`: baseline routine/hash/grant comparison after
   reproducing the extra hosted helper.
 - `upgrade-result.json`: created only after preservation and API assertions pass.
+- `hosted-deployment.json`: owner backup waiver, executed file hashes, canonical
+  history parity, sanitized hosted API/count/grant checks and remaining native QA.
+  See [the deployment record](../../staging01-hosted-deployment.md).
 
 The loopback-only `scripts/verify-local-staging01-upgrade.mjs` produces the
 comparison/result files. None of these inventories is a recoverable data backup.
