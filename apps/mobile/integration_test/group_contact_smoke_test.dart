@@ -409,10 +409,7 @@ void main() {
           ),
         ),
       );
-      await harness.waitFor(
-        tester,
-        find.text('Fictional Neighbourhood Garden'),
-      );
+      await harness.reveal(tester, find.text('Fictional Neighbourhood Garden'));
       await shot('composer-it-320dp-2x');
       await harness.reveal(tester, find.byKey(const Key('contact-note')));
       await tester.enterText(
