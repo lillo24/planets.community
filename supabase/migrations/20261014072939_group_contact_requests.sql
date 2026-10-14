@@ -96,19 +96,19 @@ language sql stable security definer set search_path='' as $$
   select p_request.submitter_id=p_actor or
     (private.group_authority_role(p_request.target_group_id,p_actor) is not null
       and private.group_is_public(p_request.target_group_id)
-      and (p_request.status<>'pending' or p_request.expires_at<=clock_timestamp() or private.group_contact_triage_available(p_request)));
+      and (p_request.status<>'pending' or p_request.expires_at<=statement_timestamp() or private.group_contact_triage_available(p_request)));
 $$;
 create function private.group_contact_request_projection(p_request private.group_contact_requests,p_actor uuid) returns jsonb
 language plpgsql stable security definer set search_path='' as $$
 declare own_live boolean := p_actor=p_request.submitter_id and private.group_contact_representation_valid(p_request.source_group_id,p_actor,p_request.source_delegate_id);
-  triage boolean := p_request.status='pending' and p_request.expires_at>clock_timestamp() and private.group_contact_triage_available(p_request)
+  triage boolean := p_request.status='pending' and p_request.expires_at>statement_timestamp() and private.group_contact_triage_available(p_request)
     and private.group_authority_role(p_request.target_group_id,p_actor) is not null;
   content boolean := own_live or triage;
 begin
   if not private.group_contact_request_visible(p_request,p_actor) then raise sqlstate '42501' using message='The contact request is unavailable.'; end if;
   return jsonb_build_object('item_kind','group_contact_request','request_id',p_request.id,
     'viewer_role',case when p_actor=p_request.submitter_id then 'requester' else 'delegate' end,
-    'status',case when p_request.status='pending' and p_request.expires_at<=clock_timestamp() then 'expired' else p_request.status end,
+    'status',case when p_request.status='pending' and p_request.expires_at<=statement_timestamp() then 'expired' else p_request.status end,
     'created_at',p_request.created_at,'resolved_at',p_request.resolved_at,'expires_at',p_request.expires_at,
     'activity_at',coalesce(p_request.resolved_at,p_request.created_at),'purpose',case when content or p_actor<>p_request.submitter_id then p_request.purpose end,
     'title',case when content or p_actor<>p_request.submitter_id then p_request.title end,
