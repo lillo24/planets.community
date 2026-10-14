@@ -49,3 +49,9 @@ same authenticated manual-review flow and neutral receipt. Italian/English
 copy explains that reporting removes nothing automatically. Template provenance
 never activates Project corroboration or Resource counterstatement disclosures;
 identity-change/retry safeguards and narrow own-report parsing are reused.
+
+D adds typed `group_contact_request` and `group_contact_message` targets through
+the same manual form and receipt. Own reports use the additive v2 projection;
+known-content reporting remains available after D authority loss. These targets
+do not activate Project corroboration or Resource counterstatements. Long category
+labels wrap within the form and menu at narrow width and enlarged EN/IT text.

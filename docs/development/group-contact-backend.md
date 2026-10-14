@@ -82,6 +82,13 @@ no affected request/chat ID. Clients reload durable authorization on hints, resu
 and reconnect, and discard all private state on identity change. Subscription
 admission alone never proves continuing read permission.
 
+D02 adds a separate neutral `group.contact_access_changed` event on that same
+topic. It may reach a former person's connected own socket only to erase stale
+content, and carries no affected object or activity identity. The pinned Realtime
+transport adds its delivery UUID independently of application keys. The additive
+public-reference projection includes only currently authorized Project kind/title;
+details are in `group-contact-mobile.md`.
+
 ## Safety and upgrade validation
 
 The existing moderation queue gains typed request/message targets and a separate

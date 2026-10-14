@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/backend/revalidate_window.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../group_contact/application/contact_access_changes.dart';
 import '../../participation/application/participation_controllers.dart';
 import '../../project_chat/application/project_chat_refresh.dart';
 import '../data/messages_gateway.dart';
@@ -49,6 +50,30 @@ class MessagesInboxController extends Notifier<MessagesInboxState> {
 
   @override
   MessagesInboxState build() {
+    ref.listen(contactAccessChangesProvider, (_, next) {
+      final actor = state.expectedProfileId;
+      if (actor == null || next.$1 != actor) return;
+      _revision++;
+      _activeRefresh = null;
+      _activeMore = null;
+      state = MessagesInboxState(
+        phase: MessagesInboxPhase.ready,
+        expectedProfileId: actor,
+        items: state.items
+            .where(
+              (i) => i.kind != StructuredRequestItemKind.groupContactRequest,
+            )
+            .toList(),
+        hasMore: state.hasMore,
+      );
+      Future<void>.microtask(() => load(actor, refresh: true));
+    });
+    ref.listen(messageChatsRefreshProvider, (_, _) {
+      final actor = state.expectedProfileId;
+      if (actor != null && state.phase != MessagesInboxPhase.idle) {
+        Future<void>.microtask(() => load(actor, refresh: true));
+      }
+    });
     ref.listen(
       authSessionProvider.select(
         (session) =>

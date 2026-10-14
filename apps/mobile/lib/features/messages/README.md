@@ -5,9 +5,11 @@ It keeps canonical structured Project and Resource requests in `Requests` and a
 mixed chronological conversation projection in the `Messages` root. Chats exposes
 independently paged `Private` and `Groups` scopes: Private contains Resource and
 Project participation-request conversations, while Groups contains Project
-group chats. Project and Resource detail transport remain in the adjacent
+group chats and provisional D representative conversations. Project and Resource detail transport remain in the adjacent
 `project_chat/`, `project_request_chat/`, and `resource_chat/` features; this
-feature owns their shared entry point.
+feature owns their shared entry point. `group_contact/` owns D contact detail,
+explicit audience and frozen command recovery. D requests are typed central
+Requests items; another manager's resolution never grants its chat.
 
 MSG01 gives the requester/immutable Creator pair one durable participation
 conversation across Projects and Tavoli, including repeat episodes and reversed
@@ -27,10 +29,10 @@ durable human-message unread state; activity alerts remain in Notifications.
   and Resource chat variants, complete activity/kind/chat cursor, and composite
   identity.
 - `data/messages_gateway.dart` is the only Supabase boundary. The inbox and
-  exact-item reads use the unified 04C4C2 RPCs; Project-only selection and
+  exact-item reads use the additive unified Requests v2 RPCs; Project-only selection and
   mutation operations keep their existing 04C3B1/05A boundaries. Each narrow
   response is parsed strictly and cross-domain field mixtures fail closed.
-- `data/message_chats_gateway.dart` reads `list_own_scoped_conversation_items_v5`,
+- `data/message_chats_gateway.dart` reads `list_own_scoped_conversation_items_v6`,
   the canonical scoped unified Chats RPC with pair pending totals. It strictly
   validates branch XOR fields, request-context lifecycle fields,
   human-preview completeness, and the Resource-only canonical opposite-party
@@ -38,16 +40,21 @@ durable human-message unread state; activity alerts remain in Notifications.
   Two nullable preview fields distinguish the latest pair request status and
   latest visible group system-event label from an older human preview. Pair
   route context remains independent; human activity wins exact timestamp ties.
-  Released v3/v4 shapes and functions remain unchanged.
+  Released v3/v4/v5 shapes and functions remain unchanged. D candidates join the
+  canonical union before final compound paging; D uses neutral Groups imagery
+  and is excluded from personal profile-photo batching.
 - `domain/message_unread_models.dart` validates complete account/scope counts
   and server-issued newest-feed snapshot tokens.
 - `data/message_unread_gateway.dart` owns expected-identity summary/read RPCs
-  and one private account invalidation subscription. The shared
+  and the legacy plus D own-account invalidation subscriptions. The shared
   `core/backend/private_broadcast_payload.dart` separates legitimate Realtime
   transport metadata from the strict identifier-only application payload.
 - `application/message_unread_controller.dart` owns canonical count refresh,
   coalescing, foreground/reconnect recovery, stale/error state, and identity
-  revisions. It never adjusts totals arithmetically.
+  revisions. It never adjusts totals arithmetically. A D access-change hint clears
+  D cached list content and the badge summary immediately, even if reread fails.
+  Requests/management never increment incoming human unread. Summary/ack v2 are
+  additive; old-client totals remain unchanged.
 - `presentation/message_unread_badge.dart` renders zero-hidden counts, visual
   caps and exact localized accessibility labels. Home and the Messages-labelled
   navigation slot share the complete conversation total; Groups uses its scope

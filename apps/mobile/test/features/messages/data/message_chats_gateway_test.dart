@@ -190,7 +190,7 @@ void main() {
     final source = File('lib/features/messages/data/message_chats_gateway.dart')
         .readAsStringSync();
 
-    expect(source, contains("'list_own_scoped_conversation_items_v5'"));
+    expect(source, contains("'list_own_scoped_conversation_items_v6'"));
     expect(source, contains("'p_scope'"));
     expect(source, contains("'p_cursor_activity_at'"));
     expect(source, contains("'p_cursor_item_kind'"));

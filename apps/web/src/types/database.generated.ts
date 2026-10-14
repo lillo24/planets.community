@@ -3587,6 +3587,10 @@ export type Database = {
         Args: { p_expected_profile_id: string; p_request_id: string }
         Returns: Json
       }
+      get_own_group_contact_sender: {
+        Args: { p_expected_profile_id: string }
+        Returns: Json
+      }
       get_own_group_corroboration_request: {
         Args: { p_expected_recipient_profile_id: string; p_request_id: string }
         Returns: {
@@ -4350,6 +4354,10 @@ export type Database = {
           resolved_by_profile_id: string
           status: string
         }[]
+      }
+      has_own_group_contact_admission: {
+        Args: { p_chat_id: string; p_expected_profile_id: string }
+        Returns: boolean
       }
       issue_location_selections_v1: {
         Args: { p_batch: string; p_places: Json }

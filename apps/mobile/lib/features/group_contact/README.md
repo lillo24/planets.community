@@ -1,0 +1,43 @@
+# Purposeful group contact (provisional D stack)
+
+This feature owns group-to-group proposals and the admitted humans' conversation.
+The review-only contract is `docs/development/group-contact-contract.md`; founder
+approval remains required before rollout. Group membership and Project authority
+are independent.
+
+- `domain/group_contact_models.dart` strictly parses requests, conversations,
+  bounded human history, representation contexts and metadata-only receipts.
+- `data/group_contact_gateway.dart` owns canonical RPCs and the identifier-only
+  own-account Realtime topic. Exact reads verify the requested identity.
+- `application/contact_attempt.dart` keeps a frozen actor/action/intent through
+  ambiguous delivery, only in memory. Receipt checks confirm the original
+  operation; content reads independently recheck authorization. Identity changes
+  discard private intent and reject late completion, including A → B → A.
+- `application/contact_access_changes.dart` carries a neutral authorization
+  invalidation. Screens, D list rows and unread badges clear immediately before
+  rereading, including when that reread fails offline.
+- `presentation/group_contact_widgets.dart` owns the context sheet and neutral
+  Groups cards. It reads the person's own role and eligible groups, never a
+  private People roster or a profile photo batch.
+- `presentation/group_contact_compose_screen.dart` owns explicit source/purpose
+  selection and private input; setup/sign-in continuation never sends.
+- `presentation/group_contact_request_screen.dart` owns recipient triage and own
+  withdrawal; a manager's resolved outcome never grants another person's chat.
+- `presentation/group_contact_chat_screen.dart` composes `ConversationHistoryList`
+  and `MessageReadViewport`. Only rendered, foreground newest history acknowledges
+  a boundary. Older history, context/info and request views do not.
+- `presentation/group_contact_info_screen.dart` owns permitted audience, blocking
+  and confirmed close/leave. Known-message reports and safe own exit remain
+  distinct from body access.
+- `presentation/group_contact_routes.dart` owns sanitized group/Project purpose
+  continuations and exact request/chat/info routes. Private note text never enters
+  a URL. Entry buttons live on public group and group-attributed Project details.
+
+The central Messages owners use Requests v2, scoped Chats v6 and unread/read v2.
+D adds typed kinds with compound paging keys. Legacy parsers/RPCs remain separate.
+Request management does not create human-message unread. No new photo trust gate,
+general direct messaging, Workspace, Checklist or permanent group room is added.
+
+Validation and real loopback native setup are in
+`docs/development/group-contact-mobile.md`. `test/features/group_contact` covers
+strict contracts, actor changes, exact retry, access loss and narrow EN/IT layouts.
