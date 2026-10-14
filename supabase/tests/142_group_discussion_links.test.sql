@@ -1,0 +1,14 @@
+begin;
+select no_plan();
+select has_table('private','group_discussion_links','C03 separately owns private links');
+select ok(relrowsecurity,'Links enable RLS') from pg_class where oid='private.group_discussion_links'::regclass;
+select ok(not has_table_privilege(r,'private.group_discussion_links',p),r||' cannot directly '||p||' room links') from unnest(array['anon','authenticated','service_role']) r cross join unnest(array['SELECT','INSERT','UPDATE','DELETE','TRUNCATE']) p;
+select has_trigger('private','group_discussion_links','group_discussion_links_identity','Link identity and removal are immutable');
+select ok(not exists(select 1 from pg_constraint where conrelid='private.group_discussion_links'::regclass and contype='f' and confrelid in ('auth.users'::regclass,'public.profiles'::regclass)),'Actor provenance adds no deletion-blocking FK');
+select ok(not has_function_privilege('anon',oid,'execute') and not has_function_privilege('service_role',oid,'execute') and has_function_privilege('authenticated',oid,'execute'),proname||' is authenticated only') from pg_proc where pronamespace='public'::regnamespace and proname like '%group_discussion_link%';
+select ok(proconfig @> array['search_path=""'],proname||' fixes search path') from pg_proc where proname like '%group_discussion_link%' and pronamespace in ('private'::regnamespace,'public'::regnamespace);
+select ok(not has_function_privilege('authenticated',oid,'execute'),proname||' is not a private client endpoint') from pg_proc where proname like '%group_discussion_link%' and pronamespace='private'::regnamespace;
+set local role anon;
+select throws_ok($$select public.list_group_discussion_links(null,gen_random_uuid())$$,'42501',null,'Guest sees no names/destinations/counts');
+reset role;
+select * from finish();rollback;

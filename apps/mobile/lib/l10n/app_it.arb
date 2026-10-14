@@ -2084,7 +2084,7 @@
   "discussionInvitations": "Inviti alle discussioni",
   "discussionAccept": "Accetta l'invito",
   "discussionDecline": "Rifiuta l'invito",
-  "discussionConsent": "Entra in questa discussione privata per leggere i messaggi inviati dopo la tua accettazione. Uscire dalla discussione o terminare il rapporto con il gruppo a cui è legata l'ammissione interrompe l'accesso. La partecipazione ai Progetti resta separata.",
+  "discussionConsent": "Entra in questa discussione privata per leggere i messaggi e i link aggiunti dopo la tua accettazione. Uscire dalla discussione o terminare il rapporto con il gruppo a cui è legata l'ammissione interrompe l'accesso. La partecipazione ai Progetti resta separata.",
   "discussionLeave": "Esci dalla discussione",
   "discussionLeaveConfirm": "Perderai l'accesso alla discussione e alla sua cronologia. Per rientrare servirà un nuovo invito.",
   "discussionArchive": "Archivia discussione",
@@ -2126,5 +2126,8 @@
         "type": "int"
       }
     }
-  }
+  },
+  "discussionLinksHistory": "Sono disponibili solo i link aggiunti dopo la tua attuale ammissione.",
+  "discussionLinksEmpty": "Non ci sono link disponibili dalla tua ammissione.",
+  "discussionLinkPermissions": "Aprire un link non concede accesso presso il suo fornitore."
 }

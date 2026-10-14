@@ -2822,7 +2822,7 @@
   "discussionInvitations": "Discussion invitations",
   "discussionAccept": "Accept invitation",
   "discussionDecline": "Decline invitation",
-  "discussionConsent": "Join this private discussion to read messages sent after your acceptance. Leaving the discussion or your bound group relationship ends access. Project participation stays separate.",
+  "discussionConsent": "Join this private discussion to read messages and links added after your acceptance. Leaving the discussion or your bound group relationship ends access. Project participation stays separate.",
   "discussionLeave": "Leave discussion",
   "discussionLeaveConfirm": "You will lose access to this discussion and its history. Rejoining requires a new invitation.",
   "discussionArchive": "Archive discussion",
@@ -2864,5 +2864,8 @@
         "type": "int"
       }
     }
-  }
+  },
+  "discussionLinksHistory": "Only links added after your current admission are available.",
+  "discussionLinksEmpty": "No links are available since your admission.",
+  "discussionLinkPermissions": "Opening a link does not grant access at its provider."
 }

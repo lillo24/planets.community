@@ -5,6 +5,7 @@ String discussionGroupRoute(String group) =>
 String discussionCreateRoute(String group) =>
     '${discussionGroupRoute(group)}/create';
 String discussionPeopleRoute(String room) => '${discussionRoute(room)}/people';
+String discussionLinksRoute(String room) => '${discussionRoute(room)}/links';
 String discussionLeaveRoute(String room, String admission) =>
     '${discussionRoute(room)}/leave/${Uri.encodeComponent(admission)}';
 String discussionDeclineRoute(String room, String invitation) =>

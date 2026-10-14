@@ -398,6 +398,16 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
               actions: [
                 if (room != null)
                   IconButton(
+                    key: const Key('discussion-workspace'),
+                    tooltip: l.discussionWorkspace,
+                    onPressed:
+                        attempt?.busy == true || attempt?.uncertain == true
+                        ? null
+                        : () => context.push(discussionLinksRoute(room.id)),
+                    icon: const Icon(Icons.folder_shared_outlined),
+                  ),
+                if (room != null)
+                  IconButton(
                     tooltip: l.discussionPeople,
                     onPressed: () =>
                         context.push(discussionPeopleRoute(room.id)),

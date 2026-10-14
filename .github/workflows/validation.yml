@@ -307,6 +307,8 @@ jobs:
 
       - name: Verify explicit Group discussions, history and lock races
         run: npm run group:discussions:verify:local
+      - name: Verify private Group discussion named links
+        run: npm run group:discussion-links:verify:local
 
       - name: Regenerate public database types
         run: npm run db:types

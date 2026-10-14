@@ -15,7 +15,10 @@ enum DiscussionAction {
   withdraw('withdraw_group_discussion_invitation'),
   leave('leave_group_discussion'),
   remove('remove_group_discussion_member'),
-  update('update_group_discussion');
+  update('update_group_discussion'),
+  addLink('add_group_discussion_link'),
+  editLink('update_group_discussion_link'),
+  removeLink('remove_group_discussion_link');
 
   const DiscussionAction(this.rpc);
   final String rpc;

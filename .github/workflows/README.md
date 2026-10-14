@@ -103,6 +103,12 @@ PR. No recurring deployment or hosted database job is introduced.
 
 # MAP01 location validation
 
+C03 adds the room-owned named-link Auth verifier after discussion checks in the
+same database job and full `check:db`. It runs against the disposable local stack
+with fictional OTP actors and makes no external provider requests. The existing
+classification, required-status aggregation and manual complete-suite entry stay
+in place; shared package/workflow edits select all affected areas.
+
 Database validation includes the authenticated location receipt/concurrency
 verifier after pgTAP. It injects synthetic provider-shaped geocoding data and
 makes no Geoapify requests. Tooling/Web validation exercises the same Edge

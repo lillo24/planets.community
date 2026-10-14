@@ -2729,6 +2729,17 @@ export type Database = {
         }
         Returns: string
       }
+      add_group_discussion_link: {
+        Args: {
+          p_client_request_id: string
+          p_expected_admission_id: string
+          p_expected_profile_id: string
+          p_name: string
+          p_room_id: string
+          p_url: string
+        }
+        Returns: Json
+      }
       add_moderation_case_note: {
         Args: {
           p_body: string
@@ -3405,6 +3416,15 @@ export type Database = {
       }
       get_group_discussion: {
         Args: { p_expected_profile_id: string; p_room_id: string }
+        Returns: Json
+      }
+      get_group_discussion_link: {
+        Args: {
+          p_expected_admission_id: string
+          p_expected_profile_id: string
+          p_link_id: string
+          p_room_id: string
+        }
         Returns: Json
       }
       get_group_discussion_message_page: {
@@ -4463,6 +4483,17 @@ export type Database = {
           p_before_id?: string
           p_expected_profile_id: string
           p_limit?: number
+        }
+        Returns: Json
+      }
+      list_group_discussion_links: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_admission_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
         }
         Returns: Json
       }
@@ -6338,6 +6369,17 @@ export type Database = {
         Args: { p_expected_owner_profile_id: string; p_request_id: string }
         Returns: string
       }
+      remove_group_discussion_link: {
+        Args: {
+          p_client_request_id: string
+          p_expected_admission_id: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_link_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
       remove_group_discussion_member: {
         Args: {
           p_admission_id: string
@@ -6899,6 +6941,19 @@ export type Database = {
           p_expected_version: number
           p_room_id: string
           p_title: string
+        }
+        Returns: Json
+      }
+      update_group_discussion_link: {
+        Args: {
+          p_client_request_id: string
+          p_expected_admission_id: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_link_id: string
+          p_name: string
+          p_room_id: string
+          p_url: string
         }
         Returns: Json
       }
