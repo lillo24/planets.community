@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../group_discussions/presentation/discussion_routes.dart';
+
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
@@ -271,6 +273,16 @@ class _GroupParticipationSectionState
                   child: Text(l.groupRetryStatus),
                 ),
               if (self != null) ...[
+                if (widget.publicAvailable &&
+                    session.phase == AuthSessionPhase.ready &&
+                    (self.membershipId != null || self.authority != null))
+                  OutlinedButton.icon(
+                    key: const Key('group-discussions'),
+                    onPressed: () =>
+                        context.push(discussionGroupRoute(widget.groupId)),
+                    icon: const Icon(Icons.forum_outlined),
+                    label: Text(l.discussionTitle),
+                  ),
                 if (self.authority != null)
                   Text(
                     groupRoleLabel(l, self.authority),

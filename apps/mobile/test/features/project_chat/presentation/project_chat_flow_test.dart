@@ -8,6 +8,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/features/group_discussions/data/discussion_gateway.dart';
+
+import '../../../support/fake_group_discussions.dart';
+
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
@@ -1513,6 +1517,7 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
         preacceptedPolicyFixture,
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(

@@ -112,7 +112,9 @@ class _OwnReportCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              report.targetSummary,
+              report.targetKind == ModerationTargetKind.groupDiscussionMessage
+                  ? l10n.discussionReportLabel
+                  : report.targetSummary,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: AppSpacing.xSmall),

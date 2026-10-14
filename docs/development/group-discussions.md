@@ -115,3 +115,63 @@ the initial producer set lacked Group memberships. The blocking test now expects
 the repository's canonical opaque `PT409`, rather than an invented `42501`.
 No hosted, physical Android/iOS or screen-reader check ran. Mobile UI, room links,
 discussion-to-Project and cumulative/native QA are the dependent stages.
+
+# C02 native projections and UI
+
+C02 keeps the installed three-domain unread summary unchanged and adds
+`get_own_message_unread_summary_with_discussions`. It adds the number of currently
+entitled C rooms with incoming unread messages to `groups` and `total`; each folder
+and room still shows its complete canonical message count. Existing account unread
+hints now invalidate this summary. ACK never derives totals from loaded rows.
+
+`get_group_discussion_message_page` adds exact actor, room and admission identifiers
+to C01 history. Native parsers verify these before adopting content and require the
+newest HMAC token to match that page's first message. Older pages carry no token.
+A disjoint capped newest window offers an explicit latest-page transition. Group
+folders load rooms only on expansion, with independent 25-row cursors; history
+uses 30-row sequence pages. No profile/photo fanout or persistent transcript cache.
+
+C routes live below `/messages/discussions`. Normal C content requires Auth and
+profile readiness. Only exact `/leave/<admission>` and `/decline/<invitation>`
+destinations bypass profile completion and policy acceptance; they read no private
+room content and execute only after a deliberate confirmation. The backend rechecks
+live identity after locking these actions. Auth return paths preserve the destination.
+
+Room commands freeze actor, action, request key and intent through uncertain replies.
+Account/readiness epochs reject late responses, and an authoritative scope denial
+clears private buffers. Own leave/decline metadata remains recoverable after room
+access or profile readiness ends; changing the account clears every attempt. Each
+private hint receives a run-only event ordinal so equal consecutive hints cannot
+be suppressed by Riverpod's equality filtering. Version conflicts require Review latest, Keep my edits and
+a separate Save. Read ACK reuses the existing foreground/current-route/bottom-viewport
+contract and is independent of invitation consent.
+
+Display names that are no longer available are nullable in C JSON projections and
+receive localized neutral placeholders. Own reports use a localized C target label.
+The staff Web panel displays only immutable exact reported-message evidence.
+
+Opt-in native reproduction uses `prepare_group_discussion_smoke.mjs`, the owned
+loopback inbox/backend, an external temporary defines file and the owned emulator:
+
+```text
+PLANETS_DISPOSABLE_QA=1 MAILPIT_URL=<owned-inbox> node apps/mobile/integration_test/prepare_group_discussion_smoke.mjs <OS-temp>/c-native.json
+adb -s <owned-emulator> reverse tcp:<owned-api-port> tcp:<owned-api-port>
+cd apps/mobile
+flutter drive --driver=integration_test/group_discussion_driver.dart --target=integration_test/group_discussion_smoke_test.dart -d <owned-emulator> --dart-define-from-file=<OS-temp>/c-native.json
+```
+
+The fixture uses genuine verified local OTP sessions and ready synthetic profiles;
+only the starting identity and one committed-send response loss are injected. The
+driver writes native PNGs under the OS temporary `planets-c-runtime` directory.
+
+Executed C02 checks: fresh replay and 5,320 pgTAP assertions in 141 files; 121
+genuine Auth assertions; local database lint and security advisors; Web tooling
+98 assertions and 380 Web tests (2 existing skips), lint, typecheck and both builds;
+full mobile checks with 3,337 tests (2 existing skips), followed by 23 focused C
+tests and current scoped analysis after the receipt/hint/scroll fixes. The owned
+native journey's assertions passed, including access denial after Leave; host
+result export failed with a disposed VM connection. The owned app then hot-reloaded
+successfully. Native frames and limitations are in `evidence/group-discussions/c02`.
+The pure widget preview annotation compiles, but launching the SDK previewer timed
+out waiting for its LSP service to register with DTD. No physical Android, iOS or
+TalkBack QA was performed. C00 remains provisional and this stack remains draft.

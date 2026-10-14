@@ -29,6 +29,10 @@ import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
+import 'package:planets_mobile/features/group_discussions/data/discussion_gateway.dart';
+
+import '../../../support/fake_group_discussions.dart';
+
 import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
 import 'package:planets_mobile/features/messages/data/message_unread_gateway.dart';
 import 'package:planets_mobile/features/messages/domain/message_unread_models.dart';
@@ -168,6 +172,16 @@ void main() {
       assertSlots();
       await tester.tap(find.byKey(const Key('message-chat-scope-groups')));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('chat-thumbnail-project_chat:group-0')),
+        100,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const Key('message-chat-list')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       assertSlots();
       expect(find.byType(ChatCoverThumbnail), findsWidgets);
       await _captureChatRows(tester, 'groups-320-2x');
@@ -562,6 +576,16 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('Groups'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel(RegExp('5 unread messages')),
+      100,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const Key('message-chat-list')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     expect(find.bySemanticsLabel(RegExp('5 unread messages')), findsOneWidget);
     expect(tester.takeException(), isNull);
     expect(unread.acknowledgements, 0, reason: 'Lists never acknowledge chats');
@@ -3098,6 +3122,7 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
         preacceptedPolicyFixture,
         coverMediaGatewayProvider.overrideWithValue(
           cover ?? FakeCoverMediaGateway(),
