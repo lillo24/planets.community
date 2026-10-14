@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../group_discussions/presentation/discussion_folders.dart';
+
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
@@ -180,7 +182,34 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
         ),
         const SizedBox(height: AppSpacing.small),
         Expanded(
-          child: initialLoading
+          child: scope == MessageChatScope.groups && items.isEmpty
+              ? RefreshIndicator(
+                  onRefresh: widget.onRefresh,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(AppSpacing.medium),
+                    children: [
+                      const DiscussionFolders(),
+                      if (initialLoading)
+                        LoadingState(message: l10n.messageChatsLoading)
+                      else if (state.phase == MessageChatsPhase.failure)
+                        ErrorState(
+                          message: messageChatsFailureMessage(
+                            l10n,
+                            state.failure!,
+                          ),
+                          onRetry: widget.onRefresh,
+                        )
+                      else
+                        EmptyState(
+                          title: l10n.projectChatsEmptyTitle,
+                          message: l10n.projectChatsEmptyMessage,
+                          icon: Icons.groups_outlined,
+                        ),
+                    ],
+                  ),
+                )
+              : initialLoading
               ? LoadingState(message: l10n.messageChatsLoading)
               : state.phase == MessageChatsPhase.failure && items.isEmpty
               ? ErrorState(
@@ -232,12 +261,16 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                         scope,
                       ),
                       rowIds: [
+                        if (scope == MessageChatScope.groups)
+                          'discussion-folders',
                         if (state.hasConnectionIssue) 'connection',
                         if (state.failure != null) 'error',
                         for (final item in items) item.compositeId,
                         if (state.hasMore) 'more',
                       ],
                       rowValues: [
+                        if (scope == MessageChatScope.groups)
+                          widget.expectedProfileId,
                         if (state.hasConnectionIssue) state.hasConnectionIssue,
                         if (state.failure != null) state.failure,
                         for (final item in items)
@@ -260,6 +293,10 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                       ],
                       padding: const EdgeInsets.all(AppSpacing.medium),
                       itemBuilder: (context, index) {
+                        if (scope == MessageChatScope.groups) {
+                          if (index == 0) return const DiscussionFolders();
+                          index--;
+                        }
                         if (state.hasConnectionIssue && index == 0) {
                           return Padding(
                             padding: const EdgeInsets.only(

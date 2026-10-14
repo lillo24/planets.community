@@ -364,6 +364,46 @@ try {
       "Only post-admission message is visible",
     );
     equal(await unread(member), 1, "Complete canonical unread count");
+    const baseSummary = await rpc(
+      member,
+      "get_own_message_unread_summary",
+      expected(member),
+    );
+    const summary = await rpc(
+      member,
+      "get_own_message_unread_summary_with_discussions",
+      expected(member),
+    );
+    equal(
+      summary,
+      {
+        ...baseSummary,
+        total: baseSummary.total + 1,
+        groups: baseSummary.groups + 1,
+      },
+      "C adds one entitled unread room without replacing older audiences",
+    );
+    const scoped = await rpc(member, "get_group_discussion_message_page", {
+      ...expected(member),
+      p_room_id: room,
+      p_limit: 30,
+    });
+    equal(
+      scoped,
+      {
+        ...page,
+        profile_id: member.id,
+        room_id: room,
+        admission_id: accepted.object_id,
+      },
+      "Native history binds exact actor, room and admission without widening content",
+    );
+    await denied(
+      other,
+      "get_group_discussion_message_page",
+      { ...expected(other), p_room_id: room },
+      "42501",
+    );
     const groups = await rpc(member, "list_my_discussion_groups", {
       ...expected(member),
       p_limit: 1,
@@ -540,6 +580,16 @@ try {
       p_room_id: room,
     });
     equal(await unread(member), 0, "Source revocation removes unread");
+    const revokedSummary = await rpc(
+      member,
+      "get_own_message_unread_summary_with_discussions",
+      expected(member),
+    );
+    equal(
+      revokedSummary,
+      await rpc(member, "get_own_message_unread_summary", expected(member)),
+      "Revoked room leaves global summary immediately",
+    );
     equal(
       await rpc(member, "list_my_discussion_groups", expected(member)),
       [],

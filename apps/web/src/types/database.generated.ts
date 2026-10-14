@@ -3407,6 +3407,15 @@ export type Database = {
         Args: { p_expected_profile_id: string; p_room_id: string }
         Returns: Json
       }
+      get_group_discussion_message_page: {
+        Args: {
+          p_before_sequence?: number
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
       get_group_discussion_unread: {
         Args: { p_expected_profile_id: string }
         Returns: number
@@ -3605,6 +3614,10 @@ export type Database = {
         Returns: Json
       }
       get_own_message_unread_summary: {
+        Args: { p_expected_profile_id: string }
+        Returns: Json
+      }
+      get_own_message_unread_summary_with_discussions: {
         Args: { p_expected_profile_id: string }
         Returns: Json
       }

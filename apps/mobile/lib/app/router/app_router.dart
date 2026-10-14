@@ -25,6 +25,10 @@ import '../../features/help/presentation/bug_report_screen.dart';
 import '../../features/help/presentation/help_routes.dart';
 import '../../features/help/presentation/help_screen.dart';
 import '../../features/messages/presentation/messages_routes.dart';
+import '../../features/group_discussions/presentation/discussion_routes.dart';
+import '../../features/group_discussions/presentation/discussion_group_screen.dart';
+import '../../features/group_discussions/presentation/discussion_chat_screen.dart';
+import '../../features/group_discussions/presentation/discussion_people_screen.dart';
 import '../../features/messages/presentation/messages_landing_screen.dart';
 import '../../features/messages/presentation/participation_request_message_screen.dart';
 import '../../features/moderation/domain/moderation_models.dart';
@@ -299,7 +303,8 @@ RoutingConfig _routingConfig(
             pending?.returnTo ??
             sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
         final destinationPath = Uri.parse(destination).path;
-        if (destinationPath == '/settings' ||
+        if (isDiscussionExitPath(destinationPath) ||
+            destinationPath == '/settings' ||
             destinationPath == '/groups' ||
             destinationPath.startsWith('/groups/') ||
             destinationPath == accountDeletionPath ||
@@ -324,15 +329,16 @@ RoutingConfig _routingConfig(
           ParticipantInvitationRoutes.isInvitePath(path) ||
           ProjectDelegateRoutes.isInvitePath(path);
       final needsPolicy =
-          isProfileEditRoute ||
-          path == profileVisibilityPath ||
-          isInvite ||
-          (isActivityManagementRoute &&
-              !isModerationRoute &&
-              !isNotificationsRoute) ||
-          (isAuthRoute &&
-              (session.phase == AuthSessionPhase.ready ||
-                  session.phase == AuthSessionPhase.profileSetupRequired));
+          !isDiscussionExitPath(path) &&
+          (isProfileEditRoute ||
+              path == profileVisibilityPath ||
+              isInvite ||
+              (isActivityManagementRoute &&
+                  !isModerationRoute &&
+                  !isNotificationsRoute) ||
+              (isAuthRoute &&
+                  (session.phase == AuthSessionPhase.ready ||
+                      session.phase == AuthSessionPhase.profileSetupRequired)));
       if (session.isAuthenticated && !accepted && needsPolicy) {
         var destination = state.uri.toString();
         if (isAuthRoute) {
@@ -359,7 +365,7 @@ RoutingConfig _routingConfig(
               isProjectResourceNeedManagementRoute ||
               isProjectDelegateManagementRoute ||
               isProjectWorkspaceManagementRoute ||
-              isMessagesRoute ||
+              (isMessagesRoute && !isDiscussionExitPath(path)) ||
               isNotificationsRoute)) {
         return Uri(
           path: '/profile/edit',
@@ -387,7 +393,8 @@ RoutingConfig _routingConfig(
 
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
           isActivityManagementRoute &&
-          !isModerationRoute) {
+          !isModerationRoute &&
+          !isDiscussionExitPath(path)) {
         return Uri(
           path: '/profile/edit',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -770,6 +777,57 @@ RoutingConfig _routingConfig(
                 path: '/messages',
                 builder: (context, state) => const MessagesLandingScreen(),
                 routes: [
+                  GoRoute(
+                    path: 'discussions/groups/:groupId',
+                    builder: (context, state) => DiscussionGroupScreen(
+                      key: state.pageKey,
+                      groupId: state.pathParameters['groupId']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'create',
+                        builder: (context, state) => DiscussionGroupScreen(
+                          key: state.pageKey,
+                          groupId: state.pathParameters['groupId']!,
+                          create: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'discussions/:roomId',
+                    builder: (context, state) => DiscussionChatScreen(
+                      key: state.pageKey,
+                      roomId: state.pathParameters['roomId']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'people',
+                        builder: (context, state) => DiscussionPeopleScreen(
+                          key: state.pageKey,
+                          roomId: state.pathParameters['roomId']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'leave/:admissionId',
+                        builder: (context, state) => DiscussionExitScreen(
+                          key: state.pageKey,
+                          roomId: state.pathParameters['roomId']!,
+                          objectId: state.pathParameters['admissionId']!,
+                          decline: false,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'decline/:invitationId',
+                        builder: (context, state) => DiscussionExitScreen(
+                          key: state.pageKey,
+                          roomId: state.pathParameters['roomId']!,
+                          objectId: state.pathParameters['invitationId']!,
+                          decline: true,
+                        ),
+                      ),
+                    ],
+                  ),
                   GoRoute(
                     path: 'requests/resource/:requestId',
                     builder: (context, state) => ResourceRequestScreen(
