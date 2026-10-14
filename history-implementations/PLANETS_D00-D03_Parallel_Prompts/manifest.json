@@ -1,0 +1,44 @@
+{
+  "prepared": "2026-10-14",
+  "repository": "lillo24/planets.community",
+  "inspected_main": "bc8f7b2f40500e76593fd19b50a5e516b53cad57",
+  "parallel_a_pr": 243,
+  "parallel_a_inspected_head": "cd17a870bf0fa8550b97581847692c3683a59fd8",
+  "files": [
+    {
+      "filename": "00_READ_FIRST_Parallel_Stack_Coordinator.md",
+      "sha256": "f04f7d0fd2aa4f8a4a3736ae9269aa2fd52204da90e685dca85b1c57431eae78",
+      "bytes": 13895
+    },
+    {
+      "filename": "01_D00_Contact_And_History_Contract.md",
+      "sha256": "f897c205cb170a5a8384662b10158e6b60bfc0e070838b14d3f29c5611d64a38",
+      "bytes": 8499
+    },
+    {
+      "filename": "02_D01_Requests_And_Conversation_Backend.md",
+      "sha256": "9147ace5cc4d740bc795121f096272d2c94ee31e9389e41b0de4dc574460c58b",
+      "bytes": 10745
+    },
+    {
+      "filename": "03_D02_Profile_Actions_Requests_And_Chats.md",
+      "sha256": "c17c820beb08990035ecc2cb2b5023f27d7d31272ff8352cfbd13fa49aca53ec",
+      "bytes": 7951
+    },
+    {
+      "filename": "04_D03_Multi_Group_Representative_Coordination.md",
+      "sha256": "d788be663c650444fb8f8aa7dcf0c55c4e124a12193ba0995b9ffba23df16ee3",
+      "bytes": 5967
+    },
+    {
+      "filename": "05_FINAL_Parallel_Integration_And_Merge_Gate.md",
+      "sha256": "b149e456478d7fb996b6c9b5210ebac82ec8b5a6a3f4e4e37d1cb95ffe3e4086",
+      "bytes": 7347
+    },
+    {
+      "filename": "README.md",
+      "sha256": "cb8afda18953716e7cf552d540e1efe8e417e961027c0673a02229c5e5992e08",
+      "bytes": 609
+    }
+  ]
+}
