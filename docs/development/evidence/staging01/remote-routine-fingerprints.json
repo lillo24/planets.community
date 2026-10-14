@@ -1,0 +1,2547 @@
+[
+  {
+    "signature": "private.accept_project_join_request_as_manager_without_block(p_expected_manager_profile_id uuid, p_request_id uuid, p_needed_skill_ids uuid[], p_already_found_skill_ids uuid[], p_extra_skill_ids uuid[], p_needed_resource_need_ids uuid[], p_already_found_resource_need_ids uuid[], p_extra_resource_need_ids uuid[])",
+    "definition_md5": "3f091261b88b4628fd98efc7a92bec10",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.accept_project_join_request_without_block(p_expected_creator_profile_id uuid, p_request_id uuid, p_needed_skill_ids uuid[], p_already_found_skill_ids uuid[], p_extra_skill_ids uuid[], p_needed_resource_need_ids uuid[], p_already_found_resource_need_ids uuid[], p_extra_resource_need_ids uuid[])",
+    "definition_md5": "75289f79145afa3b35451acb6717014f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.accept_resource_listing_request_without_block(p_expected_owner_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "b64509a9698b934e21875a901dec15ba",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.active_resource_listing_loan_reservations(p_listing_id uuid)",
+    "definition_md5": "09b742c5e18722bd77efbbc382de9579",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.apply_recurring_activity_schedule(p_recurring_activity_id uuid, p_lifecycle_state text, p_recurrence_type text, p_weekday integer, p_day_of_month integer, p_local_start_time time without time zone, p_duration_minutes integer, p_event_timezone text, p_effective_from date)",
+    "definition_md5": "06edfb8589db7ea358d9cab6689bc30c",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.assert_defined_proposal_publishable(p_proposal_id uuid, p_require_future_start boolean)",
+    "definition_md5": "cf5b47307b5247a74bfdfcce0ab473f3",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.assert_idea_publishable(p_proposal_id uuid)",
+    "definition_md5": "a84c66d076d732cce60d151c4a3c1bf5",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.assert_project_has_membership_capacity(p_project_id uuid)",
+    "definition_md5": "11d6b37cab8087a7e92099c6d9a6bded",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.assert_project_has_membership_capacity(p_project_id uuid, p_participant_profile_id uuid)",
+    "definition_md5": "0376cc24b34eec4f3d37cc7669e458ab",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.assert_proposal_publishable(p_proposal_id uuid, p_require_future_start boolean)",
+    "definition_md5": "3da6d1b17b55d2444ad206dec35ac968",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.assert_recurring_activity_publishable(p_recurring_activity_id uuid)",
+    "definition_md5": "b96fe6e35404dfae37f0820c26a892a4",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.assert_resource_listing_publishable(p_listing_id uuid)",
+    "definition_md5": "e0554d46a6875a5352db22deb929129a",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.assert_user_interaction_available(p_first_profile_id uuid, p_second_profile_id uuid)",
+    "definition_md5": "28f3178644b4dc877fa5cdfa60a3972f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.associate_participation_conversation()",
+    "definition_md5": "0219719f577c40307c4db5dd11e70079",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.audit_group_change(p_action text, p_actor uuid, p_group uuid, p_version bigint)",
+    "definition_md5": "be57ac3d8710aa61d053c4f515612b40",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.can_read_message_conversation(p_kind text, p_chat uuid, p_profile uuid)",
+    "definition_md5": "135f2c75186589a37e4430e8c7d57042",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.can_receive_message_unread(p_topic text)",
+    "definition_md5": "59902b6349e940ec0b94577cfc811a01",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "private.can_view_profile_photo(p_viewer_profile_id uuid, p_subject_profile_id uuid)",
+    "definition_md5": "76c5478705d691cd0a428b03f5ce43c1",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.claim_push_delivery_targets(p_worker_id text, p_limit integer, p_lease_seconds integer)",
+    "definition_md5": "67735dfd054576270ddfeb305894b23c",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "private.clear_closed_resource_need_coverage()",
+    "definition_md5": "91c01fa6a377316a590deda2839ea6dc",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.clear_removed_proposal_skill_coverage()",
+    "definition_md5": "11e6d8e6d2609d6e2d923b5b514c4f26",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.close_pending_direct_requests_for_user_block(p_blocker_profile_id uuid, p_blocked_profile_id uuid)",
+    "definition_md5": "d8175be52dfba0e676f5e93569317baa",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.complete_push_delivery_job_if_terminal(p_job_id uuid)",
+    "definition_md5": "f1d7cc5af52fabe66991160979bb8989",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.consume_location_receipt(p_actor uuid, p_kind text, p_item uuid, p_revision bigint, p_slot text, p_receipt uuid, p_request uuid)",
+    "definition_md5": "81ca36d6e44b4222ffc594b009a4b2e0",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.create_project_join_request_chat()",
+    "definition_md5": "1dbaf4a24833d79837332c69e878a612",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.current_project_manager_profile_ids(p_project_id uuid)",
+    "definition_md5": "6998427d03b282b047e6127be9064a26",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.derive_proposal_status(p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_reference_time timestamp with time zone)",
+    "definition_md5": "1266730a67b79685a09dfb2f27b5a85c",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.derive_recurring_activity_occurrences(p_recurring_activity_id uuid, p_from timestamp with time zone, p_until timestamp with time zone, p_limit integer)",
+    "definition_md5": "69eb73c1b5c6da9a143ca5009d562f0e",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.enforce_join_request_capacity()",
+    "definition_md5": "0aec0c8bd5011d7ee8c1c4cda2fa6f65",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.enforce_membership_capacity()",
+    "definition_md5": "99f3133da2371f21ac3e5d3a7e13fbb8",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.enforce_project_delegate_capacity()",
+    "definition_md5": "6989734a7ce1f3780969131e005965ee",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.ensure_project_group_chat(p_project_id uuid, p_membership_joined_at timestamp with time zone)",
+    "definition_md5": "6f4c032d18a66d5bc8052f0c47696723",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.ensure_project_group_chat_for_membership()",
+    "definition_md5": "748ed12688c0dc497357cefa3c292ed6",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.ensure_resource_exchange_agreement_for_request(p_request_id uuid, p_actor_profile_id uuid, p_created_at timestamp with time zone)",
+    "definition_md5": "ec4692fcc62058d78c87a14a36ce2039",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.ensure_resource_request_chat_for_request(p_request_id uuid, p_activated_at timestamp with time zone)",
+    "definition_md5": "7704800a60b19bdfe693405fbc1c0864",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.evaluate_project_resource_listing_match(p_need_title text, p_need_details text, p_project_country_code text, p_project_locality text, p_project_administrative_area text, p_listing_title text, p_listing_description text, p_listing_country_code text, p_listing_locality text, p_listing_administrative_area text)",
+    "definition_md5": "8880630fef3ee425426a30a9bb02230b",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.geo_public_candidates_v1(p_query jsonb, p_reference timestamp with time zone, p_after_kind text, p_after_id uuid)",
+    "definition_md5": "5e50506c5a98d792c427db2a4ebdbd6e",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.group_command_hash(p_intent jsonb)",
+    "definition_md5": "b7f5e8bbcae8be6a0e1ec912c8c4a01e",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.group_is_public(p_group_id uuid)",
+    "definition_md5": "29d19795ca13e723c1be15ced6cef2cf",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.has_active_directional_user_block(p_blocker_profile_id uuid, p_blocked_profile_id uuid)",
+    "definition_md5": "5393cc06b2ed09d2bcdd5b2641e9ecda",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.has_active_user_block_between(p_first_profile_id uuid, p_second_profile_id uuid)",
+    "definition_md5": "1a4d55069925d22c040fba36a110a01b",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.has_current_profile_photo(p_profile_id uuid)",
+    "definition_md5": "aa37d46cb28df68519ac7fba15e489b1",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.has_current_project_profile_photo_interaction(p_viewer_profile_id uuid, p_subject_profile_id uuid)",
+    "definition_md5": "bd70420b2cd1cef73875e94e9f2d4282",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.has_profile_photo_organizer_interaction(p_viewer_profile_id uuid, p_subject_profile_id uuid)",
+    "definition_md5": "4359b80370abf7fbef600307b0879cf2",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.has_public_project_creator_photo_context(p_creator_profile_id uuid)",
+    "definition_md5": "7206ba0c0d52a0a08a0fba95b89fdab5",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.has_public_resource_listing_owner_photo_context(p_owner_profile_id uuid)",
+    "definition_md5": "8c9a8b18ecde223d8c3e52b520debb91",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.has_resource_profile_photo_interaction(p_viewer_profile_id uuid, p_subject_profile_id uuid)",
+    "definition_md5": "5a0afad14541375272665987bffd76e5",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.initialize_profile_visibility()",
+    "definition_md5": "394a5560d1b4699b9c296b51dd54ed68",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.initialize_project_membership_live_coverage()",
+    "definition_md5": "44abeefc257f55c1acb764d002accb24",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.invalidate_project_authority_invitations(p_project_id uuid, p_project_kind text, p_issuer_profile_id uuid, p_actor_profile_id uuid, p_revoked_at timestamp with time zone)",
+    "definition_md5": "beddd305ca00c5830d522971d2595c17",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.invalidate_selected_exact_location()",
+    "definition_md5": "24e49b828fbfe5dfa7e9e2b784c00e4f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.invalidate_selected_public_location()",
+    "definition_md5": "122cb996d03c8501baee04db8a0c7514",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.is_cover_object_path_for_parent(p_object_path text, p_owner_profile_id uuid, p_parent_kind text, p_parent_id uuid)",
+    "definition_md5": "844a04264a2d8b805104b783fabb5ee0",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.is_profile_photo_object_path_for_profile(p_object_path text, p_profile_id uuid)",
+    "definition_md5": "f842b991c445e9552be3e30791cb9075",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.is_project_cover_editable(p_project_id uuid, p_creator_profile_id uuid)",
+    "definition_md5": "9b969ff497828c584d91c962be088168",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.is_project_publicly_viewable(p_project_id uuid)",
+    "definition_md5": "c63d2f7968d4a277a14f9e5ef797cf56",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.is_proposal_template_publicly_usable(p_template_id uuid, p_reference_time timestamp with time zone)",
+    "definition_md5": "260e964dddd306d4b9f274a93683cba2",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.is_public_idea(p_project_id uuid)",
+    "definition_md5": "fa49798c7a64c76fc7ea8233fe5f4469",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.is_resource_cover_editable(p_listing_id uuid, p_owner_profile_id uuid)",
+    "definition_md5": "a63d0eba26c8d342f503a36cf3473445",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.latest_project_membership_end(p_project_id uuid, p_profile_id uuid)",
+    "definition_md5": "e68f28813edb7a7422a59ed195f3dfe8",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.link_published_proposal_template()",
+    "definition_md5": "f3a50bad6025e5ceccc29003be412588",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.list_own_scoped_message_chat_items_base(p_expected_profile_id uuid, p_scope text, p_limit integer, p_cursor_activity_at timestamp with time zone, p_cursor_item_kind text, p_cursor_chat_id uuid)",
+    "definition_md5": "87517d672a28bed47af473b9d66efd8c",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.location_preview_place(p_place jsonb)",
+    "definition_md5": "4bfaff3412852e5b52d59afcf8111b42",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.lock_group_command(p_actor uuid, p_key uuid)",
+    "definition_md5": "c874c4c84896067aa6ca5cd8f454dbdc",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.lock_location_item(p_actor uuid, p_kind text, p_item uuid)",
+    "definition_md5": "527068bbc2218f69a5ba15d5241e3792",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.lock_owned_editable_project_cover_parent(p_creator_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "107416409ebc5421949c99c96fc66bb5",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.lock_owned_editable_resource_cover_parent(p_owner_profile_id uuid, p_listing_id uuid)",
+    "definition_md5": "60967ff6183dcb6f3dad59b442434d66",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.lock_project_before_proposal_skill_delete()",
+    "definition_md5": "83650114fe20bab2d10ad86830d90595",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.lock_project_for_actual_contribution_mutation(p_project_id uuid)",
+    "definition_md5": "5ce6cc1113bd2a060f16f3d966e6469d",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.lock_project_for_delegate_management(p_project_id uuid, p_require_operational boolean)",
+    "definition_md5": "427abcdd6afe10a7913cca82da95d0a6",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.lock_project_for_live_requirement_coverage(p_project_id uuid, p_require_operational boolean)",
+    "definition_md5": "e01ba705d4035e9821976ea0b3c76503",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.lock_project_for_membership_commitment_mutation(p_project_id uuid)",
+    "definition_md5": "65394dfc97cfc410e06aafe41ceb8c15",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.lock_project_for_participation(p_project_id uuid, p_require_joinable boolean)",
+    "definition_md5": "45fc3dfccb18bb55643e26735514f752",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.lock_project_for_resource_need_mutation(p_project_id uuid)",
+    "definition_md5": "c283ba0234ad450b409629c023ad3a32",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.lock_project_manager_interactions(p_project_id uuid, p_requester_profile_id uuid)",
+    "definition_md5": "e47b13f88703503f99f6fad5d3ed2814",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.lock_user_interaction_pair(p_first_profile_id uuid, p_second_profile_id uuid)",
+    "definition_md5": "60710c27f1a3fa3af8f7f8f6c3bc505b",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.manage_project_participant_invitation(p_expected_profile_id uuid, p_project_id uuid, p_operation text, p_invitation_id uuid)",
+    "definition_md5": "072e5502285fa750f08c03fd69938a5d",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.message_history_cutoff(p_kind text, p_chat uuid, p_profile uuid)",
+    "definition_md5": "13a8741aa757b3631ea904628e5eb60d",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.message_recipients(p_kind text, p_chat uuid)",
+    "definition_md5": "6b1a70a74ce21f9081b70b07c9826cab",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.moderation_context_summary(p_case private.moderation_cases)",
+    "definition_md5": "d0627bb994483ec014f96bc986d8831f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.moderation_target_summary(p_case private.moderation_cases)",
+    "definition_md5": "e957aa7f3f1748f8f7a203394175c723",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.next_recurring_activity_occurrence(p_recurring_activity_id uuid, p_reference_time timestamp with time zone)",
+    "definition_md5": "bcd4012d50e471c41e732e2da93cae03",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.normalize_group_content(p_content jsonb)",
+    "definition_md5": "9ffefeb5da336d427199703b92575042",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.normalize_project_workspace_url(p_workspace_url text)",
+    "definition_md5": "a467b51705df0465a85cea999ae8983d",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.organization_official_write_allowed(p_project_id uuid)",
+    "definition_md5": "95d25aeb78565b8c8d46e4a163e074ee",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.organization_snapshot(p_actor uuid, p_project_id uuid)",
+    "definition_md5": "09f6ae765eb2f71984dc8c9979bb548d",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.own_message_unread(p_profile uuid)",
+    "definition_md5": "43184b4c28578b3fe36d99a41a1db906",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.participation_conversation_feed(p_conversation_id uuid)",
+    "definition_md5": "0e57a65c6fdb08dc740e850b3a320760",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.participation_conversation_topic(p_chat_id uuid, p_profile_id uuid)",
+    "definition_md5": "57d0131586644e677737fe23a4eea757",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.participation_request_allows_conversation_send(p_request_id uuid)",
+    "definition_md5": "41848b80a6b6db002d095fe76be400f1",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.prepare_push_delivery_jobs(p_limit integer)",
+    "definition_md5": "94faa3eae45d5c0eed420fba599b54f7",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "private.prevent_project_join_request_acceptance_decision_mutation()",
+    "definition_md5": "278d637d4484228edf0b74afa8567a7f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.prevent_recurring_schedule_overlap()",
+    "definition_md5": "88f18ed8b10b6b42a3be38fa4b400430",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.profile_can_access_participation_conversation(p_conversation_id uuid, p_profile_id uuid)",
+    "definition_md5": "ec43a698fda9d6fe70f7b2f93efc3a39",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.profile_can_access_project_join_request_chat(p_chat_id uuid, p_profile_id uuid)",
+    "definition_md5": "aa2c772d17f385c4e699a5c5c45e6604",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.profile_can_read_project_chat_message(p_project_id uuid, p_profile_id uuid, p_message_created_at timestamp with time zone)",
+    "definition_md5": "b603ffa3bcbe0a091c0acf6566d436ca",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.profile_can_read_project_workspace(p_project_id uuid, p_profile_id uuid)",
+    "definition_md5": "aa0b3838940929832938b986f27426c2",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.profile_can_receive_participation_conversation_topic(p_topic text)",
+    "definition_md5": "1cb516e9e2f9f8a81ead6e653ae27065",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "private.profile_can_receive_project_chat_realtime_topic(p_topic text)",
+    "definition_md5": "baeffb5d40ddfb9a76f0313437ff5f9f",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "private.profile_can_receive_project_join_request_chat_topic(p_topic text)",
+    "definition_md5": "eade0d1da1eff05b33378c3af7d0cd9b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "private.profile_can_receive_resource_request_chat_topic(p_topic text)",
+    "definition_md5": "d1c283ebd9271b06ddd18271dcc980fe",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "private.profile_has_current_project_chat_entitlement(p_project_id uuid, p_profile_id uuid)",
+    "definition_md5": "6c16bd4467f2b3078c376bc29f78bd67",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.profile_has_current_project_membership(p_project_id uuid, p_profile_id uuid)",
+    "definition_md5": "42ffdd02f2ae85a0ce633f271bac71f7",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.profile_has_project_association(p_project_id uuid, p_profile_id uuid)",
+    "definition_md5": "2120826a5a6006286f96b33ae690f837",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.profile_has_project_chat_history_entitlement(p_project_id uuid, p_profile_id uuid)",
+    "definition_md5": "36609a4f9d43004f65e34d890b0a3bb4",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.profile_has_project_membership_history(p_project_id uuid, p_profile_id uuid)",
+    "definition_md5": "e5b23b2da8cda52db1c6efab578e50fb",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.profile_has_project_structural_authority(p_project_id uuid, p_profile_id uuid)",
+    "definition_md5": "a6b3dffa438eb9f1fb0ee98eb66ba19f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.profile_is_project_creator(p_project_id uuid, p_profile_id uuid)",
+    "definition_md5": "e76ed16da60909a4228ec9aa5bbc368a",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.profile_is_project_manager(p_project_id uuid, p_profile_id uuid)",
+    "definition_md5": "b5bd64ead477b1616a5a3e180054aaef",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.profile_was_project_member_at(p_project_id uuid, p_profile_id uuid, p_at timestamp with time zone)",
+    "definition_md5": "0714c9d2c80a1cf98788156f7ac96c51",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.project_accepts_participant_invitations(p_project_id uuid)",
+    "definition_md5": "ff76dfbbb47e8db46415827c469ae74c",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.project_allows_delegate_collaboration(p_project_id uuid)",
+    "definition_md5": "4a451ff9c212dca834d6fad023cb8c98",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.project_capacity_snapshot(p_project_id uuid)",
+    "definition_md5": "504adbc50c00c8045fd7c5db8ca2f1e5",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.project_chat_realtime_topic(p_chat_id uuid, p_profile_id uuid)",
+    "definition_md5": "c8297c22c23cfaa167d8ea7511139fc7",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.project_has_live_coverage_lifecycle(p_project_id uuid)",
+    "definition_md5": "430ccb59a92228c567605b1214891236",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.project_join_request_chat_realtime_topic(p_chat_id uuid, p_profile_id uuid)",
+    "definition_md5": "949f53acde8a18d45b0c097be2a0c70e",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.project_registration_capacity_snapshot(p_project_id uuid)",
+    "definition_md5": "abb0b11c4b76fb9a2cc8cd3ff3d1dd0d",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.project_requirement_is_current(p_project_id uuid, p_requirement_kind text, p_requirement_id uuid)",
+    "definition_md5": "d0e88c306ee4c491449c500f2c00f715",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.project_requirement_live_source_count(p_project_id uuid, p_requirement_kind text, p_requirement_id uuid)",
+    "definition_md5": "f1a8570d81ac032c8eaee2e9c9c9f920",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.project_resource_match_or_query(p_source text)",
+    "definition_md5": "dd5696d26bd3645754104e4368bd6bf4",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.proposal_idea_lexemes(p_text text)",
+    "definition_md5": "dabf32de00ac721efd3a3e117786477e",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.proposal_promotion_missing_fields(p_proposal_id uuid)",
+    "definition_md5": "97852b2a9220f2dd1ad4ecc2b62411b8",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.proposal_template_content_version(p_content jsonb)",
+    "definition_md5": "99c15ce111f114cc06a976d72e472b31",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.proposal_template_reusable_content(p_proposal_id uuid)",
+    "definition_md5": "90cec7ff874ff0482847dfb3702b71ce",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.proposal_template_skills(p_proposal_id uuid)",
+    "definition_md5": "2066673cb11c33a9f2f68c5ec88f4657",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_community_group_identity()",
+    "definition_md5": "7dbba9658e6faceef0fe0bcd95ea3314",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_group_manager_authority()",
+    "definition_md5": "83820d0891c54f0ec3cbb8e3ce0e45c1",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_idea_official_capacity()",
+    "definition_md5": "66e8f269a0c229743a6b35e30dd86b37",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_idea_official_details()",
+    "definition_md5": "a43226b19c676130790e9b0d6c1f6f30",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_moderation_append_only()",
+    "definition_md5": "24c6c2d2a6fb2feddf327d0d586a1398",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_moderation_case_identity()",
+    "definition_md5": "362ba481e297d90f37e24caa2e90bc85",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_new_idea_precise_location()",
+    "definition_md5": "5db7d7a354bfd9efc63c203a96c40765",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_participant_admission_receipt()",
+    "definition_md5": "260ca51872fc5f8a63dad22d81a555e7",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_participant_invitation_history()",
+    "definition_md5": "84f48c291fb8e04403e4f665e3cd38e2",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_participation_conversation_history()",
+    "definition_md5": "a11b51963f861968fe30434f0a14ab0c",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_project_chat_message_immutability()",
+    "definition_md5": "d9ff767d9fef8978d0b1ad806789175a",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_project_chat_system_event_immutability()",
+    "definition_md5": "b09034430085f19080880273a45733a9",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_project_join_request_chat_message_immutability()",
+    "definition_md5": "e2fae7c857b22cb5565fcf59137a625d",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_project_membership_origin()",
+    "definition_md5": "3e222cd5d8829ec0130d48625fa7bd11",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_project_source_identity()",
+    "definition_md5": "b4109882159c93f3a21df909c5cee5d9",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_proposal_definition_phase()",
+    "definition_md5": "33906eb3025875a60e90244c23364025",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_proposal_template_baseline()",
+    "definition_md5": "839a4e166e554d942a1be833cc016e0b",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_proposal_template_identity()",
+    "definition_md5": "92e9889147851041613c3e250865e23d",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_resource_exchange_events_immutability()",
+    "definition_md5": "4e48c46c58a276fd89378ae3f7b61114",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_resource_exchange_terms_immutability()",
+    "definition_md5": "061603b782bb63a1ac061ef9d2535a59",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_resource_request_chat_message_immutability()",
+    "definition_md5": "84bb757705f7ff8174a2c096d6c51dc7",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.protect_user_block_episode_history()",
+    "definition_md5": "25b5d385b68eada031720aba4f9c6a65",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.provision_official_starter_template(p_template_id uuid, p_key text, p_expected_content_hash text, p_content jsonb, p_reason text, p_retire boolean)",
+    "definition_md5": "de981f84907ea9fac6512ba7f5b6fd13",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.reconcile_project_group_chats()",
+    "definition_md5": "1c5cafdf83408d3c25fd1271b694ecb0",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.record_message_unread()",
+    "definition_md5": "17bf94a6dd7989270d3239eab00023a1",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.record_project_actual_contributions_updated_event(p_actor_profile_id uuid, p_project_id uuid, p_membership_id uuid, p_participant_profile_id uuid)",
+    "definition_md5": "7f464f9b3065a7a6c588bf58439d08e3",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.record_project_delegate_event(p_event_type text, p_actor_profile_id uuid, p_project_id uuid, p_project_kind text, p_invitation_id uuid, p_delegate_id uuid, p_delegate_profile_id uuid)",
+    "definition_md5": "a25a2374eba766ef608f0bfe632b6248",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.record_project_membership_commitment_event(p_actor_profile_id uuid, p_project_id uuid, p_project_kind text, p_membership_id uuid, p_participant_profile_id uuid)",
+    "definition_md5": "560078136e23bd4f846b76154ebb45eb",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.record_project_participation_event(p_event_type text, p_actor_profile_id uuid, p_project_id uuid, p_metadata jsonb)",
+    "definition_md5": "6c885d9458be69c7e7d46f31d5299080",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.record_project_requirement_coverage_event(p_event_type text, p_actor_profile_id uuid, p_project_id uuid, p_project_kind text, p_requirement_kind text, p_requirement_id uuid, p_membership_id uuid)",
+    "definition_md5": "6b8966cbe66b4364f01eedf6b8415c05",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.record_project_resource_need_event(p_event_type text, p_creator_profile_id uuid, p_project_id uuid, p_project_kind text, p_resource_need_id uuid)",
+    "definition_md5": "551573985c079b1379da8c6534d48d2a",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.record_push_delivery_result(p_target_id uuid, p_lease_id uuid, p_token_version bigint, p_outcome text, p_provider_message_id text, p_provider_error_code text, p_retry_after_seconds integer)",
+    "definition_md5": "a0c9b1dc73ac992c8127a076951d5f83",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "private.record_resource_exchange_agreement_event(p_event_kind text, p_agreement_id uuid, p_terms_id uuid, p_leg_kind text, p_actor_profile_id uuid, p_created_at timestamp with time zone)",
+    "definition_md5": "a3f64511c8615e5a5581cf07ff496fdb",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.record_resource_listing_request_event(p_action text, p_request_id uuid, p_listing_id uuid, p_owner_profile_id uuid, p_requester_profile_id uuid, p_actor_profile_id uuid)",
+    "definition_md5": "177a282251abe16b8b9e484472d15b85",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.register_project_source()",
+    "definition_md5": "4966c029cfc978f57aaeff19373ce547",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.release_coverage_before_resource_commitment_delete()",
+    "definition_md5": "dbe33b5414bdbe51ac04f0e04a65ca0b",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.release_coverage_before_skill_commitment_delete()",
+    "definition_md5": "0a1bd9f75470b2de312c04bd254004ab",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.release_ended_project_membership_coverage()",
+    "definition_md5": "4a45a43fee07ee9c6c0d758a94baf853",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.release_removed_project_membership_coverages(p_membership_id uuid, p_actor_profile_id uuid, p_project_id uuid, p_project_kind text, p_retained_skill_ids uuid[], p_retained_resource_need_ids uuid[])",
+    "definition_md5": "f735ccc444472414ae146454e0e750e3",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.replace_proposal_content(p_proposal_id uuid, p_title text, p_summary text, p_description text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_event_timezone text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_skill_ids uuid[], p_skill_importances text[])",
+    "definition_md5": "aefc126a68346e8373366cacb3bca7ba",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.replace_recurring_activity_content(p_recurring_activity_id uuid, p_title text, p_summary text, p_description text, p_topic text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text)",
+    "definition_md5": "337daa8632413ef5bd263407151a12f6",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.replace_resource_listing_content(p_listing_id uuid, p_listing_mode text, p_title text, p_description text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text)",
+    "definition_md5": "7fee9486b167ed7fff2ce39002dba625",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.request_resource_listing_without_block(p_expected_requester_profile_id uuid, p_listing_id uuid, p_message text)",
+    "definition_md5": "9ab472977bb1d775639b7d95c0e4e766",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.request_to_join_project_without_block(p_expected_requester_profile_id uuid, p_project_id uuid, p_request_message text, p_skill_ids uuid[], p_resource_need_ids uuid[])",
+    "definition_md5": "f99c75bf34821b96985c6ebf52a3dbc6",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_capacity_for_legacy_structural_edit()",
+    "definition_md5": "d2df6b608569046012ca72d4feb87a43",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_capacity_for_project_publication()",
+    "definition_md5": "b941e1594bb56e08f3ceed0286070ec7",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_complete_blocking_profile(p_expected_profile_id uuid)",
+    "definition_md5": "8fc681ea7c5ec2ed3a827b9ce097022e",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_complete_participation_profile(p_expected_profile_id uuid)",
+    "definition_md5": "30290e199c3f640ac1f0451fcf635a41",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_complete_profile(p_expected_profile_id uuid)",
+    "definition_md5": "ec802664fb6150af6ce830985442f197",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_complete_project_chat_profile(p_expected_profile_id uuid)",
+    "definition_md5": "8ced87053068b8623d2a7d9909162b88",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_complete_recurring_activity_profile(p_expected_profile_id uuid)",
+    "definition_md5": "4683fceaa6fb73158ec02f4cfbf0a4a1",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_complete_resource_listing_identity(p_expected_profile_id uuid)",
+    "definition_md5": "c16676393edc1a45c23d5a030d15d3a8",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_cover_identity(p_expected_profile_id uuid)",
+    "definition_md5": "7a0220dee5a5ea84163543489ecb2e96",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_expected_identity(p_expected_profile_id uuid)",
+    "definition_md5": "b0dd6102a56ec21567f7cdf29ca0683f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_expected_recurring_activity_identity(p_expected_profile_id uuid)",
+    "definition_md5": "c0e7852c189791a18236e053c95bb3c8",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_group_actor(p_expected_profile_id uuid)",
+    "definition_md5": "1096ba6ec8dedb1cdd16d56289e961e3",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_moderation_identity(p_expected_profile_id uuid, p_require_complete boolean)",
+    "definition_md5": "3262161575ebc25f5879c7d56be12eb2",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_moderation_staff(p_expected_profile_id uuid)",
+    "definition_md5": "f8b16b9581792a6b5c3ef693d829caab",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_notification_identity(p_expected_profile_id uuid)",
+    "definition_md5": "c9ac1f72fb87c805ea0f16c1afb9b341",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_participation_identity(p_expected_profile_id uuid)",
+    "definition_md5": "2bf566bb6b821a58544696dab931cd30",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_policy_acceptance_account(p_expected_account_id uuid, p_bundle_version text)",
+    "definition_md5": "5bf09847b0c9f517b0fd2c16bdd0af82",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_profile_photo_identity(p_expected_profile_id uuid)",
+    "definition_md5": "6116ea3c3be6484b7987062bcbec13d8",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_project_creator(p_expected_creator_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "15e04b0e82341f5877d121989a0b71a0",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_project_manager(p_expected_manager_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "8dcfc0ac040f7e8e1b410a93cba88c3e",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_project_people_viewer(p_expected_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "e2598bbd6e9d3e98b2db49ff80a315d9",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_project_structural_authority(p_expected_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "fb0f2ef838307a95f6029c1323693377",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_push_identity(p_expected_profile_id uuid)",
+    "definition_md5": "65d6b956547796b0f052ff9460d9255d",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_resource_listing_identity(p_expected_profile_id uuid)",
+    "definition_md5": "771cf8b5811a606024718ab3f49652f0",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.require_resource_listing_request_identity(p_expected_profile_id uuid, p_require_complete_profile boolean)",
+    "definition_md5": "96c708665a1d85ddc88fb680d3ae8128",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.reserve_location_provider_v1(p_consumer text, p_actor uuid, p_charge boolean)",
+    "definition_md5": "19fa4a8750307cfec70888ec8aee2c5f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.resolve_chat_message_notification_event(p_outbox_event_id uuid)",
+    "definition_md5": "373fde8ec81e72639b5717683e5c8b72",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.resolve_notification_event(p_outbox_event_id uuid)",
+    "definition_md5": "a16c0b76f751e6d42c4869576a47b35d",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.resolve_notification_event_without_role_offers(p_outbox_event_id uuid)",
+    "definition_md5": "3c0d633fd8678453c2af8fe0a0bbc930",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.resolve_participation_notification_event(p_outbox_event_id uuid)",
+    "definition_md5": "ed1d70113f3ab4062f206cffafb6815d",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.resolve_resource_chat_notification_event(p_outbox_event_id uuid)",
+    "definition_md5": "c3b82f452ff02195f82e5e991890910f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.resolve_resource_exchange_notification_event(p_outbox_event_id uuid)",
+    "definition_md5": "66acd9ee218a910463cd5ed0b1683add",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.resolve_resource_request_notification_event(p_outbox_event_id uuid)",
+    "definition_md5": "74396236f69c5e79b67942e1983c309e",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.resolve_saved_search_matching_notification_event(p_outbox_event_id uuid)",
+    "definition_md5": "b89950a02ac9761bc440850dc17f9fb6",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.resource_exchange_owner_lend_is_overdue(p_agreement_id uuid, p_terms_id uuid, p_owner_transfer_kind text, p_ends_at timestamp with time zone, p_lifecycle_state text, p_as_of timestamp with time zone)",
+    "definition_md5": "0921cd770b6f6fdae732020ee989e4df",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.resource_listing_loan_period_conflicts(p_listing_id uuid, p_exclude_agreement_id uuid, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone)",
+    "definition_md5": "ceee892fc3f43d7ad1113c2bbc3abcf3",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.resource_listing_matches_saved_search_filters(p_listing_mode text, p_listing_title text, p_listing_description text, p_listing_locality text, p_saved_listing_mode text, p_saved_query text, p_saved_locality text)",
+    "definition_md5": "b5b3354d772839b4e43d40c2c947c78b",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.resource_request_chat_realtime_topic(p_chat_id uuid, p_profile_id uuid)",
+    "definition_md5": "148ae696d410514e8f07974039b96c60",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.seed_project_membership_commitments()",
+    "definition_md5": "8dd1d22018f85ff849f8c4c1d1055b4b",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.selected_place_point(p_place jsonb)",
+    "definition_md5": "a56f8fa28df72d7ec69fc62863504dcd",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.set_cover_updated_at()",
+    "definition_md5": "c48f29328f8092710aacbb1ff51f868b",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.set_notification_preference_updated_at()",
+    "definition_md5": "e59a0ab5de6b6c0e2aaf699d75f6033c",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.set_profile_photo_updated_at()",
+    "definition_md5": "67f32b46a37faabec3d545ecf4710507",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.set_profile_updated_at()",
+    "definition_md5": "f5ffdc3601134fce52d11887840a610b",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.set_project_people_capacity_for_structural_edit(p_expected_profile_id uuid, p_project_id uuid, p_people_capacity integer)",
+    "definition_md5": "69ab9f35332e167b58427220a22b6896",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.set_project_registration_capacity_for_structural_edit(p_expected_profile_id uuid, p_project_id uuid, p_registration_capacity integer, p_count_organizers_toward_capacity boolean)",
+    "definition_md5": "ef3a796ca166c77e30bcd76df62415a9",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.set_project_resource_need_updated_at()",
+    "definition_md5": "85ca3c5e32ed9803bdd262d8cfd5e662",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.set_proposal_updated_at()",
+    "definition_md5": "38f67abf00ab216b4be2e854627189c7",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.set_recurring_activity_updated_at()",
+    "definition_md5": "29a44f2562845237277bcb0ab2c11d9e",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.set_resource_listing_updated_at()",
+    "definition_md5": "4f51a21b8fda7a57dac4b4b72fe7884a",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.set_resource_saved_search_updated_at()",
+    "definition_md5": "6165276ec3aa9c57f3cda1fdb2fd449f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.signal_delegate_participation_conversations()",
+    "definition_md5": "d3e2ae676c91b9e1b0838b48917c045f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.signal_message_access_change()",
+    "definition_md5": "c091280e2b32befbc5fbd52d3c5988bf",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.signal_message_unread(p_profile uuid)",
+    "definition_md5": "db99c8c7ac9f02f24da5d2b571c0721f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.signal_participation_conversation(p_chat_id uuid)",
+    "definition_md5": "8151ea9b7c837acdebcd05fed7f05142",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.signal_participation_message_change()",
+    "definition_md5": "faa93846accd6aae25d5f9cd5a436e94",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.signal_participation_request_change()",
+    "definition_md5": "884dc852cf6d2eb915f8fc18e05ae897",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.snapshot_group_corroboration_requests()",
+    "definition_md5": "d20e070c5f9c32ba9c566d10ac132e92",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.snapshot_resource_counterstatement_request()",
+    "definition_md5": "35f931f09cfb2219f1d0cd3c9aeae649",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.unregister_project_source()",
+    "definition_md5": "88cefc34b419355a433bc537cae26ef9",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.valid_selected_place(p_place jsonb)",
+    "definition_md5": "0ece7cffc1b6bf83928bb690ab1e1465",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.validate_organization_decision(p_kind text, p_value jsonb, p_confirm boolean)",
+    "definition_md5": "c7caed660f676a1d0bf68afc1c9c31d1",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.validate_organization_task_tree()",
+    "definition_md5": "a06f3654cc785c8005192dd17353f8e1",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.validate_participation_conversation_reference()",
+    "definition_md5": "bbc89432158b53397344ee5f8ccaca43",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.validate_project_chat_system_event()",
+    "definition_md5": "e243d0539283f0305603aeab494dd6dc",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.validate_project_delegate_relationship()",
+    "definition_md5": "8a92d3611424245c0dfb3d8f773b8ee1",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.validate_project_group_chat_anchor()",
+    "definition_md5": "cea11ab600f54466b83dfbeb7bc28b6f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.validate_project_join_request_chat_anchor()",
+    "definition_md5": "928148dcf3bbf9911706ca076a41c80f",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.validate_resource_request_chat_anchor()",
+    "definition_md5": "431464ee9d070c4deec272aafddcb1ec",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "private.workshop_template_content(p_template_id uuid)",
+    "definition_md5": "b790710f49ce306e844d4af88ac89f96",
+    "grants": "{postgres=X/postgres}"
+  },
+  {
+    "signature": "public.accept_policy_bundle(p_expected_account_id uuid, p_bundle_version text)",
+    "definition_md5": "46bf08eb9ae88c72ab54f294df241a02",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.accept_project_delegate_invitation(p_expected_delegate_profile_id uuid, p_token text)",
+    "definition_md5": "8a283548ced8aecdb853fc831cb4d67b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.accept_project_join_request(p_expected_creator_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "d8047ea328c9f6b61a76f1c535c55159",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.accept_project_join_request(p_expected_creator_profile_id uuid, p_request_id uuid, p_needed_skill_ids uuid[], p_already_found_skill_ids uuid[], p_extra_skill_ids uuid[], p_needed_resource_need_ids uuid[], p_already_found_resource_need_ids uuid[], p_extra_resource_need_ids uuid[])",
+    "definition_md5": "b0dee869343d9bd229fcd86ffe1c0f5a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.accept_project_join_request_as_manager(p_expected_manager_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "756ef1365352f1f6dd239b53796cdd9b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.accept_project_join_request_as_manager(p_expected_manager_profile_id uuid, p_request_id uuid, p_needed_skill_ids uuid[], p_already_found_skill_ids uuid[], p_extra_skill_ids uuid[], p_needed_resource_need_ids uuid[], p_already_found_resource_need_ids uuid[], p_extra_resource_need_ids uuid[])",
+    "definition_md5": "63ae5f99e1e2dd88e3e115eb3022f738",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.accept_project_participant_invitation(p_expected_profile_id uuid, p_token text, p_client_action_id uuid)",
+    "definition_md5": "bce3d5a5acdf2adf2764c86ce0aaa0ab",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.accept_project_role_offer(p_expected_profile_id uuid, p_offer_id uuid)",
+    "definition_md5": "31a874586cfa41f9f261f6fff3fc7e3b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.accept_resource_exchange_terms(p_expected_profile_id uuid, p_agreement_id uuid, p_expected_pending_terms_id uuid)",
+    "definition_md5": "e19e440439773271cc293bd4771a8c83",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.accept_resource_listing_request(p_expected_owner_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "ecf135e8710e422ea72658f3128860cf",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.acknowledge_own_message_read(p_expected_profile_id uuid, p_kind text, p_chat_id uuid, p_boundary uuid)",
+    "definition_md5": "35f5998e572d6fff2089823ecbd4114e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.acknowledge_project_requirement_attention(p_expected_profile_id uuid, p_project_id uuid, p_through_system_event_id uuid)",
+    "definition_md5": "7dd36b456cbabf25833419c90ac29e5c",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.add_moderation_case_note(p_expected_staff_profile_id uuid, p_case_id uuid, p_body text)",
+    "definition_md5": "565b7dbe08044f88732262182a00a31d",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.apply_item_location_v1(p_expected_profile_id uuid, p_kind text, p_item uuid, p_expected_revision bigint, p_request_id uuid, p_public_action text, p_public_receipt uuid, p_exact_action text, p_exact_receipt uuid)",
+    "definition_md5": "b78650590fc00e7bae4756c2da83a916",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.apply_proposal_place_v1(p_expected_profile_id uuid, p_item uuid, p_expected_revision bigint, p_request_id uuid, p_action text, p_receipt uuid)",
+    "definition_md5": "b8424879fe96f61d90263761fb78b19a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.block_user(p_expected_blocker_profile_id uuid, p_blocked_profile_id uuid)",
+    "definition_md5": "8c6db02c1eb3220d79da1c197666f824",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.can_manage_cover_image_object(p_object_path text)",
+    "definition_md5": "efa981b4efa3031afd97081085768018",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.can_read_public_cover_image_object(p_object_path text)",
+    "definition_md5": "47e31552a731b6528a00c93fa7ceeb44",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.can_read_public_project_creator_photo_object(p_object_path text)",
+    "definition_md5": "4226f3b41682f3cf9ae1ac47d0daff0a",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.can_read_public_resource_listing_owner_photo_object(p_object_path text)",
+    "definition_md5": "844b2b7ddd7d65f91c4f6734141de929",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.can_upload_cover_image_object(p_object_path text)",
+    "definition_md5": "cd94db39c51e9250bf98fccd4884b6a1",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.cancel_proposal(p_expected_creator_profile_id uuid, p_proposal_id uuid)",
+    "definition_md5": "71e5965dd2b7754f3c370d57467a71f8",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.cancel_resource_exchange_agreement(p_expected_profile_id uuid, p_agreement_id uuid)",
+    "definition_md5": "c48cd1aff5222e3ae71e8bad464b4fca",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.change_project_delegate_role(p_expected_structural_profile_id uuid, p_delegate_id uuid, p_authority_role text)",
+    "definition_md5": "ec57031001e165fe1b45f82a724dbf46",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.check_resource_exchange_pending_loan_availability(p_expected_profile_id uuid, p_agreement_id uuid, p_expected_pending_terms_id uuid)",
+    "definition_md5": "0f28d4752a59ce4db38d5e108f497f76",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.claim_project_requirement(p_expected_participant_profile_id uuid, p_project_id uuid, p_requirement_kind text, p_requirement_id uuid)",
+    "definition_md5": "4025268ea2593cb71400bf703836ea50",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.clear_own_profile_photo(p_expected_profile_id uuid)",
+    "definition_md5": "b9968fb8282b34871b8329ee428c28c9",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.clear_own_project_cover(p_expected_creator_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "743e7aec000b207c860ef069b0804d15",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.clear_own_resource_listing_cover(p_expected_owner_profile_id uuid, p_listing_id uuid)",
+    "definition_md5": "2b95335ee75649838595b06148c3759b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.clear_project_shared_workspace(p_expected_manager_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "f9ae1adbb9125111fd26ae13e9f93ae1",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.close_project_resource_need(p_expected_creator_profile_id uuid, p_resource_need_id uuid)",
+    "definition_md5": "057e673e0caded025eb7b2a35f11a5a1",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.close_resource_listing(p_expected_owner_profile_id uuid, p_listing_id uuid)",
+    "definition_md5": "ff2f3e29389276378b8fd17afecb0024",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_editor_proposal_draft(p_expected_creator_profile_id uuid, p_client_request_id uuid, p_title text, p_summary text, p_description text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_event_timezone text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_skill_ids uuid[], p_skill_importances text[], p_registration_capacity integer, p_count_organizers_toward_capacity boolean)",
+    "definition_md5": "d202c05e48031ecc7fc945932ff2fb0e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_editor_recurring_activity_draft(p_expected_creator_profile_id uuid, p_client_request_id uuid, p_title text, p_summary text, p_description text, p_topic text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_recurrence_type text, p_weekday integer, p_day_of_month integer, p_local_start_time time without time zone, p_duration_minutes integer, p_event_timezone text, p_effective_from date, p_registration_capacity integer, p_count_organizers_toward_capacity boolean)",
+    "definition_md5": "21586eb389a49dc207d9d8c59e3198f4",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_editor_resource_listing_draft(p_expected_owner_profile_id uuid, p_client_request_id uuid, p_listing_mode text, p_title text, p_description text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text)",
+    "definition_md5": "9a4d3fe49ad5896fcae1e8c3600ad595",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_group_draft(p_expected_profile_id uuid, p_client_request_id uuid, p_content jsonb)",
+    "definition_md5": "64dfcc055bb263fc3093487e411d6808",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_project_delegate_invitation(p_expected_owner_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "b9262147ba95925fd8815e0c1737ffbe",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_project_delegate_invitation(p_expected_owner_profile_id uuid, p_project_id uuid, p_requested_authority_role text)",
+    "definition_md5": "e25c28751c63c67c9c2ee9921a01f89a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_project_participant_invitation(p_expected_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "f4646128d890aa227375c85eada5bc8e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_project_resource_need(p_expected_creator_profile_id uuid, p_project_id uuid, p_title text, p_details text)",
+    "definition_md5": "834ec3d8404d5d0ef199c0655b7ecf2f",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_project_role_offer(p_expected_structural_profile_id uuid, p_project_id uuid, p_membership_id uuid, p_authority_role text)",
+    "definition_md5": "017d4803e2a9fb30c92e34277999506d",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_proposal_draft(p_expected_creator_profile_id uuid, p_title text, p_summary text, p_description text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_event_timezone text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_skill_ids uuid[], p_skill_importances text[])",
+    "definition_md5": "332472fee4a3eb3137201a8e8449db99",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_proposal_draft(p_expected_creator_profile_id uuid, p_title text, p_summary text, p_description text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_event_timezone text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_skill_ids uuid[], p_skill_importances text[], p_people_capacity integer)",
+    "definition_md5": "8b3abd7f5b299ffd7067b6f178be58e4",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_proposal_draft(p_expected_creator_profile_id uuid, p_title text, p_summary text, p_description text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_event_timezone text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_skill_ids uuid[], p_skill_importances text[], p_registration_capacity integer, p_count_organizers_toward_capacity boolean)",
+    "definition_md5": "0847e68ef4aabc263f66a8b3e57ba54a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_proposal_draft_from_template(p_expected_creator_profile_id uuid, p_template_id uuid, p_content_version text, p_client_request_id uuid, p_prefill_capacity boolean)",
+    "definition_md5": "f8e769bb66f02e94bda9aa5ea24a7aeb",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_recurring_activity_draft(p_expected_creator_profile_id uuid, p_title text, p_summary text, p_description text, p_topic text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_recurrence_type text, p_weekday integer, p_day_of_month integer, p_local_start_time time without time zone, p_duration_minutes integer, p_event_timezone text, p_effective_from date)",
+    "definition_md5": "e0925ff7a16e77f46243ae0a8a04802a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_recurring_activity_draft(p_expected_creator_profile_id uuid, p_title text, p_summary text, p_description text, p_topic text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_recurrence_type text, p_weekday integer, p_day_of_month integer, p_local_start_time time without time zone, p_duration_minutes integer, p_event_timezone text, p_effective_from date, p_people_capacity integer)",
+    "definition_md5": "83e8599c6cf3265a7ed51e9d6ee1b21a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_recurring_activity_draft(p_expected_creator_profile_id uuid, p_title text, p_summary text, p_description text, p_topic text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_recurrence_type text, p_weekday integer, p_day_of_month integer, p_local_start_time time without time zone, p_duration_minutes integer, p_event_timezone text, p_effective_from date, p_registration_capacity integer, p_count_organizers_toward_capacity boolean)",
+    "definition_md5": "b6648cdcf22c9436f6662058066c6546",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_resource_listing_draft(p_expected_owner_profile_id uuid, p_listing_mode text, p_title text, p_description text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text)",
+    "definition_md5": "3bbd75de4b4862e298f2036a0fbefd33",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.create_resource_saved_search(p_expected_profile_id uuid, p_query text, p_listing_mode text, p_locality text)",
+    "definition_md5": "c8ca800afefc19a0c320957611def4a1",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.decline_project_role_offer(p_expected_profile_id uuid, p_offer_id uuid)",
+    "definition_md5": "ccf4e7127d7688f80d52cb12e9869309",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.delete_resource_saved_search(p_expected_profile_id uuid, p_saved_search_id uuid)",
+    "definition_md5": "57c1720386091a9eb5ace1774efb6e53",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.end_recurring_activity(p_expected_creator_profile_id uuid, p_recurring_activity_id uuid)",
+    "definition_md5": "1581570401864bf73fa58a0bcbf0e887",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.finish_location_preview_v1(p_image_key text, p_token uuid, p_image_base64 text)",
+    "definition_md5": "fd053633f769cda2e4e19da8c46758df",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "public.finish_map_provider_v1(p_cache_key text, p_token uuid, p_centers jsonb, p_image_base64 text)",
+    "definition_md5": "d48bb515786a77814596ba567f152264",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "public.get_authorized_item_location_v1(p_expected_profile_id uuid, p_kind text, p_item uuid)",
+    "definition_md5": "739e51d0527c5476ecbd493e86a0ecb4",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_current_project_participant_invitation(p_expected_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "1aa125f37f4d5ded40634db733514034",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_group_staff_context(p_expected_staff_profile_id uuid, p_group_id uuid)",
+    "definition_md5": "6c64179dff2cc6122a4feda97ba700e8",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_location_preview_v1(p_kind text, p_item uuid, p_view text, p_expected_profile_id uuid)",
+    "definition_md5": "d9b19b99a616e9896437050c3be6a02e",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_moderation_case_corroboration(p_expected_staff_profile_id uuid, p_case_id uuid)",
+    "definition_md5": "4fcc6460e2cfe0641e6cd416e97f5ee0",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_moderation_case_counterstatement(p_expected_staff_profile_id uuid, p_case_id uuid)",
+    "definition_md5": "30bdd3fafb0b169bbad2284fead82ebe",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_moderation_case_detail(p_expected_staff_profile_id uuid, p_case_id uuid)",
+    "definition_md5": "46f495830a2ae390afd5fc5645b47cf8",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_moderation_case_group(p_expected_staff_profile_id uuid, p_case_id uuid)",
+    "definition_md5": "64a74a881ffd4960fbfffc8f62e99a8f",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_moderation_case_template(p_expected_staff_profile_id uuid, p_case_id uuid)",
+    "definition_md5": "d71b3ce7c96ee7fbee8aab44b5e03056",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_blocked_profile_status(p_expected_blocker_profile_id uuid, p_target_profile_id uuid)",
+    "definition_md5": "94fcc1f7b55a44c015eef4ec1e4d5ceb",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_group(p_expected_profile_id uuid, p_group_id uuid)",
+    "definition_md5": "2a0db0d285b754819e196198069f1cf3",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_group_corroboration_request(p_expected_recipient_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "ee62b647bbda904df167da609e44ff8c",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_message_feed_page(p_expected_profile_id uuid, p_kind text, p_chat_id uuid, p_limit integer, p_before_created_at timestamp with time zone, p_before_item_kind text, p_before_item_id uuid, p_only_pending boolean)",
+    "definition_md5": "213a7652a3f07ff6e01e4687251dc18a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_message_unread_summary(p_expected_profile_id uuid)",
+    "definition_md5": "da8f702b77f363512333d1c0eb849aef",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_moderation_staff_access(p_expected_profile_id uuid)",
+    "definition_md5": "fb62839aa315efe8c9980da4b9935c64",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_participation_conversation(p_expected_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "eefb9e7bc02ffe9b96a4086a5dc6395b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_participation_conversation_requests(p_expected_profile_id uuid, p_chat_id uuid, p_request_ids uuid[])",
+    "definition_md5": "5ff59254499c7234baa4472a1093bd0a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_participation_request_message_item(p_expected_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "000640b7c42286ed8b3f8b2906a8d27e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_profile_photo(p_expected_profile_id uuid)",
+    "definition_md5": "3439ad1075c54516308dca48103d3bd1",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_project_cover(p_expected_creator_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "61e09462b3a9271ae877eab4f114427f",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_project_group_chat(p_expected_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "06e0461bb442404ed105b3c15f19eeec",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_project_join_request_chat(p_expected_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "80d99388b005ef7460ee83dcb67111f2",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_project_management_role(p_expected_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "852bd96d1bf581d9d282d4e7ec890603",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_project_requirement_attention(p_expected_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "41c9f66741d63b6e605742ef4c9adf14",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_project_shared_workspace(p_expected_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "de09878355e7fcb033ac2dc5262fa165",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_proposal(p_expected_creator_profile_id uuid, p_proposal_id uuid)",
+    "definition_md5": "741ee275d7cdf70f4f7f89cacbc45be4",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_proposal_template_application(p_expected_creator_profile_id uuid, p_client_request_id uuid)",
+    "definition_md5": "9d2345ad4bc59ec45fb55e629520cfb8",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_proposal_template_baseline(p_expected_creator_profile_id uuid, p_template_id uuid)",
+    "definition_md5": "4f2348eed89f02f7e3f47f6658e45492",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_proposal_v2(p_expected_creator_profile_id uuid, p_proposal_id uuid)",
+    "definition_md5": "00381eaa9b1b836665ef54fa0fc53d71",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_recurring_activity(p_expected_creator_profile_id uuid, p_recurring_activity_id uuid)",
+    "definition_md5": "f1e8dfcc63c71ce0e96127e09fec62ee",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_resource_counterstatement_request(p_expected_recipient_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "f180223cbfddbb1f4630295111e7809b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_resource_listing(p_expected_owner_profile_id uuid, p_listing_id uuid)",
+    "definition_md5": "564c2bcc51938464310fa87d8475b9c5",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_resource_listing_cover(p_expected_owner_profile_id uuid, p_listing_id uuid)",
+    "definition_md5": "31ba933634364b0e6c0ca9a1f2385f8d",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_resource_request_chat(p_expected_profile_id uuid, p_chat_id uuid)",
+    "definition_md5": "8b3d776d7a14a850e69e54a4d959c5cc",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_resource_saved_search(p_expected_profile_id uuid, p_saved_search_id uuid)",
+    "definition_md5": "ecddeb582b40f865cf1522f5b9244a18",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_structured_request_message_item(p_expected_profile_id uuid, p_item_kind text, p_request_id uuid)",
+    "definition_md5": "a87ded6a324a738cfce08eb366e42267",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_own_unread_notification_count(p_expected_profile_id uuid)",
+    "definition_md5": "ca784485fc7efa3a5f5475bb1539c9e2",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_policy_acceptance(p_expected_account_id uuid, p_bundle_version text)",
+    "definition_md5": "7666f2fb0c8315510152010752fbf11f",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_profile_photo_for_viewer(p_profile_id uuid)",
+    "definition_md5": "1455bdb9a48fedb7f5486569bab22b63",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_project_capacity_for_manager(p_expected_manager_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "074d1d91627b5af778427f636b423573",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_project_creator_profile_photo_for_viewer(p_project_id uuid)",
+    "definition_md5": "c95d252d9ab7ae5fe7cf698d46baa1f2",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_project_join_request_resolution_context(p_expected_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "d20ce59c6f009bb76712f0c169a67ac8",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_project_organization_v1(p_expected_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "6292c020800177e73dd85fde20e57017",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_project_participant_invitation_preview(p_token text)",
+    "definition_md5": "a16de9c9cf80ee7a1cbf4b57ea2c296b",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_project_participant_meeting_details(p_expected_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "a59966658b6e3cb6ee8d8d9bb69ec41e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_proposal_promotion_requirements(p_expected_profile_id uuid, p_proposal_id uuid)",
+    "definition_md5": "7e770269dc3fb6b61a1c8ec68343b87f",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_public_group(p_group_id uuid)",
+    "definition_md5": "d8183468a1bdb95477fc69cc082ba9ce",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_public_item_location_v1(p_kind text, p_item uuid)",
+    "definition_md5": "4778788a5ac2c4ab2cd1acc855eab522",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_public_location_previews_v1(p_items jsonb)",
+    "definition_md5": "bc6afd20e1d7cbb3dd23160ad1ea5141",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_public_profile(p_profile_id uuid)",
+    "definition_md5": "af2ee5ff61da379b5976097d66d8f9bc",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_public_proposal(p_proposal_id uuid)",
+    "definition_md5": "c60f2248449188020ba22bb148df66ba",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_public_proposal_template(p_template_id uuid)",
+    "definition_md5": "e64ca10470977a28ec0591741bb28028",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_public_proposal_template_v2(p_template_id uuid)",
+    "definition_md5": "87b284814f5c9e825197d96d4c076647",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_public_proposal_v2(p_proposal_id uuid)",
+    "definition_md5": "d6660fda277bfb9d7c319392bb180187",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_public_recurring_activity(p_recurring_activity_id uuid, p_occurrence_limit integer, p_reference_time timestamp with time zone)",
+    "definition_md5": "207fdc36b37ed0f6da07ae4ab2e17648",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_public_resource_listing(p_listing_id uuid)",
+    "definition_md5": "4616c9e993e7d50f22dbf21f0cf622a9",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_resource_exchange_agreement(p_expected_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "5f2298f2bf8a12145ac34548916bf98d",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_resource_listing_owner_profile_photo_for_viewer(p_listing_id uuid)",
+    "definition_md5": "4aa6547eb64a0fdb776da5a19635fe0e",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.get_resource_listing_request(p_expected_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "88e30d4c8f0359640c2126011eed0f7b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.issue_location_selections_v1(p_batch uuid, p_places jsonb)",
+    "definition_md5": "1022a5717932fefddd53d5d61d99432e",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "public.leave_project(p_expected_participant_profile_id uuid, p_membership_id uuid)",
+    "definition_md5": "ee2d5303683b3b600e11d1fa50e79562",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_current_project_people(p_expected_profile_id uuid, p_project_id uuid, p_limit integer, p_after_role_rank integer, p_after_profile_id uuid)",
+    "definition_md5": "b51e3e89fbb37e3952801445284d7a9d",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_moderation_case_template_blueprints(p_expected_staff_profile_id uuid, p_case_id uuid, p_content_version text, p_limit integer, p_cursor_need_id uuid)",
+    "definition_md5": "f2a9cac85c8c1354c66e12da2fa9a53b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_moderation_cases(p_expected_staff_profile_id uuid, p_state text, p_limit integer, p_before_created_at timestamp with time zone, p_before_case_id uuid)",
+    "definition_md5": "80d2efe7c3fb4e57d9a028c1ba4e0fd6",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_blocked_profiles(p_expected_blocker_profile_id uuid, p_limit integer, p_cursor_blocked_at timestamp with time zone, p_cursor_block_episode_id uuid)",
+    "definition_md5": "992ca84e19217db4a3ecf831681f1644",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_delegated_projects(p_expected_profile_id uuid)",
+    "definition_md5": "862d6020f159babafd7b31e879ec7a8f",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_delegated_projects_v2(p_expected_profile_id uuid)",
+    "definition_md5": "28da61e4728893723db01da535f2395e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_group_corroboration_requests(p_expected_recipient_profile_id uuid, p_pending_only boolean, p_limit integer, p_before_created_at timestamp with time zone, p_before_request_id uuid)",
+    "definition_md5": "9d811dfd000b20c6e0e809f5b40e4eec",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_groups(p_expected_profile_id uuid, p_limit integer, p_before_created_at timestamp with time zone, p_before_id uuid)",
+    "definition_md5": "ea93155c5be228f3f0bf54ea8979606d",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_message_chat_items(p_expected_profile_id uuid, p_limit integer, p_cursor_activity_at timestamp with time zone, p_cursor_item_kind text, p_cursor_chat_id uuid)",
+    "definition_md5": "30e639e19b5335b40eb4a3763d87f669",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_moderation_evidence_requests(p_expected_recipient_profile_id uuid, p_pending_only boolean, p_limit integer)",
+    "definition_md5": "458433d43afd76f1b6d2bd7e0a4f9137",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_moderation_reports(p_expected_reporter_profile_id uuid, p_limit integer, p_before_created_at timestamp with time zone, p_before_report_id uuid)",
+    "definition_md5": "7357a1a0283a6bbd17086a34a4047928",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_notification_preferences(p_expected_profile_id uuid)",
+    "definition_md5": "527c8efe55567fd958e343a74fef2055",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_notifications(p_expected_profile_id uuid, p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid)",
+    "definition_md5": "2d3f728cff4e974faf21082a0f04cf39",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_participation_conversation_items(p_expected_profile_id uuid, p_chat_id uuid, p_limit integer, p_before_created_at timestamp with time zone, p_before_item_kind text, p_before_item_id uuid, p_only_pending boolean)",
+    "definition_md5": "e68905eb2a7d867c83edc468975f99c9",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_participation_request_message_items(p_expected_profile_id uuid, p_limit integer, p_cursor_activity_at timestamp with time zone, p_cursor_request_id uuid)",
+    "definition_md5": "f2026146a37c307f468dcffaff7ecad8",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_pending_requested_proposals(p_expected_requester_profile_id uuid, p_locality text, p_skill_ids uuid[], p_query text)",
+    "definition_md5": "e39f822418e9cfc8c423b135ecbb3b34",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_pending_requested_proposals_v2(p_expected_requester_profile_id uuid, p_locality text, p_skill_ids uuid[], p_query text)",
+    "definition_md5": "1961bd2ca4ddbb8c4c3ae37dd9746e15",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_pending_requested_recurring_activities(p_expected_requester_profile_id uuid, p_reference_time timestamp with time zone, p_locality text)",
+    "definition_md5": "e902ce84ef381d11f650fc50e933229d",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_project_chat_feed(p_expected_profile_id uuid, p_chat_id uuid, p_limit integer, p_before_created_at timestamp with time zone, p_before_item_kind text, p_before_item_id uuid)",
+    "definition_md5": "8ca077ef00a6ac2d54cf6e673f0afb05",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_project_chat_messages(p_expected_profile_id uuid, p_chat_id uuid, p_limit integer, p_before_created_at timestamp with time zone, p_before_message_id uuid)",
+    "definition_md5": "586ca9d9940f22c2014610a353d35594",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_project_group_chats(p_expected_profile_id uuid, p_limit integer, p_before_activity_at timestamp with time zone, p_before_chat_id uuid)",
+    "definition_md5": "967686fbe3130d0453de7d3fb77ffb7c",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_project_join_request_chat_items(p_expected_profile_id uuid, p_chat_id uuid, p_limit integer, p_before_created_at timestamp with time zone, p_before_item_kind text, p_before_item_id uuid)",
+    "definition_md5": "c58078307ee88380a5e089f0fc8c9607",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_project_join_request_contribution_selections(p_expected_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "dc7d72bb668544b85a0305c58e63551b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_project_join_requests(p_expected_requester_profile_id uuid)",
+    "definition_md5": "34e6115d7ee89ef492f8893264da76bf",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_project_membership_commitment_options(p_expected_profile_id uuid, p_membership_id uuid)",
+    "definition_md5": "101ab1be8f12f54ace3bed7d07642312",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_project_membership_commitments(p_expected_profile_id uuid, p_membership_id uuid)",
+    "definition_md5": "fc38058149b1d32afb499f462df092eb",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_project_memberships(p_expected_participant_profile_id uuid)",
+    "definition_md5": "75508880c53993c4e9c5794e306b794b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_project_resource_needs(p_expected_creator_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "c58190df77ecd0c1fc193d046d2edd6d",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_proposals(p_expected_creator_profile_id uuid)",
+    "definition_md5": "36024a2e2c36dfc0994a8324af3062c0",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_proposals_v2(p_expected_creator_profile_id uuid)",
+    "definition_md5": "18dbd42d817e64db8218c6baaf14da7e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_recurring_activities(p_expected_creator_profile_id uuid)",
+    "definition_md5": "b1da434dc95efd8661325b4d02916ac7",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_resource_listing_requests(p_expected_requester_profile_id uuid)",
+    "definition_md5": "320d8e24dbbdc07d46f9bb4da70d5c1e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_resource_listings(p_expected_owner_profile_id uuid)",
+    "definition_md5": "e316880cb635353827fb71e9d982acff",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_resource_request_chat_messages(p_expected_profile_id uuid, p_chat_id uuid, p_limit integer, p_before_created_at timestamp with time zone, p_before_message_id uuid)",
+    "definition_md5": "3455e1db65a172f226e91857cdb0100a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_resource_request_chats(p_expected_profile_id uuid, p_limit integer, p_before_activity_at timestamp with time zone, p_before_chat_id uuid)",
+    "definition_md5": "52ebc349883dcae53e044725e2c8ce37",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_resource_saved_searches(p_expected_profile_id uuid, p_limit integer, p_cursor_updated_at timestamp with time zone, p_cursor_id uuid)",
+    "definition_md5": "cb3d34b3c0b4abf6bb681ea37d26684a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_scoped_conversation_items(p_expected_profile_id uuid, p_scope text, p_limit integer, p_cursor_activity_at timestamp with time zone, p_cursor_item_kind text, p_cursor_chat_id uuid)",
+    "definition_md5": "3e7cee4a2da68c4e96e4e6a2cf7e2a2d",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_scoped_conversation_items_v3(p_expected_profile_id uuid, p_scope text, p_limit integer, p_cursor_activity_at timestamp with time zone, p_cursor_item_kind text, p_cursor_chat_id uuid)",
+    "definition_md5": "8b310bf98b7e7a9d2cfcaffd2d29f6c8",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_scoped_conversation_items_v4(p_expected_profile_id uuid, p_scope text, p_limit integer, p_cursor_activity_at timestamp with time zone, p_cursor_item_kind text, p_cursor_chat_id uuid)",
+    "definition_md5": "a351f61a1a80363f5a1335d655b100b7",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_scoped_message_chat_items(p_expected_profile_id uuid, p_scope text, p_limit integer, p_cursor_activity_at timestamp with time zone, p_cursor_item_kind text, p_cursor_chat_id uuid)",
+    "definition_md5": "59f18910164fc549e0bcdad071b3b08a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_own_structured_request_message_items(p_expected_profile_id uuid, p_limit integer, p_cursor_activity_at timestamp with time zone, p_cursor_item_kind text, p_cursor_request_id uuid)",
+    "definition_md5": "5b7bbe48552be7854ad3e55e4f367066",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_owned_resource_listing_loan_schedule(p_expected_owner_profile_id uuid, p_listing_id uuid)",
+    "definition_md5": "07457ee1c9cf90e942a578cfff53906f",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_profile_photos_for_viewer(p_profile_ids uuid[])",
+    "definition_md5": "929a07e10ed9235377958d2f01f150c4",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_capacity_statuses_for_structural_actor(p_expected_profile_id uuid, p_project_ids uuid[])",
+    "definition_md5": "e7ec097374a61613412eb2730e0b69e9",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_delegate_invitations_for_owner(p_expected_owner_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "8a2178e19fc92bf71898a8319fa818f9",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_delegates_for_owner(p_expected_owner_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "3e6b170ba060b78f310c1fd9cdb9643a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_join_requests(p_expected_creator_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "01e041cdd0cf4385e0565228fb4f1ae6",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_join_requests_for_manager(p_expected_manager_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "0dfcba440696c9885a480b9a197ce8f2",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_live_requirement_coverage(p_expected_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "dbb226cf1047efcefd6579635efd308f",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_members(p_expected_creator_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "b01afbc27ce8be8add47a1e019d5aae1",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_members_for_manager(p_expected_manager_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "1eb710e0ad5042702ec35accd327c139",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_membership_actual_contribution_options(p_expected_creator_profile_id uuid, p_membership_id uuid)",
+    "definition_md5": "64f88caa8b1889603f8443b1103bd17d",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_membership_actual_contribution_options_for_manager(p_expected_manager_profile_id uuid, p_membership_id uuid)",
+    "definition_md5": "77a7ddfe2411622b3c69892a7c3ba152",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_membership_actual_contributions(p_expected_profile_id uuid, p_membership_id uuid)",
+    "definition_md5": "974e1c54f9bedd0294963733df3aebff",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_participant_invitation_history(p_expected_profile_id uuid, p_project_id uuid, p_limit integer, p_before_created_at timestamp with time zone, p_before_invitation_id uuid)",
+    "definition_md5": "a805aafe9117d6ecaee16526896ff54e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_resource_need_listing_matches(p_expected_creator_profile_id uuid, p_resource_need_id uuid, p_location_scope text, p_limit integer, p_listing_mode text, p_cursor_text_match_kind text, p_cursor_location_match_kind text, p_cursor_published_at timestamp with time zone, p_cursor_listing_id uuid)",
+    "definition_md5": "98ed4f806966209939ed5dff4b47b343",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_project_role_offers(p_expected_profile_id uuid, p_project_id uuid, p_limit integer, p_after_created_at timestamp with time zone, p_after_id uuid)",
+    "definition_md5": "97269d4c8338aaeec9c41fb8d6762dc6",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_public_groups(p_search text, p_group_kind text, p_volunteering_focus boolean, p_locality text, p_limit integer, p_before_created_at timestamp with time zone, p_before_id uuid)",
+    "definition_md5": "29f77ad062e6fe840fc17559f8eebe61",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_public_project_capacity_statuses(p_project_ids uuid[])",
+    "definition_md5": "18dfd842bf16fc208e5df51e3bdcaf27",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_public_project_resource_needs(p_project_id uuid)",
+    "definition_md5": "a2704805a3f7ee1b7b0bfd5905277fe5",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_public_proposal_template_resource_blueprints(p_template_id uuid, p_content_version text, p_limit integer, p_cursor_need_id uuid)",
+    "definition_md5": "29e125fd53b542c984071451ddebea76",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_public_proposal_template_resource_blueprints_v2(p_template_id uuid, p_content_version text, p_limit integer, p_cursor_need_id uuid)",
+    "definition_md5": "aa3b0c0f6f4537cdaf8320c99fa0254e",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_public_proposal_templates(p_limit integer, p_cursor_linked_at timestamp with time zone, p_cursor_id uuid, p_skill_ids uuid[], p_query text)",
+    "definition_md5": "e68cb76cda99181a473e9ab33b821edb",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_public_proposal_templates_v2(p_limit integer, p_cursor_linked_at timestamp with time zone, p_cursor_id uuid, p_skill_ids uuid[], p_query text)",
+    "definition_md5": "5b7a265c7cfc9c0b1a7c17f6eb3f8688",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_public_proposals(p_limit integer, p_cursor_starts_at timestamp with time zone, p_cursor_id uuid, p_locality text, p_skill_ids uuid[], p_query text)",
+    "definition_md5": "1feec3f9a798e082070a01bd78a27440",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_public_proposals_v2(p_limit integer, p_cursor_published_at timestamp with time zone, p_cursor_id uuid, p_locality text, p_skill_ids uuid[], p_query text, p_definition_phase text, p_reference_time timestamp with time zone)",
+    "definition_md5": "be30a8dc0faf5ee42332aaeecd99653c",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_public_recurring_activities(p_reference_time timestamp with time zone, p_limit integer, p_cursor_next_starts_at timestamp with time zone, p_cursor_id uuid, p_locality text)",
+    "definition_md5": "c00b55e9104d4f4f66699d62d9347df5",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_public_recurring_activity_occurrences(p_recurring_activity_id uuid, p_from timestamp with time zone, p_until timestamp with time zone, p_limit integer)",
+    "definition_md5": "9d3648298452fc418b794c8d0148d7ee",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_public_resource_listings(p_limit integer, p_cursor_published_at timestamp with time zone, p_cursor_id uuid, p_listing_mode text, p_locality text, p_query text)",
+    "definition_md5": "5f0868f2b278a04206c3db93080cc865",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_resource_exchange_agreement_events(p_expected_profile_id uuid, p_agreement_id uuid)",
+    "definition_md5": "2ed5a17ebb5ce0223117349d093d8ba7",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_resource_exchange_agreement_terms(p_expected_profile_id uuid, p_agreement_id uuid)",
+    "definition_md5": "fd8d87df8e5be4bf814a2be88a1bd284",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_resource_listing_requests(p_expected_owner_profile_id uuid, p_listing_id uuid)",
+    "definition_md5": "ea9fc053602df20874d4a0cc5342511e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.list_similar_active_proposals(p_expected_profile_id uuid, p_title text, p_skill_ids uuid[], p_country_code text, p_locality text, p_excluded_proposal_id uuid, p_limit integer)",
+    "definition_md5": "f6fc6ca3fdeaea2d1725ac4248a79d2c",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.mark_all_notifications_read(p_expected_profile_id uuid)",
+    "definition_md5": "8020d5a5392d8c0921fa990736dced61",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.mark_notification_read(p_expected_profile_id uuid, p_notification_id uuid)",
+    "definition_md5": "69f7ea3578f858d057099afffe2bbf79",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.mutate_project_organization_v1(p_expected_profile_id uuid, p_project_id uuid, p_expected_revision bigint, p_request_id uuid, p_command jsonb)",
+    "definition_md5": "db29dece863bfa7aa4f9eba81d775c7e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.page_project_history_for_manager(p_expected_profile_id uuid, p_project_id uuid, p_limit integer, p_after_joined_at timestamp with time zone, p_after_id uuid)",
+    "definition_md5": "8781a47b78497becafedff76333ee4b3",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.page_project_requests_for_manager(p_expected_profile_id uuid, p_project_id uuid, p_limit integer, p_after_pending boolean, p_after_created_at timestamp with time zone, p_after_id uuid)",
+    "definition_md5": "26b463807608e5a4f0f4d9b9c25252e4",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.pause_recurring_activity(p_expected_creator_profile_id uuid, p_recurring_activity_id uuid)",
+    "definition_md5": "d7d41b76ffd420ea543f6b1da62545e9",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.preview_project_delegate_invitation(p_token text)",
+    "definition_md5": "1dc80176b43c7dcfe2f5e157f87b8b6c",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.process_notification_outbox_batch(p_limit integer)",
+    "definition_md5": "9eb43c75a99580746852eb30ea3ba6ae",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "public.process_push_outbox_batch(p_limit integer)",
+    "definition_md5": "138a4dd6dcda184fe2f40a66a0ca323a",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "public.process_resource_saved_search_matching_outbox_batch(p_limit integer)",
+    "definition_md5": "75f2b5ef000ac8504bed40e6e837b9d0",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "public.promote_proposal_idea(p_expected_profile_id uuid, p_proposal_id uuid)",
+    "definition_md5": "5bf0fcf43d8f8363a5573505f41ca92f",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.propose_resource_exchange_terms(p_expected_profile_id uuid, p_agreement_id uuid, p_expected_current_terms_id uuid, p_expected_pending_terms_id uuid, p_owner_transfer_kind text, p_owner_lend_starts_at timestamp with time zone, p_owner_lend_ends_at timestamp with time zone, p_requester_transfer_kind text, p_requester_resource_description text, p_requester_lend_starts_at timestamp with time zone, p_requester_lend_ends_at timestamp with time zone, p_private_note text)",
+    "definition_md5": "a146892c3086864410c465f6ce9b3dce",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.publish_proposal(p_expected_creator_profile_id uuid, p_proposal_id uuid)",
+    "definition_md5": "d7dfe81b77b14760b16abd3590f4547e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.publish_proposal_idea(p_expected_creator_profile_id uuid, p_proposal_id uuid)",
+    "definition_md5": "efae54feb641bc098bb2268719546619",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.publish_recurring_activity(p_expected_creator_profile_id uuid, p_recurring_activity_id uuid)",
+    "definition_md5": "02c601c1a14dad84906c5c7347468315",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.publish_resource_listing(p_expected_owner_profile_id uuid, p_listing_id uuid)",
+    "definition_md5": "38775978c8f445b061f9b4fa50aa93ac",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.record_resource_exchange_milestone(p_expected_profile_id uuid, p_agreement_id uuid, p_expected_terms_id uuid, p_leg_kind text, p_event_kind text)",
+    "definition_md5": "038ce15923aee3c9ee9bb58a81ac3f0e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.recover_editor_proposal_draft(p_expected_creator_profile_id uuid, p_client_request_id uuid)",
+    "definition_md5": "677e548cca9231cb6dbd678f98f37f09",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.recover_editor_recurring_activity_draft(p_expected_creator_profile_id uuid, p_client_request_id uuid)",
+    "definition_md5": "d3eb04bc1300fe3bddfcd72b2d3f7768",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.recover_editor_resource_listing_draft(p_expected_owner_profile_id uuid, p_client_request_id uuid)",
+    "definition_md5": "7ad2c1d11de4b0549861657b833f5164",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.recover_group_command(p_expected_profile_id uuid, p_client_request_id uuid)",
+    "definition_md5": "14f730e9bf05cdd6bdd0850e22cb5144",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.regenerate_project_participant_invitation(p_expected_profile_id uuid, p_project_id uuid)",
+    "definition_md5": "e31539b8df0e5cbdf8869488976b7ff6",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.register_own_push_installation(p_expected_profile_id uuid, p_installation_id uuid, p_platform text, p_provider_token text)",
+    "definition_md5": "0f4a6ac7295f1e81eec19427e4d1d664",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.reject_project_join_request(p_expected_creator_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "575fe29c00b5579e392c21db6e3e0cd1",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.reject_project_join_request_as_manager(p_expected_manager_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "fef16567e96cfa78c8f98846ea73810d",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.reject_resource_exchange_terms(p_expected_profile_id uuid, p_agreement_id uuid, p_expected_pending_terms_id uuid)",
+    "definition_md5": "38b0dec4ee20ea60f6da6de26f2a2398",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.reject_resource_listing_request(p_expected_owner_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "ddaea44532517a6e07c787cc9dd236ea",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.remove_moderation_case_template(p_expected_staff_profile_id uuid, p_case_id uuid, p_template_id uuid, p_client_request_id uuid, p_reviewed_content_version text, p_reason text)",
+    "definition_md5": "0970e9ea2c5eacc4d5678f25e9e06a23",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.remove_project_member(p_expected_creator_profile_id uuid, p_membership_id uuid)",
+    "definition_md5": "25aeaf6a9f958ae9ecae1704059a426b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.remove_project_member_as_manager(p_expected_manager_profile_id uuid, p_membership_id uuid)",
+    "definition_md5": "377f72ad20b7906c7b1a9ac436f95a13",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.replace_project_membership_actual_contributions(p_expected_creator_profile_id uuid, p_membership_id uuid, p_expected_skill_ids uuid[], p_expected_resource_need_ids uuid[], p_expected_substantial_effort boolean, p_skill_ids uuid[], p_resource_need_ids uuid[], p_substantial_effort boolean)",
+    "definition_md5": "b18e314e68b9488ad0ec2b8877130a11",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.replace_project_membership_actual_contributions_as_manager(p_expected_manager_profile_id uuid, p_membership_id uuid, p_expected_skill_ids uuid[], p_expected_resource_need_ids uuid[], p_expected_substantial_effort boolean, p_skill_ids uuid[], p_resource_need_ids uuid[], p_substantial_effort boolean)",
+    "definition_md5": "a8e36961f858110da53e1056c771dbad",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.replace_project_membership_commitments(p_expected_actor_profile_id uuid, p_membership_id uuid, p_expected_skill_ids uuid[], p_expected_resource_need_ids uuid[], p_skill_ids uuid[], p_resource_need_ids uuid[])",
+    "definition_md5": "ee391503d69dc25f52a0b2b71f198546",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.request_resource_listing(p_expected_requester_profile_id uuid, p_listing_id uuid, p_message text)",
+    "definition_md5": "38cc07d4d4ee85dee2ae7b6b6678a28a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.request_to_join_project(p_expected_requester_profile_id uuid, p_project_id uuid, p_request_message text, p_skill_ids uuid[], p_resource_need_ids uuid[])",
+    "definition_md5": "43c6e75506e812456a4fbb7fecb564de",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.reserve_location_preview_v1(p_image_key text, p_cacheable boolean, p_actor uuid)",
+    "definition_md5": "2ff4464f903d0001fe0e8bc4ae2df1f5",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "public.reserve_location_search_v1(p_actor uuid, p_kind text, p_item uuid, p_revision bigint, p_slot text, p_session uuid, p_query_hash text)",
+    "definition_md5": "ab514e65ca604e72bc4ab75ae366108a",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "public.reserve_map_provider_v1(p_actor uuid, p_kind text, p_cache_key text)",
+    "definition_md5": "1b5a4ffae5b8a2336886b3bd0b9cf250",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "public.resolve_location_selection_v1(p_actor uuid, p_kind text, p_item uuid, p_revision bigint, p_slot text, p_session uuid, p_receipt uuid)",
+    "definition_md5": "a5eca48070c60d92b4a9a129847947e9",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "public.resolve_map_center_v1(p_actor uuid, p_suggestion uuid)",
+    "definition_md5": "1e832a88dc7b13bb61ee3ba0b2365587",
+    "grants": "{postgres=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "public.resume_recurring_activity(p_expected_creator_profile_id uuid, p_recurring_activity_id uuid)",
+    "definition_md5": "3dcb2e1c0d256fedb51e351a0f0624d1",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.revoke_project_delegate(p_expected_owner_profile_id uuid, p_delegate_id uuid)",
+    "definition_md5": "b9c951b894069fe9bb50f382ad11f8f7",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.revoke_project_delegate_invitation(p_expected_owner_profile_id uuid, p_invitation_id uuid)",
+    "definition_md5": "10f5b787545b1c4e2671b0c8646401a3",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.revoke_project_participant_invitation(p_expected_profile_id uuid, p_project_id uuid, p_invitation_id uuid)",
+    "definition_md5": "c725b42c2339e0cf173a665ee2dc2857",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.rls_auto_enable()",
+    "definition_md5": "6998ea6b4c2480f5d2e34b5dcf3f8d36",
+    "grants": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "signature": "public.search_public_geography_v1(p_query jsonb, p_limit integer, p_cursor jsonb)",
+    "definition_md5": "d0fd63712b5e097f81e80c1879910d94",
+    "grants": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.send_participation_conversation_message(p_expected_profile_id uuid, p_chat_id uuid, p_body text)",
+    "definition_md5": "9d728edba4026c18d74d106483ef0c58",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.send_project_chat_message(p_expected_profile_id uuid, p_chat_id uuid, p_body text)",
+    "definition_md5": "95489bc99d03a6f77b431c22466d1453",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.send_project_join_request_chat_message(p_expected_profile_id uuid, p_chat_id uuid, p_body text)",
+    "definition_md5": "0cdf92d9d48b0662a00ee58b081636f2",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.send_resource_request_chat_message(p_expected_profile_id uuid, p_chat_id uuid, p_body text)",
+    "definition_md5": "5f91d4ef668c64542e86f16d3c1421cb",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.set_group_directory_suppression(p_expected_staff_profile_id uuid, p_group_id uuid, p_client_request_id uuid, p_expected_version bigint, p_directory_suppressed boolean, p_reason text)",
+    "definition_md5": "61fa19c3829445f14aff9ed899ee1bb0",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.set_group_publication_state(p_expected_profile_id uuid, p_group_id uuid, p_client_request_id uuid, p_expected_version bigint, p_publication_state text)",
+    "definition_md5": "d265b359274db448ee726ac2d4a56b27",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.set_own_notification_preference(p_expected_profile_id uuid, p_category_slug text, p_in_app_enabled boolean, p_push_enabled boolean)",
+    "definition_md5": "6ab5eb9c5326cf12e755e28769a8b64e",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.set_own_profile_photo(p_expected_profile_id uuid, p_object_path text, p_audience text)",
+    "definition_md5": "024bee530444c078c8c6d133ddc4ae43",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.set_own_profile_photo_audience(p_expected_profile_id uuid, p_audience text)",
+    "definition_md5": "41d1f5655b29cc63eaa9d1869a21b596",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.set_own_project_cover(p_expected_creator_profile_id uuid, p_project_id uuid, p_object_path text)",
+    "definition_md5": "4d2b14f409b817249daf4914312bcc33",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.set_own_resource_listing_cover(p_expected_owner_profile_id uuid, p_listing_id uuid, p_object_path text)",
+    "definition_md5": "ebdb68f5686383ef481efb752d768eb4",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.set_project_requirement_manual_coverage(p_expected_creator_profile_id uuid, p_project_id uuid, p_requirement_kind text, p_requirement_id uuid, p_is_covered boolean)",
+    "definition_md5": "5834097df111353a5d93ef723ee9a280",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.set_project_requirement_manual_coverage_as_manager(p_expected_manager_profile_id uuid, p_project_id uuid, p_requirement_kind text, p_requirement_id uuid, p_is_covered boolean)",
+    "definition_md5": "1b6ef0315343bca519cc4e510c3eb4d9",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.set_project_shared_workspace(p_expected_manager_profile_id uuid, p_project_id uuid, p_workspace_url text)",
+    "definition_md5": "420c8af8955126c728a01421702496e9",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.step_down_project_authority(p_expected_profile_id uuid, p_delegate_id uuid)",
+    "definition_md5": "a443e2250c2df4bc76469a031cf273bc",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.submit_group_corroboration_response(p_expected_recipient_profile_id uuid, p_request_id uuid, p_client_submission_id uuid, p_choice text, p_explanation text)",
+    "definition_md5": "7981917740a91e9676ff50610056b251",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.submit_moderation_report(p_expected_reporter_profile_id uuid, p_client_submission_id uuid, p_category text, p_explanation text, p_target_kind text, p_target_id uuid, p_context_kind text, p_context_id uuid)",
+    "definition_md5": "005237a11e85ea8f712da438dd50a1b7",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.submit_resource_counterstatement(p_expected_recipient_profile_id uuid, p_request_id uuid, p_client_submission_id uuid, p_statement text)",
+    "definition_md5": "9345afaf4447a9a304d68458d36c0da2",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.transition_moderation_case(p_expected_staff_profile_id uuid, p_case_id uuid, p_expected_state_version bigint, p_target_state text)",
+    "definition_md5": "af768da8a2b90496abe893a10946990d",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.unblock_user(p_expected_blocker_profile_id uuid, p_blocked_profile_id uuid)",
+    "definition_md5": "071e2064b60814def93e8c85be1e2f7f",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.unregister_own_push_installation(p_expected_profile_id uuid, p_installation_id uuid)",
+    "definition_md5": "84c2b1a98baefdb0c8a3acfc0561cc75",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.update_group(p_expected_profile_id uuid, p_group_id uuid, p_client_request_id uuid, p_expected_version bigint, p_content jsonb)",
+    "definition_md5": "0f5ecad1eb00e7f09f290c901cbace7b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.update_own_profile(p_expected_profile_id uuid, p_display_name text, p_bio text, p_skill_ids uuid[], p_display_name_audience text, p_bio_audience text, p_skills_audience text)",
+    "definition_md5": "b55e3582fa9b13276da4f2b3e12c4064",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.update_own_proposal(p_expected_creator_profile_id uuid, p_proposal_id uuid, p_title text, p_summary text, p_description text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_event_timezone text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_skill_ids uuid[], p_skill_importances text[])",
+    "definition_md5": "cabdec64de92071421058d3b83bda35b",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.update_own_proposal(p_expected_creator_profile_id uuid, p_proposal_id uuid, p_title text, p_summary text, p_description text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_event_timezone text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_skill_ids uuid[], p_skill_importances text[], p_people_capacity integer)",
+    "definition_md5": "c5a71404d065cc9893855f16d7863c67",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.update_own_proposal(p_expected_creator_profile_id uuid, p_proposal_id uuid, p_title text, p_summary text, p_description text, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_event_timezone text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_skill_ids uuid[], p_skill_importances text[], p_registration_capacity integer, p_count_organizers_toward_capacity boolean)",
+    "definition_md5": "0239f4ef3dd072442a282faa7122596a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.update_own_recurring_activity(p_expected_creator_profile_id uuid, p_recurring_activity_id uuid, p_title text, p_summary text, p_description text, p_topic text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_recurrence_type text, p_weekday integer, p_day_of_month integer, p_local_start_time time without time zone, p_duration_minutes integer, p_event_timezone text, p_effective_from date)",
+    "definition_md5": "39c8e92b99f5e79b35a0a23597715fd3",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.update_own_recurring_activity(p_expected_creator_profile_id uuid, p_recurring_activity_id uuid, p_title text, p_summary text, p_description text, p_topic text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_recurrence_type text, p_weekday integer, p_day_of_month integer, p_local_start_time time without time zone, p_duration_minutes integer, p_event_timezone text, p_effective_from date, p_people_capacity integer)",
+    "definition_md5": "2ee65d545246d86f483e42a298608275",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.update_own_recurring_activity(p_expected_creator_profile_id uuid, p_recurring_activity_id uuid, p_title text, p_summary text, p_description text, p_topic text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text, p_exact_meeting_text text, p_exact_location_visibility text, p_recurrence_type text, p_weekday integer, p_day_of_month integer, p_local_start_time time without time zone, p_duration_minutes integer, p_event_timezone text, p_effective_from date, p_registration_capacity integer, p_count_organizers_toward_capacity boolean)",
+    "definition_md5": "d6aaf4a5f3bef625feb5e77d33eb4ad7",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.update_own_resource_listing(p_expected_owner_profile_id uuid, p_listing_id uuid, p_listing_mode text, p_title text, p_description text, p_country_code text, p_locality text, p_administrative_area text, p_public_location_label text)",
+    "definition_md5": "1489e08c0167d3ceaf3eae1b48754f58",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.update_project_resource_need(p_expected_creator_profile_id uuid, p_resource_need_id uuid, p_title text, p_details text)",
+    "definition_md5": "d6d93ee36e18bc63db071789b77dd9c1",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.update_resource_saved_search(p_expected_profile_id uuid, p_saved_search_id uuid, p_query text, p_listing_mode text, p_locality text)",
+    "definition_md5": "c1c4f7d56026c5d60d79b23942b15a43",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.withdraw_project_join_request(p_expected_requester_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "343d85f6c0d9e224dc559d995949579a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.withdraw_resource_exchange_terms(p_expected_profile_id uuid, p_agreement_id uuid, p_expected_pending_terms_id uuid)",
+    "definition_md5": "08eb8168dde43b5fb38e5e0a2c51ac45",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "signature": "public.withdraw_resource_listing_request(p_expected_requester_profile_id uuid, p_request_id uuid)",
+    "definition_md5": "658e66f99d2ac1584f0dbc1dd868c19a",
+    "grants": "{postgres=X/postgres,authenticated=X/postgres}"
+  }
+]

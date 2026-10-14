@@ -1,0 +1,25 @@
+{
+  "pending": [
+    "20261011132245_project_workspace_named_links.sql",
+    "20261011180000_location_text_provenance.sql",
+    "20261012091701_profile_content_only_update.sql",
+    "20261012094725_chat_list_group_covers.sql",
+    "20261012104716_proposal_skills_management.sql",
+    "20261012110923_group_membership_and_authority.sql",
+    "20261012111424_group_relationship_api.sql",
+    "20261012111833_group_membership_blocking_and_grants.sql",
+    "20261012152803_group_exact_self_membership_context.sql",
+    "20261013100000_group_project_attribution.sql",
+    "20261013100100_group_project_atomic_creation.sql",
+    "20261013100200_group_project_publish_revision.sql",
+    "20261013175400_project_workspace_paging_and_recovery.sql"
+  ],
+  "preserved_tables": 110,
+  "preserved_rows": 2958,
+  "local_history_count": 96,
+  "public_proposal_count": 10,
+  "public_group_empty_cases": 2,
+  "v4_v5_compatibility": true,
+  "populated_message_count": 2,
+  "anonymous_and_cross_account_denied": true
+}

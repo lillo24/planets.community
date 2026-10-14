@@ -1,0 +1,585 @@
+[
+  {
+    "version": "20260901200051",
+    "name": "database_security_foundation",
+    "statement_count": 12,
+    "joined_md5": "51dc1b292644dfbc3716a6aea7a49ff4",
+    "compact_md5": "6dc90f5479df875a265c1733b743224d"
+  },
+  {
+    "version": "20260901211937",
+    "name": "identity_audit_outbox_primitives",
+    "statement_count": 16,
+    "joined_md5": "3c4ea55b6fcf6d8d82a5de77a7d45760",
+    "compact_md5": "b0489a2ee396879351bf75dfad833c2f"
+  },
+  {
+    "version": "20260902192101",
+    "name": "basic_profiles_skills_visibility",
+    "statement_count": 50,
+    "joined_md5": "6dc572368105a0c35b24cd7d51abd083",
+    "compact_md5": "deef4e35ef84593cdd48530a93195fc3"
+  },
+  {
+    "version": "20260903082017",
+    "name": "one_time_proposals_and_discovery",
+    "statement_count": 70,
+    "joined_md5": "fb52f23e65ca9a372332ccdeb3876589",
+    "compact_md5": "580eed12eed8328c8b979c4aab58aa34"
+  },
+  {
+    "version": "20260903201641",
+    "name": "recurring_activity_domain_foundation",
+    "statement_count": 91,
+    "joined_md5": "fe5480d5212d1945b9b55cc384a07e8c",
+    "compact_md5": "49afcb1f805749a56e2b2d3a94a60847"
+  },
+  {
+    "version": "20260908164407",
+    "name": "project_participation_domain_foundation",
+    "statement_count": 73,
+    "joined_md5": "336c14655cc04c940981e217cc6d70db",
+    "compact_md5": "c27436332c0a0dff0e4e942a7e43c394"
+  },
+  {
+    "version": "20260908200948",
+    "name": "notification_domain_outbox_projection",
+    "statement_count": 62,
+    "joined_md5": "69ba60c4392f9d75c1104b4b4197b546",
+    "compact_md5": "9e48365b095107a40800237f03083fd3"
+  },
+  {
+    "version": "20260909162645",
+    "name": "messages_structured_participation_requests",
+    "statement_count": 12,
+    "joined_md5": "0defad49e1aea341327901a2f8e43085",
+    "compact_md5": "3616b301290e30d460dd02c787276cfb"
+  },
+  {
+    "version": "20260912174300",
+    "name": "push_installation_delivery_job_foundation",
+    "statement_count": 43,
+    "joined_md5": "e3e0af6f86ad7aa8520cac9c71f05acf",
+    "compact_md5": "a79bcad3c3d9d639a6a111e71dac0d20"
+  },
+  {
+    "version": "20260912193149",
+    "name": "push_delivery_attempt_worker_protocol",
+    "statement_count": 42,
+    "joined_md5": "e7dc8b68d11cba4f8d9d34a7785bf569",
+    "compact_md5": "211cfc196276803c832b17a5a0e08d96"
+  },
+  {
+    "version": "20260913063431",
+    "name": "participation_aware_browse_pending_requests",
+    "statement_count": 9,
+    "joined_md5": "f268b2c50a32c6a0c495bbe59ee9e679",
+    "compact_md5": "c4e57069317f3fe8d459ea696342c4af"
+  },
+  {
+    "version": "20260913084320",
+    "name": "project_group_chat_lifecycle_authorization",
+    "statement_count": 36,
+    "joined_md5": "bd14e2694de4bfbde1fedd27851f4021",
+    "compact_md5": "43dacbf7763d30d2a9cc4167a2082bbc"
+  },
+  {
+    "version": "20260913134856",
+    "name": "project_chat_message_domain_realtime",
+    "statement_count": 42,
+    "joined_md5": "165a768087e00bde2f34fa1f804e5f30",
+    "compact_md5": "39014e5d3fb08a5f74d5866abf1e13fc"
+  },
+  {
+    "version": "20260914110554",
+    "name": "project_chat_notification_projection_mobile_alerts",
+    "statement_count": 33,
+    "joined_md5": "45192e20e1663d8ba8293186498e0778",
+    "compact_md5": "a4e931d27500b2a7bc058ca49f4eee68"
+  },
+  {
+    "version": "20260914134222",
+    "name": "scambio_dona_listing_domain_foundation",
+    "statement_count": 54,
+    "joined_md5": "302a26743dbcdc4daa66de1fd27b93c2",
+    "compact_md5": "36ec715ab41b75fe32459e5be8236a67"
+  },
+  {
+    "version": "20260915090235",
+    "name": "project_resource_needs_domain_foundation",
+    "statement_count": 37,
+    "joined_md5": "f84527d6f4da53b4bde862eab73b9eee",
+    "compact_md5": "357fe12c55967c687e7446274d066018"
+  },
+  {
+    "version": "20260915100846",
+    "name": "join_request_contribution_selection_domain",
+    "statement_count": 19,
+    "joined_md5": "42131a768b15fa6a61852aa4530e5de6",
+    "compact_md5": "00dfa5b769639c263aab637a22bbb57d"
+  },
+  {
+    "version": "20260917133005",
+    "name": "current_participant_commitments",
+    "statement_count": 34,
+    "joined_md5": "364fedb874bd828e6957468768c7f5b3",
+    "compact_md5": "82402db886f73c451823acec5ad7a78c"
+  },
+  {
+    "version": "20260918081948",
+    "name": "join_acceptance_contribution_triage_domain",
+    "statement_count": 26,
+    "joined_md5": "17ac9763978ab37bb2bf1f75c4ab5e94",
+    "compact_md5": "70210fc88b38448d945e23b418f0a4c0"
+  },
+  {
+    "version": "20260918102402",
+    "name": "live_project_requirement_coverage_domain",
+    "statement_count": 77,
+    "joined_md5": "196e7292a472335b8e2cf4a0d3e1e9d2",
+    "compact_md5": "83181504e1a68d6e8efcdd826b45e0b3"
+  },
+  {
+    "version": "20260918131216",
+    "name": "structured_group_need_resurfacing_attention_domain",
+    "statement_count": 39,
+    "joined_md5": "7b0335c8c33c9c9010307876370572b0",
+    "compact_md5": "07320e46d4354dd6a8908264da05ffb7"
+  },
+  {
+    "version": "20260918180243",
+    "name": "one_time_actual_contribution_attribution_domain",
+    "statement_count": 37,
+    "joined_md5": "80d09674a79a2fb968bbfc8f5d4296d8",
+    "compact_md5": "1c8aefb9cceca32cef59acbbe1b969c3"
+  },
+  {
+    "version": "20260919111637",
+    "name": "postgrest_safe_conflict_sqlstates",
+    "statement_count": 3,
+    "joined_md5": "fc2dacb60a575ea8fc7274fe75b1646b",
+    "compact_md5": "6aad5c474ae64f19d815db310ef5b9ba"
+  },
+  {
+    "version": "20260919135332",
+    "name": "scambio_dona_resource_request_domain",
+    "statement_count": 55,
+    "joined_md5": "660d369337ccc7649479462c33ee98b5",
+    "compact_md5": "63f5c1ad3b3b7ed0b6e938b22cfe4805"
+  },
+  {
+    "version": "20260919195434",
+    "name": "reliable_scambio_agreement_loan_barter_domain",
+    "statement_count": 108,
+    "joined_md5": "dc04570a10b697cd74b228abe4b11de8",
+    "compact_md5": "231436e1a471fd69629f5121b0675146"
+  },
+  {
+    "version": "20260920084219",
+    "name": "accepted_resource_request_conversation_domain",
+    "statement_count": 51,
+    "joined_md5": "755c2f212ad0d9cf97c694804bea8955",
+    "compact_md5": "118881bc1a8d7e08abd5ba9d376e9f3d"
+  },
+  {
+    "version": "20260920123000",
+    "name": "unified_messages_resource_notification_projection",
+    "statement_count": 72,
+    "joined_md5": "8e87315838c466fa1f1befd6b216911a",
+    "compact_md5": "e4e3b531c88bf0f407a8d08ef6ff7f16"
+  },
+  {
+    "version": "20260920160723",
+    "name": "non_null_resource_exchange_terms_flags",
+    "statement_count": 1,
+    "joined_md5": "9f80da2b145e882063ef85a07c9b12c5",
+    "compact_md5": "e3fb9758efce14c6269dd0218fad1344"
+  },
+  {
+    "version": "20260922090000",
+    "name": "loan_reservation_conflict_domain",
+    "statement_count": 26,
+    "joined_md5": "1d8f78f7a55a1b8d42f61af93922aea5",
+    "compact_md5": "abd1d25427bc4cf71cbe0dcf52fc4795"
+  },
+  {
+    "version": "20260922120000",
+    "name": "explainable_project_resource_matching",
+    "statement_count": 12,
+    "joined_md5": "013c943922b932f7caaa6067be244cf2",
+    "compact_md5": "1d9dde01e5131bfd879c3cf73f3c9267"
+  },
+  {
+    "version": "20260925092956",
+    "name": "add_proposal_discovery_query",
+    "statement_count": 10,
+    "joined_md5": "6214c9d05f9ee47d827a765c56dd4dcb",
+    "compact_md5": "7057b5df9b7f07339378a47d9a162833"
+  },
+  {
+    "version": "20260925112156",
+    "name": "personal_saved_resource_search_domain",
+    "statement_count": 35,
+    "joined_md5": "7fbb1b3fc36ffbca8c77deb3ab7ae02e",
+    "compact_md5": "43d26d9315b5eac3f8a25220eabace98"
+  },
+  {
+    "version": "20260925142259",
+    "name": "saved_search_new_listing_match_projection",
+    "statement_count": 13,
+    "joined_md5": "e1a64fdf82e6efbd7ae466004c1aad07",
+    "compact_md5": "c9102910f22ea3b37663d5eab1670c11"
+  },
+  {
+    "version": "20260925151612",
+    "name": "immediate_saved_search_match_notification_projection",
+    "statement_count": 19,
+    "joined_md5": "e24bbde92dea7b3e5b0cf2ca2fa350fd",
+    "compact_md5": "fce471d343b562590b8a5f5c9aa11e1b"
+  },
+  {
+    "version": "20260926102538",
+    "name": "open_stack_database_gate_stabilization",
+    "statement_count": 4,
+    "joined_md5": "c7c01a02bd68298ffddfc08fcaeb36a3",
+    "compact_md5": "3c9a4d1370b1274332d24a854ec0ee94"
+  },
+  {
+    "version": "20260926103400",
+    "name": "repair_project_chat_ambiguities",
+    "statement_count": 3,
+    "joined_md5": "ae188852905b19fd729fa6c5fcdf9c0d",
+    "compact_md5": "c94f9f5d7924eb61df574357cd39e71a"
+  },
+  {
+    "version": "20260926122235",
+    "name": "profile_photo_storage_domain",
+    "statement_count": 33,
+    "joined_md5": "8ed22c987907a7d4b84a2fdde05c608c",
+    "compact_md5": "0b23d3e02c16d7bda5ab1948e141c64b"
+  },
+  {
+    "version": "20260926141814",
+    "name": "project_join_request_private_chat_domain",
+    "statement_count": 44,
+    "joined_md5": "096e57b844692166265da15c1de3c5bc",
+    "compact_md5": "5f1e4e4ca65e0095725b346ee4cc0a1d"
+  },
+  {
+    "version": "20260926150624",
+    "name": "profile_photo_viewer_access",
+    "statement_count": 16,
+    "joined_md5": "2b79ff00f6b2d8997309fdddfd3451ac",
+    "compact_md5": "d5f4fbf65085b9e4d029b5b14ba2fbcb"
+  },
+  {
+    "version": "20260926185124",
+    "name": "scoped_participation_request_chats",
+    "statement_count": 4,
+    "joined_md5": "7ea6f2686128ae49e8571e7c7663bd70",
+    "compact_md5": "6dfcc0346919913e79fe1954ee3f9b4b"
+  },
+  {
+    "version": "20260927054617",
+    "name": "personal_project_profile_photo_trust_gates",
+    "statement_count": 30,
+    "joined_md5": "e4aeaa879fe9b6111fd6e83d6f9c33ec",
+    "compact_md5": "81338a996098a329847fe76e545f4ee3"
+  },
+  {
+    "version": "20260927060206",
+    "name": "project_delegate_domain",
+    "statement_count": 121,
+    "joined_md5": "bb6d43898b26195319b7b4f4992e5642",
+    "compact_md5": "61af1734950ce900bf1af1c749fee625"
+  },
+  {
+    "version": "20260927074009",
+    "name": "scambio_dona_profile_photo_trust_integration",
+    "statement_count": 26,
+    "joined_md5": "12030089d58671b1414831ea875a2ec2",
+    "compact_md5": "3ac192113ebcc534d30e14ea11d3dab1"
+  },
+  {
+    "version": "20260927075624",
+    "name": "project_delegate_ux_reads",
+    "statement_count": 8,
+    "joined_md5": "4ccd68d7cfb807cb22be24dbd734a38a",
+    "compact_md5": "bef277d62bfe82f8fc7cc28bec15b59d"
+  },
+  {
+    "version": "20260927103437",
+    "name": "delegate_participant_independence",
+    "statement_count": 2,
+    "joined_md5": "92941df6e7298185437f54684f7fa82e",
+    "compact_md5": "c067d84e874e6b1cf4c62088180b62ff"
+  },
+  {
+    "version": "20260928063450",
+    "name": "reporting_moderation_foundation",
+    "statement_count": 87,
+    "joined_md5": "d6f7779583d7596c66bf8457154ad0f1",
+    "compact_md5": "bc429983627374aac978221c7a32e9e9"
+  },
+  {
+    "version": "20260928064452",
+    "name": "cover_media_domain_foundation",
+    "statement_count": 142,
+    "joined_md5": "76e3661560d537cf7f8d2d6a9db72209",
+    "compact_md5": "afa3f4465f4deb5f5ced98610bd14610"
+  },
+  {
+    "version": "20260928075820",
+    "name": "project_cocreator_domain_authority",
+    "statement_count": 104,
+    "joined_md5": "b6a1439cfff9defd3254ae2d222670ba",
+    "compact_md5": "ff9c8253001da2ff9fd018751accc6a9"
+  },
+  {
+    "version": "20260928083634",
+    "name": "group_case_corroboration",
+    "statement_count": 34,
+    "joined_md5": "8c912f7aa6b1e920f62aab075e1a5605",
+    "compact_md5": "0c3ed731de47680dce16000c9fc8cf02"
+  },
+  {
+    "version": "20260928114506",
+    "name": "scambio_dona_counterstatement",
+    "statement_count": 30,
+    "joined_md5": "cf459d01ef6a9419b5bb820349818bd5",
+    "compact_md5": "6ff3d35c7bc868ae54d00876387215b7"
+  },
+  {
+    "version": "20260929155334",
+    "name": "user_blocking_domain_enforcement",
+    "statement_count": 89,
+    "joined_md5": "b93dd57b2b0b6a5c2dc0ab83792ed13c",
+    "compact_md5": "2704d06814fb444030d0fd93653f48bb"
+  },
+  {
+    "version": "20260929170514",
+    "name": "exact_outbound_block_status",
+    "statement_count": 4,
+    "joined_md5": "ea72f937eb443e79fdc4b5797ae03572",
+    "compact_md5": "cc6b4a9e0ea3994b589d27938d77255e"
+  },
+  {
+    "version": "20260929170746",
+    "name": "project_shared_workspace",
+    "statement_count": 21,
+    "joined_md5": "d0547b564cde835689f9b5e27381eaab",
+    "compact_md5": "38bc488a3c439258b2634a96a4d2272a"
+  },
+  {
+    "version": "20260929171419",
+    "name": "project_people_capacity_fullness",
+    "statement_count": 49,
+    "joined_md5": "f671d134e6036677bb3804054cb9a52c",
+    "compact_md5": "70b41fddcc284159f67fb098d34c8d44"
+  },
+  {
+    "version": "20260930140814",
+    "name": "organizer_aware_capacity_headcount",
+    "statement_count": 60,
+    "joined_md5": "4213e17aae34dc2289fa13e29c9cf17a",
+    "compact_md5": "5d2ffd3d9335e81c750e6fe634bb2db3"
+  },
+  {
+    "version": "20261001072748",
+    "name": "founder_qa_mobile_stabilization",
+    "statement_count": 13,
+    "joined_md5": "4a82b0a4a528a16820ab1e8ef7d18f94",
+    "compact_md5": "f8fe79a439132b6955af840985a67a0b"
+  },
+  {
+    "version": "20261002103310",
+    "name": "unified_project_people_role_offers",
+    "statement_count": 45,
+    "joined_md5": "b5f2db5e0f901ca0e77dbb10b81e96d5",
+    "compact_md5": "ca4ee4dffa76aa94d0429c17b9770e96"
+  },
+  {
+    "version": "20261003125732",
+    "name": "direct_participant_invitations",
+    "statement_count": 47,
+    "joined_md5": "d323f8e6603729735c66b3f881ba6299",
+    "compact_md5": "5025bd6799ff93a87821e83351518d39"
+  },
+  {
+    "version": "20261003125831",
+    "name": "source_linked_proposal_template_workshop",
+    "statement_count": 36,
+    "joined_md5": "e1538098145c85d04febe7a369806a13",
+    "compact_md5": "c803b27b58bc65a0d3ec6bc5b596821e"
+  },
+  {
+    "version": "20261003191351",
+    "name": "template_reporting_and_removal",
+    "statement_count": 29,
+    "joined_md5": "a1b8d6e453c1fd8c657ccd7e08fb6304",
+    "compact_md5": "d16149d0871268857cdf4cf9a740091d"
+  },
+  {
+    "version": "20261004145334",
+    "name": "template_to_draft_creation",
+    "statement_count": 13,
+    "joined_md5": "8a0723f0a1f0f330b0521a73ef065f91",
+    "compact_md5": "dc925835d0641af013794e84de39148c"
+  },
+  {
+    "version": "20261004200147",
+    "name": "idempotent_editor_draft_creation",
+    "statement_count": 10,
+    "joined_md5": "ee03f356a04822abe457f60a85a9cdd6",
+    "compact_md5": "247497f5d8f37d0fdc6c81178f60acc1"
+  },
+  {
+    "version": "20261005104541",
+    "name": "similar_active_proposal_matching",
+    "statement_count": 8,
+    "joined_md5": "b9f955b14e33d25ca1b941e4e4130336",
+    "compact_md5": "675a3a42d803d07b7063872670bbea21"
+  },
+  {
+    "version": "20261005111132",
+    "name": "delegated_participation_notification_actor",
+    "statement_count": 1,
+    "joined_md5": "62d0685091115829f5f2c3cca2164cf9",
+    "compact_md5": "42683a2f283bb7f25d1c3cef7cb1579b"
+  },
+  {
+    "version": "20261006101031",
+    "name": "participation_pair_conversations",
+    "statement_count": 57,
+    "joined_md5": "1f76d17e1d7a6fa79c6ff193cc360a37",
+    "compact_md5": "5d6ace6e057e0a0e98f0fc0d8ebfa006"
+  },
+  {
+    "version": "20261006131533",
+    "name": "message_unread_activity_separation",
+    "statement_count": 53,
+    "joined_md5": "8e095be3bed99e56440903dc7bb79c2b",
+    "compact_md5": "e159c46e31a4eaf8343f2a944582eb6e"
+  },
+  {
+    "version": "20261007090000",
+    "name": "new_template_draft_italy_timezone",
+    "statement_count": 2,
+    "joined_md5": "c2b6ea2baf6254cc8b3d1591d4312788",
+    "compact_md5": "4db2d61352d6788ff41810adf7a1e093"
+  },
+  {
+    "version": "20261007103000",
+    "name": "push_projector_receipt_recheck",
+    "statement_count": 1,
+    "joined_md5": "374a44edde8507755d688407c5d59455",
+    "compact_md5": "ca542496cd651a33e4e4caf7064b4746"
+  },
+  {
+    "version": "20261007103322",
+    "name": "messages_list_activity_preview",
+    "statement_count": 4,
+    "joined_md5": "ad94d7ada34798ad078c6f7bba9cd58b",
+    "compact_md5": "e9b2cfa9694da140dedf11c9f45ba82f"
+  },
+  {
+    "version": "20261008124856",
+    "name": "geoapify_shared_location_foundation",
+    "statement_count": 57,
+    "joined_md5": "de9c3b2b5390dc0c6b9cd0318d6e93f4",
+    "compact_md5": "ac3849b97f26fda74bf68a75be645357"
+  },
+  {
+    "version": "20261008144158",
+    "name": "map02_idempotent_editor_drafts",
+    "statement_count": 20,
+    "joined_md5": "91d0c211d78ee42f6e8d68d5cc547c20",
+    "compact_md5": "2c8ccdb406e8a0d327ed9c25d2230430"
+  },
+  {
+    "version": "20261008193521",
+    "name": "map03_location_previews",
+    "statement_count": 23,
+    "joined_md5": "62ff6d26a2d9c21b6950c09ae44da3dd",
+    "compact_md5": "ff285846c7d3f89016806b24a8c48145"
+  },
+  {
+    "version": "20261009070032",
+    "name": "map04_geographic_discovery",
+    "statement_count": 12,
+    "joined_md5": "2789928b7f58ed86615c6b0099f4e9ca",
+    "compact_md5": "d2559b6041937a34634f83cb3679aa81"
+  },
+  {
+    "version": "20261009083736",
+    "name": "map05_interactive_discovery_provider",
+    "statement_count": 24,
+    "joined_md5": "2badddcd7454de194b6725f9c8decc2d",
+    "compact_md5": "12d9ef36a45edc74bd7cfe006870d40e"
+  },
+  {
+    "version": "20261010075613",
+    "name": "defined_proposal_city_only",
+    "statement_count": 3,
+    "joined_md5": "bc6fab42e2975dc42c2ee8867c3a12cf",
+    "compact_md5": "f53b0be846980ae76ed3f3e2f5b54edc"
+  },
+  {
+    "version": "20261010112941",
+    "name": "public_idea_definition_phase",
+    "statement_count": 1,
+    "joined_md5": "5efbc1897b0546f2633699803a78e056",
+    "compact_md5": "3bcce7114a9e1920948956ced2b95d45",
+    "trimmed_file_md5": "dc78cdd3179f8a36439aaa18cd27aa19"
+  },
+  {
+    "version": "20261010131622",
+    "name": "proposal_inline_location_privacy",
+    "statement_count": 14,
+    "joined_md5": "99de846ce2b293b62d4c2fcf513a04bc",
+    "compact_md5": "eb24100dc111b7b425e4dddefaa954e7"
+  },
+  {
+    "version": "20261010173000",
+    "name": "idea_location_privacy_integration",
+    "statement_count": 1,
+    "joined_md5": "a5c7457353c2b4cadd7387695f11229a",
+    "compact_md5": "521611eb799c8f735f4c7515bb3203bb",
+    "trimmed_file_md5": "61226c4f6e9550f232e270a85a681bf9"
+  },
+  {
+    "version": "20261011082932",
+    "name": "policy01b_account_acceptance",
+    "statement_count": 17,
+    "joined_md5": "4226ea80abf4abcb37ecc8114a31b1d8",
+    "compact_md5": "de914180d0c15658dcd74dbe40693dac"
+  },
+  {
+    "version": "20261011094930",
+    "name": "official_starter_templates",
+    "statement_count": 41,
+    "joined_md5": "d5fa9f92b94e1338a66be1e5138294c8",
+    "compact_md5": "401dcedfb10d15e52f84b58a6d5d46c8"
+  },
+  {
+    "version": "20261011100002",
+    "name": "project_organization_private_planning",
+    "statement_count": 27,
+    "joined_md5": "86d0721fccf374cbdab8dc9787d3bae0",
+    "compact_md5": "96353cc06f512cfd4304f5e7d6ada8fd"
+  },
+  {
+    "version": "20261011141035",
+    "name": "persistent_groups_backend",
+    "statement_count": 45,
+    "joined_md5": "5f3bf307ba50f610413b059584b19e1c",
+    "compact_md5": "2ab3d9b6a260ec39ed502aa458df2ebc"
+  },
+  {
+    "version": "20261011141420",
+    "name": "persistent_group_reporting",
+    "statement_count": 14,
+    "joined_md5": "4ddcdc13f8ad258b748c56f4af69f35d",
+    "compact_md5": "0a19b35efe767a9e0c85449751552287"
+  }
+]
