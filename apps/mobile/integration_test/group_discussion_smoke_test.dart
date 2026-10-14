@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -20,6 +21,8 @@ import 'package:planets_mobile/features/group_discussions/presentation/discussio
 import 'package:planets_mobile/features/messages/presentation/messages_navigation.dart';
 import 'package:planets_mobile/features/messages/domain/message_chat_models.dart';
 import 'package:planets_mobile/features/policies/data/policy_acceptance_store.dart';
+import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
+import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
 import 'package:planets_mobile/features/settings/domain/language_preference.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -164,6 +167,33 @@ void main() {
       container.read(discussionChatProvider(room))!.invalidate();
       await harness.waitFor(tester, find.text('Fictional incoming message.'));
       await shot('chat-en');
+      expect(find.byKey(const Key('discussion-create-project')), findsNothing);
+      for (var n = 0; n < 31; n++) {
+        await peer.rpc(
+          'send_group_discussion_message',
+          params: {
+            'p_expected_profile_id': creator,
+            'p_client_request_id': const Uuid().v4(),
+            'p_room_id': room,
+            'p_body': 'Fictional older-page fixture $n.',
+          },
+        );
+      }
+      // Reopen a fresh bounded window rather than bypassing a disabled refresh
+      // control while the real private hints are still arriving.
+      router.go('/messages');
+      await tester.pump(const Duration(seconds: 1));
+      router.go(discussionRoute(room));
+      await harness.waitFor(tester, find.byKey(const Key('discussion-older')));
+      await tester.tap(find.byKey(const Key('discussion-older')));
+      await harness.waitUntil(
+        tester,
+        () => container
+            .read(discussionChatProvider(room))!
+            .messages
+            .any((m) => m.body == 'Fictional C native message.'),
+      );
+      expect(container.read(discussionChatProvider(room))!.messages.length, 33);
       expect(
         await container
             .read(languagePreferenceProvider.notifier)
@@ -197,7 +227,10 @@ void main() {
       expect(find.byKey(const Key('discussion-link-add')), findsNothing);
       await shot('links-it');
       router.pop();
-      await harness.waitFor(tester, find.text('Fictional incoming message.'));
+      await harness.waitFor(
+        tester,
+        find.text('Fictional older-page fixture 30.'),
+      );
       router.go('/groups/$group');
       await harness.waitFor(tester, find.byKey(const Key('group-discussions')));
       await harness.reveal(tester, find.byKey(const Key('group-discussions')));
@@ -226,9 +259,183 @@ void main() {
         gateway.room(member, room),
         throwsA(isA<PostgrestException>()),
       );
+      // A separate genuinely authenticated publisher exercises the handoff.
+      // The former member above cannot see this room or its links.
+      final projects = _LostProjectReply(peer);
+      final publisher = ProviderContainer(
+        overrides: [
+          appConfigProvider.overrideWithValue(config),
+          supabaseClientProvider.overrideWithValue(peer),
+          authGatewayProvider.overrideWithValue(_VerifiedIdentity(creator)),
+          proposalGatewayProvider.overrideWithValue(projects),
+          policyAcceptanceStoreProvider.overrideWithValue(
+            _RealPolicyStore(peer),
+          ),
+          initialLanguagePreferenceProvider.overrideWithValue(
+            LanguagePreference.english,
+          ),
+        ],
+      );
+      addTearDown(publisher.dispose);
+      await publisher.read(authSessionProvider.notifier).start();
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: publisher,
+          child: const PlanetsApp(),
+        ),
+      );
+      final publisherRouter = publisher.read(appRouterProvider);
+      publisherRouter.go(discussionRoute(room));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('discussion-create-project')),
+      );
+      await tester.tap(find.byKey(const Key('discussion-workspace')));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('discussion-link-add')),
+      );
+      await tester.tap(find.byKey(const Key('discussion-link-add')));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('discussion-link-name')),
+      );
+      await tester.enterText(
+        find.byKey(const Key('discussion-link-name')),
+        'Foglio C native',
+      );
+      await tester.enterText(
+        find.byKey(const Key('discussion-link-url')),
+        'https://example.invalid/native-sheet',
+      );
+      await tester.tap(find.byKey(const Key('discussion-link-save')));
+      await harness.waitFor(tester, find.text('Foglio C native'));
+      final card = find.ancestor(
+        of: find.text('Foglio C native'),
+        matching: find.byType(Card),
+      );
+      final edit = find.descendant(
+        of: card,
+        matching: find.widgetWithText(TextButton, 'Edit workspace'),
+      );
+      await tester.ensureVisible(edit);
+      await tester.tap(edit);
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('discussion-link-name')),
+      );
+      await tester.enterText(
+        find.byKey(const Key('discussion-link-name')),
+        'Documento C native reviewed',
+      );
+      await tester.tap(find.byKey(const Key('discussion-link-save')));
+      await harness.waitFor(tester, find.text('Documento C native reviewed'));
+      await shot('manager-links-en');
+      await publisher
+          .read(languagePreferenceProvider.notifier)
+          .select(LanguagePreference.italian);
+      await tester.pump(const Duration(milliseconds: 300));
+      await shot('manager-links-it');
+      await publisher
+          .read(languagePreferenceProvider.notifier)
+          .select(LanguagePreference.english);
+      publisherRouter.pop();
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('discussion-create-project')),
+      );
+      final before = await projects.listOwnProposals(creator);
+      await tester.tap(find.byKey(const Key('discussion-create-project')));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('proposal-start-scratch')),
+      );
+      await shot('project-choice-en');
+      await tester.tap(find.byKey(const Key('proposal-start-scratch')));
+      await harness.waitFor(tester, find.byKey(const Key('proposal-title')));
+      expect((await projects.listOwnProposals(creator)).length, before.length);
+      await tester.enterText(
+        find.byKey(const Key('proposal-title')),
+        'Fictional C native reviewed idea',
+      );
+      await harness.reveal(tester, find.byKey(const Key('proposal-summary')));
+      await tester.enterText(
+        find.byKey(const Key('proposal-summary')),
+        'Explicitly supplied content from a fictional publisher.',
+      );
+      FocusManager.instance.primaryFocus?.unfocus();
+      await SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+      await harness.reveal(tester, find.byKey(const Key('proposal-mode-idea')));
+      await tester.tap(find.byKey(const Key('proposal-mode-idea')));
+      await tester.pump(const Duration(milliseconds: 300));
+      final save = find.byKey(const Key('proposal-save-draft'));
+      await harness.reveal(tester, save);
+      await tester.tap(save);
+      await harness.waitUntil(
+        tester,
+        () =>
+            publisherRouter.routerDelegate.state.uri.path ==
+                discussionRoute(room) ||
+            save.evaluate().isNotEmpty &&
+                (tester.widget(save) as ButtonStyleButton).onPressed != null,
+      );
+      if (publisherRouter.routerDelegate.state.uri.path !=
+          discussionRoute(room)) {
+        await harness.reveal(tester, save);
+        await tester.tap(save);
+      }
+      await harness.waitUntil(
+        tester,
+        () =>
+            publisherRouter.routerDelegate.state.uri.path ==
+            discussionRoute(room),
+      );
+      final after = await projects.listOwnProposals(creator);
+      expect(after.length, before.length + 1);
+      final createdProject = after.singleWhere(
+        (p) => p.title == 'Fictional C native reviewed idea',
+      );
+      expect(createdProject.groupBinding.groupId, group);
+      expect(projects.lost, true);
+      await harness.waitFor(
+        tester,
+        find.text('Fictional older-page fixture 30.'),
+      );
+      await shot('project-return-en');
+      await publisher
+          .read(languagePreferenceProvider.notifier)
+          .select(LanguagePreference.italian);
+      await tester.pump(const Duration(milliseconds: 300));
+      await shot('project-return-it');
       expect(tester.takeException(), isNull);
     },
   );
+}
+
+class _LostProjectReply extends SupabaseProposalGateway {
+  _LostProjectReply(super.client);
+  bool lost = false;
+  @override
+  Future<String> createDraft(
+    String actor,
+    ProposalInput input, {
+    String? clientRequestId,
+    String? groupId,
+  }) async {
+    final id = await super.createDraft(
+      actor,
+      input,
+      clientRequestId: clientRequestId,
+      groupId: groupId,
+    );
+    if (!lost && groupId != null) {
+      lost = true;
+      throw const SocketException(
+        'Synthetic lost committed C Project response.',
+      );
+    }
+    return id;
+  }
 }
 
 class _LostSendReply extends SupabaseDiscussionGateway {

@@ -1,4 +1,5 @@
 import '../../group_projects/domain/group_project_models.dart';
+import '../../group_projects/domain/group_project_creation_return.dart';
 import '../../group_projects/application/group_attribution_draft.dart';
 import '../../group_projects/data/group_project_gateway.dart';
 import '../../group_projects/presentation/group_project_widgets.dart';
@@ -858,6 +859,15 @@ class _RecurringActivityEditorScreenState
     ref.invalidate(ownRecurringActivitiesProvider);
     ref.invalidate(publicRecurringActivitiesProvider);
     if (!navigate) return true;
+    final origin = GoRouter.maybeOf(context) == null
+        ? null
+        : GoRouterState.of(context).extra;
+    if (origin is GroupProjectCreationReturn &&
+        origin.actor == identity &&
+        ref.read(authSessionProvider).identity?.id == identity) {
+      context.pop(GroupProjectCreationResult(identity, id));
+      return true;
+    }
     if (publish) {
       context.go('/tavoli/mine');
     } else if (widget.activityId == null) {

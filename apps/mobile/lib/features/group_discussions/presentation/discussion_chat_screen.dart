@@ -17,6 +17,7 @@ import '../data/discussion_gateway.dart';
 import '../domain/discussion_models.dart';
 import 'discussion_feedback.dart';
 import 'discussion_routes.dart';
+import 'discussion_project_start.dart';
 import 'discussion_widgets.dart';
 
 class DiscussionChatScreen extends ConsumerStatefulWidget {
@@ -396,6 +397,13 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
                 }
               },
               actions: [
+                if (room?.canPublish == true && c != null)
+                  DiscussionProjectStart(
+                    controller: c,
+                    source: room!,
+                    enabled:
+                        attempt?.busy != true && attempt?.uncertain != true,
+                  ),
                 if (room != null)
                   IconButton(
                     key: const Key('discussion-workspace'),

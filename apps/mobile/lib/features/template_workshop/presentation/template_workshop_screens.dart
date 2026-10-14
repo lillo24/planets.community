@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../group_projects/application/group_attribution_draft.dart';
+import '../../group_projects/domain/group_project_creation_return.dart';
 import '../../group_projects/data/group_project_gateway.dart';
 import '../../group_projects/presentation/group_project_widgets.dart';
 
@@ -111,14 +112,25 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
     if (_visiting) return;
     _visiting = true;
     try {
-      await context.push(
+      final origin = GoRouterState.of(context).extra;
+      final result = await context.push<Object?>(
         widget.groupId == null
             ? route
             : Uri(
                 path: route,
                 queryParameters: {'group': widget.groupId!},
               ).toString(),
+        extra: origin is GroupProjectCreationReturn ? origin : null,
       );
+      if (mounted &&
+          origin is GroupProjectCreationReturn &&
+          result is GroupProjectCreationResult &&
+          result.actor == origin.actor &&
+          ref.read(authSessionProvider).identity?.id == origin.actor &&
+          ModalRoute.of(context)?.isCurrent == true) {
+        context.pop(result);
+        return;
+      }
       if (mounted) await _refresh();
     } finally {
       _visiting = false;
@@ -443,8 +455,20 @@ class _TemplateWorkshopDetailScreenState
     }
     try {
       // The ordinary editor reads CURRENT owner data and owns its own session.
-      await context.push('/proposals/$id/edit');
+      final origin = GoRouterState.of(context).extra;
+      final result = await context.push<Object?>(
+        '/proposals/$id/edit',
+        extra: origin is GroupProjectCreationReturn ? origin : null,
+      );
       if (mounted && ref.read(authSessionProvider).identity?.id == actor) {
+        if (origin is GroupProjectCreationReturn &&
+            origin.actor == actor &&
+            result is GroupProjectCreationResult &&
+            result.actor == actor &&
+            ModalRoute.of(context)?.isCurrent == true) {
+          context.pop(result);
+          return;
+        }
         await _refresh();
       }
     } catch (_) {
