@@ -46,6 +46,24 @@ function client(role: string | null = "moderator", error: unknown = null) {
   } satisfies ModerationServerClient;
 }
 describe("case-scoped contact evidence", () => {
+  it("accepts only the fresh coordination note without source history", () => {
+    const fresh = {
+      ...message,
+      kind: "group_coordination_proposal",
+      title: "Fresh shared purpose",
+      body: "Fresh synthetic invitation",
+    };
+    expect(parseGroupContactEvidence(fresh).title).toBe("Fresh shared purpose");
+    expect(() =>
+      parseGroupContactEvidence({
+        ...fresh,
+        source_chat_id: message.target_id,
+      }),
+    ).toThrow();
+    expect(() =>
+      parseGroupContactEvidence({ ...fresh, title: null }),
+    ).toThrow();
+  });
   it("parses separate typed message and request targets", () => {
     expect(parseGroupContactEvidence(message)).toMatchObject({
       kind: "group_contact_message",

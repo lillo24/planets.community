@@ -2127,5 +2127,41 @@
   "contactRecover": "Verifica lo stato dell'invio",
   "contactRequestUnavailable": "Questa richiesta non è disponibile nel tuo contesto attuale.",
   "contactSender": "Invii come {name}",
-  "@contactSender": { "placeholders": { "name": { "type": "String" } } }
+  "@contactSender": { "placeholders": { "name": { "type": "String" } } },
+  "coordinationTitle": "Coordinamento tra gruppi",
+  "coordinationChooseGroups": "Scegli altri gruppi",
+  "coordinationGroupBounds": "Scegli da uno a tre gruppi pubblici. Ogni posto richiede una persona diversa.",
+  "coordinationSearchGroups": "Cerca gruppi pubblici, poi premi Invio",
+  "coordinationMoreGroups": "Altri gruppi",
+  "coordinationUseGroups": "Usa i gruppi selezionati",
+  "coordinationPending": "In attesa dei consensi",
+  "coordinationActive": "Coordinamento pronto",
+  "coordinationCanceled": "Annullato",
+  "coordinationAgree": "Conferma",
+  "coordinationInvitationDisclosure": "Questa nuova nota e la tua identità sono visibili ai due rappresentanti iniziali e ai responsabili autorizzati dei gruppi invitati. Scrivi solo ciò che scegli di condividere con loro.",
+  "coordinationClaimDisclosure": "Rivendica un posto per un gruppo a tuo nome. La tua identità e il gruppo rappresentato saranno condivisi con i rappresentanti iniziali per esaminare il pubblico proposto. Questa scelta non conferma il pubblico finale e non apre una chat.",
+  "coordinationConfirmDisclosure": "Acconsento a condividere il nuovo riepilogo e i nuovi messaggi esattamente con queste persone che rappresentano questi gruppi. Le conversazioni precedenti restano private. Ogni modifica al pubblico richiede una nuova conferma.",
+  "coordinationChangeDisclosure": "Sostituire i gruppi aggiuntivi? I loro posti precedenti e tutti i consensi saranno invalidati. I due rappresentanti iniziali rimangono.",
+  "coordinationCancelDisclosure": "Annullare definitivamente questa proposta? Nessuna appartenenza a gruppi o altra conversazione verrà modificata.",
+  "coordinationDeclineDisclosure": "Rifiutare definitivamente questa proposta? Non verrà creata una conversazione di coordinamento.",
+  "coordinationFreshHistory": "Una nuova conversazione parte da questo riepilogo senza messaggi precedenti. Possono entrare solo le persone esplicitamente confermate.",
+  "coordinationPropose": "Proponi un coordinamento tra gruppi",
+  "coordinationSeatNamed": "Rappresentante scelto",
+  "coordinationSeatWaiting": "In attesa di un rappresentante",
+  "coordinationAudienceWithheld": "I rappresentanti iniziali devono confermare il pubblico completo prima che venga condiviso con gli invitati.",
+  "coordinationConfirmed": "Pubblico confermato",
+  "coordinationAwaitingConfirmation": "In attesa di conferma",
+  "coordinationClaimGroup": "Rappresenta {group}",
+  "coordinationConfirm": "Conferma esattamente questo pubblico",
+  "coordinationChangeAudience": "Modifica i gruppi aggiuntivi",
+  "coordinationCancel": "Annulla la proposta",
+  "coordinationSource": "Apri la conversazione originale",
+  "coordinationReport": "Segnala questo invito",
+  "@coordinationClaimGroup": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  }
 }

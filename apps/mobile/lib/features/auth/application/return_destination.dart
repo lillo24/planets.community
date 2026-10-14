@@ -1,6 +1,7 @@
 import '../../project_participant_invites/presentation/participant_invitation_routes.dart';
 import '../../project_delegates/presentation/project_delegate_routes.dart';
 import '../../group_contact/presentation/group_contact_routes.dart';
+import '../../group_coordination/presentation/coordination_routes.dart';
 
 const defaultReturnDestination = '/';
 
@@ -27,7 +28,12 @@ String sanitizeReturnDestination(String? candidate) {
   }
   if ((uri.path.contains('/group-contact/') ||
           (uri.path.startsWith('/groups/') && uri.path.endsWith('/contact'))) &&
-      !isGroupContactContinuation(candidate)) {
+      !isGroupContactContinuation(candidate) &&
+      !isCoordinationContinuation(candidate)) {
+    return defaultReturnDestination;
+  }
+  if (uri.path.contains('/group-coordination/') &&
+      !isCoordinationContinuation(candidate)) {
     return defaultReturnDestination;
   }
   return uri.toString();

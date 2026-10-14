@@ -14,6 +14,8 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/group_contact/data/group_contact_gateway.dart';
 import 'package:planets_mobile/features/group_contact/presentation/group_contact_routes.dart';
 import 'package:planets_mobile/features/group_contact/presentation/group_contact_compose_screen.dart';
+import 'package:planets_mobile/features/group_coordination/presentation/coordination_routes.dart';
+import 'package:planets_mobile/features/group_coordination/presentation/coordination_screen.dart';
 import 'package:planets_mobile/features/messages/application/message_unread_controller.dart';
 import 'package:planets_mobile/features/policies/data/policy_acceptance_store.dart';
 import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
@@ -48,6 +50,10 @@ void main() {
           bobToken = String.fromEnvironment('D_BOB_TOKEN'),
           carol = String.fromEnvironment('D_CAROL_ID'),
           carolToken = String.fromEnvironment('D_CAROL_TOKEN'),
+          dave = String.fromEnvironment('D_DAVE_ID'),
+          daveToken = String.fromEnvironment('D_DAVE_TOKEN'),
+          library = String.fromEnvironment('D_LIBRARY'),
+          libraryName = String.fromEnvironment('D_LIBRARY_NAME'),
           garden = String.fromEnvironment('D_GARDEN'),
           workshop = String.fromEnvironment('D_WORKSHOP'),
           grant = String.fromEnvironment('D_CAROL_GRANT'),
@@ -59,6 +65,10 @@ void main() {
         bobToken,
         carol,
         carolToken,
+        dave,
+        daveToken,
+        library,
+        libraryName,
         garden,
         workshop,
         grant,
@@ -70,6 +80,7 @@ void main() {
       final containers = <ProviderContainer>[];
       final clients = <SupabaseClient>[];
       var lost = false;
+      var lostCoordination = false;
       final originalError = FlutterError.onError;
       FlutterErrorDetails? lastError;
       FlutterError.onError = (details) {
@@ -81,6 +92,7 @@ void main() {
         String id,
         String token, {
         bool loseSubmit = false,
+        bool loseCoordination = false,
       }) async {
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pumpAndSettle();
@@ -111,6 +123,14 @@ void main() {
                   lost = true;
                   throw const SocketException(
                     'Synthetic lost response after real contact creation.',
+                  );
+                }
+                if (loseCoordination &&
+                    name == 'confirm_group_coordination_audience' &&
+                    !lostCoordination) {
+                  lostCoordination = true;
+                  throw const SocketException(
+                    'Synthetic lost final coordination response after commit.',
                   );
                 }
                 return result;
@@ -144,21 +164,33 @@ void main() {
       Future<void> tap(String key) async {
         final finder = find.byKey(Key(key));
         if (key.startsWith('contact-confirm-') ||
+            key == 'coordination-confirm-dialog' ||
             key.startsWith('blocking-confirm-')) {
           await harness.waitFor(tester, finder);
         }
-        await harness.waitUntil(
-          tester,
-          () =>
-              finder.evaluate().isNotEmpty ||
-              find.byType(ListView).evaluate().isNotEmpty,
-        );
-        if (finder.evaluate().isEmpty) {
-          await harness.reveal(tester, finder);
-        } else {
-          await tester.ensureVisible(finder);
+        // Route/auth/access refreshes can replace a lazy ListView while waiting.
+        // Re-find its scrollable after each frame rather than retaining a finder
+        // for a disposed previous route. Missing widgets still fail explicitly.
+        final deadline = DateTime.now().add(const Duration(seconds: 45));
+        while (finder.hitTestable().evaluate().isEmpty &&
+            DateTime.now().isBefore(deadline)) {
+          await tester.pump(const Duration(milliseconds: 200));
+          if (finder.evaluate().isNotEmpty) {
+            await tester.ensureVisible(finder);
+          } else {
+            final scrolls = find.descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            );
+            if (scrolls.evaluate().isNotEmpty)
+              await tester.drag(scrolls.first, const Offset(0, -200));
+          }
         }
-        await tester.pump(const Duration(milliseconds: 300));
+        expect(
+          finder.hitTestable(),
+          findsOneWidget,
+          reason: 'Native action $key must become visible.',
+        );
         await harness.waitUntil(
           tester,
           () =>
@@ -279,6 +311,170 @@ void main() {
         findsNothing,
       );
       await shot('other-manager-metadata-en');
+      final coordinator = await asPerson(alice, aliceToken);
+      final coordinatorRouter = coordinator.read(appRouterProvider);
+      coordinatorRouter.go(groupContactInfoRoute(chat));
+      await tap('contact-coordinate');
+      await tap('coordination-pick');
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('coordination-search')),
+      );
+      await tester.enterText(
+        find.byKey(const Key('coordination-search')),
+        libraryName,
+      );
+      await tap('coordination-search-run');
+      await hideKeyboard();
+      await tap('coordination-group-$library');
+      await tap('coordination-use-groups');
+      await harness.reveal(tester, find.byKey(const Key('coordination-title')));
+      await tester.enterText(
+        find.byKey(const Key('coordination-title')),
+        'Fresh fictional three-group coordination',
+      );
+      await harness.reveal(tester, find.byKey(const Key('coordination-note')));
+      await tester.enterText(
+        find.byKey(const Key('coordination-note')),
+        'Only this fresh synthetic invitation is shared with the new audience.',
+      );
+      await hideKeyboard();
+      await shot('coordination-fresh-composer-en');
+      await tap('coordination-propose');
+      await tap('coordination-confirm-dialog');
+      await harness.waitUntil(
+        tester,
+        () => coordinatorRouter.routerDelegate.state.uri.path.contains(
+          '/group-coordination/',
+        ),
+      );
+      final proposalId =
+          coordinatorRouter.routerDelegate.state.uri.pathSegments.last;
+      final invitee = await asPerson(dave, daveToken);
+      final inviteeRouter = invitee.read(appRouterProvider);
+      inviteeRouter.go(coordinationProposalRoute(proposalId));
+      await tap('coordination-claim-$library');
+      await tap('coordination-confirm-dialog');
+      await harness.waitFor(
+        tester,
+        find.text(
+          'The original representatives must confirm the complete named audience before it is shared with invitees.',
+        ),
+      );
+      expect(find.text('Fictional human reply from Carol.'), findsNothing);
+      expect(find.text('Open original conversation'), findsNothing);
+      await shot('coordination-claimed-no-source-en');
+      final firstConsent = await asPerson(alice, aliceToken);
+      firstConsent
+          .read(appRouterProvider)
+          .go(coordinationProposalRoute(proposalId));
+      await tap('coordination-confirm');
+      await tap('coordination-confirm-dialog');
+      final secondConsent = await asPerson(carol, carolToken);
+      secondConsent
+          .read(appRouterProvider)
+          .go(coordinationProposalRoute(proposalId));
+      await tap('coordination-confirm');
+      await tap('coordination-confirm-dialog');
+      final finalConsent = await asPerson(
+        dave,
+        daveToken,
+        loseCoordination: true,
+      );
+      final finalRouter = finalConsent.read(appRouterProvider);
+      finalRouter.go(coordinationProposalRoute(proposalId));
+      await tap('coordination-confirm');
+      await shot('coordination-exact-audience-en');
+      await tap('coordination-confirm-dialog');
+      await tap('coordination-recover');
+      await tap('coordination-open');
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('contact-message-body')),
+      );
+      final freshChat = finalRouter.routerDelegate.state.uri.pathSegments.last;
+      final freshFeed = await currentClient!.rpc<Map<String, dynamic>>(
+        'get_own_group_contact_feed',
+        params: {'p_expected_profile_id': dave, 'p_chat_id': freshChat},
+      );
+      expect(freshFeed['items'], isEmpty);
+      expect(find.text('Fictional human reply from Carol.'), findsNothing);
+      await shot('coordination-fresh-empty-chat-en');
+      await tester.enterText(
+        find.byKey(const Key('contact-message-body')),
+        'A fresh human message from Fictional Dave.',
+      );
+      await hideKeyboard();
+      await tap('contact-message-send');
+      await harness.waitFor(
+        tester,
+        find.text('A fresh human message from Fictional Dave.'),
+      );
+      await shot('coordination-new-human-history-en');
+      // Compact Italian audience consent uses the same real canonical proposal.
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: finalConsent,
+          child: MaterialApp(
+            locale: const Locale('it'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(2)),
+              child: child!,
+            ),
+            home: CoordinationScreen(proposalId: proposalId),
+          ),
+        ),
+      );
+      await harness.waitFor(tester, find.text('Coordinamento pronto'));
+      await harness.reveal(tester, find.textContaining('Fictional dave'));
+      await shot('coordination-audience-it-320dp-2x');
+      // Separate bilateral decline/withdraw controls never change the activated
+      // coordination seats or either group's membership.
+      Future<String> anotherRequest(String target, String subject) async {
+        final sender = await asPerson(alice, aliceToken);
+        final router = sender.read(appRouterProvider);
+        router.go(groupContactComposeRoute(target));
+        await harness.waitFor(
+          tester,
+          find.text('Fictional Neighbourhood Garden'),
+        );
+        await tester.tap(find.text('Fictional Neighbourhood Garden'));
+        await harness.reveal(tester, find.byKey(const Key('contact-title')));
+        await tester.enterText(find.byKey(const Key('contact-title')), subject);
+        await harness.reveal(tester, find.byKey(const Key('contact-note')));
+        await tester.enterText(
+          find.byKey(const Key('contact-note')),
+          'Independent synthetic request for a finite decision.',
+        );
+        await hideKeyboard();
+        await tap('contact-submit');
+        await harness.waitUntil(
+          tester,
+          () => router.routerDelegate.state.uri.path.contains(
+            '/requests/group-contact/',
+          ),
+        );
+        return router.routerDelegate.state.uri.pathSegments.last;
+      }
+
+      await anotherRequest(workshop, 'Synthetic withdraw path');
+      await tap('contact-withdraw');
+      await harness.waitFor(tester, find.text('Withdrawn'));
+      await shot('safe-withdraw-en');
+      final declinedRequest = await anotherRequest(
+        library,
+        'Synthetic decline path',
+      );
+      final decliner = await asPerson(dave, daveToken);
+      decliner
+          .read(appRouterProvider)
+          .go(groupContactRequestRoute(declinedRequest));
+      await tap('contact-decline');
+      await harness.waitFor(tester, find.text('Declined'));
+      await shot('explicit-decline-en');
       final bClient = SupabaseClient(
         config.supabaseUrl.toString(),
         config.supabasePublishableKey,

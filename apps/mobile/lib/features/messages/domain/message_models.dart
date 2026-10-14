@@ -2,11 +2,13 @@ import '../../participation/domain/participation_models.dart';
 import '../../resource_listings/domain/resource_listing_models.dart';
 import '../../resource_requests/domain/resource_request_models.dart';
 import '../../group_contact/domain/group_contact_models.dart';
+import '../../group_coordination/domain/coordination_models.dart';
 
 enum StructuredRequestItemKind {
   participationRequest('participation_request'),
   resourceRequest('resource_request'),
-  groupContactRequest('group_contact_request');
+  groupContactRequest('group_contact_request'),
+  groupCoordinationProposal('group_coordination_proposal');
 
   const StructuredRequestItemKind(this.wireValue);
 
@@ -16,6 +18,8 @@ enum StructuredRequestItemKind {
     'participation_request' => StructuredRequestItemKind.participationRequest,
     'resource_request' => StructuredRequestItemKind.resourceRequest,
     'group_contact_request' => StructuredRequestItemKind.groupContactRequest,
+    'group_coordination_proposal' =>
+      StructuredRequestItemKind.groupCoordinationProposal,
     _ => throw const FormatException('Unsupported structured request kind.'),
   };
 }
@@ -142,6 +146,7 @@ sealed class StructuredRequestMessageItem {
         item.contact.publicProjectKind,
         item.contact.publicProjectTitle,
       ),
+      GroupCoordinationMessageItem item => item.proposal.refreshValue,
     },
   );
   String get compositeId => '${kind.wireValue}:$requestId';
@@ -246,6 +251,22 @@ final class GroupContactRequestMessageItem
         activityAt: contact.activityAt,
       );
   final GroupContactRequest contact;
+}
+
+final class GroupCoordinationMessageItem extends StructuredRequestMessageItem {
+  GroupCoordinationMessageItem(this.proposal)
+    : super(
+        kind: StructuredRequestItemKind.groupCoordinationProposal,
+        requestId: proposal.id,
+        viewerRole: MessageViewerRole.fromWire(proposal.viewerRole),
+        requesterProfileId: proposal.initiatorId,
+        requesterDisplayName: proposal.initiatorName,
+        requestMessage: proposal.note,
+        createdAt: proposal.createdAt,
+        resolvedAt: proposal.resolvedAt,
+        activityAt: proposal.activityAt,
+      );
+  final CoordinationProposal proposal;
 }
 
 class MessageCursor {

@@ -411,15 +411,49 @@ class ContactReceipt {
     this.requestId,
     this.chatId,
     this.messageId,
+    this.coordinationId,
+    this.version,
   });
   final String outcome;
   final bool replayed;
   final String? requestId, chatId, messageId;
+  final String? coordinationId;
+  final int? version;
   factory ContactReceipt.parse(Object? value) {
     if (value is! Map) {
       throw const FormatException('Unconfirmed contact result.');
     }
     final outcome = value['outcome'];
+    if (value.containsKey('coordination_id')) {
+      if (!{
+        'proposed',
+        'claimed',
+        'changed',
+        'confirmed',
+        'declined',
+        'canceled',
+        'active',
+      }.contains(outcome)) {
+        throw const FormatException('Unsupported coordination outcome.');
+      }
+      final r = contactRow(value, {
+        'coordination_id',
+        'version',
+        'outcome',
+        'replayed',
+        if (outcome == 'active') 'chat_id',
+      });
+      if (r['version'] is! int || (r['version'] as int) < 1) {
+        throw const FormatException('Malformed coordination version.');
+      }
+      return ContactReceipt(
+        outcome as String,
+        contactBool(r['replayed']),
+        coordinationId: contactUuid(r['coordination_id']),
+        version: r['version'] as int,
+        chatId: outcome == 'active' ? contactUuid(r['chat_id']) : null,
+      );
+    }
     final keys = switch (outcome) {
       'pending' ||
       'declined' ||

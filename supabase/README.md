@@ -197,3 +197,11 @@ ordinary create overloads remain available. `114` audits raw grants/RLS and RPC
 hardening; `npm run draft:editor:verify:local` verifies the authenticated contract
 and removed-template draft independence. See the
 [draft departure guide](../docs/development/proposal-draft-departure.md).
+
+Batch D adds private purposeful group contacts and exact human/group admissions.
+Its [contract](../docs/development/group-contact-contract.md),
+[backend guide](../docs/development/group-contact-backend.md) and
+[coordination protocol](../docs/development/group-coordination-protocol.md) own
+the provisional approval gate, receipt/lock ordering, versioned projections and
+disposable upgrade/real-Auth checks. Requests v3 adds coordination while retaining
+installed v1/v2 contracts. Coordination progress creates no message unread.

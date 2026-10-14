@@ -1,7 +1,10 @@
 import { isUuid } from "./moderation-models";
 
 export type GroupContactEvidence = Readonly<{
-  kind: "group_contact_request" | "group_contact_message";
+  kind:
+    | "group_contact_request"
+    | "group_contact_message"
+    | "group_coordination_proposal";
   targetId: string;
   humanId: string;
   sourceGroupId: string;
@@ -39,7 +42,8 @@ export function parseGroupContactEvidence(
     return fail();
   if (
     (row.kind !== "group_contact_request" &&
-      row.kind !== "group_contact_message") ||
+      row.kind !== "group_contact_message" &&
+      row.kind !== "group_coordination_proposal") ||
     !isUuid(row.target_id) ||
     !isUuid(row.human_id) ||
     !isUuid(row.source_group_id) ||
@@ -54,6 +58,16 @@ export function parseGroupContactEvidence(
     if (
       !isUuid(row.target_group_id) ||
       (row.purpose !== "idea" && row.purpose !== "collaboration") ||
+      typeof row.title !== "string" ||
+      Array.from(row.title).length < 1 ||
+      Array.from(row.title).length > 120 ||
+      Array.from(row.body).length > 1000
+    )
+      return fail();
+  } else if (row.kind === "group_coordination_proposal") {
+    if (
+      row.target_group_id !== null ||
+      row.purpose !== null ||
       typeof row.title !== "string" ||
       Array.from(row.title).length < 1 ||
       Array.from(row.title).length > 120 ||

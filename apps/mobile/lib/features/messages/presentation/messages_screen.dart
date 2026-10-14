@@ -32,6 +32,7 @@ import 'message_unread_badge.dart';
 import 'participation_request_details.dart';
 import '../../group_contact/presentation/group_contact_widgets.dart';
 import '../../group_contact/presentation/group_contact_routes.dart';
+import '../../group_coordination/presentation/coordination_routes.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
@@ -673,6 +674,7 @@ class _StructuredRequestCard extends StatelessWidget {
     GroupContactRequestMessageItem item => GroupContactRequestCard(
       item.contact,
     ),
+    GroupCoordinationMessageItem item => CoordinationRequestCard(item.proposal),
   };
 }
 

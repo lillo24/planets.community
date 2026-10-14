@@ -42,7 +42,7 @@ async function rpc(person, name, params) {
 try {
   const run = randomUUID().slice(0, 8),
     people = {};
-  for (const name of ["alice", "bob", "carol"]) {
+  for (const name of ["alice", "bob", "carol", "dave"]) {
     const person = await signInLocalOtpUser({
       ...status,
       mailpitUrl,
@@ -60,6 +60,7 @@ try {
   for (const [name, person] of [
     ["garden", people.alice],
     ["workshop", people.bob],
+    ["library", people.dave],
   ]) {
     const id = await rpc(person, "create_group_draft", {
       p_expected_profile_id: person.id,
@@ -68,7 +69,9 @@ try {
         name:
           name === "garden"
             ? "Fictional Neighbourhood Garden"
-            : "Fictional Laboratorio di collaborazione del quartiere",
+            : name === "library"
+              ? `Fictional D Library ${run}`
+              : "Fictional Laboratorio di collaborazione del quartiere",
         description:
           "Synthetic neighbours planning a local collaboration together.",
         group_kind: "informal",
@@ -141,6 +144,8 @@ try {
     SUPABASE_PUBLISHABLE_KEY: status.publishableKey,
     D_GARDEN: groups.garden,
     D_WORKSHOP: groups.workshop,
+    D_LIBRARY: groups.library,
+    D_LIBRARY_NAME: `Fictional D Library ${run}`,
     D_CAROL_GRANT: admission.relationship_id,
     D_PROJECT: project,
   };
@@ -150,7 +155,7 @@ try {
   }
   await writeFile(output, JSON.stringify(values), { mode: 0o600 });
   console.log(
-    "Prepared three fictional OTP accounts, two public groups and independent Project. Private defines written outside checkout.",
+    "Prepared four fictional OTP accounts, three public groups and independent Project. Private defines written outside checkout.",
   );
 } finally {
   await sql.end();
