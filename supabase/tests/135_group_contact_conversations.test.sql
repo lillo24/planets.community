@@ -1,0 +1,57 @@
+begin;
+select no_plan();
+insert into auth.users(id,email) select ('d1100000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'d-chat-tap-'||n||'@planets.invalid' from generate_series(1,4) n;
+insert into public.profiles(id,display_name) select id,'Fictional D representative' from auth.users where email like 'd-chat-tap-%';
+insert into private.community_groups(id,name,description,group_kind,volunteering_focus,publication_state,original_actor_id)
+select ('d1110000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'Fictional contact group '||n,'A fictional group description for local tests.','informal',false,'published',('d1100000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid from generate_series(1,2) n;
+insert into private.community_group_managers(group_id,profile_id,appointed_by_actor_id)
+select id,original_actor_id,original_actor_id from private.community_groups where id::text like 'd111%';
+insert into private.group_delegates(id,group_id,profile_id,initial_role,delegate_role,granted_by)
+values('d1120000-0000-4000-8000-000000000001','d1110000-0000-4000-8000-000000000002','d1100000-0000-4000-8000-000000000003','co_organizer','co_organizer','d1100000-0000-4000-8000-000000000002');
+create temp table d_chat_result(kind text,value jsonb); grant all on d_chat_result to authenticated;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d1100000-0000-4000-8000-000000000001',true);
+insert into d_chat_result values('request',public.submit_group_contact_request('d1100000-0000-4000-8000-000000000001',gen_random_uuid(),'d1110000-0000-4000-8000-000000000001','d1110000-0000-4000-8000-000000000002','collaboration','Fictional collaboration','A private fictional contact summary.'));
+select set_config('request.jwt.claim.sub','d1100000-0000-4000-8000-000000000003',true);
+insert into d_chat_result values('chat',public.accept_group_contact_request('d1100000-0000-4000-8000-000000000003','d1130000-0000-4000-8000-000000000001',(select (value->>'request_id')::uuid from d_chat_result where kind='request')));
+select is(public.accept_group_contact_request('d1100000-0000-4000-8000-000000000003','d1130000-0000-4000-8000-000000000001',(select (value->>'request_id')::uuid from d_chat_result where kind='request'))->>'chat_id',(select value->>'chat_id' from d_chat_result where kind='chat'),'accept retry recovers exactly one thread');
+select is(jsonb_array_length(public.get_own_group_contact_conversation('d1100000-0000-4000-8000-000000000003',(select (value->>'chat_id')::uuid from d_chat_result where kind='chat'))->'audience'),2,'exact two admitted humans');
+select set_config('request.jwt.claim.sub','d1100000-0000-4000-8000-000000000002',true);
+select throws_ok($$select public.get_own_group_contact_conversation('d1100000-0000-4000-8000-000000000002',(select (value->>'chat_id')::uuid from d_chat_result where kind='chat'))$$,'42501',null,'another target Creator inherits no conversation');
+select throws_ok($$select public.accept_group_contact_request('d1100000-0000-4000-8000-000000000002',gen_random_uuid(),(select (value->>'request_id')::uuid from d_chat_result where kind='request'))$$,'PT409',null,'second accept cannot create another conversation');
+select is(public.get_own_group_contact_request('d1100000-0000-4000-8000-000000000002',(select (value->>'request_id')::uuid from d_chat_result where kind='request'))->>'request_message',null::text,'resolved managerial triage excludes note');
+select is(public.get_own_group_contact_request('d1100000-0000-4000-8000-000000000002',(select (value->>'request_id')::uuid from d_chat_result where kind='request'))->>'chat_id',null::text,'resolved managerial triage excludes chat identity');
+select set_config('request.jwt.claim.sub','d1100000-0000-4000-8000-000000000001',true);
+select public.send_group_contact_message('d1100000-0000-4000-8000-000000000001','d1130000-0000-4000-8000-000000000002',(select (value->>'chat_id')::uuid from d_chat_result where kind='chat'),' A fictional hello ');
+select is(public.send_group_contact_message('d1100000-0000-4000-8000-000000000001','d1130000-0000-4000-8000-000000000002',(select (value->>'chat_id')::uuid from d_chat_result where kind='chat'),' A fictional hello ')->>'replayed','true','send lost-response replay safe');
+select throws_ok($$select public.send_group_contact_message('d1100000-0000-4000-8000-000000000001','d1130000-0000-4000-8000-000000000002',(select (value->>'chat_id')::uuid from d_chat_result where kind='chat'),'Changed intent')$$,'PT409',null,'send intent frozen');
+select set_config('request.jwt.claim.sub','d1100000-0000-4000-8000-000000000003',true);
+insert into d_chat_result values('feed',public.get_own_group_contact_feed('d1100000-0000-4000-8000-000000000003',(select (value->>'chat_id')::uuid from d_chat_result where kind='chat')));
+select is((select value->'items'->0->>'body' from d_chat_result where kind='feed'),'A fictional hello','only human body normalized');
+select is((select value->'items'->0->>'represented_group_id' from d_chat_result where kind='feed'),'d1110000-0000-4000-8000-000000000001','immutable human plus group provenance');
+select public.acknowledge_group_contact_read('d1100000-0000-4000-8000-000000000003',(select (value->>'chat_id')::uuid from d_chat_result where kind='chat'),(select (value->>'read_boundary')::uuid from d_chat_result where kind='feed'));
+reset role;
+select is((select count(*) from private.group_contact_messages where conversation_id=(select (value->>'chat_id')::uuid from d_chat_result where kind='chat')),1::bigint,'no duplicate human message');
+select is(private.group_contact_unread('d1100000-0000-4000-8000-000000000003',(select (value->>'chat_id')::uuid from d_chat_result where kind='chat')),0::bigint,'durable read boundary');
+select is(private.group_contact_unread('d1100000-0000-4000-8000-000000000001',(select (value->>'chat_id')::uuid from d_chat_result where kind='chat')),0::bigint,'sender never incoming unread');
+update private.group_delegates set revoked_at=clock_timestamp(),revoked_by='d1100000-0000-4000-8000-000000000002' where id='d1120000-0000-4000-8000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d1100000-0000-4000-8000-000000000003',true);
+select throws_ok($$select public.get_own_group_contact_feed('d1100000-0000-4000-8000-000000000003',(select (value->>'chat_id')::uuid from d_chat_result where kind='chat'))$$,'42501',null,'revoked grant loses body');
+select throws_ok($$select public.acknowledge_group_contact_read('d1100000-0000-4000-8000-000000000003',(select (value->>'chat_id')::uuid from d_chat_result where kind='chat'),(select (value->>'read_boundary')::uuid from d_chat_result where kind='feed'))$$,'42501',null,'old token cannot bypass revocation');
+select is(public.recover_group_contact_action('d1100000-0000-4000-8000-000000000003','d1130000-0000-4000-8000-000000000001')->>'outcome','accepted','own original metadata remains recoverable');
+reset role;
+insert into private.group_delegates(group_id,profile_id,initial_role,delegate_role,granted_by)
+values('d1110000-0000-4000-8000-000000000002','d1100000-0000-4000-8000-000000000003','co_creator','co_creator','d1100000-0000-4000-8000-000000000002');
+select ok(not private.group_contact_can_read((select (value->>'chat_id')::uuid from d_chat_result where kind='chat'),'d1100000-0000-4000-8000-000000000003'),'regrant cannot resurrect old admission');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d1100000-0000-4000-8000-000000000001',true);
+select is(public.get_own_group_contact_conversation('d1100000-0000-4000-8000-000000000001',(select (value->>'chat_id')::uuid from d_chat_result where kind='chat'))->>'is_read_only','true','remaining bilateral participant keeps read-only history');
+select throws_ok($$select public.send_group_contact_message('d1100000-0000-4000-8000-000000000001',gen_random_uuid(),(select (value->>'chat_id')::uuid from d_chat_result where kind='chat'),'After revoked grant')$$,'42501',null,'bilateral sending stops after other grant revocation');
+select public.close_group_contact_conversation('d1100000-0000-4000-8000-000000000001',gen_random_uuid(),(select (value->>'chat_id')::uuid from d_chat_result where kind='chat'));
+select public.leave_group_contact_conversation('d1100000-0000-4000-8000-000000000001',gen_random_uuid(),(select (value->>'chat_id')::uuid from d_chat_result where kind='chat'));
+select throws_ok($$select public.get_own_group_contact_conversation('d1100000-0000-4000-8000-000000000001',(select (value->>'chat_id')::uuid from d_chat_result where kind='chat'))$$,'42501',null,'leave ends only own D admission');
+reset role;
+select ok(not exists(select 1 from private.group_memberships where group_id::text like 'd111%'),'contact created no group memberships');
+select * from finish();
+rollback;

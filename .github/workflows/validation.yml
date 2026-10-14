@@ -165,6 +165,9 @@ jobs:
       - name: Verify populated group Project attribution preservation
         run: npm run group:projects:upgrade:verify:local
 
+      - name: Verify populated D contact upgrade without inherited history
+        run: npm run group:contact:upgrade:verify:local
+
       - name: Replay migrations and seed from zero
         run: npm run db:reset
 
@@ -190,6 +193,9 @@ jobs:
 
       - name: Verify group membership, authority, recovery and lock races
         run: npm run group:membership:verify:local
+
+      - name: Verify purposeful group contact, legacy contracts and observed role races
+        run: npm run group:contact:verify:local
 
       - name: Verify local mobile email OTP flow
         run: npm run auth:verify:local

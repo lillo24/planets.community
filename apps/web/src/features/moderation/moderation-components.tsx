@@ -142,6 +142,33 @@ export function ModerationCaseDetailView({
       {detail.group ? (
         <GroupReviewView group={detail.group} caseId={detail.caseId} />
       ) : null}
+      {detail.groupContact ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Reported group contact content</CardTitle>
+            <CardDescription>
+              Exact reported evidence for manual review. This grants no
+              conversation access.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {detail.groupContact.title ? (
+              <p>{detail.groupContact.title}</p>
+            ) : null}
+            <p className="whitespace-pre-wrap break-words">
+              {detail.groupContact.body}
+            </p>
+            <dl className="grid gap-1 text-sm">
+              <dt>Actual human author</dt>
+              <dd className="break-all">{detail.groupContact.humanId}</dd>
+              <dt>Represented group</dt>
+              <dd className="break-all">{detail.groupContact.sourceGroupId}</dd>
+              <dt>Created</dt>
+              <dd>{formatDate(detail.groupContact.createdAt)}</dd>
+            </dl>
+          </CardContent>
+        </Card>
+      ) : null}
       {detail.template ? (
         <Card>
           <CardHeader>
