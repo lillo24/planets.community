@@ -766,6 +766,12 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
         final origin = GoRouterState.of(context).extra;
         if (origin is GroupProjectCreationReturn &&
             origin.actor == widget.identityId) {
+          // Stateful shell branch changes may complete a pop without forwarding
+          // its result. Restore the private source explicitly after acknowledgment.
+          if (origin.returnPath case final path?) {
+            context.go(path);
+            return true;
+          }
           context.pop(GroupProjectCreationResult(widget.identityId, id));
           return true;
         }

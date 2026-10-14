@@ -6,6 +6,7 @@ Future<void> main() async {
   final output = Directory('${Directory.systemTemp.path}/planets-c-runtime');
   await output.create(recursive: true);
   await integrationDriver(
+    writeResponseOnFailure: true,
     responseDataCallback: (data) async {
       final screenshots = data?['screenshots'];
       if (screenshots is! List || screenshots.isEmpty) {

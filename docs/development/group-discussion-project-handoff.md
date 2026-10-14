@@ -22,13 +22,23 @@ through GRP03C's current post-lock checks; choosing personal attribution remains
 the existing explicit editor decision. Returning to a room reuses C's current
 admission checks and cannot restore old access.
 
-An actor-only marker in `group_project_creation_return.dart` is carried in private
-in-memory route extras through the chooser/catalog/detail/editor. Only a confirmed
-ordinary save returns a result; opening, cancellation and uncertain saves do not.
-Scratch and template saves, as well as Tavolo saves, return through the retained
-routes to the originating room, preserving its controller/history and scroll.
-Default personal/Group creation navigation is unchanged. No room identifier or
-content is stored on a Project or serialized in its route parameters.
+An actor-bound marker in `group_project_creation_return.dart` carries the private
+return path in in-memory route extras through the chooser/catalog/detail/editor.
+Only a confirmed ordinary save returns to the discussion; opening, cancellation
+and uncertain saves do not. Scratch/template and Tavolo saves explicitly restore
+that path because a pop result can be lost across the stateful shell's branches.
+The retained room and its controller keep their current history and scroll, and
+the room still checks its current admission on return. Existing Group flows use
+the same typed save result when they have no discussion return path. Default
+personal/Group creation navigation is unchanged. No room identifier or content
+is stored on a Project or serialized in its route parameters.
+
+The entry busy state ends when navigation starts, rather than waiting for an
+editor result across shell branches. This leaves the retained Create Project
+control usable after return. Native verification also exposed the shared owner
+collection adapter's implicit descending UUID order: transport now explicitly
+orders ascending to match `gt` continuation, then restores the existing display
+order. A real HTTP-adapter regression covers multiple own Projects.
 
 The optional persistent room→Project association and explicit link-copy stages
 are omitted. There is consequently no association write, partial association
@@ -46,12 +56,15 @@ the discussion Auth verifier for source admission/role visibility. C00 remains
 provisional until explicit founder approval, and final cumulative/native QA is
 required before a main merge.
 
-Executed stage checks: six focused source/scratch/Tavolo tests in EN/IT; a full
-mobile run with 3,353 tests and two existing skips before the two added Tavolo
-cases, followed by their current focused run; full mobile analysis and formatting,
-then scoped analysis after source-denial invalidation; 90 genuine GRP03C Auth
+Executed final C04 checks: `npm run check:mobile` passed localization generation,
+formatting (715 files unchanged), full analysis and 3,356 tests with two existing
+skips. Nine focused owner/source/scratch/Tavolo cases also passed; 90 genuine GRP03C Auth
 assertions including observed publication waits, frozen creation, templates and
-independent roles. C03's exact head passed all required CI areas. The native probe
-is extended for a fresh 30-message window, link editing and an acknowledged
-discussion-origin Project save; its final run and evidence belong to cumulative
-integration. No new schema or Project RPC contract is introduced by C04.
+independent roles passed. C03's exact head passed all required CI areas. The native probe
+passed for a fresh 30-message window, link editing and an acknowledged
+discussion-origin Project save. The same source controller/history/scroll is
+retained, and the Create Project button is usable again. All 14 final PNGs exported
+successfully; see `evidence/group-discussions/c04`. Nine current focused tests
+cover the real owner adapter and EN/IT scratch/Tavolo saves across stateful shell
+branches. The cumulative report records the final full checks. No new schema or
+Project RPC contract is introduced by C04.
