@@ -225,6 +225,9 @@ class ProjectNeedsController extends Notifier<ProjectNeedsState> {
   }
 
   void closeDrawer() {
+    if (!ref.mounted) {
+      return;
+    }
     if (state.isDrawerOpen) state = state.copyWith(isDrawerOpen: false);
   }
 

@@ -1,3 +1,5 @@
+import 'package:planets_mobile/features/project_chat/application/project_chat_controllers.dart';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -280,6 +282,17 @@ void main() {
       final chatId = (rows as List).single['chat_id'] as String;
       final readsBefore = chatGateway.reads;
       chatRouter.go('/messages/chats/$chatId');
+      await harness.waitUntil(
+        tester,
+        () =>
+            chatContainer.read(projectChatDetailProvider).chatId == chatId &&
+            chatContainer.read(projectChatDetailProvider).summary?.projectId ==
+                pid,
+      );
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('project-workspace-chat-control')),
+      );
       await harness.waitFor(
         tester,
         find.byKey(const Key('project-needs-button')),

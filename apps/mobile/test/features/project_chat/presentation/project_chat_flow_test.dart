@@ -1,3 +1,4 @@
+import 'package:planets_mobile/features/project_chat/application/project_needs_controller.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 
 import '../../../support/fake_policy.dart';
@@ -376,6 +377,32 @@ void main() {
     await tester.tap(find.byKey(const Key('project-workspace-confirm-open')));
     await tester.pumpAndSettle();
     expect(launcher.calls, 1);
+  });
+
+  testWidgets('Checklist closes outside disposal and keeps Workspace lazy', (
+    tester,
+  ) async {
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = [];
+    final workspace = FakeProjectWorkspaceGateway();
+    final app = await _pump(tester, chats: chats, workspace: workspace);
+    app.read(appRouterProvider).go('/messages/chats/chat-1');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('project-needs-button')));
+    await tester.pumpAndSettle();
+    expect(app.read(projectNeedsProvider).isDrawerOpen, isTrue);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(app.read(projectNeedsProvider).isDrawerOpen, isFalse);
+    expect(workspace.calls, isEmpty);
+    await tester.tap(find.byKey(const Key('project-workspace-chat-control')));
+    await tester.pumpAndSettle();
+    expect(
+      workspace.calls.where((call) => call.startsWith('get:')),
+      hasLength(1),
+    );
   });
 
   for (final mode in ['empty', 'loading', 'error']) {
