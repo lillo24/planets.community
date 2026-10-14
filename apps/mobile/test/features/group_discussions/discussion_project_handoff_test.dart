@@ -86,35 +86,34 @@ void main() {
         container
             .read(authSessionProvider.notifier)
             .markProfileReady(const AuthIdentity(id: 'user-1'));
-        final router = GoRouter(
-          initialLocation: '/origin',
-          routes: [
-            GoRoute(
-              path: '/origin',
-              builder: (context, _) => Scaffold(
-                body: TextButton(
-                  onPressed: () => context.push<Object?>(
-                    '/proposals/create?group=$groupId',
-                    extra: const GroupProjectCreationReturn('user-1'),
+        final router = handoffRouter([
+          GoRoute(
+            path: '/origin',
+            builder: (context, _) => Scaffold(
+              body: TextButton(
+                onPressed: () => context.push<Object?>(
+                  '/proposals/create?group=$groupId',
+                  extra: const GroupProjectCreationReturn(
+                    'user-1',
+                    returnPath: '/origin',
                   ),
-                  child: const Text('Retained room'),
                 ),
+                child: const Text('Retained room'),
               ),
             ),
-            GoRoute(
-              path: '/proposals/create',
-              builder: (_, s) => ProposalCreationChoice(
-                groupId: s.uri.queryParameters['group'],
-              ),
+          ),
+          GoRoute(
+            path: '/proposals/create',
+            builder: (_, s) =>
+                ProposalCreationChoice(groupId: s.uri.queryParameters['group']),
+          ),
+          GoRoute(
+            path: '/tavoli/create',
+            builder: (_, s) => RecurringActivityEditorScreen(
+              initialGroupId: s.uri.queryParameters['group'],
             ),
-            GoRoute(
-              path: '/tavoli/create',
-              builder: (_, s) => RecurringActivityEditorScreen(
-                initialGroupId: s.uri.queryParameters['group'],
-              ),
-            ),
-          ],
-        );
+          ),
+        ]);
         addTearDown(router.dispose);
         addTearDown(container.dispose);
         addTearDown(auth.close);
@@ -229,46 +228,46 @@ void main() {
         container
             .read(authSessionProvider.notifier)
             .markProfileReady(const AuthIdentity(id: 'user-1'));
-        final router = GoRouter(
-          initialLocation: '/origin',
-          routes: [
-            GoRoute(
-              path: '/origin',
-              builder: (context, _) => Scaffold(
-                body: TextButton(
-                  onPressed: () => context.push<Object?>(
-                    '/proposals/create?group=$groupId',
-                    extra: const GroupProjectCreationReturn('user-1'),
+        final router = handoffRouter([
+          GoRoute(
+            path: '/origin',
+            builder: (context, _) => Scaffold(
+              body: TextButton(
+                onPressed: () => context.push<Object?>(
+                  '/proposals/create?group=$groupId',
+                  extra: const GroupProjectCreationReturn(
+                    'user-1',
+                    returnPath: '/origin',
                   ),
-                  child: const Text('Retained room'),
                 ),
+                child: const Text('Retained room'),
               ),
             ),
-            GoRoute(
-              path: '/proposals/create',
-              pageBuilder: (_, s) => MaterialPage<void>(
-                key: s.pageKey,
-                child: ProposalCreationChoice(
-                  groupId: s.uri.queryParameters['group'],
-                ),
+          ),
+          GoRoute(
+            path: '/proposals/create',
+            pageBuilder: (_, s) => MaterialPage<void>(
+              key: s.pageKey,
+              child: ProposalCreationChoice(
+                groupId: s.uri.queryParameters['group'],
               ),
             ),
-            GoRoute(
-              path: '/proposals/create/scratch',
-              pageBuilder: (_, s) => MaterialPage<void>(
-                key: s.pageKey,
-                child: ProposalEditorScreen(
-                  initialGroupId: s.uri.queryParameters['group'],
-                ),
+          ),
+          GoRoute(
+            path: '/proposals/create/scratch',
+            pageBuilder: (_, s) => MaterialPage<void>(
+              key: s.pageKey,
+              child: ProposalEditorScreen(
+                initialGroupId: s.uri.queryParameters['group'],
               ),
             ),
-            GoRoute(
-              path: '/proposals/mine',
-              builder: (_, _) =>
-                  const Scaffold(body: Text('Ordinary personal fallback')),
-            ),
-          ],
-        );
+          ),
+          GoRoute(
+            path: '/proposals/mine',
+            builder: (_, _) =>
+                const Scaffold(body: Text('Ordinary personal fallback')),
+          ),
+        ]);
         addTearDown(router.dispose);
         addTearDown(container.dispose);
         addTearDown(auth.close);
@@ -331,6 +330,21 @@ void main() {
     );
   }
 }
+
+// Discussion and creation live on different retained shell branches in the app.
+// A flat router does not reproduce a save result stranded on the chooser.
+GoRouter handoffRouter(List<RouteBase> routes) => GoRouter(
+  initialLocation: '/origin',
+  routes: [
+    StatefulShellRoute.indexedStack(
+      builder: (_, _, shell) => shell,
+      branches: [
+        StatefulShellBranch(routes: [routes.first]),
+        StatefulShellBranch(routes: routes.skip(1).toList()),
+      ],
+    ),
+  ],
+);
 
 Future<void> reveal(WidgetTester tester, Finder target) async {
   final scrollable = find

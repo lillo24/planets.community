@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +13,7 @@ import '../application/discussion_controllers.dart';
 import '../application/discussion_project_handoff.dart';
 import '../domain/discussion_models.dart';
 import 'discussion_feedback.dart';
+import 'discussion_routes.dart';
 
 class DiscussionProjectStart extends ConsumerStatefulWidget {
   const DiscussionProjectStart({
@@ -56,12 +59,19 @@ class _DiscussionProjectStartState
         current,
       );
       if (!mounted || !current()) return;
-      await context.push<Object?>(
-        Uri(
-          path: '/proposals/create',
-          queryParameters: {'group': fresh.groupId},
-        ).toString(),
-        extra: GroupProjectCreationReturn(c.actor),
+      // Entry's busy latch ends once navigation begins. A cross-branch return
+      // can restore this retained route without completing the push's result.
+      unawaited(
+        context.push<Object?>(
+          Uri(
+            path: '/proposals/create',
+            queryParameters: {'group': fresh.groupId},
+          ).toString(),
+          extra: GroupProjectCreationReturn(
+            c.actor,
+            returnPath: discussionRoute(source.id),
+          ),
+        ),
       );
       // Source content/scroll remain in the retained room. Its own current grant
       // controls any return; Project creation and publication are independent.

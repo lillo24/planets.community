@@ -89,7 +89,11 @@ void main() {
           ),
         ],
       );
-      addTearDown(container.dispose);
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        container.dispose();
+      });
       final originalErrorHandler = FlutterError.onError!;
       FlutterError.onError = (details) {
         debugPrint('C runtime error: ${details.exception}');
@@ -184,7 +188,13 @@ void main() {
       router.go('/messages');
       await tester.pump(const Duration(seconds: 1));
       router.go(discussionRoute(room));
-      await harness.waitFor(tester, find.byKey(const Key('discussion-older')));
+      await harness.waitUntil(tester, () {
+        final reopened = container.read(discussionChatProvider(room));
+        return reopened != null &&
+            !reopened.busy &&
+            reopened.messages.length == 30;
+      });
+      await harness.reveal(tester, find.byKey(const Key('discussion-older')));
       await tester.tap(find.byKey(const Key('discussion-older')));
       await harness.waitUntil(
         tester,
@@ -229,8 +239,9 @@ void main() {
       router.pop();
       await harness.waitFor(
         tester,
-        find.text('Fictional older-page fixture 30.'),
+        find.byKey(const Key('discussion-workspace')),
       );
+      expect(container.read(discussionChatProvider(room))!.messages.length, 33);
       router.go('/groups/$group');
       await harness.waitFor(tester, find.byKey(const Key('group-discussions')));
       await harness.reveal(tester, find.byKey(const Key('group-discussions')));
@@ -276,7 +287,11 @@ void main() {
           ),
         ],
       );
-      addTearDown(publisher.dispose);
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        publisher.dispose();
+      });
       await publisher.read(authSessionProvider.notifier).start();
       await tester.pumpWidget(
         UncontrolledProviderScope(
@@ -300,23 +315,29 @@ void main() {
         tester,
         find.byKey(const Key('discussion-link-name')),
       );
+      final sheetName = 'Foglio C native ${const Uuid().v4().substring(0, 8)}';
       await tester.enterText(
         find.byKey(const Key('discussion-link-name')),
-        'Foglio C native',
+        sheetName,
       );
       await tester.enterText(
         find.byKey(const Key('discussion-link-url')),
         'https://example.invalid/native-sheet',
       );
       await tester.tap(find.byKey(const Key('discussion-link-save')));
-      await harness.waitFor(tester, find.text('Foglio C native'));
       final card = find.ancestor(
-        of: find.text('Foglio C native'),
+        of: find.text(sheetName),
         matching: find.byType(Card),
+      );
+      await harness.waitUntil(
+        tester,
+        () =>
+            find.byType(AlertDialog).evaluate().isEmpty &&
+            card.evaluate().length == 1,
       );
       final edit = find.descendant(
         of: card,
-        matching: find.widgetWithText(TextButton, 'Edit workspace'),
+        matching: find.byIcon(Icons.edit_outlined),
       );
       await tester.ensureVisible(edit);
       await tester.tap(edit);
@@ -329,7 +350,12 @@ void main() {
         'Documento C native reviewed',
       );
       await tester.tap(find.byKey(const Key('discussion-link-save')));
-      await harness.waitFor(tester, find.text('Documento C native reviewed'));
+      await harness.waitUntil(
+        tester,
+        () =>
+            find.byType(AlertDialog).evaluate().isEmpty &&
+            find.text('Documento C native reviewed').evaluate().isNotEmpty,
+      );
       await shot('manager-links-en');
       await publisher
           .read(languagePreferenceProvider.notifier)
@@ -344,7 +370,17 @@ void main() {
         tester,
         find.byKey(const Key('discussion-create-project')),
       );
+      final sourceController = publisher.read(discussionChatProvider(room))!;
+      await harness.waitUntil(tester, () => !sourceController.busy);
+      final sourceMessages = sourceController.messages
+          .map((m) => m.id)
+          .toList();
+      final sourceScroll = tester
+          .widget<ListView>(find.byType(ListView).first)
+          .controller!;
+      final sourceOffset = sourceScroll.offset;
       final before = await projects.listOwnProposals(creator);
+      final reviewedTitle = 'Fictional C native reviewed idea ${before.length}';
       await tester.tap(find.byKey(const Key('discussion-create-project')));
       await harness.waitFor(
         tester,
@@ -356,9 +392,19 @@ void main() {
       expect((await projects.listOwnProposals(creator)).length, before.length);
       await tester.enterText(
         find.byKey(const Key('proposal-title')),
-        'Fictional C native reviewed idea',
+        reviewedTitle,
       );
+      FocusManager.instance.primaryFocus?.unfocus();
+      await SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+      await tester.pump(const Duration(milliseconds: 300));
       await harness.reveal(tester, find.byKey(const Key('proposal-summary')));
+      await harness.waitFor(
+        tester,
+        find.descendant(
+          of: find.byKey(const Key('proposal-summary')),
+          matching: find.byType(EditableText),
+        ),
+      );
       await tester.enterText(
         find.byKey(const Key('proposal-summary')),
         'Explicitly supplied content from a fictional publisher.',
@@ -371,6 +417,7 @@ void main() {
       final save = find.byKey(const Key('proposal-save-draft'));
       await harness.reveal(tester, save);
       await tester.tap(save);
+      await tester.pump(const Duration(milliseconds: 300));
       await harness.waitUntil(
         tester,
         () =>
@@ -384,22 +431,59 @@ void main() {
         await harness.reveal(tester, save);
         await tester.tap(save);
       }
-      await harness.waitUntil(
-        tester,
-        () =>
-            publisherRouter.routerDelegate.state.uri.path ==
-            discussionRoute(room),
-      );
+      try {
+        await harness.waitUntil(
+          tester,
+          () =>
+              publisherRouter.routerDelegate.state.uri.path ==
+              discussionRoute(room),
+        );
+      } catch (_) {
+        await binding.takeScreenshot('c04-handoff-diagnostic');
+        final rows = await peer
+            .rpc<List<dynamic>>(
+              'list_own_proposals',
+              params: {'p_expected_creator_profile_id': creator},
+            )
+            .order('proposal_id', ascending: true)
+            .limit(200);
+        debugPrint(
+          'C handoff diagnostic: route=${publisherRouter.routerDelegate.state.uri.path}; lost=${projects.lost}; own=${rows.length}.',
+        );
+        rethrow;
+      }
       final after = await projects.listOwnProposals(creator);
       expect(after.length, before.length + 1);
-      final createdProject = after.singleWhere(
-        (p) => p.title == 'Fictional C native reviewed idea',
+      final createdProject = after.singleWhere((p) => p.title == reviewedTitle);
+      // Owner list cards intentionally omit the private draft binding. Verify
+      // attribution through the canonical owner-detail read instead.
+      expect(
+        (await projects.getOwnProposal(
+          creator,
+          createdProject.id,
+        ))?.groupBinding.groupId,
+        group,
       );
-      expect(createdProject.groupBinding.groupId, group);
       expect(projects.lost, true);
       await harness.waitFor(
         tester,
-        find.text('Fictional older-page fixture 30.'),
+        find.byKey(const Key('discussion-workspace')),
+      );
+      // The native list is lazy, so a retained viewport need not instantiate its
+      // newest row. Verify the actual source controller, history and scroll.
+      expect(
+        publisher.read(discussionChatProvider(room)),
+        same(sourceController),
+      );
+      expect(sourceController.messages.map((m) => m.id), sourceMessages);
+      expect(sourceScroll.offset, closeTo(sourceOffset, 1));
+      expect(
+        tester
+            .widget<IconButton>(
+              find.byKey(const Key('discussion-create-project')),
+            )
+            .onPressed,
+        isNotNull,
       );
       await shot('project-return-en');
       await publisher

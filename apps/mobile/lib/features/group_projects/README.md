@@ -7,7 +7,7 @@ membership. See the [canonical contract](../../../../../docs/development/group-a
   badges, eligible-group cursors and the small public group Project projection.
 - `domain/group_project_failures.dart` recognizes only the structured post-lock
   representation denial that permits abandoning a rejected creation intent.
-- `domain/group_project_creation_return.dart` owns the actor-only, in-memory
+- `domain/group_project_creation_return.dart` owns the actor-bound, in-memory
   contextual navigation marker and acknowledged editor result. It conveys no
   source content, persistent association or publishing authority.
 - `data/group_project_gateway.dart` owns bounded RPCs, Creator-only association

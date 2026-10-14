@@ -865,6 +865,10 @@ class _RecurringActivityEditorScreenState
     if (origin is GroupProjectCreationReturn &&
         origin.actor == identity &&
         ref.read(authSessionProvider).identity?.id == identity) {
+      if (origin.returnPath case final path?) {
+        context.go(path);
+        return true;
+      }
       context.pop(GroupProjectCreationResult(identity, id));
       return true;
     }

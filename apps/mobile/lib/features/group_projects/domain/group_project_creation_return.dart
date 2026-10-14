@@ -1,8 +1,9 @@
 /// Private, in-memory navigation marker; it grants no publishing authority.
-/// Room identifiers/content stay with the originating discussion route.
+/// The optional destination stays in route memory and grants no room access.
 class GroupProjectCreationReturn {
-  const GroupProjectCreationReturn(this.actor);
+  const GroupProjectCreationReturn(this.actor, {this.returnPath});
   final String actor;
+  final String? returnPath;
 }
 
 /// Only an acknowledged ordinary editor save returns a canonical Project ID.
