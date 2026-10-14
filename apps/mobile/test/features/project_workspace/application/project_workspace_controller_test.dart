@@ -7,13 +7,185 @@ import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/project_workspace/application/project_workspace_controller.dart';
 import 'package:planets_mobile/features/project_workspace/data/project_workspace_gateway.dart';
+import 'package:planets_mobile/features/project_workspace/data/project_workspace_pending_add_store.dart';
 import 'package:planets_mobile/features/project_workspace/domain/project_workspace_models.dart';
+import 'package:planets_mobile/features/policies/application/policy_acceptance_controller.dart';
+import 'package:planets_mobile/features/policies/application/policy_documents.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
 import '../../../support/fake_project_workspace.dart';
 
 void main() {
+  test(
+    'independent edits/removal reconcile the full canonical collection',
+    () async {
+      final gateway = FakeProjectWorkspaceGateway()
+        ..links.addAll([
+          projectWorkspaceFixture(id: 'a'),
+          projectWorkspaceFixture(id: 'b'),
+        ]);
+      final session = _readyContainer(gateway);
+      addTearDown(session.dispose);
+      final controller = session.container.read(
+        projectWorkspaceProvider.notifier,
+      );
+      await controller.load(
+        expectedProfileId: 'user-1',
+        projectId: 'proposal-1',
+      );
+      expect(
+        await controller.saveLink(
+          expectedManagerProfileId: 'user-1',
+          projectId: 'proposal-1',
+          name: 'Budget',
+          input: 'https://example.org/budget',
+          linkId: 'b',
+          expectedVersion: 1,
+        ),
+        isTrue,
+      );
+      expect(
+        session.container.read(projectWorkspaceProvider).links.map((x) => x.id),
+        ['b', 'a'],
+      );
+      expect(gateway.links.first.url.hostname, 'drive.google.com');
+      await controller.removeLink(
+        expectedManagerProfileId: 'user-1',
+        projectId: 'proposal-1',
+        linkId: 'a',
+        expectedVersion: 1,
+      );
+      expect(
+        session.container.read(projectWorkspaceProvider).links.single.name,
+        'Budget',
+      );
+    },
+  );
+  test('failed canonical refresh clears stale data and retry recovers committed link', () async {
+    final gateway = FakeProjectWorkspaceGateway();
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+    final controller = session.container.read(
+      projectWorkspaceProvider.notifier,
+    );
+    await controller.load(expectedProfileId: 'user-1', projectId: 'proposal-1');
+    gateway.onSaved = () => gateway.pageError = StateError('offline');
+    expect(
+      await controller.saveLink(
+        expectedManagerProfileId: 'user-1',
+        projectId: 'proposal-1',
+        name: 'Doc',
+        input: 'https://example.org',
+      ),
+      isFalse,
+    );
+    expect(
+      session.container.read(projectWorkspaceProvider).phase,
+      ProjectWorkspacePhase.failure,
+    );
+    expect(session.container.read(projectWorkspaceProvider).links, isEmpty);
+    gateway.pageError = null;
+    await controller.load(expectedProfileId: 'user-1', projectId: 'proposal-1');
+    expect(
+      session.container.read(projectWorkspaceProvider).links.single.name,
+      'Doc',
+    );
+    expect(
+      await controller.reconcilePendingAdd(
+        expectedManagerProfileId: 'user-1',
+        projectId: 'proposal-1',
+      ),
+      isTrue,
+    );
+    expect(gateway.links, hasLength(1));
+    expect(
+      gateway.calls.where((call) => call.startsWith('set:')),
+      hasLength(1),
+    );
+  });
+  test(
+    'mutation failure retains collection; forbidden failure clears it',
+    () async {
+      final gateway = FakeProjectWorkspaceGateway()
+        ..workspace = projectWorkspaceFixture();
+      final session = _readyContainer(gateway);
+      addTearDown(session.dispose);
+      final controller = session.container.read(
+        projectWorkspaceProvider.notifier,
+      );
+      await controller.load(
+        expectedProfileId: 'user-1',
+        projectId: 'proposal-1',
+      );
+      gateway.mutationError = StateError('offline');
+      expect(
+        await controller.removeLink(
+          expectedManagerProfileId: 'user-1',
+          projectId: 'proposal-1',
+          linkId: 'link-1',
+          expectedVersion: 1,
+        ),
+        isFalse,
+      );
+      expect(
+        session.container.read(projectWorkspaceProvider).links,
+        hasLength(1),
+      );
+      gateway.mutationError = const PostgrestException(
+        message: 'private',
+        code: '42501',
+      );
+      expect(
+        await controller.removeLink(
+          expectedManagerProfileId: 'user-1',
+          projectId: 'proposal-1',
+          linkId: 'link-1',
+          expectedVersion: 1,
+        ),
+        isFalse,
+      );
+      expect(session.container.read(projectWorkspaceProvider).links, isEmpty);
+    },
+  );
+  test('project switch ignores stale reads and entitlement loss ignores stale mutation', () async {
+    final pending = Completer<void>();
+    final gateway = FakeProjectWorkspaceGateway()..readDelay = pending.future;
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+    final controller = session.container.read(
+      projectWorkspaceProvider.notifier,
+    );
+    final first = controller.load(
+      expectedProfileId: 'user-1',
+      projectId: 'proposal-1',
+    );
+    final second = controller.load(
+      expectedProfileId: 'user-1',
+      projectId: 'proposal-2',
+    );
+    pending.complete();
+    await Future.wait([first, second]);
+    expect(
+      session.container.read(projectWorkspaceProvider).projectId,
+      'proposal-2',
+    );
+    final saving = Completer<void>();
+    gateway.mutationDelay = saving.future;
+    final save = controller.saveLink(
+      expectedManagerProfileId: 'user-1',
+      projectId: 'proposal-2',
+      name: 'Doc',
+      input: 'https://example.org',
+    );
+    controller.clearProject('proposal-2');
+    saving.complete();
+    expect(await save, isFalse);
+    expect(
+      session.container.read(projectWorkspaceProvider).phase,
+      ProjectWorkspacePhase.idle,
+    );
+  });
   test(
     'loads participant/manager read state and binds expected profile',
     () async {
@@ -28,7 +200,7 @@ void main() {
 
       final state = session.container.read(projectWorkspaceProvider);
       expect(state.phase, ProjectWorkspacePhase.ready);
-      expect(state.workspace?.url.hostname, 'drive.google.com');
+      expect(state.links.firstOrNull?.url.hostname, 'drive.google.com');
       expect(gateway.calls, ['get:user-1:proposal-1']);
     },
   );
@@ -44,26 +216,34 @@ void main() {
       );
 
       expect(
-        await controller.setWorkspace(
+        await controller.saveLink(
           expectedManagerProfileId: 'user-1',
           projectId: 'proposal-1',
+          name: 'Documento',
           input: ' https://docs.example.org/team ',
         ),
         isTrue,
       );
       expect(
-        session.container.read(projectWorkspaceProvider).workspace?.url.value,
+        session.container
+            .read(projectWorkspaceProvider)
+            .links
+            .firstOrNull
+            ?.url
+            .value,
         'https://docs.example.org/team',
       );
       expect(
-        await controller.clearWorkspace(
+        await controller.removeLink(
+          linkId: 'link-1',
+          expectedVersion: 1,
           expectedManagerProfileId: 'user-1',
           projectId: 'proposal-1',
         ),
         isTrue,
       );
       expect(
-        session.container.read(projectWorkspaceProvider).workspace,
+        session.container.read(projectWorkspaceProvider).links.firstOrNull,
         isNull,
       );
     },
@@ -93,7 +273,7 @@ void main() {
         ProjectWorkspacePhase.idle,
       );
       expect(
-        session.container.read(projectWorkspaceProvider).workspace,
+        session.container.read(projectWorkspaceProvider).links.firstOrNull,
         isNull,
       );
     },
@@ -108,9 +288,10 @@ void main() {
 
     final save = session.container
         .read(projectWorkspaceProvider.notifier)
-        .setWorkspace(
+        .saveLink(
           expectedManagerProfileId: 'user-1',
           projectId: 'proposal-1',
+          name: 'Documento',
           input: 'https://example.org/team',
         );
     session.container
@@ -123,7 +304,10 @@ void main() {
       session.container.read(projectWorkspaceProvider).phase,
       ProjectWorkspacePhase.idle,
     );
-    expect(session.container.read(projectWorkspaceProvider).workspace, isNull);
+    expect(
+      session.container.read(projectWorkspaceProvider).links.firstOrNull,
+      isNull,
+    );
   });
 
   test('entitlement loss clears the current project immediately', () async {
@@ -138,7 +322,10 @@ void main() {
 
     controller.clearProject('proposal-1');
 
-    expect(session.container.read(projectWorkspaceProvider).workspace, isNull);
+    expect(
+      session.container.read(projectWorkspaceProvider).links.firstOrNull,
+      isNull,
+    );
     expect(
       session.container.read(projectWorkspaceProvider).phase,
       ProjectWorkspacePhase.idle,
@@ -173,9 +360,13 @@ void main() {
   );
   final container = ProviderContainer(
     overrides: [
+      policyAcceptanceProvider.overrideWith(_AcceptedWorkspacePolicies.new),
       authGatewayProvider.overrideWithValue(auth),
       profileAnchorGatewayProvider.overrideWithValue(
         FakeProfileAnchorGateway()..readiness = ProfileAnchorReadiness.complete,
+      ),
+      projectWorkspacePendingAddStoreProvider.overrideWithValue(
+        FakeWorkspacePendingAddStore(),
       ),
       projectWorkspaceGatewayProvider.overrideWithValue(gateway),
     ],
@@ -189,5 +380,14 @@ void main() {
       container.dispose();
       auth.close();
     },
+  );
+}
+
+class _AcceptedWorkspacePolicies extends PolicyAcceptanceController {
+  @override
+  PolicyAcceptanceState build() => PolicyAcceptanceState(
+    ref.watch(authSessionProvider).identity?.id,
+    ref.watch(policyVersionProvider),
+    PolicyAcceptancePhase.accepted,
   );
 }

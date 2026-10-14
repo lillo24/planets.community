@@ -667,6 +667,13 @@ RoutingConfig _routingConfig(
                     pageBuilder: (context, state) => MaterialPage<void>(
                       key: state.pageKey,
                       child: ProfileEditScreen(
+                        offerGroupAfterSetup:
+                            sessionReader().phase ==
+                                AuthSessionPhase.profileSetupRequired &&
+                            !state.uri.hasQuery &&
+                            (pendingReader()?.returnTo == null ||
+                                pendingReader()?.returnTo == '/' ||
+                                pendingReader()?.returnTo == '/profile'),
                         returnTo: state.uri.queryParameters['returnTo'] == null
                             ? '/profile'
                             : sanitizeReturnDestination(

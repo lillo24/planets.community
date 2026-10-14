@@ -1,3 +1,5 @@
+import 'package:planets_mobile/features/project_workspace/application/project_workspace_controller.dart';
+
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -28,6 +30,7 @@ import 'package:planets_mobile/features/project_participant_invites/data/partici
 import 'package:planets_mobile/features/project_participant_invites/domain/participant_invitation_models.dart';
 import 'package:planets_mobile/features/project_participant_invites/presentation/participant_link_management_screen.dart';
 import 'package:planets_mobile/features/project_workspace/data/project_workspace_gateway.dart';
+import 'package:planets_mobile/features/project_workspace/data/project_workspace_pending_add_store.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../../support/fake_auth.dart';
@@ -429,7 +432,20 @@ void main() {
         } else {
           workspace.readDelay = delay.future;
         }
-        await _pump(tester, 'manage', workspace: workspace, settle: failed);
+        final h = await _pump(tester, 'manage', workspace: workspace);
+        expect(workspace.calls, isEmpty);
+        // A previously opened collection may have a cached loading/error state;
+        // the navigation card itself never starts a read.
+        final read = h.container
+            .read(projectWorkspaceProvider.notifier)
+            .load(expectedProfileId: 'user-1', projectId: 'project-1');
+        if (failed) {
+          await read;
+          await tester.pumpAndSettle();
+        } else {
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
+        }
         expect(
           find.byKey(const Key('project-manage-workspace')),
           findsOneWidget,
@@ -439,9 +455,15 @@ void main() {
           workspace.readError = null;
           await tester.tap(find.byTooltip('Try again'));
           await tester.pumpAndSettle();
+          expect(
+            h.router.routerDelegate.state.uri.path,
+            '/proposals/project-1/workspace',
+          );
+          expect(workspace.calls, hasLength(1));
         } else {
           expect(find.byType(CircularProgressIndicator), findsOneWidget);
           delay.complete();
+          await read;
           await tester.pumpAndSettle();
         }
         expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -590,6 +612,9 @@ _pump(
       ),
       projectDelegateGatewayProvider.overrideWithValue(delegates),
       participantInvitationGatewayProvider.overrideWithValue(invitations),
+      projectWorkspacePendingAddStoreProvider.overrideWithValue(
+        FakeWorkspacePendingAddStore(),
+      ),
       projectWorkspaceGatewayProvider.overrideWithValue(sharedWorkspace),
       participationGatewayProvider.overrideWithValue(participation),
       projectInviteSharingProvider.overrideWithValue(sharing),

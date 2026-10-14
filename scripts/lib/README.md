@@ -79,3 +79,15 @@ without overwriting owner edits or fabricating idempotency for Tavolo/Resource
 RPCs. `demo-drafts.test.mjs` exercises unchanged reruns, lost receipts and committed
 unknown-outcome recovery. `demo-world.mjs` composes this inventory under its
 existing advisory lock; read-only verification never repairs destinations.
+
+- `project-workspace-multi-verifier.mjs` extends the workspace verifier with real
+  authenticated multi-link CRUD/concurrency/legacy-compatibility checks and the
+  explicit disposable-stack populated upgrade mode. It never contacts hosted
+  databases or prints credential-bearing CLI output.
+
+- `project-workspace-upgrade-verifier.mjs` owns guarded disposable-loopback reset
+  rehearsals for original and populated latest-main histories. Its temporary
+  migration input excludes only Batch A workspace migrations; tracked history
+  stays intact. It verifies repeat-up preservation and removes only its own
+  resolved temporary tree. The multi-link verifier covers real Proposal/Tavolo
+  RPC paging, Add receipts, concurrent CAS, legacy coexistence and privacy.

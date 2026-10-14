@@ -51,7 +51,11 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.byKey(const Key('proposal-status-idea')), findsOneWidget);
+        expect(
+          find.byKey(const Key('proposal-idea-ribbon-idea-1')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('proposal-status-idea')), findsNothing);
         final place = find.text(
           language == 'it'
               ? 'Luogo da decidere insieme'

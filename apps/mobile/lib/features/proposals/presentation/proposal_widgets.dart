@@ -6,9 +6,8 @@ import '../../../core/theme/app_tokens.dart';
 import '../../locations/presentation/location_attribution.dart';
 import '../../locations/presentation/public_location_label.dart';
 
-import '../../../core/widgets/requested_badge.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../cover_media/presentation/project_cover_image.dart';
+import 'proposal_card_cover.dart';
 import '../../participation/presentation/project_capacity_label.dart';
 import '../../participation/presentation/project_capacity_presentation.dart';
 import '../domain/proposal_models.dart';
@@ -95,22 +94,7 @@ class ProposalCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Stack(
-              children: [
-                ProjectCoverImage(
-                  key: Key('proposal-cover-${proposal.id}'),
-                  title: proposal.title,
-                  objectPath: proposal.coverObjectPath,
-                  aspectRatio: 3 / 2,
-                ),
-                if (isRequested)
-                  const Positioned(
-                    top: AppSpacing.small,
-                    right: AppSpacing.small,
-                    child: RequestedBadge(),
-                  ),
-              ],
-            ),
+            ProposalCardCover(proposal: proposal, isRequested: isRequested),
             Padding(
               padding: const EdgeInsets.all(AppSpacing.medium),
               child: Column(
@@ -126,10 +110,8 @@ class ProposalCard extends StatelessWidget {
                         key: Key('proposal-card-title-${proposal.id}'),
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      ProposalStatusBadge(
-                        status: proposal.status,
-                        isIdea: proposal.isIdea,
-                      ),
+                      if (!proposal.isIdea)
+                        ProposalStatusBadge(status: proposal.status),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.small),
@@ -160,7 +142,11 @@ class ProposalCard extends StatelessWidget {
                       AppLocalizations.of(context).proposalSkillsTitle,
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
-                    ProposalSkillRequirements(skills: proposal.skills),
+                    ProposalSkillRequirements(
+                      skills: proposal.skills,
+                      multiline:
+                          MediaQuery.textScalerOf(context).scale(14) > 18,
+                    ),
                   ],
                 ],
               ),
@@ -173,9 +159,16 @@ class ProposalCard extends StatelessWidget {
 }
 
 class ProposalSkillRequirements extends StatelessWidget {
-  const ProposalSkillRequirements({required this.skills, super.key});
+  const ProposalSkillRequirements({
+    required this.skills,
+    this.multiline = false,
+    super.key,
+  });
 
   final List<ProposalSkill> skills;
+  // Card-only enlarged-text fallback: Chip inherits a single-line label style.
+  // Keep the same inert labels and ordering while allowing complete wrapping.
+  final bool multiline;
 
   @override
   Widget build(BuildContext context) {
@@ -186,12 +179,33 @@ class ProposalSkillRequirements extends StatelessWidget {
       children: [
         for (final importance in ProposalSkillImportance.values)
           for (final skill in skills.where((s) => s.importance == importance))
-            Chip(
-              label: Text(
-                '${importance == ProposalSkillImportance.required ? l10n.proposalSkillRequired : l10n.proposalSkillUseful}: ${skill.label}',
-              ),
+            _SkillLabel(
+              label:
+                  '${importance == ProposalSkillImportance.required ? l10n.proposalSkillRequired : l10n.proposalSkillUseful}: ${skill.label}',
+              multiline: multiline,
             ),
       ],
+    );
+  }
+}
+
+class _SkillLabel extends StatelessWidget {
+  const _SkillLabel({required this.label, required this.multiline});
+  final String label;
+  final bool multiline;
+  @override
+  Widget build(BuildContext context) {
+    if (!multiline) return Chip(label: Text(label));
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.outline),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Text(label, style: theme.textTheme.labelLarge),
+      ),
     );
   }
 }

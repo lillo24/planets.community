@@ -1,3 +1,4 @@
+import 'package:planets_mobile/features/project_chat/application/project_needs_controller.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 
 import '../../../support/fake_policy.dart';
@@ -28,6 +29,8 @@ import 'package:planets_mobile/features/project_chat/data/project_needs_gateway.
 import 'package:planets_mobile/features/project_chat/application/project_chat_controllers.dart';
 import 'package:planets_mobile/features/project_chat/domain/project_chat_models.dart';
 import 'package:planets_mobile/features/project_workspace/data/project_workspace_gateway.dart';
+import 'package:planets_mobile/features/project_workspace/data/project_workspace_pending_add_store.dart';
+import 'package:planets_mobile/features/project_workspace/presentation/project_workspace_screen.dart';
 import 'package:planets_mobile/features/project_workspace/application/project_workspace_launcher.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
@@ -49,6 +52,55 @@ import '../../../support/fake_recurring_activity.dart';
 import '../../../support/fake_resource_chat.dart';
 
 void main() {
+  testWidgets(
+    'switching Project chats loads the new target and keeps Workspace lazy',
+    (tester) async {
+      final chats = FakeProjectChatGateway()
+        ..summaries = [
+          projectChatSummaryFixture(),
+          projectChatSummaryFixture(
+            chatId: 'chat-2',
+            projectId: 'tavolo-2',
+            projectKind: ProjectKind.recurring,
+            projectTitle: 'Tavolo two',
+          ),
+        ];
+      final workspace = FakeProjectWorkspaceGateway();
+      final app = await _pump(tester, chats: chats, workspace: workspace);
+      final router = app.read(appRouterProvider);
+      router.go('/messages/chats/chat-1');
+      await tester.pumpAndSettle();
+      expect(
+        app.read(projectChatDetailProvider).summary?.projectId,
+        'proposal-1',
+      );
+      await tester.enterText(
+        find.byKey(const Key('project-chat-composer')),
+        'Unsent first-chat message',
+      );
+      router.go('/messages/chats/chat-2');
+      for (var frame = 0; frame < 10; frame++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(app.read(projectChatDetailProvider).chatId, 'chat-2');
+      expect(
+        app.read(projectChatDetailProvider).phase,
+        ProjectChatDetailPhase.ready,
+      );
+      expect(
+        app.read(projectChatDetailProvider).summary?.projectId,
+        'tavolo-2',
+      );
+      expect(find.text('Unsent first-chat message'), findsNothing);
+      expect(
+        find.byKey(const Key('project-workspace-chat-control')),
+        findsOneWidget,
+      );
+      expect(workspace.calls, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'AUTO02 failed older page pauses, retries its cursor and rejects late account work',
     (tester) async {
@@ -366,14 +418,96 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('project-workspace-chat-control')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('drive.google.com'), findsOneWidget);
+    expect(launcher.calls, 0);
+    await tester.tap(find.text('drive.google.com'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('drive.google.com'), findsWidgets);
     expect(find.textContaining('private-token'), findsNothing);
     await tester.tap(find.byKey(const Key('project-workspace-confirm-open')));
     await tester.pumpAndSettle();
     expect(launcher.calls, 1);
   });
 
-  testWidgets('manager without a link sees Add workspace in chat', (
+  testWidgets('Checklist closes outside disposal and keeps Workspace lazy', (
+    tester,
+  ) async {
+    final chats = FakeProjectChatGateway()
+      ..summaries = [projectChatSummaryFixture()]
+      ..histories['chat-1'] = [];
+    final workspace = FakeProjectWorkspaceGateway();
+    final app = await _pump(tester, chats: chats, workspace: workspace);
+    app.read(appRouterProvider).go('/messages/chats/chat-1');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('project-needs-button')));
+    await tester.pumpAndSettle();
+    expect(app.read(projectNeedsProvider).isDrawerOpen, isTrue);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(app.read(projectNeedsProvider).isDrawerOpen, isFalse);
+    expect(workspace.calls, isEmpty);
+    await tester.tap(find.byKey(const Key('project-workspace-chat-control')));
+    await tester.pumpAndSettle();
+    expect(
+      workspace.calls.where((call) => call.startsWith('get:')),
+      hasLength(1),
+    );
+  });
+
+  for (final mode in ['empty', 'loading', 'error']) {
+    testWidgets(
+      'current ordinary member keeps neighboring Checklist/Workspace and opens $mode collection',
+      (tester) async {
+        final chats = FakeProjectChatGateway()
+          ..summaries = [projectChatSummaryFixture()]
+          ..histories['chat-1'] = [];
+        final pending = Completer<void>();
+        final workspace = FakeProjectWorkspaceGateway();
+        if (mode == 'loading') workspace.readDelay = pending.future;
+        if (mode == 'error') workspace.readError = StateError('private');
+        final app = await _pump(tester, chats: chats, workspace: workspace);
+        app.read(appRouterProvider).go('/messages/chats/chat-1');
+        if (mode == 'loading') {
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 1));
+        } else {
+          await tester.pumpAndSettle();
+        }
+        expect(find.byKey(const Key('project-needs-button')), findsOneWidget);
+        expect(workspace.calls, isEmpty);
+        final chip = find.byKey(const Key('project-workspace-chat-control'));
+        expect(tester.widget(chip), isA<ActionChip>());
+        expect(
+          tester.getCenter(chip).dx,
+          greaterThan(
+            tester.getCenter(find.byKey(const Key('project-needs-button'))).dx,
+          ),
+        );
+        await tester.tap(chip);
+        if (mode == 'loading') {
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 1));
+          pending.complete();
+        }
+        await tester.pumpAndSettle();
+        expect(find.byType(ProjectWorkspaceScreen), findsOneWidget);
+        expect(
+          workspace.calls.where((call) => call.startsWith('get:')),
+          hasLength(1),
+        );
+        expect(find.byKey(const Key('project-workspace-add')), findsNothing);
+        expect(
+          find.text(
+            mode == 'error'
+                ? 'Shared workspace information is unavailable. Try again.'
+                : 'No links shared yet.',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+  }
+  testWidgets('manager without a link retains the Workspace chip in chat', (
     tester,
   ) async {
     final chats = FakeProjectChatGateway()
@@ -389,7 +523,7 @@ void main() {
       find.byKey(const Key('project-workspace-chat-control')),
       findsOneWidget,
     );
-    expect(find.text('Add workspace'), findsOneWidget);
+    expect(find.text('Workspace'), findsOneWidget);
   });
 
   testWidgets('former member keeps history without composer or Realtime', (
@@ -1132,6 +1266,10 @@ void main() {
     );
     app.read(appRouterProvider).go('/messages/chats/chat-1/info');
     await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('project-chat-edit-commitments')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('project-chat-edit-commitments')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Painting'));
@@ -1289,7 +1427,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('drive.google.com'), findsOneWidget);
-    expect(find.byKey(const Key('project-workspace-info-edit')), findsNothing);
+    expect(find.byKey(const Key('workspace-edit-link-1')), findsNothing);
   });
 
   testWidgets('Group info gives a manager Edit workspace', (tester) async {
@@ -1304,10 +1442,7 @@ void main() {
     app.read(appRouterProvider).go('/messages/chats/chat-1/info');
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const Key('project-workspace-info-edit')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const Key('workspace-edit-link-1')), findsOneWidget);
   });
 
   testWidgets('delegate group info is labeled Co-organizer', (tester) async {
@@ -1417,6 +1552,9 @@ Future<ProviderContainer> _pump(
         ),
         projectNeedsGatewayProvider.overrideWithValue(
           needs ?? FakeProjectNeedsGateway(),
+        ),
+        projectWorkspacePendingAddStoreProvider.overrideWithValue(
+          FakeWorkspacePendingAddStore(),
         ),
         projectWorkspaceGatewayProvider.overrideWithValue(
           workspace ?? FakeProjectWorkspaceGateway(),

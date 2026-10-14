@@ -16,7 +16,6 @@ import '../../blocking/presentation/blocking_action.dart';
 import '../../messages/presentation/messages_routes.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../../project_workspace/application/project_workspace_controller.dart';
-import '../../project_workspace/domain/project_workspace_models.dart';
 import '../../project_workspace/presentation/project_workspace_widgets.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../project_organization/presentation/project_organization_sheet.dart';
@@ -53,9 +52,22 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
   }
 
   @override
+  void didUpdateWidget(covariant ProjectChatScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.chatId == widget.chatId) return;
+    // GoRouter can reuse this state for another chat on the same route.
+    _composer.clear();
+    _didInitialScroll = false;
+    Future<void>.microtask(_load);
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _detailController.stopSignals();
+    _detailController.stopSignals(
+      expectedProfileId: _expectedProfileId,
+      chatId: widget.chatId,
+    );
     _composer.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -75,13 +87,14 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
 
   Future<void> _load() async {
     final profileId = _expectedProfileId;
-    if (profileId == null || !_hasExpectedIdentity) return;
+    if (!mounted || profileId == null || !_hasExpectedIdentity) return;
+    final chatId = widget.chatId;
     await _detailController.refresh(
       expectedProfileId: profileId,
-      chatId: widget.chatId,
+      chatId: chatId,
     );
-    if (!mounted || !_hasExpectedIdentity) return;
-    _detailController.startSignals(profileId, widget.chatId);
+    if (!mounted || widget.chatId != chatId || !_hasExpectedIdentity) return;
+    _detailController.startSignals(profileId, chatId);
     await _syncWorkspace();
   }
 
@@ -110,9 +123,8 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
           .clearProject(summary.projectId);
       return;
     }
-    await ref
-        .read(projectWorkspaceProvider.notifier)
-        .load(expectedProfileId: profileId, projectId: summary.projectId);
+    // The collection route owns reads. Opening or refreshing chat must not
+    // preload its private links; only known entitlement loss clears a cache.
   }
 
   Future<void> _loadOlder() async {
@@ -295,21 +307,13 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
                                   label: Text(l10n.organizationTitle),
                                 ),
                               ],
-                              if (workspaceBelongs &&
-                                  (workspaceState.phase ==
-                                          ProjectWorkspacePhase.loading ||
-                                      (workspaceState.phase ==
-                                              ProjectWorkspacePhase.ready &&
-                                          (workspaceState.workspace != null ||
-                                              summary!.isManager)))) ...[
-                                const SizedBox(width: AppSpacing.small),
-                                ProjectWorkspaceChatControl(
-                                  expectedProfileId: _expectedProfileId,
-                                  projectId: summary!.projectId,
-                                  projectKind: summary.projectKind,
-                                  isManager: summary.isManager,
-                                ),
-                              ],
+                              const SizedBox(width: AppSpacing.small),
+                              ProjectWorkspaceChatControl(
+                                expectedProfileId: _expectedProfileId,
+                                projectId: summary!.projectId,
+                                projectKind: summary.projectKind,
+                                isManager: summary.isManager,
+                              ),
                             ],
                           ),
                         ),

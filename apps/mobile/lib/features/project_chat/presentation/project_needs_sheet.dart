@@ -9,14 +9,22 @@ import '../application/project_needs_controller.dart';
 import '../domain/project_chat_models.dart';
 import '../domain/project_needs_models.dart';
 
-Future<void> showProjectNeedsSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
-    builder: (_) => const ProjectNeedsSheet(),
-  );
+Future<void> showProjectNeedsSheet(BuildContext context) async {
+  final controller = ProviderScope.containerOf(context)
+      .read(projectNeedsProvider.notifier);
+  try {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (_) => const ProjectNeedsSheet(),
+    );
+  } finally {
+    // Route completion runs outside widget disposal/build, and closes the
+    // drawer before a later sheet can open. Disposal must not notify providers.
+    controller.closeDrawer();
+  }
 }
 
 class ProjectNeedsSheet extends ConsumerStatefulWidget {
@@ -37,12 +45,6 @@ class _ProjectNeedsSheetState extends ConsumerState<ProjectNeedsSheet> {
     _controller = ref.read(projectNeedsProvider.notifier);
     _openingContentRevision = ref.read(projectNeedsProvider).contentRevision;
     Future<void>.microtask(_controller.openDrawerAndRefresh);
-  }
-
-  @override
-  void dispose() {
-    _controller.closeDrawer();
-    super.dispose();
   }
 
   void _acknowledgeAfterRender(ProjectNeedsState state) {

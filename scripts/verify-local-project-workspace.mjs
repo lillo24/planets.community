@@ -1,3 +1,8 @@
+import { randomUUID } from "node:crypto";
+import {
+  verifyWorkspaceCollection,
+  verifyWorkspaceUpgrade,
+} from "./lib/project-workspace-multi-verifier.mjs";
 import { createClient } from "@supabase/supabase-js";
 import postgres from "postgres";
 
@@ -26,7 +31,9 @@ const anonymousClient = createClient(apiUrl, publishableKey, {
 });
 
 try {
-  await verifyProjectWorkspace();
+  if (process.argv.includes("--upgrade"))
+    await verifyWorkspaceUpgrade({ repositoryRoot, apiUrl, databaseUrl });
+  else await verifyProjectWorkspace();
 } finally {
   await sql.end();
 }
@@ -41,6 +48,7 @@ async function verifyProjectWorkspace() {
   const participant = await signIn("workspace-participant@planets.invalid");
   const pending = await signIn("workspace-pending@planets.invalid");
   const unrelated = await signIn("workspace-unrelated@planets.invalid");
+  const groupOnly = await signIn("workspace-group-only@planets.invalid");
   await Promise.all([
     ensureCompleteProfile(creator, "Workspace Creator"),
     ensureCompleteProfile(coorganizer, "Workspace Co-organizer"),
@@ -48,11 +56,18 @@ async function verifyProjectWorkspace() {
     ensureCompleteProfile(participant, "Workspace Participant"),
     ensureCompleteProfile(pending, "Workspace Pending"),
     ensureCompleteProfile(unrelated, "Workspace Unrelated"),
+    ensureCompleteProfile(groupOnly, "Workspace Group Only"),
   ]);
   await Promise.all(
-    [creator, coorganizer, cocreator, participant, pending, unrelated].map(
-      (user) => ensureLocalProfilePhoto(user),
-    ),
+    [
+      creator,
+      coorganizer,
+      cocreator,
+      participant,
+      pending,
+      unrelated,
+      groupOnly,
+    ].map((user) => ensureLocalProfilePhoto(user)),
   );
 
   const projectId = await createPublishedProposal(creator);
@@ -82,6 +97,20 @@ async function verifyProjectWorkspace() {
   await setWorkspace(cocreator, projectId, cocreatorUrl);
   await assertWorkspace(coorganizer, projectId, cocreatorUrl);
 
+  const coCreatorRequest = randomUUID();
+  const coCreatorLink = await rpc(cocreator, "save_project_workspace_link", {
+    p_expected_manager_profile_id: cocreator.id,
+    p_project_id: projectId,
+    p_display_name: "Co-creator document",
+    p_workspace_url: "https://example.org/co-creator",
+    p_client_request_id: coCreatorRequest,
+  });
+  await rpc(cocreator, "remove_project_workspace_link", {
+    p_expected_manager_profile_id: cocreator.id,
+    p_project_id: projectId,
+    p_link_id: coCreatorLink,
+    p_expected_version: 1,
+  });
   await rpc(creator, "change_project_delegate_role", {
     p_expected_structural_profile_id: creator.id,
     p_delegate_id: cocreatorDelegateId,
@@ -106,6 +135,17 @@ async function verifyProjectWorkspace() {
     projectId,
   );
   await assertWorkspace(participant, projectId, demotedUrl);
+  await verifyWorkspaceCollection({
+    sql,
+    rpc,
+    denied: assertRpcDenied,
+    creator,
+    manager: coorganizer,
+    member: participant,
+    projectId,
+    createProject: createPublishedProposal,
+    anonymousClient,
+  });
   await assertRpcDenied(
     participant.client.rpc("set_project_shared_workspace", {
       p_expected_manager_profile_id: participant.id,
@@ -132,6 +172,96 @@ async function verifyProjectWorkspace() {
   });
   await assertWorkspaceDenied(participant, projectId, "former participant");
 
+  const recurringId = await createPublishedTavolo(creator);
+  await setWorkspace(creator, recurringId, "https://example.org/tavolo-legacy");
+  await grantDelegate(creator, coorganizer, recurringId, "co_organizer");
+  await grantDelegate(creator, cocreator, recurringId, "co_creator");
+  const recurringMembership = await requestAndAccept(
+    participant,
+    creator,
+    recurringId,
+  );
+  await verifyWorkspaceCollection({
+    sql,
+    rpc,
+    denied: assertRpcDenied,
+    creator,
+    manager: coorganizer,
+    member: participant,
+    projectId: recurringId,
+    createProject: createPublishedTavolo,
+    anonymousClient,
+    projectKind: "recurring_activity",
+  });
+  await assertWorkspaceDenied(unrelated, recurringId, "unrelated Tavolo actor");
+  await rpc(creator, "remove_project_member_as_manager", {
+    p_expected_manager_profile_id: creator.id,
+    p_membership_id: recurringMembership,
+  });
+  await assertWorkspaceDenied(
+    participant,
+    recurringId,
+    "removed Tavolo participant",
+  );
+
+  const groupId = await rpc(unrelated, "create_group_draft", {
+    p_expected_profile_id: unrelated.id,
+    p_client_request_id: randomUUID(),
+    p_content: {
+      name: "Synthetic workspace role boundary",
+      description: "Local synthetic verifier group only",
+      group_kind: "informal",
+      locality: "Trento",
+      volunteering_focus: true,
+    },
+  });
+  await rpc(unrelated, "set_group_publication_state", {
+    p_expected_profile_id: unrelated.id,
+    p_group_id: groupId,
+    p_client_request_id: randomUUID(),
+    p_expected_version: 1,
+    p_publication_state: "published",
+  });
+  for (const [person, role] of [
+    [pending, "co_creator"],
+    [groupOnly, "co_organizer"],
+  ]) {
+    const [invitation] = await rpc(
+      unrelated,
+      "create_group_authority_invitation",
+      {
+        p_expected_profile_id: unrelated.id,
+        p_group_id: groupId,
+        p_client_request_id: randomUUID(),
+        p_role: role,
+      },
+    );
+    await rpc(person, "accept_group_authority_invitation", {
+      p_expected_profile_id: person.id,
+      p_client_request_id: randomUUID(),
+      p_token: invitation.invite_token,
+    });
+  }
+  const roles =
+    await sql`select profile_id,delegate_role from private.group_delegates where group_id=${groupId}::uuid and revoked_at is null`;
+  if (roles.length !== 2)
+    throw new Error("Canonical group authority fixture is incomplete.");
+  for (const person of [unrelated, pending, groupOnly]) {
+    await assertWorkspaceDenied(
+      person,
+      projectId,
+      "persistent group role alone",
+    );
+    await assertWorkspaceDenied(
+      person,
+      recurringId,
+      "persistent group role alone for Tavolo",
+    );
+  }
+  console.log(
+    "Tavolo mutations/pages/privacy, removed membership and all three group-only authority roles passed.",
+  );
+
   const coorganizerMembershipId = await requestAndAccept(
     coorganizer,
     creator,
@@ -145,6 +275,12 @@ async function verifyProjectWorkspace() {
     "https://sharepoint.com/sites/workspace-verifier";
   await setWorkspace(coorganizer, projectId, managerAfterLeaveUrl);
   await assertWorkspace(coorganizer, projectId, managerAfterLeaveUrl);
+  const managerPage = await rpc(coorganizer, "list_project_workspace_links", {
+    p_expected_profile_id: coorganizer.id,
+    p_project_id: projectId,
+  });
+  if (managerPage.can_manage !== true)
+    throw new Error("Independent management was lost on participant leave.");
 
   await requestAndAccept(cocreator, creator, projectId);
   await rpc(creator, "revoke_project_delegate", {
@@ -152,6 +288,26 @@ async function verifyProjectWorkspace() {
     p_delegate_id: cocreatorDelegateId,
   });
   await assertWorkspace(cocreator, projectId, managerAfterLeaveUrl);
+  await assertRpcDenied(
+    cocreator.client.rpc("get_project_workspace_add_receipt", {
+      p_expected_manager_profile_id: cocreator.id,
+      p_project_id: projectId,
+      p_client_request_id: coCreatorRequest,
+    }),
+    "receipt after manager revocation",
+    "42501",
+  );
+  await assertRpcDenied(
+    cocreator.client.rpc("save_project_workspace_link", {
+      p_expected_manager_profile_id: cocreator.id,
+      p_project_id: projectId,
+      p_display_name: "Revoked",
+      p_workspace_url: "https://example.org/revoked",
+      p_client_request_id: randomUUID(),
+    }),
+    "named Add after manager revocation",
+    "42501",
+  );
   await assertRpcDenied(
     cocreator.client.rpc("set_project_shared_workspace", {
       p_expected_manager_profile_id: cocreator.id,
@@ -224,7 +380,7 @@ async function verifyProjectWorkspace() {
   );
 }
 
-async function createPublishedProposal(creator) {
+async function createPublishedProposal(creator, publish = true) {
   const projectId = await rpc(creator, "create_proposal_draft", {
     p_expected_creator_profile_id: creator.id,
     p_title: "Shared workspace verifier Project",
@@ -244,11 +400,43 @@ async function createPublishedProposal(creator) {
     p_skill_importances: [],
     p_people_capacity: 20,
   });
-  await rpc(creator, "publish_proposal", {
-    p_expected_creator_profile_id: creator.id,
-    p_proposal_id: projectId,
-  });
+  if (publish) {
+    await rpc(creator, "publish_proposal", {
+      p_expected_creator_profile_id: creator.id,
+      p_proposal_id: projectId,
+    });
+  }
   return projectId;
+}
+
+async function createPublishedTavolo(creator, publish = true) {
+  const id = await rpc(creator, "create_recurring_activity_draft", {
+    p_expected_creator_profile_id: creator.id,
+    p_title: "Workspace Tavolo verifier",
+    p_summary: "Synthetic workspace verification",
+    p_description: "Local synthetic recurring Project",
+    p_topic: "Garden",
+    p_country_code: "IT",
+    p_locality: "Trento",
+    p_administrative_area: "Trento",
+    p_public_location_label: "Trento",
+    p_exact_meeting_text: "Synthetic meeting point",
+    p_exact_location_visibility: "participants",
+    p_recurrence_type: "weekly",
+    p_weekday: 2,
+    p_day_of_month: null,
+    p_local_start_time: "10:00",
+    p_duration_minutes: 60,
+    p_event_timezone: "Europe/Rome",
+    p_effective_from: "2098-01-01",
+    p_people_capacity: 20,
+  });
+  if (publish)
+    await rpc(creator, "publish_recurring_activity", {
+      p_expected_creator_profile_id: creator.id,
+      p_recurring_activity_id: id,
+    });
+  return id;
 }
 
 async function grantDelegate(creator, candidate, projectId, role) {
@@ -303,13 +491,60 @@ async function assertWorkspace(user, projectId, expectedUrl) {
   }
 }
 
-function assertWorkspaceDenied(user, projectId, label) {
-  return assertRpcDenied(
+async function assertWorkspaceDenied(user, projectId, label) {
+  await assertRpcDenied(
     user.client.rpc("get_own_project_shared_workspace", {
       p_expected_profile_id: user.id,
       p_project_id: projectId,
     }),
-    `${label} workspace read`,
+    label,
+    "42501",
+  );
+  await assertRpcDenied(
+    user.client.rpc("get_project_workspace_link", {
+      p_expected_profile_id: user.id,
+      p_project_id: projectId,
+      p_link_id: "fa000000-0000-4000-8000-000000000000",
+    }),
+    `${label} item`,
+    "42501",
+  );
+  await assertRpcDenied(
+    user.client.rpc("get_project_workspace_add_receipt", {
+      p_expected_manager_profile_id: user.id,
+      p_project_id: projectId,
+      p_client_request_id: randomUUID(),
+    }),
+    `${label} receipt`,
+    "42501",
+  );
+  await assertRpcDenied(
+    user.client.rpc("list_project_workspace_links", {
+      p_expected_profile_id: user.id,
+      p_project_id: projectId,
+    }),
+    `${label} list`,
+    "42501",
+  );
+  await assertRpcDenied(
+    user.client.rpc("save_project_workspace_link", {
+      p_expected_manager_profile_id: user.id,
+      p_project_id: projectId,
+      p_display_name: "Denied",
+      p_workspace_url: "https://example.org",
+      p_client_request_id: randomUUID(),
+    }),
+    `${label} add`,
+    "42501",
+  );
+  await assertRpcDenied(
+    user.client.rpc("remove_project_workspace_link", {
+      p_expected_manager_profile_id: user.id,
+      p_project_id: projectId,
+      p_link_id: "fa000000-0000-4000-8000-000000000000",
+      p_expected_version: 1,
+    }),
+    `${label} remove`,
     "42501",
   );
 }

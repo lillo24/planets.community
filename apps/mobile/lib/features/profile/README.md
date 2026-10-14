@@ -38,7 +38,15 @@ Setup and edit share one canonical Save handler. Its AppBar action remains
 visible while scrolling, disables during requests and shows save progress.
 Safe save failures appear above the scrollable fields as a live-region message;
 validation still blocks invalid required names before any gateway call. A
-successful save/reload marks the current identity ready and returns to Profile.
+successful save/reload marks the current identity ready. An ordinary, explicit
+incomplete-to-complete setup save then presents the optional group offer from
+`presentation/post_setup_group_offer.dart`; Skip, Back and outside dismissal
+continue to Profile, while Create opens the existing group editor. The offer
+does not create or publish a group. It has no persistent completion flag.
+Router-owned setup without a protected continuation is the only eligible entry;
+normal edits and native photo/return-by-pop editors do not offer it. Its route,
+identity and pending continuation listeners cancel obsolete callbacks, including
+account replacement and a newer invitation. No offer is queued after that action.
 When setup was entered through a guarded Proposal/Tavolo Join route, Save keeps
 that Join continuation while AppBar/system Back cancel to the public parent
 detail. Both destinations are derived from sanitized internal routes.

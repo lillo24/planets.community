@@ -92,6 +92,7 @@ class MessageChatsController extends Notifier<MessageChatsState> {
     );
     ref.onDispose(() {
       _revision++;
+      _signalsEnabled = false;
       _refreshTimer?.cancel();
       _closeAllSubscriptions();
     });

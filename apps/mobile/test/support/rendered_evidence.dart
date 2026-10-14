@@ -6,13 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Opt-in actual Flutter renders; normal CI does no filesystem/font work.
+/// Opt-in Flutter captures. Typography matrices can also request real fonts
+/// without writing screenshots; other CI callers keep the inexpensive default.
 class RenderedEvidence {
   static const directory = String.fromEnvironment('UI_POLISH_CAPTURE_DIR');
   static const key = Key('ui-polish-render');
 
-  static Future<void> loadFonts() async {
-    if (directory.isEmpty) return;
+  static Future<void> loadFonts({bool force = false}) async {
+    if (directory.isEmpty && !force) return;
     final fonts =
         '${File(Platform.resolvedExecutable).parent.parent.parent.path}/material_fonts';
     for (final entry in {
