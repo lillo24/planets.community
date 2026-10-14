@@ -83,7 +83,9 @@ in-place correction/deletion endpoint: start a new deliberate request. Retention
 anonymization and later lawful removal belong to Plan 10; no arbitrary retention
 period, account FK or cascade deletes D records.
 
-Actor/action UUID receipts freeze operation, target and exact normalized intent.
+Actor/action UUID receipts freeze operation, target and exact submitted intent,
+including whitespace. Stored human text is trimmed separately; transport retries
+must preserve the original submitted bytes.
 Exact replay returns the original identifiers/outcome, never restores authority.
 Changed intent is `PT409`. An uncertain transport keeps the same UUID and input;
 explicit recovery returns metadata only and zero rows when no action committed.

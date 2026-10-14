@@ -33,7 +33,9 @@ enum ModerationTargetKind {
   projectChatMessage('project_chat_message'),
   resourceListing('resource_listing'),
   resourceRequest('resource_request'),
-  resourceChatMessage('resource_chat_message');
+  resourceChatMessage('resource_chat_message'),
+  groupContactRequest('group_contact_request'),
+  groupContactMessage('group_contact_message');
 
   const ModerationTargetKind(this.wireValue);
 
@@ -48,6 +50,8 @@ enum ModerationTargetKind {
     'resource_listing' => ModerationTargetKind.resourceListing,
     'resource_request' => ModerationTargetKind.resourceRequest,
     'resource_chat_message' => ModerationTargetKind.resourceChatMessage,
+    'group_contact_request' => ModerationTargetKind.groupContactRequest,
+    'group_contact_message' => ModerationTargetKind.groupContactMessage,
     _ => throw const FormatException('Unsupported moderation target kind.'),
   };
 }

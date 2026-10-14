@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../group_contact/application/contact_access_changes.dart';
 import '../data/message_unread_gateway.dart';
 import '../domain/message_unread_models.dart';
 import 'message_chats_refresh.dart';
@@ -36,6 +37,17 @@ class MessageUnreadController extends Notifier<MessageUnreadState>
     final id = session.phase == AuthSessionPhase.ready
         ? session.identity?.id
         : null;
+    ref.listen(contactAccessChangesProvider, (_, next) {
+      if (id != null && next.$1 == id && state.profileId == id) {
+        _request++;
+        state = MessageUnreadState(
+          profileId: id,
+          stale: true,
+          disconnected: state.disconnected,
+        );
+        _schedule(id);
+      }
+    });
     final revision = ++_revision;
     _request++;
     _timer?.cancel();

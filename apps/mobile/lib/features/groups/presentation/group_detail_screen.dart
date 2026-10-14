@@ -13,6 +13,7 @@ import '../../moderation/presentation/report_form_screen.dart';
 import '../data/group_gateway.dart';
 import '../domain/group_models.dart';
 import 'group_widgets.dart';
+import '../../group_contact/presentation/group_contact_widgets.dart';
 
 class GroupDetailScreen extends ConsumerStatefulWidget {
   const GroupDetailScreen({required this.id, this.report = false, super.key});
@@ -92,6 +93,10 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                         padding: const EdgeInsets.all(24),
                         children: [
                           GroupSummary(snapshot.data!, full: true),
+                          GroupContactEntry(
+                            groupId: widget.id,
+                            groupName: snapshot.data!.content.name,
+                          ),
                           const SizedBox(height: 24),
                           Text(l.groupsDeclaration),
                           GroupProjectFeed(groupId: widget.id),

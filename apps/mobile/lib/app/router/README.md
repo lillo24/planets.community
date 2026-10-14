@@ -87,3 +87,10 @@ Content creation/edit/report retains its readiness boundary. The separate
 `structural-edit` route uses Co-creator RPCs and safely exits after Restore.
 Proposal/Tavolo Groups navigation belongs only to the top-right page toolbar;
 `BrowseActivitySwitcher` owns only activity-family choices.
+
+D02 adds protected group contact composers and exact Messages contact
+request/chat/info destinations. Its continuation validator allows only UUID
+context, supported purpose and an optional public Project ID; private note text
+never enters a URL. Profile/policy setup returns to the intended form without
+sending, accepting or entering optional group onboarding. Contact details live in
+`group_contact/`, and group/Project participation retains its existing routes.

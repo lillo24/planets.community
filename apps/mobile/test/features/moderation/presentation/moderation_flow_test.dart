@@ -18,6 +18,48 @@ import '../../../support/fake_moderation.dart';
 void main() {
   for (final locale in ['en', 'it']) {
     testWidgets(
+      'contact reports keep long categories inside 320dp at 2x in $locale',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final container = _container(FakeModerationGateway());
+        addTearDown(container.dispose);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              locale: Locale(locale),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(context)
+                    .copyWith(textScaler: TextScaler.linear(2)),
+                child: child!,
+              ),
+              home: const ReportFormScreen(
+                target: ModerationReportTarget(
+                  kind: ModerationTargetKind.groupContactMessage,
+                  id: '00000000-0000-4000-8000-000000000501',
+                  label: 'Previously received synthetic message',
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final l = AppLocalizations.of(
+          tester.element(find.byType(ReportFormScreen)),
+        );
+        await tester.tap(find.byKey(const Key('moderation-category')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(l.moderationCategoryInappropriate).last);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      },
+    );
+    testWidgets(
       'template self-report uses shared route and manual receipt in $locale',
       (tester) async {
         final gateway = FakeModerationGateway();

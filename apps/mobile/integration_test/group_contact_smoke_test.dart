@@ -1,0 +1,427 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:planets_mobile/app/planets_app.dart';
+import 'package:planets_mobile/app/router/app_router.dart';
+import 'package:planets_mobile/core/backend/supabase_backend.dart';
+import 'package:planets_mobile/core/config/app_config.dart';
+import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
+import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
+import 'package:planets_mobile/features/group_contact/data/group_contact_gateway.dart';
+import 'package:planets_mobile/features/group_contact/presentation/group_contact_routes.dart';
+import 'package:planets_mobile/features/group_contact/presentation/group_contact_compose_screen.dart';
+import 'package:planets_mobile/features/messages/application/message_unread_controller.dart';
+import 'package:planets_mobile/features/policies/data/policy_acceptance_store.dart';
+import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
+import 'package:planets_mobile/features/settings/domain/language_preference.dart';
+import 'package:planets_mobile/l10n/generated/app_localizations.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
+
+import 'contact_local_identity.dart';
+import 'groups_smoke_test.dart' as harness show waitUntil, waitFor, reveal;
+
+void main() {
+  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.fullyLive;
+  testWidgets(
+    'real D submit, triage, accept, read, safety and independent Project join',
+    (tester) async {
+      final config = AppConfig.fromCompileTime();
+      if (config.environment != AppEnvironment.local ||
+          ![
+            '127.0.0.1',
+            'localhost',
+            '::1',
+          ].contains(config.supabaseUrl.host)) {
+        throw StateError(
+          'Explicit disposable loopback configuration and adb reverse required.',
+        );
+      }
+      const alice = String.fromEnvironment('D_ALICE_ID'),
+          aliceToken = String.fromEnvironment('D_ALICE_TOKEN'),
+          bob = String.fromEnvironment('D_BOB_ID'),
+          bobToken = String.fromEnvironment('D_BOB_TOKEN'),
+          carol = String.fromEnvironment('D_CAROL_ID'),
+          carolToken = String.fromEnvironment('D_CAROL_TOKEN'),
+          garden = String.fromEnvironment('D_GARDEN'),
+          workshop = String.fromEnvironment('D_WORKSHOP'),
+          grant = String.fromEnvironment('D_CAROL_GRANT'),
+          project = String.fromEnvironment('D_PROJECT');
+      if ([
+        alice,
+        aliceToken,
+        bob,
+        bobToken,
+        carol,
+        carolToken,
+        garden,
+        workshop,
+        grant,
+        project,
+      ].any((s) => s.isEmpty)) {
+        throw StateError('Prepare local contact UI defines first.');
+      }
+      SupabaseClient? currentClient;
+      final containers = <ProviderContainer>[];
+      final clients = <SupabaseClient>[];
+      var lost = false;
+      final originalError = FlutterError.onError;
+      FlutterErrorDetails? lastError;
+      FlutterError.onError = (details) {
+        lastError = details;
+        originalError?.call(details);
+      };
+      addTearDown(() => FlutterError.onError = originalError);
+      Future<ProviderContainer> asPerson(
+        String id,
+        String token, {
+        bool loseSubmit = false,
+      }) async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        final client = SupabaseClient(
+          config.supabaseUrl.toString(),
+          config.supabasePublishableKey,
+          accessToken: () => Future.value(token),
+        );
+        currentClient = client;
+        clients.add(client);
+        final container = ProviderContainer(
+          overrides: [
+            appConfigProvider.overrideWithValue(config),
+            supabaseClientProvider.overrideWithValue(client),
+            authGatewayProvider.overrideWithValue(ContactLocalIdentity(id)),
+            policyAcceptanceStoreProvider.overrideWithValue(
+              ContactTokenPolicyStore(client),
+            ),
+            initialLanguagePreferenceProvider.overrideWithValue(
+              LanguagePreference.english,
+            ),
+            groupContactGatewayProvider.overrideWithValue(
+              GroupContactGateway((name, args) async {
+                final result = await client.rpc<Object?>(name, params: args);
+                if (loseSubmit &&
+                    name == 'submit_group_contact_request' &&
+                    !lost) {
+                  lost = true;
+                  throw const SocketException(
+                    'Synthetic lost response after real contact creation.',
+                  );
+                }
+                return result;
+              }, signalClient: client),
+            ),
+          ],
+        );
+        containers.add(container);
+        await container.read(authSessionProvider.notifier).start();
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            key: ValueKey(containers.length),
+            container: container,
+            child: const PlanetsApp(),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 600));
+        return container;
+      }
+
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        for (final container in containers) {
+          container.dispose();
+        }
+        for (final client in clients) {
+          await client.dispose();
+        }
+      });
+      Future<void> tap(String key) async {
+        final finder = find.byKey(Key(key));
+        if (key.startsWith('contact-confirm-') ||
+            key.startsWith('blocking-confirm-')) {
+          await harness.waitFor(tester, finder);
+        }
+        await harness.waitUntil(
+          tester,
+          () =>
+              finder.evaluate().isNotEmpty ||
+              find.byType(ListView).evaluate().isNotEmpty,
+        );
+        if (finder.evaluate().isEmpty) {
+          await harness.reveal(tester, finder);
+        } else {
+          await tester.ensureVisible(finder);
+        }
+        await tester.pump(const Duration(milliseconds: 300));
+        await harness.waitUntil(
+          tester,
+          () =>
+              finder.hitTestable().evaluate().isNotEmpty &&
+              (finder.evaluate().single.widget is! ButtonStyleButton ||
+                  (finder.evaluate().single.widget as ButtonStyleButton)
+                          .onPressed !=
+                      null),
+        );
+        await tester.tap(finder);
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+
+      Future<void> shot(String name) async {
+        await tester.pump(const Duration(milliseconds: 600));
+        final exception = tester.takeException();
+        if (exception != null) {
+          debugPrint('D native render failure: ${exception.runtimeType}');
+          debugPrintStack(stackTrace: lastError?.stack);
+        }
+        expect(exception, isNull);
+        await binding
+            .takeScreenshot('d02-$name')
+            .timeout(const Duration(seconds: 30));
+      }
+
+      Future<void> hideKeyboard() async {
+        FocusManager.instance.primaryFocus?.unfocus();
+        await SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+        await tester.pump(const Duration(milliseconds: 400));
+      }
+
+      final a = await asPerson(alice, aliceToken, loseSubmit: true);
+      final startingUnread = await currentClient!.rpc<Map<String, dynamic>>(
+        'get_own_message_unread_summary_v2',
+        params: {'p_expected_profile_id': alice},
+      );
+      await binding.convertFlutterSurfaceToImage();
+      final aRouter = a.read(appRouterProvider);
+      aRouter.go('/proposals/$project');
+      await tap('contact-group-entry');
+      await harness.waitFor(tester, find.text('Propose collaboration'));
+      await shot('public-context-en');
+      await tester.tap(find.text('Propose collaboration'));
+      await harness.waitFor(
+        tester,
+        find.text('Fictional Neighbourhood Garden'),
+      );
+      await tester.tap(find.text('Fictional Neighbourhood Garden'));
+      await harness.reveal(tester, find.byKey(const Key('contact-title')));
+      await tester.enterText(
+        find.byKey(const Key('contact-title')),
+        'Fictional shared garden proposal',
+      );
+      await harness.reveal(tester, find.byKey(const Key('contact-note')));
+      await tester.enterText(
+        find.byKey(const Key('contact-note')),
+        'Private synthetic idea to coordinate local garden tools.',
+      );
+      await shot('composer-keyboard-en');
+      await hideKeyboard();
+      await tap('contact-submit');
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('contact-recover-submit')),
+      );
+      await shot('delivery-pending-en');
+      await tap('contact-recover-submit');
+      await harness.waitUntil(
+        tester,
+        () => aRouter.routerDelegate.state.uri.path.contains(
+          '/requests/group-contact/',
+        ),
+      );
+      final request = aRouter.routerDelegate.state.uri.pathSegments.last;
+      await harness.waitFor(tester, find.text('Pending'));
+      await shot('sent-request-en');
+      final b = await asPerson(bob, bobToken);
+      b.read(appRouterProvider).go(groupContactRequestRoute(request));
+      await harness.waitFor(tester, find.byKey(const Key('contact-accept')));
+      await shot('creator-triage-en');
+      final c = await asPerson(carol, carolToken);
+      final cRouter = c.read(appRouterProvider);
+      cRouter.go(groupContactRequestRoute(request));
+      await tap('contact-accept');
+      await tap('contact-confirm-accept');
+      await harness.waitFor(tester, find.text('Open conversation'));
+      final own = await currentClient!.rpc<Map<String, dynamic>>(
+        'get_own_group_contact_request',
+        params: {'p_expected_profile_id': carol, 'p_request_id': request},
+      );
+      final chat = own['chat_id'] as String;
+      await tester.tap(find.text('Open conversation'));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('contact-message-body')),
+      );
+      await tester.enterText(
+        find.byKey(const Key('contact-message-body')),
+        'Fictional human reply from Carol.',
+      );
+      await hideKeyboard();
+      await tap('contact-message-send');
+      await harness.waitFor(
+        tester,
+        find.text('Fictional human reply from Carol.'),
+      );
+      await shot('human-and-group-en');
+      cRouter.go(groupContactInfoRoute(chat));
+      await harness.waitFor(tester, find.text('Conversation audience'));
+      await shot('audience-en');
+      final another = await asPerson(bob, bobToken);
+      another.read(appRouterProvider).go(groupContactRequestRoute(request));
+      await harness.waitFor(tester, find.text('Accepted'));
+      expect(find.text('Open conversation'), findsNothing);
+      expect(
+        find.text('Private synthetic idea to coordinate local garden tools.'),
+        findsNothing,
+      );
+      await shot('other-manager-metadata-en');
+      final bClient = SupabaseClient(
+        config.supabaseUrl.toString(),
+        config.supabasePublishableKey,
+        accessToken: () => Future.value(bobToken),
+      );
+      addTearDown(bClient.dispose);
+      final reader = await asPerson(alice, aliceToken);
+      reader.read(appRouterProvider).go(groupContactChatRoute(chat));
+      await harness.waitFor(
+        tester,
+        find.text('Fictional human reply from Carol.'),
+      );
+      await tester.pump(const Duration(seconds: 2));
+      final unread = await currentClient!.rpc<Map<String, dynamic>>(
+        'get_own_message_unread_summary_v2',
+        params: {'p_expected_profile_id': alice},
+      );
+      expect(unread['groups'], startingUnread['groups']);
+      await currentClient!.rpc(
+        'send_group_contact_message',
+        params: {
+          'p_expected_profile_id': alice,
+          'p_action_id': const Uuid().v4(),
+          'p_chat_id': chat,
+          'p_body': 'Earlier synthetic message available for reporting.',
+        },
+      );
+      final former = await asPerson(carol, carolToken);
+      former.read(appRouterProvider).go(groupContactChatRoute(chat));
+      await harness.waitFor(
+        tester,
+        find.text('Earlier synthetic message available for reporting.'),
+      );
+      await harness.waitUntil(
+        tester,
+        () =>
+            former.read(messageUnreadProvider).summary != null &&
+            !former.read(messageUnreadProvider).disconnected,
+      );
+      await bClient.rpc(
+        'revoke_group_delegate',
+        params: {
+          'p_expected_profile_id': bob,
+          'p_delegate_id': grant,
+          'p_client_request_id': const Uuid().v4(),
+        },
+      );
+      // The subscribed own-account access hint must clear the live body; no local
+      // forced refresh is used to disguise a missing authorization invalidation.
+      await harness.waitFor(
+        tester,
+        find.text('Report a previously received message'),
+      );
+      expect(
+        find.text('Earlier synthetic message available for reporting.'),
+        findsNothing,
+      );
+      expect(find.byKey(const Key('contact-message-send')), findsNothing);
+      await shot('former-denied-known-report-en');
+      await tester.tap(find.text('Report a previously received message'));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('moderation-category')),
+      );
+      await tester.tap(find.byKey(const Key('moderation-category')));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.text('Harassment or abuse').last);
+      await tester.pump(const Duration(milliseconds: 400));
+      await harness.reveal(
+        tester,
+        find.byKey(const Key('moderation-explanation')),
+      );
+      await tester.enterText(
+        find.byKey(const Key('moderation-explanation')),
+        'Fictional report of a previously received synthetic message.',
+      );
+      await hideKeyboard();
+      await tap('moderation-submit');
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('moderation-received')),
+      );
+      await shot('protected-report-en');
+      // D did not grant Project participation. Its existing request remains explicit.
+      final joiner = await asPerson(alice, aliceToken);
+      joiner.read(appRouterProvider).go(groupContactInfoRoute(chat));
+      await harness.waitFor(tester, find.text('Block Fictional carol'));
+      await tester.tap(find.text('Block Fictional carol'));
+      await tap('blocking-confirm-block');
+      await harness.waitFor(tester, find.text('Unblock Fictional carol'));
+      await shot('block-permitted-history-en');
+      joiner.read(appRouterProvider).go('/proposals/$project/join');
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('participation-message-field')),
+      );
+      await tester.enterText(
+        find.byKey(const Key('participation-message-field')),
+        'Independent fictional Project participation request.',
+      );
+      await hideKeyboard();
+      await tap('participation-send-request');
+      await harness.waitUntil(
+        tester,
+        () => !joiner
+            .read(appRouterProvider)
+            .routerDelegate
+            .state
+            .uri
+            .path
+            .endsWith('/join'),
+      );
+      await shot('independent-project-request-en');
+      // Native compact Italian render using the same genuine gateway and actor.
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: joiner,
+          child: MaterialApp(
+            locale: const Locale('it'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(2)),
+              child: child!,
+            ),
+            home: GroupContactComposeScreen(groupId: workshop),
+          ),
+        ),
+      );
+      await harness.waitFor(
+        tester,
+        find.text('Fictional Neighbourhood Garden'),
+      );
+      await shot('composer-it-320dp-2x');
+      await harness.reveal(tester, find.byKey(const Key('contact-note')));
+      await tester.enterText(
+        find.byKey(const Key('contact-note')),
+        'Nota sintetica con tastiera italiana.',
+      );
+      await shot('composer-it-320dp-2x-keyboard');
+      await hideKeyboard();
+      expect(tester.takeException(), isNull);
+    },
+  );
+}

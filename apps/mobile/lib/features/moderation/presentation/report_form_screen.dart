@@ -88,6 +88,9 @@ class _ReportFormScreenState extends ConsumerState<ReportFormScreen> {
                   children: [
                     DropdownButtonFormField<ModerationCategory>(
                       key: const Key('moderation-category'),
+                      // Bound long localized categories at narrow/enlarged text.
+                      isExpanded: true,
+                      itemHeight: null,
                       initialValue: _category,
                       decoration: InputDecoration(
                         labelText: l10n.moderationCategoryLabel,
@@ -96,7 +99,10 @@ class _ReportFormScreenState extends ConsumerState<ReportFormScreen> {
                         for (final category in ModerationCategory.values)
                           DropdownMenuItem(
                             value: category,
-                            child: Text(_categoryLabel(l10n, category)),
+                            child: Text(
+                              _categoryLabel(l10n, category),
+                              softWrap: true,
+                            ),
                           ),
                       ],
                       onChanged: submission.isSubmitting
