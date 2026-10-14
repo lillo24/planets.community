@@ -1,5 +1,15 @@
 # Repository scripts
 
+- `verify-local-group-contact.mjs` owns D01 real Auth/PostgREST checks for
+  private requests, explicit conversation admission, receipts, v5/v6 compatibility,
+  unread, targeted reporting and observed send/revoke races.
+- `verify-local-group-contact-upgrade.mjs` resets only an explicitly disposable
+  loopback stack to the pre-D boundary, populates current-main demo/group history,
+  hashes every existing table/column/row and verifies additive/repeated upgrades.
+  Set `PLANETS_DISPOSABLE_QA=1` outside CI; `MAILPIT_URL` follows the selected
+  local stack. Both commands use the checkout's pinned CLI and fail on unavailable
+  runtime state. See the provisional D contract and execution evidence.
+
 - `verify-local-group-membership.mjs` owns GRP03A genuine Auth/PostgREST
   relationship, role, block, retry and observed multi-connection lock races.
   `--upgrade` resets an explicitly disposable loopback stack, populates GRP01,

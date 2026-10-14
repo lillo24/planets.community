@@ -2572,6 +2572,14 @@ export type Database = {
           replayed: boolean
         }[]
       }
+      accept_group_contact_request: {
+        Args: {
+          p_action_id: string
+          p_expected_profile_id: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
       accept_group_join_request: {
         Args: {
           p_client_request_id: string
@@ -2704,7 +2712,24 @@ export type Database = {
         Args: { p_expected_owner_profile_id: string; p_request_id: string }
         Returns: string
       }
+      acknowledge_group_contact_read: {
+        Args: {
+          p_boundary: string
+          p_chat_id: string
+          p_expected_profile_id: string
+        }
+        Returns: undefined
+      }
       acknowledge_own_message_read: {
+        Args: {
+          p_boundary: string
+          p_chat_id: string
+          p_expected_profile_id: string
+          p_kind: string
+        }
+        Returns: Json
+      }
+      acknowledge_own_message_read_v2: {
         Args: {
           p_boundary: string
           p_chat_id: string
@@ -2780,6 +2805,10 @@ export type Database = {
         Args: { p_object_path: string }
         Returns: boolean
       }
+      can_receive_group_contact_signal: {
+        Args: { p_topic: string }
+        Returns: boolean
+      }
       can_upload_cover_image_object: {
         Args: { p_object_path: string }
         Returns: boolean
@@ -2852,6 +2881,14 @@ export type Database = {
       clear_project_shared_workspace: {
         Args: { p_expected_manager_profile_id: string; p_project_id: string }
         Returns: boolean
+      }
+      close_group_contact_conversation: {
+        Args: {
+          p_action_id: string
+          p_chat_id: string
+          p_expected_profile_id: string
+        }
+        Returns: Json
       }
       close_project_resource_need: {
         Args: {
@@ -3310,6 +3347,14 @@ export type Database = {
         }
         Returns: string
       }
+      decline_group_contact_request: {
+        Args: {
+          p_action_id: string
+          p_expected_profile_id: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
       decline_group_role_offer: {
         Args: {
           p_client_request_id: string
@@ -3476,6 +3521,10 @@ export type Database = {
         Args: { p_case_id: string; p_expected_staff_profile_id: string }
         Returns: Json
       }
+      get_moderation_case_group_contact: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: Json
+      }
       get_moderation_case_template: {
         Args: { p_case_id: string; p_expected_staff_profile_id: string }
         Returns: {
@@ -3519,6 +3568,24 @@ export type Database = {
           version: number
           volunteering_focus: boolean
         }[]
+      }
+      get_own_group_contact_conversation: {
+        Args: { p_chat_id: string; p_expected_profile_id: string }
+        Returns: Json
+      }
+      get_own_group_contact_feed: {
+        Args: {
+          p_before_id?: string
+          p_before_ordinal?: number
+          p_chat_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      get_own_group_contact_request: {
+        Args: { p_expected_profile_id: string; p_request_id: string }
+        Returns: Json
       }
       get_own_group_corroboration_request: {
         Args: { p_expected_recipient_profile_id: string; p_request_id: string }
@@ -3576,6 +3643,10 @@ export type Database = {
         Returns: Json
       }
       get_own_message_unread_summary: {
+        Args: { p_expected_profile_id: string }
+        Returns: Json
+      }
+      get_own_message_unread_summary_v2: {
         Args: { p_expected_profile_id: string }
         Returns: Json
       }
@@ -3961,6 +4032,14 @@ export type Database = {
           viewer_role: string
         }[]
       }
+      get_own_structured_request_message_item_v2: {
+        Args: {
+          p_expected_profile_id: string
+          p_item_kind: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
       get_own_unread_notification_count: {
         Args: { p_expected_profile_id: string }
         Returns: number
@@ -4292,6 +4371,14 @@ export type Database = {
           replayed: boolean
         }[]
       }
+      leave_group_contact_conversation: {
+        Args: {
+          p_action_id: string
+          p_chat_id: string
+          p_expected_profile_id: string
+        }
+        Returns: Json
+      }
       leave_project: {
         Args: {
           p_expected_participant_profile_id: string
@@ -4508,6 +4595,15 @@ export type Database = {
           target_summary: string
         }[]
       }
+      list_my_contact_groups: {
+        Args: {
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_my_publishable_groups: {
         Args: {
           p_cursor_created_at?: string
@@ -4552,6 +4648,15 @@ export type Database = {
           project_status: string
           project_title: string
         }[]
+      }
+      list_own_group_contact_requests: {
+        Args: {
+          p_cursor_activity_at?: string
+          p_cursor_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
       }
       list_own_group_corroboration_requests: {
         Args: {
@@ -4706,6 +4811,25 @@ export type Database = {
         }[]
       }
       list_own_moderation_reports: {
+        Args: {
+          p_before_created_at?: string
+          p_before_report_id?: string
+          p_expected_reporter_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          case_id: string
+          category: string
+          context_summary: string
+          created_at: string
+          explanation: string
+          report_id: string
+          state: string
+          target_kind: string
+          target_summary: string
+        }[]
+      }
+      list_own_moderation_reports_v2: {
         Args: {
           p_before_created_at?: string
           p_before_report_id?: string
@@ -5314,6 +5438,17 @@ export type Database = {
         }
         Returns: Json
       }
+      list_own_scoped_conversation_items_v6: {
+        Args: {
+          p_cursor_activity_at?: string
+          p_cursor_chat_id?: string
+          p_cursor_item_kind?: string
+          p_expected_profile_id: string
+          p_limit: number
+          p_scope: string
+        }
+        Returns: Json
+      }
       list_own_scoped_message_chat_items: {
         Args: {
           p_cursor_activity_at?: string
@@ -5390,6 +5525,16 @@ export type Database = {
           status: string
           viewer_role: string
         }[]
+      }
+      list_own_structured_request_message_items_v2: {
+        Args: {
+          p_cursor_activity_at?: string
+          p_cursor_item_kind?: string
+          p_cursor_request_id?: string
+          p_expected_profile_id: string
+          p_limit: number
+        }
+        Returns: Json
       }
       list_owned_resource_listing_loan_schedule: {
         Args: { p_expected_owner_profile_id: string; p_listing_id: string }
@@ -6131,6 +6276,10 @@ export type Database = {
           group_id: string
         }[]
       }
+      recover_group_contact_action: {
+        Args: { p_action_id: string; p_expected_profile_id: string }
+        Returns: Json
+      }
       recover_group_relationship_command: {
         Args: { p_client_request_id: string; p_expected_profile_id: string }
         Returns: {
@@ -6447,6 +6596,15 @@ export type Database = {
         Args: { p_cursor?: Json; p_limit?: number; p_query: Json }
         Returns: Json
       }
+      send_group_contact_message: {
+        Args: {
+          p_action_id: string
+          p_body: string
+          p_chat_id: string
+          p_expected_profile_id: string
+        }
+        Returns: Json
+      }
       send_participation_conversation_message: {
         Args: {
           p_body: string
@@ -6650,6 +6808,19 @@ export type Database = {
       step_down_project_authority: {
         Args: { p_delegate_id: string; p_expected_profile_id: string }
         Returns: string
+      }
+      submit_group_contact_request: {
+        Args: {
+          p_action_id: string
+          p_expected_profile_id: string
+          p_note: string
+          p_public_project_id?: string
+          p_purpose: string
+          p_source_group_id: string
+          p_target_group_id: string
+          p_title: string
+        }
+        Returns: Json
       }
       submit_group_corroboration_response: {
         Args: {
@@ -6947,6 +7118,14 @@ export type Database = {
           p_saved_search_id: string
         }
         Returns: string
+      }
+      withdraw_group_contact_request: {
+        Args: {
+          p_action_id: string
+          p_expected_profile_id: string
+          p_request_id: string
+        }
+        Returns: Json
       }
       withdraw_group_join_request: {
         Args: {

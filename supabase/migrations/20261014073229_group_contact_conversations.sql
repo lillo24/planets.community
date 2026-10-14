@@ -272,6 +272,9 @@ create function public.acknowledge_group_contact_read(p_expected_profile_id uuid
 language plpgsql security definer set search_path='' as $$
 declare actor uuid:=private.require_group_identity(p_expected_profile_id); snapshot private.group_contact_read_snapshots;
 begin
+  perform 1 from private.community_groups g where g.id in
+    (select a.group_id from private.group_contact_admissions a where a.conversation_id=p_chat_id) order by g.id for share;
+  perform private.require_group_identity(actor);
   select * into snapshot from private.group_contact_read_snapshots where token=p_boundary and profile_id=actor and conversation_id=p_chat_id and issued_at>=clock_timestamp()-interval '7 days';
   if snapshot.token is null or not private.group_contact_can_read(p_chat_id,actor) then raise sqlstate '42501' using message='The read boundary is unavailable.'; end if;
   insert into private.group_contact_read_frontiers values(actor,p_chat_id,snapshot.ordinal) on conflict(profile_id,conversation_id)

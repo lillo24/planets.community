@@ -1,5 +1,12 @@
 # Moderation staff surface
 
+D01 adds `group-contact-moderation-models.ts` for strict case-scoped evidence of
+a reported group contact request or representative message. The server loads it
+only for those typed cases. Staff see the exact reported content and canonical
+human/group identifiers, without another message, audience roster or source-chat
+link. Staff roles never grant ordinary D conversation access. This follows the
+provisional [D contract](../../../../../docs/development/group-contact-contract.md).
+
 This feature owns the private server-side moderation client used by `/admin`.
 `moderation-server.ts` verifies signed claims and checks the canonical database
 staff role before every read. `moderation-operations.ts` repeats that check for

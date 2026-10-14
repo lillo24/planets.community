@@ -99,3 +99,7 @@ verifier after pgTAP. It injects synthetic provider-shaped geocoding data and
 makes no Geoapify requests. Tooling/Web validation exercises the same Edge
 adapter's pure modules with fake HTTP/Auth/metering dependencies. The workflow
 addition preserves required status aggregation and existing path boundaries.
+Batch D adds one populated upgrade check before fresh replay and one bounded
+real-Auth verifier alongside group membership. The existing path classifier and
+required statuses remain unchanged. Requests/chat/unread compatibility and safety
+changes share the Database gate; schema changes also regenerate Web contracts.
