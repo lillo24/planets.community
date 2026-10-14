@@ -17,6 +17,38 @@ import '../../../support/fake_project_chat.dart';
 import '../../../support/fake_project_needs.dart';
 
 void main() {
+  test('disposing an old chat cannot cancel a newer pending load', () async {
+    final gateway = FakeProjectChatGateway()
+      ..emitDisconnectedOnClose = true
+      ..summaries = [
+        projectChatSummaryFixture(),
+        projectChatSummaryFixture(chatId: 'chat-2', projectId: 'tavolo-2'),
+      ];
+    final session = _readyContainer(gateway);
+    addTearDown(session.dispose);
+    final controller = session.container.read(
+      projectChatDetailProvider.notifier,
+    );
+    await controller.load(expectedProfileId: 'user-1', chatId: 'chat-1');
+    controller.startSignals('user-1', 'chat-1');
+    final pending = Completer<void>();
+    gateway.historyDelay = pending.future;
+    final loading = controller.load(
+      expectedProfileId: 'user-1',
+      chatId: 'chat-2',
+    );
+    await Future<void>.delayed(Duration.zero);
+    controller.stopSignals(expectedProfileId: 'user-1', chatId: 'chat-1');
+    pending.complete();
+    expect(await loading, isTrue);
+    expect(
+      session.container.read(projectChatDetailProvider).summary?.projectId,
+      'tavolo-2',
+    );
+    expect(gateway.subscriptions.last.chatId, 'chat-2');
+    expect(gateway.subscriptions.last.isClosed, isFalse);
+  });
+
   test(
     'revoked canonical chat clears retained history on warm refresh',
     () async {

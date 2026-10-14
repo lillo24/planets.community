@@ -382,6 +382,7 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
     });
     ref.onDispose(() {
       _revision++;
+      _signalsEnabled = false;
       _closeSubscription();
     });
     return const ProjectChatDetailState();
@@ -753,7 +754,13 @@ class ProjectChatDetailController extends Notifier<ProjectChatDetailState> {
     if (summary != null) _syncSubscription(expectedProfileId, summary);
   }
 
-  void stopSignals() {
+  void stopSignals({String? expectedProfileId, String? chatId}) {
+    if (!ref.mounted ||
+        (chatId != null &&
+            (state.chatId != chatId ||
+                state.expectedProfileId != expectedProfileId))) {
+      return;
+    }
     _revision++;
     _signalsEnabled = false;
     _reconcilePending = false;

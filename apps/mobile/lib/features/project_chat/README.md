@@ -170,6 +170,11 @@ No chat creation, membership, admission or history rule changes.
 
 ## Automatic history paging (AUTO02)
 
+Changing the chat ID on an existing route reloads that target and clears the
+unsent composer. Screen disposal stops only its own actor/chat subscription;
+it cannot invalidate an in-flight load for a newer chat. Closing a provider
+disables signals before closing channels, including synchronous close callbacks.
+
 Opening still requests the newest 30 feed items. A deliberate upward drag within
 one viewport of the top requests one older 30-item page. The shared Messages
 `ConversationHistoryList` lazily renders human messages and system cards in

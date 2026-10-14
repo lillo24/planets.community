@@ -279,6 +279,18 @@ void main() {
     );
   });
 
+  test('provider disposal ignores synchronous channel-close status', () async {
+    final resource = FakeResourceChatGateway()..emitDisconnectedOnClose = true;
+    final list = FakeMessageChatsGateway()
+      ..items = [resourceMessageChatFixture()];
+    final session = _readyContainer(list, resource: resource);
+    final controller = session.container.read(messageChatsProvider.notifier);
+    await controller.load('user-1');
+    controller.startSignals('user-1');
+    expect(() => session.dispose(), returnsNormally);
+    expect(resource.subscriptions.single.isClosed, isTrue);
+  });
+
   test(
     'private pagination batches only newly discovered counterparties',
     () async {

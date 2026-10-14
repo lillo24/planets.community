@@ -53,6 +53,55 @@ import '../../../support/fake_resource_chat.dart';
 
 void main() {
   testWidgets(
+    'switching Project chats loads the new target and keeps Workspace lazy',
+    (tester) async {
+      final chats = FakeProjectChatGateway()
+        ..summaries = [
+          projectChatSummaryFixture(),
+          projectChatSummaryFixture(
+            chatId: 'chat-2',
+            projectId: 'tavolo-2',
+            projectKind: ProjectKind.recurring,
+            projectTitle: 'Tavolo two',
+          ),
+        ];
+      final workspace = FakeProjectWorkspaceGateway();
+      final app = await _pump(tester, chats: chats, workspace: workspace);
+      final router = app.read(appRouterProvider);
+      router.go('/messages/chats/chat-1');
+      await tester.pumpAndSettle();
+      expect(
+        app.read(projectChatDetailProvider).summary?.projectId,
+        'proposal-1',
+      );
+      await tester.enterText(
+        find.byKey(const Key('project-chat-composer')),
+        'Unsent first-chat message',
+      );
+      router.go('/messages/chats/chat-2');
+      for (var frame = 0; frame < 10; frame++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(app.read(projectChatDetailProvider).chatId, 'chat-2');
+      expect(
+        app.read(projectChatDetailProvider).phase,
+        ProjectChatDetailPhase.ready,
+      );
+      expect(
+        app.read(projectChatDetailProvider).summary?.projectId,
+        'tavolo-2',
+      );
+      expect(find.text('Unsent first-chat message'), findsNothing);
+      expect(
+        find.byKey(const Key('project-workspace-chat-control')),
+        findsOneWidget,
+      );
+      expect(workspace.calls, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'AUTO02 failed older page pauses, retries its cursor and rejects late account work',
     (tester) async {
       final chats = FakeProjectChatGateway()

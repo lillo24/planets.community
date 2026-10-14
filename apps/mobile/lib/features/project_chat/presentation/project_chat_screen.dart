@@ -52,9 +52,22 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
   }
 
   @override
+  void didUpdateWidget(covariant ProjectChatScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.chatId == widget.chatId) return;
+    // GoRouter can reuse this state for another chat on the same route.
+    _composer.clear();
+    _didInitialScroll = false;
+    Future<void>.microtask(_load);
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _detailController.stopSignals();
+    _detailController.stopSignals(
+      expectedProfileId: _expectedProfileId,
+      chatId: widget.chatId,
+    );
     _composer.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -74,13 +87,14 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
 
   Future<void> _load() async {
     final profileId = _expectedProfileId;
-    if (profileId == null || !_hasExpectedIdentity) return;
+    if (!mounted || profileId == null || !_hasExpectedIdentity) return;
+    final chatId = widget.chatId;
     await _detailController.refresh(
       expectedProfileId: profileId,
-      chatId: widget.chatId,
+      chatId: chatId,
     );
-    if (!mounted || !_hasExpectedIdentity) return;
-    _detailController.startSignals(profileId, widget.chatId);
+    if (!mounted || widget.chatId != chatId || !_hasExpectedIdentity) return;
+    _detailController.startSignals(profileId, chatId);
     await _syncWorkspace();
   }
 
