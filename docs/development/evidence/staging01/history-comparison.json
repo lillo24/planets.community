@@ -1,0 +1,417 @@
+[
+  {
+    "version": "20260901200051",
+    "name": "database_security_foundation",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260901211937",
+    "name": "identity_audit_outbox_primitives",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260902192101",
+    "name": "basic_profiles_skills_visibility",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260903082017",
+    "name": "one_time_proposals_and_discovery",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260903201641",
+    "name": "recurring_activity_domain_foundation",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260908164407",
+    "name": "project_participation_domain_foundation",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260908200948",
+    "name": "notification_domain_outbox_projection",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260909162645",
+    "name": "messages_structured_participation_requests",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260912174300",
+    "name": "push_installation_delivery_job_foundation",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260912193149",
+    "name": "push_delivery_attempt_worker_protocol",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260913063431",
+    "name": "participation_aware_browse_pending_requests",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260913084320",
+    "name": "project_group_chat_lifecycle_authorization",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260913134856",
+    "name": "project_chat_message_domain_realtime",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260914110554",
+    "name": "project_chat_notification_projection_mobile_alerts",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260914134222",
+    "name": "scambio_dona_listing_domain_foundation",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260915090235",
+    "name": "project_resource_needs_domain_foundation",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260915100846",
+    "name": "join_request_contribution_selection_domain",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260917133005",
+    "name": "current_participant_commitments",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260918081948",
+    "name": "join_acceptance_contribution_triage_domain",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260918102402",
+    "name": "live_project_requirement_coverage_domain",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260918131216",
+    "name": "structured_group_need_resurfacing_attention_domain",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260918180243",
+    "name": "one_time_actual_contribution_attribution_domain",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260919111637",
+    "name": "postgrest_safe_conflict_sqlstates",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260919135332",
+    "name": "scambio_dona_resource_request_domain",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260919195434",
+    "name": "reliable_scambio_agreement_loan_barter_domain",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260920084219",
+    "name": "accepted_resource_request_conversation_domain",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260920123000",
+    "name": "unified_messages_resource_notification_projection",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260920160723",
+    "name": "non_null_resource_exchange_terms_flags",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260922090000",
+    "name": "loan_reservation_conflict_domain",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260922120000",
+    "name": "explainable_project_resource_matching",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260925092956",
+    "name": "add_proposal_discovery_query",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260925112156",
+    "name": "personal_saved_resource_search_domain",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260925142259",
+    "name": "saved_search_new_listing_match_projection",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260925151612",
+    "name": "immediate_saved_search_match_notification_projection",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260926102538",
+    "name": "open_stack_database_gate_stabilization",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260926103400",
+    "name": "repair_project_chat_ambiguities",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260926122235",
+    "name": "profile_photo_storage_domain",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260926141814",
+    "name": "project_join_request_private_chat_domain",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260926150624",
+    "name": "profile_photo_viewer_access",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260926185124",
+    "name": "scoped_participation_request_chats",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260927054617",
+    "name": "personal_project_profile_photo_trust_gates",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260927060206",
+    "name": "project_delegate_domain",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260927074009",
+    "name": "scambio_dona_profile_photo_trust_integration",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260927075624",
+    "name": "project_delegate_ux_reads",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260927103437",
+    "name": "delegate_participant_independence",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260928063450",
+    "name": "reporting_moderation_foundation",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260928064452",
+    "name": "cover_media_domain_foundation",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260928075820",
+    "name": "project_cocreator_domain_authority",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260928083634",
+    "name": "group_case_corroboration",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260928114506",
+    "name": "scambio_dona_counterstatement",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260929155334",
+    "name": "user_blocking_domain_enforcement",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260929170514",
+    "name": "exact_outbound_block_status",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260929170746",
+    "name": "project_shared_workspace",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260929171419",
+    "name": "project_people_capacity_fullness",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20260930140814",
+    "name": "organizer_aware_capacity_headcount",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261001072748",
+    "name": "founder_qa_mobile_stabilization",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261002103310",
+    "name": "unified_project_people_role_offers",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261003125732",
+    "name": "direct_participant_invitations",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261003125831",
+    "name": "source_linked_proposal_template_workshop",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261003191351",
+    "name": "template_reporting_and_removal",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261004145334",
+    "name": "template_to_draft_creation",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261004200147",
+    "name": "idempotent_editor_draft_creation",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261005104541",
+    "name": "similar_active_proposal_matching",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261005111132",
+    "name": "delegated_participation_notification_actor",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261006101031",
+    "name": "participation_pair_conversations",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261006131533",
+    "name": "message_unread_activity_separation",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261007090000",
+    "name": "new_template_draft_italy_timezone",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261007103000",
+    "name": "push_projector_receipt_recheck",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261007103322",
+    "name": "messages_list_activity_preview",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261008124856",
+    "name": "geoapify_shared_location_foundation",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261008144158",
+    "name": "map02_idempotent_editor_drafts",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261008193521",
+    "name": "map03_location_previews",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261009070032",
+    "name": "map04_geographic_discovery",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261009083736",
+    "name": "map05_interactive_discovery_provider",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261010075613",
+    "name": "defined_proposal_city_only",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261010112941",
+    "name": "public_idea_definition_phase",
+    "match_kind": "exact_complete_file"
+  },
+  {
+    "version": "20261010131622",
+    "name": "proposal_inline_location_privacy",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261010173000",
+    "name": "idea_location_privacy_integration",
+    "match_kind": "exact_complete_file"
+  },
+  {
+    "version": "20261011082932",
+    "name": "policy01b_account_acceptance",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261011094930",
+    "name": "official_starter_templates",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261011100002",
+    "name": "project_organization_private_planning",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261011141035",
+    "name": "persistent_groups_backend",
+    "match_kind": "exact_statement_array"
+  },
+  {
+    "version": "20261011141420",
+    "name": "persistent_group_reporting",
+    "match_kind": "exact_statement_array"
+  }
+]

@@ -15,6 +15,11 @@
 This folder owns reproducible configuration generation, local authenticated
 domain verification and change-scoped validation tooling.
 
+- `verify-local-staging01-upgrade.mjs` owns the one-time STAGING01 exact hosted
+  baseline/populated-upgrade rehearsal. It requires a designated non-default
+  disposable loopback stack and records only counts/hashes. It has no hosted
+  deployment mode. See [the preflight](../docs/development/staging01-recovery-preflight.md).
+
 - `generate-database-types.mjs` writes the canonical public TypeScript schema
   from the checkout's local Supabase stack. Never hand-edit its output.
 - `generate-*-local-config.mjs` prepares local client configuration.
