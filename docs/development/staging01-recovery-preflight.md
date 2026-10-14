@@ -1,10 +1,14 @@
 # STAGING01 staging recovery preflight
 
-Status: Phase 1; hosted writes await explicit owner approval and a verified
-recoverable backup. The Android app is **not yet verified fixed**. No hosted
-schema/data, Edge Function, provider, Storage policy, Play release or installed
-app was changed. The active [STAGING01 plan](../../history-implementations/PLANETS_STAGING01_restore_proposals_messages.md)
-requires this stop before Phase 2.
+Status: Phase 2 backend deployment completed on 2026-10-14 after explicit owner
+authorization **“Don't backup, apply migrations.”** All 13 pending migrations
+below are now applied with canonical history parity (96 versions). No backup was
+taken. See [the hosted deployment record](staging01-hosted-deployment.md).
+The Android app is **not yet verified fixed** end to end. The inventory and
+approval/backup requirements below record Phase 1; the owner subsequently waived
+its backup gate for this deployment. The original
+[STAGING01 plan](../../history-implementations/PLANETS_STAGING01_restore_proposals_messages.md)
+remains the historical task specification.
 
 ## Verified cause and target — 2026-10-14
 
@@ -132,10 +136,15 @@ The usual run requires a reset. Run pgTAP on clean data before fixture verifiers
 
 ## Backup, approval and recovery requirements
 
+**Historical Phase 1 requirements:** the owner subsequently authorized the
+deployment without a backup. This section records the preflight gate and
+recovery assessment; it is not an outstanding blocker for the completed
+[staging deployment](staging01-hosted-deployment.md).
+
 No recoverable staging snapshot/export has been verified. This machine has no
 Supabase CLI access token, linked project or ignored staging client config.
-The connected management tools permit read-only inventory but do not provide
-a backup-export capability. Never infer a backup from project health or the
+During Phase 1 the connected management tools were used only for read-only
+inventory; they do not provide a backup-export capability. Never infer a backup from project health or the
 Free plan. Supabase recommends off-site CLI exports for Free projects, and
 database backups exclude actual Storage object bytes; see
 [Database Backups](https://supabase.com/docs/guides/platform/backups).

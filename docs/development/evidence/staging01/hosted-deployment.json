@@ -1,0 +1,281 @@
+{
+  "project_name": "planets-staging",
+  "project_ref": "cllpvruvrrvxczjitlqd",
+  "canonical_source_commit": "c99d9fe9b3a81dffa4e9fa9a137a60f56630d498",
+  "owner_authorization": "Don't backup, apply migrations",
+  "backup_taken": false,
+  "execution_method": "Connected Supabase migration API; complete canonical files and version records in one statement batch; exact matching generated API wrapper record removed after verification.",
+  "api_wrapper": {
+    "version": "20261014182158",
+    "name": "staging01_canonical_recovery_20261014",
+    "statement_count": 1,
+    "md5": "d44cd711d1bd2eedac1d2f01e36fcf4e",
+    "sha256": "b395415715aadfa19cbdb2bd89cd99c51c4129c5de0772353fef525d7cbb4825"
+  },
+  "bundle": {
+    "bytes": 334946,
+    "md5": "d44cd711d1bd2eedac1d2f01e36fcf4e",
+    "sha256": "b395415715aadfa19cbdb2bd89cd99c51c4129c5de0772353fef525d7cbb4825"
+  },
+  "baseline": {
+    "routine_count": 509,
+    "routine_md5": "601908de3958a5e12fe2dcd78f65d0c5",
+    "history_count": 83,
+    "history_md5": "1003c236f00774fc0d2acfb5a9f88a77"
+  },
+  "applied": [
+    {
+      "file": "20261011132245_project_workspace_named_links.sql",
+      "version": "20261011132245",
+      "name": "project_workspace_named_links",
+      "sha256": "326b7a4a4d21f82dcfd985a517c6f08bbe986fb00ae797e8d62f03049eac627d"
+    },
+    {
+      "file": "20261011180000_location_text_provenance.sql",
+      "version": "20261011180000",
+      "name": "location_text_provenance",
+      "sha256": "6cfc741f5388cc579813dd92c52c167c472853fd649368fd57d0f2b31598b560"
+    },
+    {
+      "file": "20261012091701_profile_content_only_update.sql",
+      "version": "20261012091701",
+      "name": "profile_content_only_update",
+      "sha256": "26ad1395bf224e83698ab3fb1f03bae43ed88e254c795d041356830adfd46482"
+    },
+    {
+      "file": "20261012094725_chat_list_group_covers.sql",
+      "version": "20261012094725",
+      "name": "chat_list_group_covers",
+      "sha256": "fa74d9db5e3a1121d79310f894d8a217fc8ad221eafa7621271a823ced89bc61"
+    },
+    {
+      "file": "20261012104716_proposal_skills_management.sql",
+      "version": "20261012104716",
+      "name": "proposal_skills_management",
+      "sha256": "13f215cd1979465fd188122d8c97a3413dc03ef9a7d13355568efa304f20a6f3"
+    },
+    {
+      "file": "20261012110923_group_membership_and_authority.sql",
+      "version": "20261012110923",
+      "name": "group_membership_and_authority",
+      "sha256": "ef6582b4e78556ede855ae038351ad3592cf8538ddf5f8fd13c34781834b148b"
+    },
+    {
+      "file": "20261012111424_group_relationship_api.sql",
+      "version": "20261012111424",
+      "name": "group_relationship_api",
+      "sha256": "692cfbc47ef3c1c4669b16269692c395ab30cb60656d62c6e9b40f86cae3440c"
+    },
+    {
+      "file": "20261012111833_group_membership_blocking_and_grants.sql",
+      "version": "20261012111833",
+      "name": "group_membership_blocking_and_grants",
+      "sha256": "4f531364d95fcdaa959b5ff462236035221a783bb005af7a2ae7b2ca7fb0a831"
+    },
+    {
+      "file": "20261012152803_group_exact_self_membership_context.sql",
+      "version": "20261012152803",
+      "name": "group_exact_self_membership_context",
+      "sha256": "597cd4aee7cabb74e2d7981b711b46428ceb456305bffd18059b09dd02862f85"
+    },
+    {
+      "file": "20261013100000_group_project_attribution.sql",
+      "version": "20261013100000",
+      "name": "group_project_attribution",
+      "sha256": "40ced3c4a9632a19117c6b999dbb096a4b31fbc2fa3701c78295f18b75ed88bc"
+    },
+    {
+      "file": "20261013100100_group_project_atomic_creation.sql",
+      "version": "20261013100100",
+      "name": "group_project_atomic_creation",
+      "sha256": "18aaa61747a6a2948f4fa6d20383506f29ec831a8f2fc59d56bb5315328c71fc"
+    },
+    {
+      "file": "20261013100200_group_project_publish_revision.sql",
+      "version": "20261013100200",
+      "name": "group_project_publish_revision",
+      "sha256": "618892c4e3ab74f465e34106c4b3ee9e1bec7bea30563522e930b6e57c444a75"
+    },
+    {
+      "file": "20261013175400_project_workspace_paging_and_recovery.sql",
+      "version": "20261013175400",
+      "name": "project_workspace_paging_and_recovery",
+      "sha256": "edd56e57cb75e5204c2dc68009df294ea11d42a1c4c89b638e1fab035f9e11a7"
+    }
+  ],
+  "final_canonical_versions": 96,
+  "original_history_unchanged": true,
+  "original_table_count": 110,
+  "original_row_count": 225,
+  "original_table_row_counts_unchanged": true,
+  "new_tables": [
+    {
+      "schema_name": "private",
+      "table_name": "group_authority_invitations",
+      "rls": true
+    },
+    {
+      "schema_name": "private",
+      "table_name": "group_delegates",
+      "rls": true
+    },
+    {
+      "schema_name": "private",
+      "table_name": "group_join_requests",
+      "rls": true
+    },
+    {
+      "schema_name": "private",
+      "table_name": "group_memberships",
+      "rls": true
+    },
+    {
+      "schema_name": "private",
+      "table_name": "group_participant_invitation_secrets",
+      "rls": true
+    },
+    {
+      "schema_name": "private",
+      "table_name": "group_participant_invitations",
+      "rls": true
+    },
+    {
+      "schema_name": "private",
+      "table_name": "group_relationship_receipts",
+      "rls": true
+    },
+    {
+      "schema_name": "private",
+      "table_name": "group_role_changes",
+      "rls": true
+    },
+    {
+      "schema_name": "private",
+      "table_name": "location_text_origins",
+      "rls": true
+    },
+    {
+      "schema_name": "private",
+      "table_name": "project_attribution_receipts",
+      "rls": true
+    },
+    {
+      "schema_name": "private",
+      "table_name": "project_workspace_add_receipts",
+      "rls": true
+    }
+  ],
+  "private_api_table_grants": 0,
+  "expected_personal_publication_backfill": 2,
+  "historical_group_attributions": 0,
+  "v4_definition_unchanged": true,
+  "rpc_catalog": [
+    {
+      "proname": "get_public_project_groups",
+      "identity_arguments": "p_project_ids uuid[]",
+      "result": "jsonb",
+      "provolatile": "s",
+      "prosecdef": true,
+      "proconfig": ["search_path=\"\""],
+      "definition_md5": "61004c4a9ca14538c049ef0dc7c0df4a",
+      "anon_execute": true,
+      "authenticated_execute": true,
+      "service_execute": false
+    },
+    {
+      "proname": "list_own_scoped_conversation_items_v4",
+      "identity_arguments": "p_expected_profile_id uuid, p_scope text, p_limit integer, p_cursor_activity_at timestamp with time zone, p_cursor_item_kind text, p_cursor_chat_id uuid",
+      "result": "jsonb",
+      "provolatile": "s",
+      "prosecdef": true,
+      "proconfig": ["search_path=\"\""],
+      "definition_md5": "a351f61a1a80363f5a1335d655b100b7",
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": false
+    },
+    {
+      "proname": "list_own_scoped_conversation_items_v5",
+      "identity_arguments": "p_expected_profile_id uuid, p_scope text, p_limit integer, p_cursor_activity_at timestamp with time zone, p_cursor_item_kind text, p_cursor_chat_id uuid",
+      "result": "jsonb",
+      "provolatile": "s",
+      "prosecdef": true,
+      "proconfig": ["search_path=\"\""],
+      "definition_md5": "f88c5e05891f9e9ef87c3ac54076f11d",
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_execute": false
+    }
+  ],
+  "public_api": [
+    {
+      "rpc": "list_public_proposals_v2",
+      "status": 200,
+      "count": 2
+    },
+    {
+      "rpc": "get_public_project_groups",
+      "status": 200,
+      "input_count": 2,
+      "result_count": 0
+    },
+    {
+      "rpc": "get_public_project_groups",
+      "status": 200,
+      "input_count": 0,
+      "result_count": 0
+    },
+    {
+      "rpc": "list_own_scoped_conversation_items_v4",
+      "status": 401,
+      "code": "42501",
+      "anonymous_denied": true
+    },
+    {
+      "rpc": "list_own_scoped_conversation_items_v5",
+      "status": 401,
+      "code": "42501",
+      "anonymous_denied": true
+    }
+  ],
+  "advisor_summary": [
+    {
+      "name": "rls_enabled_no_policy",
+      "level": "INFO",
+      "count": 104,
+      "before_count": 93,
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy",
+      "new_findings": 11
+    },
+    {
+      "name": "anon_security_definer_function_executable",
+      "level": "WARN",
+      "count": 38,
+      "before_count": 34,
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable",
+      "new_findings": 4,
+      "canonical_rpc_findings_reviewed": true
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "level": "WARN",
+      "count": 315,
+      "before_count": 258,
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable",
+      "new_findings": 57,
+      "canonical_rpc_findings_reviewed": true
+    },
+    {
+      "name": "auth_leaked_password_protection",
+      "level": "WARN",
+      "count": 1,
+      "before_count": 1,
+      "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection",
+      "new_findings": 0
+    }
+  ],
+  "real_client_smoke": "Pending owner response; no connected ADB device or owner-entered staging session.",
+  "production_changed": false,
+  "storage_or_edge_function_deployment": false,
+  "app_release_changed": false
+}
