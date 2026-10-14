@@ -1,6 +1,6 @@
 # PLANETS — C-series Group discussions parallel Codex stack
 
-Use all six numbered files in this folder **once**, in order:
+Use all seven numbered files in this folder **once**, in order:
 
 1. 00_READ_FIRST_C_Stack_Coordinator.md
 2. 01_C00_Group_Discussion_Permissions_And_History_Contract.md
