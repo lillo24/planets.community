@@ -1,4 +1,5 @@
 import '../../group_projects/domain/group_project_models.dart';
+import '../../group_projects/domain/group_project_creation_return.dart';
 import '../../group_projects/application/group_attribution_draft.dart';
 import '../../group_projects/data/group_project_gateway.dart';
 import '../../group_projects/presentation/group_project_widgets.dart';
@@ -762,6 +763,18 @@ class _ProposalFormState extends ConsumerState<_ProposalForm>
       setState(() => _saving = false);
       if (!locationSaved) return false;
       if (navigate) {
+        final origin = GoRouterState.of(context).extra;
+        if (origin is GroupProjectCreationReturn &&
+            origin.actor == widget.identityId) {
+          // Stateful shell branch changes may complete a pop without forwarding
+          // its result. Restore the private source explicitly after acknowledgment.
+          if (origin.returnPath case final path?) {
+            context.go(path);
+            return true;
+          }
+          context.pop(GroupProjectCreationResult(widget.identityId, id));
+          return true;
+        }
         if (widget.returnToHub && context.canPop()) {
           context.pop();
         } else {

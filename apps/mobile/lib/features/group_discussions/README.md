@@ -29,6 +29,10 @@ Resource and representative conversations.
   edits and destination confirmation before the fresh authorized launch.
 - `presentation/discussion_link_widgets.dart` provides the pure named-link
   heading and a narrow large-text preview without importing native transport.
+- `application/discussion_project_handoff.dart` and
+  `presentation/discussion_project_start.dart` check current source entry before
+  opening the ordinary Group-attributed Project chooser. Its private navigation
+  result returns to the retained room without granting Project access.
 
 The backend is authoritative. See the provisional permissions contract and
 reproduction notes in `docs/development/group-discussions.md`. Controllers do not
