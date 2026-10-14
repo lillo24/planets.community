@@ -57,18 +57,31 @@ One whole Mobile run overlapped a consent-dialog source/test repair and used the
 old compiled screen with the new assertion: 3342 passed, two existing skips and
 that one failure. The repaired focused suite passed; D03 Mobile CI subsequently
 passed on `e8a3c85`. A whole SQL run against already-populated QA data triggered
-existing empty-baseline count assertions. It is not a clean database qualification;
-the fresh-database CI run remains the relevant gate.
+existing empty-baseline count assertions; it was not counted as qualification.
+Both the D03 run `38587678652` and cumulative run `38591101897` subsequently
+passed all required Mobile/Web/Site/Database statuses. Clean CI replay passed all
+5,242 SQL assertions, both populated upgrade paths and the 218-check real-Auth
+coordination verifier. The cumulative source gate was green at `8446bc7`.
 
 The native Android build and genuine local users exercised contact context,
 explicit source/purpose, exact lost-response recovery, manager triage, acceptance,
 human send, audience and nonaccepting-manager denial. The first D03 native run also
 reached fresh composition and additional seat claim. A harness retained a lazy
 scrollable across account/route replacement; the corrected bounded helper re-finds
-it, waits for auth readiness and records a diagnostic on missing actions.
+it, waits for auth readiness/canonical detail and records a diagnostic on missing
+actions. The final gate also reconciles a committed proposal through its explicit
+receipt-recovery UI if an access hint races the submit response.
+Later attempts reached proposal submission but did not return a complete result;
+the last driver lost its VM debug service (`ext.flutter.driver: Service has
+disappeared`) without a whole-journey report. No native pass is inferred from it.
 Complete native consent/fresh-history/report/block/decline/withdraw and Italian
-evidence is still pending at this integration snapshot. Partial screenshots are
-not a whole-journey pass.
+evidence remains a release/source-merge qualification blocker. Eight native PNGs
+were saved; inspected metadata denial was minimal, while the audience PNG showed
+loading and did not qualify its final layout. Partial frames are not a pass.
+
+Hot restart was executed successfully against the task-owned app through DTD.
+The final harness itself passed scoped static analysis. No native device or
+back-end limitation was hidden behind mocked successful results.
 
 The task-owned target is `PLANETS_D_QA` / `emulator-5580`; the real phone
 `48091FDAS0041A` and unrelated C services/worktrees were not used or cleaned up.
@@ -85,7 +98,7 @@ participation request. Installed Requests v1/v2 and own-reports v1/v2 exclude ne
 kinds before keyset limits; current Requests/own-reports v3 include coordination,
 while Chats v6 and unread/read v2 preserve human-message semantics.
 
-Before source merge: record exact founder approval/departures, finish native and
-fresh-database qualification, confirm all required CI on the cumulative head,
+Before source merge: record exact founder approval/departures, finish native
+qualification, confirm all required CI on the final cumulative head,
 fetch main again and review the complete effective migration/schema diff. Approval
 of the code does not authorize production rollout or resolve lawful retention.

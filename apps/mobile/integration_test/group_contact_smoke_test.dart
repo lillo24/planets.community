@@ -10,6 +10,7 @@ import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/backend/supabase_backend.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
+import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/group_contact/data/group_contact_gateway.dart';
 import 'package:planets_mobile/features/group_contact/presentation/group_contact_routes.dart';
@@ -77,6 +78,7 @@ void main() {
         throw StateError('Prepare local contact UI defines first.');
       }
       SupabaseClient? currentClient;
+      ProviderContainer? currentScope;
       final containers = <ProviderContainer>[];
       final clients = <SupabaseClient>[];
       var lost = false;
@@ -139,6 +141,7 @@ void main() {
           ],
         );
         containers.add(container);
+        currentScope = container;
         await container.read(authSessionProvider.notifier).start();
         await tester.pumpWidget(
           UncontrolledProviderScope(
@@ -148,6 +151,12 @@ void main() {
           ),
         );
         await tester.pump(const Duration(milliseconds: 600));
+        await harness.waitUntil(
+          tester,
+          () =>
+              container.read(authSessionProvider).phase ==
+              AuthSessionPhase.ready,
+        );
         return container;
       }
 
@@ -186,6 +195,20 @@ void main() {
               await tester.drag(scrolls.first, const Offset(0, -200));
             }
           }
+        }
+        if (finder.hitTestable().evaluate().isEmpty) {
+          final scope = currentScope!;
+          final path = scope
+              .read(appRouterProvider)
+              .routerDelegate
+              .state
+              .uri
+              .path
+              .replaceAll(RegExp(r'[0-9a-fA-F-]{36}'), ':id');
+          debugPrint(
+            'D native missing $key: path=$path phase=${scope.read(authSessionProvider).phase.name}',
+          );
+          await binding.takeScreenshot('d03-missing-$key');
         }
         expect(
           finder.hitTestable(),
@@ -315,6 +338,10 @@ void main() {
       final coordinator = await asPerson(alice, aliceToken);
       final coordinatorRouter = coordinator.read(appRouterProvider);
       coordinatorRouter.go(groupContactInfoRoute(chat));
+      await harness.waitFor(
+        tester,
+        find.text('Fictional shared garden proposal'),
+      );
       await tap('contact-coordinate');
       await tap('coordination-pick');
       await harness.waitFor(
@@ -345,10 +372,23 @@ void main() {
       await tap('coordination-confirm-dialog');
       await harness.waitUntil(
         tester,
-        () => coordinatorRouter.routerDelegate.state.uri.path.contains(
-          '/group-coordination/',
-        ),
+        () =>
+            coordinatorRouter.routerDelegate.state.uri.path.contains(
+              '/group-coordination/',
+            ) ||
+            find.byKey(const Key('coordination-recover')).evaluate().isNotEmpty,
       );
+      if (!coordinatorRouter.routerDelegate.state.uri.path.contains(
+        '/group-coordination/',
+      )) {
+        await tap('coordination-recover');
+        await harness.waitUntil(
+          tester,
+          () => coordinatorRouter.routerDelegate.state.uri.path.contains(
+            '/group-coordination/',
+          ),
+        );
+      }
       final proposalId =
           coordinatorRouter.routerDelegate.state.uri.pathSegments.last;
       final invitee = await asPerson(dave, daveToken);
@@ -369,12 +409,20 @@ void main() {
       firstConsent
           .read(appRouterProvider)
           .go(coordinationProposalRoute(proposalId));
+      await harness.waitFor(
+        tester,
+        find.text('Fresh fictional three-group coordination'),
+      );
       await tap('coordination-confirm');
       await tap('coordination-confirm-dialog');
       final secondConsent = await asPerson(carol, carolToken);
       secondConsent
           .read(appRouterProvider)
           .go(coordinationProposalRoute(proposalId));
+      await harness.waitFor(
+        tester,
+        find.text('Fresh fictional three-group coordination'),
+      );
       await tap('coordination-confirm');
       await tap('coordination-confirm-dialog');
       final finalConsent = await asPerson(

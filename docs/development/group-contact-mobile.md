@@ -99,7 +99,10 @@ The scoped Mobile regression run passed 451 tests before the final sender/layout
 additions; the final focused contact/moderation run passed 23 tests. The additive
 access/sender/exit/expiry SQL suite passed 20 assertions, and the inherited real
 OTP/PostgREST verifier passed 62 checks with the D02 schema. Web generated types
-passed typechecking. The full current Mobile CI suite remains the stage gate.
+passed typechecking. D02 required CI subsequently passed on `a1bf9f9`; D03 and
+the cumulative runtime/schema checks also passed. See the
+[final integration evidence](group-contact-integration-evidence.md) for exact heads
+and the remaining whole native journey blocker.
 
 Native debugging exercised submission, exact lost-response recovery, manager
 triage, acceptance, human messages, audience, revocation and protected reporting.
