@@ -5,6 +5,11 @@ explicit episode-bound admission, committed-sequence history/read frontier and
 typed report-evidence domain. C00 remains provisional; isolated tests and draft
 PRs do not authorize main merge or shared activation.
 
+[STAGING01 recovery preflight](staging01-recovery-preflight.md) records the
+2026-10-14 hosted contract mismatch, exact pending versions, local rehearsal,
+backup requirements and explicit hosted-write approval gate. Its extra hosted
+automatic-RLS trigger is diagnosed separately from canonical migration history.
+
 [GRP01 persistent groups](persistent-groups.md) owns durable group identity,
 personal-manager authority, versioned publication, bounded anonymous reads,
 independent staff suppression and genuine group reporting. Its focused HTTP and

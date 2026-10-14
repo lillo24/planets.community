@@ -1,0 +1,54 @@
+[
+  {
+    "file": "20261011132245_project_workspace_named_links.sql",
+    "sha256": "326b7a4a4d21f82dcfd985a517c6f08bbe986fb00ae797e8d62f03049eac627d"
+  },
+  {
+    "file": "20261011180000_location_text_provenance.sql",
+    "sha256": "6cfc741f5388cc579813dd92c52c167c472853fd649368fd57d0f2b31598b560"
+  },
+  {
+    "file": "20261012091701_profile_content_only_update.sql",
+    "sha256": "26ad1395bf224e83698ab3fb1f03bae43ed88e254c795d041356830adfd46482"
+  },
+  {
+    "file": "20261012094725_chat_list_group_covers.sql",
+    "sha256": "fa74d9db5e3a1121d79310f894d8a217fc8ad221eafa7621271a823ced89bc61"
+  },
+  {
+    "file": "20261012104716_proposal_skills_management.sql",
+    "sha256": "13f215cd1979465fd188122d8c97a3413dc03ef9a7d13355568efa304f20a6f3"
+  },
+  {
+    "file": "20261012110923_group_membership_and_authority.sql",
+    "sha256": "ef6582b4e78556ede855ae038351ad3592cf8538ddf5f8fd13c34781834b148b"
+  },
+  {
+    "file": "20261012111424_group_relationship_api.sql",
+    "sha256": "692cfbc47ef3c1c4669b16269692c395ab30cb60656d62c6e9b40f86cae3440c"
+  },
+  {
+    "file": "20261012111833_group_membership_blocking_and_grants.sql",
+    "sha256": "4f531364d95fcdaa959b5ff462236035221a783bb005af7a2ae7b2ca7fb0a831"
+  },
+  {
+    "file": "20261012152803_group_exact_self_membership_context.sql",
+    "sha256": "597cd4aee7cabb74e2d7981b711b46428ceb456305bffd18059b09dd02862f85"
+  },
+  {
+    "file": "20261013100000_group_project_attribution.sql",
+    "sha256": "40ced3c4a9632a19117c6b999dbb096a4b31fbc2fa3701c78295f18b75ed88bc"
+  },
+  {
+    "file": "20261013100100_group_project_atomic_creation.sql",
+    "sha256": "18aaa61747a6a2948f4fa6d20383506f29ec831a8f2fc59d56bb5315328c71fc"
+  },
+  {
+    "file": "20261013100200_group_project_publish_revision.sql",
+    "sha256": "618892c4e3ab74f465e34106c4b3ee9e1bec7bea30563522e930b6e57c444a75"
+  },
+  {
+    "file": "20261013175400_project_workspace_paging_and_recovery.sql",
+    "sha256": "edd56e57cb75e5204c2dc68009df294ea11d42a1c4c89b638e1fab035f9e11a7"
+  }
+]

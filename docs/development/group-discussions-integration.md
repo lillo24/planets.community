@@ -15,12 +15,15 @@ or public activation under this task.
 | C03 private named links            | #251     | `a857b79`       |
 | C04 ordinary Project handoff       | #252     | `35d0216`       |
 
-The integration includes latest `origin/main` at
-`17b7c76` (the A stack is already merged; later changes archive/add prompts only).
-Its source merge is `d5c135e976047f24431a02b098427a3b12341c64`. A verified empty
-diff against C04 `35d0216f59a973e8d2886be1f38d584d6f1fe04e` covers all mobile,
-Web/site runtime, manifests, scripts, migrations and CI configuration. The only
-additional implementation artifact is this integration/approval packet. C01–C03
+The integration includes latest `origin/main` at `c99d9fe` (A is already merged;
+later changes archive/add prompts and STAGING01 preflight evidence/rehearsal).
+A verified empty diff against C04
+`35d0216f59a973e8d2886be1f38d584d6f1fe04e` covers all mobile, Web/site runtime,
+manifests, C verifiers, migrations and CI configuration. Main's new one-time
+STAGING01 script/evidence is retained unchanged and was not executed under C.
+The database documentation keeps both the C and STAGING01 navigation entries;
+the script navigation map retains both domains. The C-only additional artifact
+is this integration/approval packet. C01–C03
 required CI passed; current C04 and cumulative exact-head CI statuses are recorded
 on their PRs. The cumulative PR remains draft even when its checks pass.
 
