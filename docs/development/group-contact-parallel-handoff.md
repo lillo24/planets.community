@@ -9,7 +9,7 @@ old D privacy model.
 
 - Cumulative source: [D #254](https://github.com/lillo24/planets.community/pull/254),
   `codex/d-integration`; preserves all D00–D03 ancestry.
-- Runtime checkpoint: `bd8e510a2007cd22f09b98494d248d177d1fc801`;
+- Runtime checkpoint: `5ffd1fd7`;
   final qualification and native follow-up are recorded below.
 - Included main: `94af1c2eb707446baf7b7e027dff6ea997c9813e`.
 - Peer inspected: [C #257](https://github.com/lillo24/planets.community/pull/257),
@@ -75,10 +75,11 @@ is separate from `group_contact_request`, `group_coordination_proposal` and
 `group_contact_chat`.
 
 D migrations span `20261014072939` through `20261014125000` (ten files).
-Four forward files add member domain/safety (`20261015095004` and
+Five forward files add member domain/safety (`20261015095004` and
 `20261015095042`), contact activity/preferences (`20261015095248`) and canonical
-notification-worker preservation (`20261015110945`). There are fourteen D/M
-migrations and 110 repository migrations at this checkpoint.
+notification-worker preservation (`20261015110945`), followed by canonical Block
+lock-order correction (`20261015114510`). There are fifteen D/M migrations and
+111 repository migrations at this checkpoint.
 They are absent from main and remain unshipped review source; no applied main
 migration is changed. Later integration must test actual sorted C/D migrations,
 including populated predecessor report constraints and Block helper identity.
@@ -97,6 +98,17 @@ Current D routes are `/groups/:id/contact`,
 `/messages/requests/group-contact/:id`, `/messages/chats/group-contact/:id`
 and coordination routes documented by the owning feature. Login/setup never
 submits or accepts an action. Receipt recovery never restores authorization.
+
+At pushed C `a72e9f86`, the implemented unread reader is
+`get_own_message_unread_summary_with_discussions(uuid)`, based on the legacy
+summary; the `_with_discussions_v2` name in C's handoff is not yet implemented.
+The later integrator must inspect the final C source, compose its room unread
+with D v3 totals without duplicate Project-folder counts, and preserve C's
+`acknowledge_group_discussion_read_v2(uuid,uuid,text)` snapshot ACK alongside D's
+UUID-boundary ACK. C's canonical People invitation is
+`invite_group_discussion_member(uuid,uuid,uuid,uuid)`, with an Idea picker filtered
+by its actual `can_invite` capability. These are read-only integration notes, not
+an import or qualification of unmerged C.
 
 ## Worked acceptance examples
 
@@ -197,9 +209,18 @@ No hosted operation has been performed.
 - That correction applied successfully on the owned database; affected SQL files
   019, 029, 054, 089, 140 and 143 passed all 208 assertions. The full clean Database
   and remaining CI gates must run on the final follow-up push.
+- Additional review found the member wrapper prelocked a partial Group set before
+  legacy Project/Resource closure. Forward `20261015114510` instead adds member
+  origins at the predecessor's single complete legacy/coordination Group union,
+  then delegates before member-pair cleanup. Guards and postconditions preserve
+  both function OIDs/ACLs and reject unexpected source changes. Ten added SQL
+  assertions and a real-Auth regression independently observe Block waiting on a
+  Project row while affected Groups remain lockable with `NOWAIT`. Lightweight
+  checks pass; actual apply, SQL and Auth execution await the C slot handback.
 - A local clean replay accepted all 109 migrations before the new correction;
   all fourteen D/M files are now installed after the successful forward apply.
-  This incremental result is not described as a clean 110-file replay.
+  The fifteenth Block correction is pending. This incremental result is not
+  described as a clean 111-file replay.
 - Genuine member Auth verification passed 119 checks after a scoped restart of
   the verified D Auth container resolved OTP HTTP 504 failures. The earlier
   interrupted local populated-upgrade attempt is not a pass; CI's completed
@@ -208,6 +229,13 @@ No hosted operation has been performed.
   Auth checks. D uses only project `planets-community-d-qa`, explicit engine
   `planets-d-qa`, ports 55320–55329, inspector 8183 and AVD 5580. D will explicitly
   release the slot through the PR discussion after its checks/services finish.
+- D subsequently released the slot explicitly in
+  [the verified service-stop handoff](https://github.com/lillo24/planets.community/pull/254#issuecomment-6191162408):
+  all seven verified D project containers and AVD 5580 stopped, volumes retained.
+  Corrected D/M APKs compile serially without DB/emulator; D waits for C's
+  explicit return before restarting. The old synthetic identities exposed in a
+  diagnostic were retired and their old tokens verified denied. Fresh unique
+  defines remain outside Git and logs.
 
 Native completion, final source CI and all unresolved decision rows remain gates.
 No policy answer is inferred from the instruction to continue.
