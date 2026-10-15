@@ -108,6 +108,9 @@ revocation tests wait for actual decoded pixels before asserting exact text.
 
 ## MAPFIX03 handoff and release boundary
 
+MAPUI03 is merged in [PR #265](https://github.com/lillo24/planets.community/pull/265).
+See the [MAPFIX03 follow-up evidence and remaining live acceptance](mapfix03-live-detail-diagnosis.md).
+
 MAPFIX03 starts after MAPUI03 merges. Initial read-only ADB inventory on this run
 found no attached device; physical phone `48091FDAS0041A`, installed package,
 signer, installer, compiled gates and Play assignment remain unverified. Ordinary
