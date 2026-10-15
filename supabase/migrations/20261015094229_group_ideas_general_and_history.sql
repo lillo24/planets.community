@@ -188,7 +188,8 @@ begin
  if not private.group_discussion_group_available(p_group_id) or (not private.group_discussion_person_current(p_group_id,actor) and not exists(
   select 1 from private.group_discussions r where r.group_id=p_group_id and private.group_discussion_history_frontier(r.id,actor) is not null)) then
   raise sqlstate '42501' using message='The discussions are unavailable.'; end if;
- if p_before_id is not null then select r.kind='general' into cursor_general from private.group_discussions r where r.id=p_before_id and r.group_id=p_group_id;
+ if p_before_id is not null then select r.kind='general' into cursor_general from private.group_discussions r where r.id=p_before_id and r.group_id=p_group_id
+  and private.group_discussion_summary_v2(r.id,actor) is not null;
   if cursor_general is null then raise sqlstate '22023' using message='The discussion cursor is invalid.'; end if; end if;
  select coalesce(jsonb_agg(page.summary order by page.is_general desc,page.created_at desc,page.id desc),'[]') into result from (
   select r.id,r.created_at,r.kind='general' is_general,s.summary from private.group_discussions r
