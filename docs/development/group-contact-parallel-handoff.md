@@ -211,3 +211,24 @@ No hosted operation has been performed.
 
 Native completion, final source CI and all unresolved decision rows remain gates.
 No policy answer is inferred from the instruction to continue.
+
+## Later final-main review
+
+Inspect the effective schema after all sorted migrations, not a stage's original
+function declaration. The principal invariants and evidence owners are:
+
+- Representative authority and history stay separate from ordinary membership:
+  contact migrations/tests 134–137 and the genuine group-contact verifier.
+- Coordination admits only exact-version named consent into a fresh history:
+  coordination migrations/test 138 and the coordination Auth/native journeys.
+- Personal requests use canonical origin People, named acceptance and separate
+  consent episodes; managers gain no oversight: member migrations/test 140 and
+  `verify-local-member-contact.mjs`.
+- Invitations/activity never count as human unread, stale access is filtered
+  before paging, and mute never acknowledges messages: Messages adapters,
+  notification controller tests and SQL 143.
+- Staff receives exact reported evidence without surrounding private history:
+  versioned own-report/staff projections and Web moderation tests.
+- If C lands later, compose its actual APIs, kinds and sorted populated schema
+  before limits; preserve all existing Project/Resource/contact histories, then
+  regenerate types. No combined C/D validation is claimed while C is unmerged.
