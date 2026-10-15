@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import postgres from "postgres";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
+import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
 
 // Real local OTP + PostgREST and independently observed database lock races.
 // Synthetic candidate only: this verifier does not approve the lifetime policy.
@@ -166,6 +167,10 @@ async function afterGroupWait(groupId, rpcName, launch, transition) {
 async function blockAfterLegacyProjectWait(blocker, blocked, groupIds) {
   // These records use ordinary real-Auth commands. Only the held lock and the
   // independent NOWAIT observation use SQL; no synthetic Project state is injected.
+  // The legacy Project publish/join gate requires photos; member contact above
+  // deliberately runs without them and gains no new photo requirement.
+  await ensureLocalProfilePhoto(blocked);
+  await ensureLocalProfilePhoto(blocker);
   const projectId = await call(blocked, "create_proposal_draft", {
     p_expected_creator_profile_id: blocked.id,
     p_title: `Fictional M Block order ${run}`,
