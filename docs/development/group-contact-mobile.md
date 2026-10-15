@@ -88,7 +88,28 @@ alone does not isolate a database. Set D's Mailpit explicitly: the shared helper
 default is port 54324. On Windows, both task-local Podman variables above select
 the owned engine without changing the machine's default connection. Start the
 database and finish cold image downloads before the emulator on a memory-limited
-host. The documented viewport is asserted as 320dp by the test.
+host. Every captured frame asserts an actual 320dp viewport and 2x text scaling.
+
+To avoid overlapping Gradle and emulator memory on Windows, build with the
+emulator stopped, then boot only the owned device and drive the resulting APK:
+
+```powershell
+$env:GRADLE_OPTS='-Dorg.gradle.workers.max=2 -Dorg.gradle.daemon=false "-Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m -XX:ReservedCodeCacheSize=256m"'
+$env:JAVA_TOOL_OPTIONS='-XX:ActiveProcessorCount=2'
+flutter build apk --debug --no-pub --target=integration_test/group_contact_smoke_test.dart --dart-define-from-file="$env:TEMP/planets-d-r04-native-defines.json"
+New-Item -ItemType Directory -Path build/native-review -Force | Out-Null
+Copy-Item -LiteralPath build/app/outputs/flutter-apk/app-debug.apk -Destination build/native-review/d-contact.apk
+# Boot/configure the owned emulator as above, then:
+flutter drive -d emulator-5580 --no-dds --no-pub --use-application-binary=build/native-review/d-contact.apk --driver=test_driver/group_contact_screenshots.dart --target=integration_test/group_contact_smoke_test.dart
+```
+
+These process-local Gradle limits do not change repository build configuration or
+stop other Gradle daemons. Keep a distinct ignored APK for each test target: a
+later member build replaces `app-debug.apk`. Rebuild after changing the target,
+source or fixtures, and allow for the genuine fixture tokens' expiry when
+coordinating validation slots; do not extend token lifetime to make a run pass.
+The instrumented APK contains the private compile-time fixture tokens too: keep
+it ignored locally and remove it with those defines after QA.
 
 The complete synthetic review journey includes a declined coordination proposal,
 an explicit audience replacement that retires the selected seat and old consent,
@@ -100,10 +121,11 @@ target and persisted report, blocking, safe former-representative leave, close w
 permitted history, and a separate pending Project request without membership.
 The fixtures and postconditions use the real backend; only initial UI identity
 and the two lost responses are injected. Account switches dispose the preceding
-scope/client. Lazy-scroll lookups use the current route; screenshots wait for
+scope/client. Both keyed and text actions reveal their current-route target
+before tapping at enlarged text. Lazy-scroll lookups use the current route; screenshots wait for
 loaded content, and the driver retains failure response data too.
 
-EN narrow and IT 2x composer, audience and denied frames must be inspected after
+EN and IT 320dp/2x composer, audience and denied frames must be inspected after
 the **entire** driver exits successfully. An intermediate checkpoint or static
 analysis pass does not qualify the native journey. Do not hot restart an active
 integration driver; `--no-dds` follows the repository's Windows native harness

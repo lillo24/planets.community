@@ -348,6 +348,7 @@ void main() {
       await tap('group-people');
       await tapFinder(find.text('Fictional Bob'));
       await harness.waitFor(tester, find.text(strings().memberContactAction));
+      await reveal(find.text(strings().memberContactAction));
       if (evidence) await shotPair('people-sheet');
       await tapFinder(find.text(strings().memberContactAction));
       await reveal(find.byKey(const Key('member-contact-note')));
@@ -547,7 +548,7 @@ void main() {
     await tap('member-contact-close');
     await dialogPair('close-confirmation', () => tap('member-contact-close'));
     await confirmDialog();
-    await harness.waitFor(tester, find.text(strings().memberContactReadOnly));
+    await reveal(find.text(strings().memberContactReadOnly));
     final closed = await conversation(aliceClient, alice, primary.chat);
     expect(closed['ended_reason'], 'closed');
     expect(closed['current_episode_id'], isNull);
@@ -569,7 +570,7 @@ void main() {
     await tap('member-contact-leave');
     await dialogPair('leave-confirmation', () => tap('member-contact-leave'));
     await confirmDialog();
-    await harness.waitFor(tester, find.text(strings().memberContactReadOnly));
+    await reveal(find.text(strings().memberContactReadOnly));
     expect(
       (await conversation(bobClient, bob, leave.chat))['ended_reason'],
       'left',

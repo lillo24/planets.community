@@ -40,6 +40,16 @@ cd apps/mobile
 flutter drive -d emulator-5580 --no-dds --no-pub --driver=test_driver/member_contact_screenshots.dart --target=integration_test/member_contact_smoke_test.dart --dart-define-from-file="$env:TEMP/planets-member-native-defines.json"
 ```
 
+For a memory-limited host, use the process-local Gradle limits and serial
+build/device procedure in [the representative harness guide](group-contact-mobile.md).
+Build with `--target=integration_test/member_contact_smoke_test.dart` and the
+member defines, then preserve the result as `build/native-review/member-contact.apk`.
+Drive that exact prebuilt file with `--use-application-binary` and the member
+driver/target above. Each build replaces `app-debug.apk`; distinct ignored copies
+prevent accidentally driving the other test target. Rebuild after any source or
+fixture change. The APK also contains private fixture tokens and must be removed
+with the temporary defines after QA.
+
 The test asserts the actual device width is 320dp and injects 2x text scaling
 through the test platform dispatcher. Every saved checkpoint asserts that the
 rendered route received those dimensions and that no Flutter layout exception

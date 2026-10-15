@@ -43,6 +43,8 @@ void main() {
         'Explicit disposable loopback configuration and adb reverse required.',
       );
     }
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     const alice = String.fromEnvironment('D_ALICE_ID'),
         aliceToken = String.fromEnvironment('D_ALICE_TOKEN'),
         bob = String.fromEnvironment('D_BOB_ID'),
@@ -291,6 +293,13 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
     }
 
+    Future<void> tapFinder(Finder finder) async {
+      await reveal(finder);
+      expect(finder.hitTestable(), findsOneWidget);
+      await tester.tap(finder);
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
     Future<void> shot(String name) async {
       await harness.waitUntil(
         tester,
@@ -303,7 +312,10 @@ void main() {
         debugPrintStack(stackTrace: lastError?.stack);
       }
       expect(exception, isNull);
-      debugPrint('D native checkpoint: $name');
+      final context = tester.element(find.byType(Scaffold).last);
+      expect(MediaQuery.sizeOf(context).width, closeTo(320, 0.5));
+      expect(MediaQuery.textScalerOf(context).scale(10), 20);
+      debugPrint('D native checkpoint: $name, actual 320dp, text scale 2x.');
       await binding
           .takeScreenshot('d02-$name')
           .timeout(const Duration(seconds: 30));
@@ -356,10 +368,11 @@ void main() {
     aRouter.go('/proposals/$project');
     await tap('contact-group-entry');
     await harness.waitFor(tester, find.text('Propose collaboration'));
+    await reveal(find.text('Propose collaboration'));
     await shot('public-context-en');
-    await tester.tap(find.text('Propose collaboration'));
+    await tapFinder(find.text('Propose collaboration'));
     await harness.waitFor(tester, find.text('Fictional Neighbourhood Garden'));
-    await tester.tap(find.text('Fictional Neighbourhood Garden'));
+    await tapFinder(find.text('Fictional Neighbourhood Garden'));
     await reveal(find.byKey(const Key('contact-title')));
     await tester.enterText(
       find.byKey(const Key('contact-title')),
@@ -403,7 +416,7 @@ void main() {
       params: {'p_expected_profile_id': carol, 'p_request_id': request},
     );
     final chat = own['chat_id'] as String;
-    await tester.tap(find.text('Open conversation'));
+    await tapFinder(find.text('Open conversation'));
     await harness.waitFor(
       tester,
       find.byKey(const Key('contact-message-body')),
@@ -735,7 +748,7 @@ void main() {
         tester,
         find.text('Fictional Neighbourhood Garden'),
       );
-      await tester.tap(find.text('Fictional Neighbourhood Garden'));
+      await tapFinder(find.text('Fictional Neighbourhood Garden'));
       await reveal(find.byKey(const Key('contact-title')));
       await tester.enterText(find.byKey(const Key('contact-title')), subject);
       await reveal(find.byKey(const Key('contact-note')));
@@ -841,16 +854,16 @@ void main() {
     );
     expect(find.byKey(const Key('contact-message-send')), findsNothing);
     await shot('former-denied-known-report-en');
-    await tester.tap(find.text('Report a previously received message'));
+    await tapFinder(find.text('Report a previously received message'));
     await harness.waitFor(tester, find.byKey(const Key('moderation-category')));
     final reportTarget =
         former.read(appRouterProvider).routerDelegate.state.extra
             as ModerationReportTarget;
     expect(reportTarget.kind, ModerationTargetKind.groupContactMessage);
     expect(reportTarget.id, reportMessage['message_id']);
-    await tester.tap(find.byKey(const Key('moderation-category')));
+    await tapFinder(find.byKey(const Key('moderation-category')));
     await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.text('Harassment or abuse').last);
+    await tapFinder(find.text('Harassment or abuse').last);
     await tester.pump(const Duration(milliseconds: 400));
     await reveal(find.byKey(const Key('moderation-explanation')));
     await tester.enterText(
@@ -965,7 +978,7 @@ void main() {
     final joiner = await asPerson(alice, aliceToken);
     joiner.read(appRouterProvider).go(groupContactInfoRoute(freshChat));
     await harness.waitFor(tester, find.text('Block Fictional carol'));
-    await tester.tap(find.text('Block Fictional carol'));
+    await tapFinder(find.text('Block Fictional carol'));
     await tap('blocking-confirm-block');
     await harness.waitFor(tester, find.text('Unblock Fictional carol'));
     await shot('block-permitted-history-en');
