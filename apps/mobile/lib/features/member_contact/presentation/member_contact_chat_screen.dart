@@ -316,156 +316,190 @@ class _MemberContactChatScreenState
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            if (loading) const LinearProgressIndicator(),
-            if (c == null && !loading)
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Text(denied ? l.contactUnavailable : l.contactFailure),
-                    TextButton(onPressed: load, child: Text(l.retryAction)),
-                    if (knownReport case final String message)
-                      TextButton(
-                        onPressed: () => report(message),
-                        child: Text(l.contactKnownReport),
-                      ),
-                  ],
+        child: LayoutBuilder(
+          builder: (context, constraints) => Column(
+            children: [
+              // The keyboard and large text can consume most of the body. Bound
+              // both contextual notices and the composer so history stays visible;
+              // scroll their full content instead of clipping consent/recovery text.
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: constraints.maxHeight / 4,
                 ),
-              ),
-            if (c != null)
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(l.memberContactOrigin(c.groupName)),
-              ),
-            if (c != null && c.readOnly)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(l.memberContactReadOnly),
-              ),
-            if (attempt != null &&
-                (c == null || c.readOnly || attempt!.receipt != null))
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  children: [
-                    Text(l.contactDeliveryPending),
-                    TextButton(
-                      key: const Key('contact-recover-send'),
-                      onPressed: sending ? null : recover,
-                      child: Text(l.contactRecover),
-                    ),
-                  ],
-                ),
-              ),
-            Expanded(
-              child: MessageReadViewport(
-                profileId: actor,
-                kind: 'member_contact_chat',
-                chatId: c?.id,
-                boundary: c == null ? null : boundary,
-                scrollController: scroll,
-                child: ConversationHistoryList<MemberContactMessage>(
-                  key: ValueKey((widget.chatId, actor, epoch)),
-                  items: items,
-                  itemKey: (m) => m.id,
-                  controller: scroll,
-                  enabled: c != null,
-                  hasMore: hasMore,
-                  loading: loadingOlder,
-                  failed: olderFailed,
-                  onLoadOlder: older,
-                  fallbackLabel: l.projectChatLoadOlder,
-                  buttonKey: const Key('contact-history-more'),
-                  empty: Center(
-                    child: Text(c == null ? '' : l.projectChatNoMessages),
-                  ),
-                  itemBuilder: (context, m) {
-                    final name = m.senderName;
-                    return Card(
-                      key: Key('contact-human-${m.id}'),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              style: Theme.of(context).textTheme.labelLarge,
-                            ),
-                            Text(m.body),
-                            Text(
-                              messageDate(context, m.createdAt),
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            if (m.senderId != actor)
-                              TextButton.icon(
-                                onPressed: () => report(m.id),
-                                icon: const Icon(Icons.flag_outlined),
-                                label: Text(l.contactMessageReport),
+                child: SingleChildScrollView(
+                  primary: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (loading) const LinearProgressIndicator(),
+                      if (c == null && !loading)
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Text(
+                                denied
+                                    ? l.contactUnavailable
+                                    : l.contactFailure,
                               ),
-                          ],
+                              TextButton(
+                                onPressed: load,
+                                child: Text(l.retryAction),
+                              ),
+                              if (knownReport case final String message)
+                                TextButton(
+                                  onPressed: () => report(message),
+                                  child: Text(l.contactKnownReport),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      if (c != null)
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Text(l.memberContactOrigin(c.groupName)),
+                        ),
+                      if (c != null && c.readOnly)
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(l.memberContactReadOnly),
+                        ),
+                      if (attempt != null &&
+                          (c == null || c.readOnly || attempt!.receipt != null))
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            children: [
+                              Text(l.contactDeliveryPending),
+                              TextButton(
+                                key: const Key('contact-recover-send'),
+                                onPressed: sending ? null : recover,
+                                child: Text(l.contactRecover),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            if (c != null && !c.readOnly)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (sendFailed && attempt?.ambiguous != true)
-                      Semantics(
-                        liveRegion: true,
-                        child: Text(l.contactFailure),
-                      ),
-                    if (attempt?.ambiguous == true)
-                      Semantics(
-                        liveRegion: true,
-                        child: Text(l.contactDeliveryPending),
-                      ),
-                    if (attempt?.ambiguous == true)
-                      TextButton(
-                        onPressed: sending ? null : recover,
-                        child: Text(l.contactRecover),
-                      ),
-                    TextField(
-                      key: const Key('contact-message-body'),
-                      controller: body,
-                      onChanged: (text) => ref
-                          .read(memberContactDraftsProvider.notifier)
-                          .save(slot, text),
-                      enabled: !sending && attempt?.ambiguous != true,
-                      minLines: 1,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        labelText: l.contactMessageHint,
-                      ),
+              Expanded(
+                child: MessageReadViewport(
+                  profileId: actor,
+                  kind: 'member_contact_chat',
+                  chatId: c?.id,
+                  boundary: c == null ? null : boundary,
+                  scrollController: scroll,
+                  child: ConversationHistoryList<MemberContactMessage>(
+                    key: ValueKey((widget.chatId, actor, epoch)),
+                    items: items,
+                    itemKey: (m) => m.id,
+                    controller: scroll,
+                    enabled: c != null,
+                    hasMore: hasMore,
+                    loading: loadingOlder,
+                    failed: olderFailed,
+                    onLoadOlder: older,
+                    fallbackLabel: l.projectChatLoadOlder,
+                    buttonKey: const Key('contact-history-more'),
+                    empty: Center(
+                      child: Text(c == null ? '' : l.projectChatNoMessages),
                     ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: FilledButton.icon(
-                        key: const Key('contact-message-send'),
-                        onPressed: sending ? null : send,
-                        icon: const Icon(Icons.send_outlined),
-                        label: Text(
-                          sending
-                              ? l.contactSending
-                              : attempt?.ambiguous == true
-                              ? l.retryAction
-                              : l.contactMessageSend,
+                    itemBuilder: (context, m) {
+                      final name = m.senderName;
+                      return Card(
+                        key: Key('contact-human-${m.id}'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: Theme.of(context).textTheme.labelLarge,
+                              ),
+                              Text(m.body),
+                              Text(
+                                messageDate(context, m.createdAt),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              if (m.senderId != actor)
+                                TextButton.icon(
+                                  onPressed: () => report(m.id),
+                                  icon: const Icon(Icons.flag_outlined),
+                                  label: Text(l.contactMessageReport),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
+                      );
+                    },
+                  ),
                 ),
               ),
-          ],
+              if (c != null && !c.readOnly)
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: constraints.maxHeight / 2,
+                  ),
+                  child: SingleChildScrollView(
+                    key: const Key('member-contact-composer-scroll'),
+                    primary: false,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (sendFailed && attempt?.ambiguous != true)
+                            Semantics(
+                              liveRegion: true,
+                              child: Text(l.contactFailure),
+                            ),
+                          if (attempt?.ambiguous == true)
+                            Semantics(
+                              liveRegion: true,
+                              child: Text(l.contactDeliveryPending),
+                            ),
+                          if (attempt?.ambiguous == true)
+                            TextButton(
+                              onPressed: sending ? null : recover,
+                              child: Text(l.contactRecover),
+                            ),
+                          TextField(
+                            key: const Key('contact-message-body'),
+                            controller: body,
+                            onChanged: (text) => ref
+                                .read(memberContactDraftsProvider.notifier)
+                                .save(slot, text),
+                            enabled: !sending && attempt?.ambiguous != true,
+                            minLines: 1,
+                            maxLines: 3,
+                            decoration: InputDecoration(
+                              labelText: l.contactMessageHint,
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: FilledButton.icon(
+                              key: const Key('contact-message-send'),
+                              onPressed: sending ? null : send,
+                              icon: const Icon(Icons.send_outlined),
+                              label: Text(
+                                sending
+                                    ? l.contactSending
+                                    : attempt?.ambiguous == true
+                                    ? l.retryAction
+                                    : l.contactMessageSend,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

@@ -19,6 +19,7 @@ import 'package:planets_mobile/features/member_contact/presentation/member_conta
 import 'package:planets_mobile/features/member_contact/presentation/member_contact_widgets.dart';
 import 'package:planets_mobile/features/messages/application/message_chats_refresh.dart';
 import 'package:planets_mobile/features/messages/data/message_unread_gateway.dart';
+import 'package:planets_mobile/features/messages/presentation/message_read_viewport.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../support/fake_blocking.dart';
@@ -401,6 +402,93 @@ void main() {
   });
 
   for (final language in ['en', 'it']) {
+    testWidgets(
+      '$language member chat keeps keyboard send and recovery reachable',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 711);
+        tester.view.devicePixelRatio = 1;
+        tester.view.padding = const FakeViewPadding(top: 24);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPadding);
+        addTearDown(tester.view.resetViewInsets);
+        final sent = <Map<String, dynamic>>[];
+        final recovered = <Map<String, dynamic>>[];
+        await pumpMember(
+          tester,
+          (name, args) async {
+            if (name == 'get_own_member_contact_conversation') {
+              return {
+                ...chatRow(),
+                'group_name':
+                    'Fictional shared garden with a long contextual '
+                    'Group name for the narrow member conversation',
+              };
+            }
+            if (name == 'send_member_contact_message') {
+              sent.add(Map.of(args));
+              throw StateError('Lost response after commit');
+            }
+            if (name == 'recover_member_contact_action') {
+              recovered.add(Map.of(args));
+              return receipt('sent');
+            }
+            return basic(name, args);
+          },
+          path: '/chat',
+          language: language,
+          scale: 2,
+        );
+        final field = find.byKey(const Key('contact-message-body'));
+        await tester.enterText(
+          field,
+          'Frozen first line\nSecond line\nThird line',
+        );
+        // A real-sized keyboard shrinks Scaffold's body, including the
+        // enlarged origin header, rather than resizing only the text field.
+        tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(
+          tester.getSize(find.byType(MessageReadViewport)).height,
+          greaterThanOrEqualTo(75),
+          reason: 'The composer and context leave visible message history.',
+        );
+        final l = AppLocalizations.of(
+          tester.element(find.byType(MemberContactChatScreen)),
+        );
+        final send = find.byKey(const Key('contact-message-send'));
+        await tester.ensureVisible(send);
+        await tester.pumpAndSettle();
+        expect(send.hitTestable(), findsOneWidget);
+        expect(tester.getBottomRight(send).dy, lessThanOrEqualTo(411));
+        await tester.tap(send);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(sent, hasLength(1));
+        expect(
+          tester.getSize(find.byType(MessageReadViewport)).height,
+          greaterThanOrEqualTo(75),
+          reason: 'Ambiguous delivery does not consume the history viewport.',
+        );
+        expect(
+          sent.single['p_body'],
+          'Frozen first line\nSecond line\nThird line',
+        );
+        expect(sent.single['p_episode_id'], episode);
+        expect(tester.widget<TextField>(field).enabled, isFalse);
+        final recover = find.text(l.contactRecover);
+        await tester.ensureVisible(recover);
+        await tester.pumpAndSettle();
+        expect(recover.hitTestable(), findsOneWidget);
+        await tester.tap(recover);
+        await tester.pumpAndSettle();
+        expect(recovered.single['p_action_id'], sent.single['p_action_id']);
+        expect(sent, hasLength(1));
+        expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+        expect(tester.takeException(), isNull);
+      },
+    );
     testWidgets(
       '$language narrow large-text person actions preserve personal scope',
       (tester) async {

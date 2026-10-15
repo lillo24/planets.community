@@ -65,6 +65,16 @@ the owned emulator's software keyboard as above; no keyboard geometry is faked.
 Visibility waits scroll the page rather than a text field's inner viewport, and
 save a failure frame if the required action never becomes visible.
 
+The member chat uses the actual resized SafeArea body constraints: contextual
+notices scroll within one quarter of its height, and the anchored composer scrolls
+within at most half. This reserves visible history even with the keyboard, long
+origin names and 2x text. The production-screen EN/IT widget regression uses
+320×711 geometry and a 300dp keyboard inset, sends a three-line draft, then verifies
+that frozen-response recovery remains reachable above the keyboard without a
+second send. It failed with a 65px overflow before the bounded layout change.
+These simulated-inset checks supplement the required real native keyboard frames;
+they do not replace them or certify a completed native journey.
+
 The complete journey verifies:
 
 - Group detail → private canonical People → compact named sheet → contextual
