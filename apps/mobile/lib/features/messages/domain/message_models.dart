@@ -31,7 +31,10 @@ enum MessageViewerRole {
   requester('requester'),
   creator('creator'),
   delegate('delegate'),
-  owner('owner');
+  owner('owner'),
+  // M owns its named actor/capabilities; it is not a legacy owner/delegate role.
+  // This local discriminator is never accepted by legacy wire-role parsing.
+  memberContactPerson('member_contact_person');
 
   const MessageViewerRole(this.wireValue);
 
@@ -301,9 +304,7 @@ final class MemberContactRequestMessageItem
     : super(
         kind: StructuredRequestItemKind.memberContactRequest,
         requestId: contact.id,
-        viewerRole: contact.canWithdraw
-            ? MessageViewerRole.requester
-            : MessageViewerRole.owner,
+        viewerRole: MessageViewerRole.memberContactPerson,
         requesterProfileId: contact.senderId,
         requesterDisplayName: contact.senderName,
         requestMessage: contact.note,
