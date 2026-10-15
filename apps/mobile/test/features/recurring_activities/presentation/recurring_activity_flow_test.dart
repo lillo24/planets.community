@@ -399,6 +399,8 @@ void main() {
         findsOneWidget,
       );
       await tester.scrollUntilVisible(find.text('September 9, 2026'), 250);
+      // Settle the lazy resource section before targeting the next date.
+      await tester.pumpAndSettle();
       expect(find.text('19:00 – 20:30'), findsWidgets);
       await tester.scrollUntilVisible(find.text('September 16, 2026'), 250);
       expect(find.text('September 16, 2026'), findsOneWidget);

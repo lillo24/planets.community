@@ -36,10 +36,12 @@ PreferredSizeWidget groupAppBar(
   String title, {
   String fallback = '/groups',
   VoidCallback? close,
+  List<Widget>? actions,
 }) => pageAppBar(
   context,
   title: Text(title),
   onClose: close ?? () => closeGroups(context, fallback),
+  actions: actions,
 );
 
 class GroupSummary extends StatelessWidget {

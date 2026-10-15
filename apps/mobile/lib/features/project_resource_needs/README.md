@@ -1,5 +1,11 @@
 # Project resource needs
 
+The public section renders each title once with its full optional description.
+`headingAction` is a caller-authorized local action; it does not grant permissions.
+It preserves an otherwise empty owner section when a heading/action is supplied.
+`showHeading`/`showEmpty`, loading and retry contracts remain. See UIPOLISH03's
+record in `docs/development/uipolish03-details-groups-chat.md`.
+
 This feature owns the Flutter read and creator-management boundary for stable
 Project resource/material needs shared by one-time Proposals and recurring
 Tavoli. It is separate from standalone Scambio-Dona listings, participation

@@ -1,5 +1,17 @@
 # Local native integration checks
 
+## UIPOLISH03 presentation capture
+
+`uipolish03_smoke_test.dart` runs synthetic Project/Groups/Resource-chat scenes.
+`uipolish03_capture.ps1` captures their acknowledged frames through task-owned
+Android ADB. It verifies the AVD, app focus and private-cache acknowledgement;
+it never selects a physical device. Each phase captures 14 frames using the
+ordinary Flutter SurfaceView. Native IME/landscape are verified at 1x; those
+2x steps repeatedly terminated this Windows AVD and remain unverified.
+Widget tests cover both 2x constraints. App assertions remain strict.
+See `docs/development/uipolish03-details-groups-chat.md` for both-terminal commands,
+the exported-main baseline, logical landscape limits and validation results.
+
 ## Navigation profile probe
 
 `navigation_profile_test.dart` runs guest Welcome/intro/Home, three rounds of

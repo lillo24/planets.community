@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/widgets/event_schedule.dart';
+import '../../../core/widgets/detail_section_header.dart';
 import '../../../core/widgets/user_scroll_pagination.dart';
 import '../../geographic_discovery/domain/map_discovery.dart';
 import '../../geographic_discovery/presentation/map_view_button.dart';
@@ -569,48 +570,51 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                     ),
                   ],
                   const SizedBox(height: AppSpacing.large),
-                  Text(
-                    l10n.proposalScheduleTitle,
-                    style: Theme.of(context).textTheme.titleLarge,
+                  DetailSectionHeader(
+                    icon: Icons.calendar_today_outlined,
+                    title: l10n.proposalScheduleTitle,
                   ),
                   const SizedBox(height: AppSpacing.small),
                   EventSchedule(
+                    showIcon: false,
                     startsAt: detail.summary.startsAt,
                     endsAt: detail.summary.endsAt,
                     timeZone: detail.summary.eventTimezone,
                   ),
                   if (detail.summary.skills.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.large),
-                    Text(
-                      l10n.proposalSkillsTitle,
-                      style: Theme.of(context).textTheme.titleLarge,
+                    DetailSectionHeader(
+                      icon: Icons.people_outline,
+                      title: l10n.detailSkillsTitle,
                     ),
-                    Text(l10n.proposalSkillsHint),
+                    Text(l10n.detailSkillsHint),
                     const SizedBox(height: AppSpacing.small),
                     ProposalSkillRequirements(
                       skills: detail.summary.skills,
                       multiline: true,
+                      groupByImportance: true,
                     ),
                   ],
                   ProjectResourceNeedsSection(
                     key: const Key('tutorial-project-needs'),
                     projectId: detail.summary.id,
+                    headingAction:
+                        ref.watch(authSessionProvider).identity?.id ==
+                            detail.creatorProfileId
+                        ? TextButton(
+                            key: Key(
+                              'project-resources-manage-${detail.summary.id}',
+                            ),
+                            onPressed: () => context.push(
+                              ProjectResourceNeedRoutes.manage(
+                                ProjectKind.oneTime,
+                                detail.summary.id,
+                              ),
+                            ),
+                            child: Text(l10n.detailManageAction),
+                          )
+                        : null,
                   ),
-                  if (ref.watch(authSessionProvider).identity?.id ==
-                      detail.creatorProfileId) ...[
-                    const SizedBox(height: AppSpacing.medium),
-                    OutlinedButton.icon(
-                      key: Key('project-resources-manage-${detail.summary.id}'),
-                      onPressed: () => context.push(
-                        ProjectResourceNeedRoutes.manage(
-                          ProjectKind.oneTime,
-                          detail.summary.id,
-                        ),
-                      ),
-                      icon: const Icon(Icons.inventory_2_outlined),
-                      label: Text(l10n.projectResourcesManage),
-                    ),
-                  ],
                   const SizedBox(height: AppSpacing.large),
                   participation!,
                   const SizedBox(height: AppSpacing.large),

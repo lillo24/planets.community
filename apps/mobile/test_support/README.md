@@ -1,5 +1,9 @@
 # Disposable mobile GUI rehearsal
 
+`uipolish03_fixture.dart` owns synthetic Project, Groups and Resource-chat data,
+fake data boundaries and the presentation-only router shared by widget tests and
+native before/after captures. It does not enter shipping application imports.
+
 `proposal_card_comparison.dart` is the A02 non-shipping comparison of the current
 Proposal card and two ribbon compositions. It reuses the real theme, cover,
 Requested badge, schedule and capacity owners. Synthetic Popular is confined to

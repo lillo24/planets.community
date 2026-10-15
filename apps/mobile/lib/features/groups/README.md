@@ -1,5 +1,11 @@
 # Registered groups
 
+UIPOLISH03 keeps public search visible and initially collapses the secondary
+filters. Disclosure preserves values without fetching. The existing debounce,
+exact territory query and public/own scopes remain; successful empty results are
+distinguished from pending/error states. Refresh remains in the app bar and by
+pull gesture. See `docs/development/uipolish03-details-groups-chat.md`.
+
 GRP03C's public Project/Tavolo feed and contextual creation belong to
 [`../group_projects/`](../group_projects/README.md). Group participation and
 authority remain independent of each associated Project's own access rules.

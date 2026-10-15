@@ -1,5 +1,10 @@
 # Shared mobile widgets
 
+`detail_section_header.dart` owns wrapping icon/title headings with local actions
+below the heading. `EventSchedule.showIcon` defaults to true; a detail heading can
+supply the calendar once by setting it false. See the UIPOLISH03 validation record
+in `docs/development/uipolish03-details-groups-chat.md`.
+
 This folder owns small presentation primitives reused across feature boundaries.
 
 - `planets_hero.dart` shares the bundled PLANETS logo, stars and circular native
