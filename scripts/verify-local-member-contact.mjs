@@ -126,6 +126,594 @@ async function send(sender, conversation, body, action = randomUUID()) {
     p_body: body,
   });
 }
+async function decide(person, operation, receipt, action = randomUUID()) {
+  return call(person, `${operation}_member_contact_request`, {
+    p_action_id: action,
+    p_request_id: receipt.request_id,
+  });
+}
+async function historicalRequest(sender, recipient, groupId, state, days) {
+  // Explicit SQL time fixture: insert historical provenance without rewriting
+  // immutable timestamps, disabling triggers, or claiming a client submission.
+  await sql`insert into private.member_contact_pairs(group_id,low_profile_id,high_profile_id)
+    values(${groupId}::uuid,least(${sender.id}::uuid,${recipient.id}::uuid),greatest(${sender.id}::uuid,${recipient.id}::uuid))
+    on conflict(group_id,low_profile_id,high_profile_id) do nothing`;
+  const [row] = await sql`insert into private.member_contact_requests(
+      pair_id,sender_profile_id,recipient_profile_id,group_name,sender_display_name,recipient_display_name,
+      note,status,created_at,activity_at,expires_at,resolved_at,resolved_by)
+    select p.id,s.id,r.id,g.name,s.display_name,r.display_name,'Synthetic historical introduction.',${state},
+      clock_timestamp()-${days.created}*interval '1 day',clock_timestamp()-${days.created}*interval '1 day',
+      clock_timestamp()-${days.expired}*interval '1 day',
+      case when ${state}='pending' then null else clock_timestamp()-${days.resolved ?? 0}*interval '1 day' end,
+      case when ${state}='pending' then null else r.id end
+    from private.member_contact_pairs p join private.community_groups g on g.id=p.group_id
+      join public.profiles s on s.id=${sender.id}::uuid join public.profiles r on r.id=${recipient.id}::uuid
+    where p.group_id=${groupId}::uuid and p.low_profile_id=least(s.id,r.id) and p.high_profile_id=greatest(s.id,r.id)
+    returning id request_id,pair_id`;
+  assert.ok(row, "Historical request fixture has its exact synthetic pair");
+  return row;
+}
+async function verifyTerminalAndRateBoundaries(owner, groupId) {
+  const sender = await user("bounds-sender");
+  const recipient = await user("bounds-recipient");
+  await join(owner, sender, groupId);
+  await join(owner, recipient, groupId);
+  const first = await request(sender, recipient, groupId);
+  await denied(recipient, "withdraw_member_contact_request", {
+    p_action_id: randomUUID(),
+    p_request_id: first.request_id,
+  });
+  await denied(sender, "decline_member_contact_request", {
+    p_action_id: randomUUID(),
+    p_request_id: first.request_id,
+  });
+  const withdrawalAction = randomUUID();
+  equal(
+    (await decide(sender, "withdraw", first, withdrawalAction)).outcome,
+    "withdrawn",
+    "sender deliberately withdraws pending consent",
+  );
+  equal(
+    (await decide(sender, "withdraw", first, withdrawalAction)).replayed,
+    true,
+    "lost Withdraw response replays the same decision",
+  );
+  const withdrawn = await call(recipient, "get_own_member_contact_request", {
+    p_request_id: first.request_id,
+  });
+  equal(
+    withdrawn.status,
+    "withdrawn",
+    "withdrawn request remains truthful metadata",
+  );
+  equal(
+    withdrawn.request_message,
+    null,
+    "unseen withdrawn note is not newly disclosed",
+  );
+  await denied(
+    recipient,
+    "accept_member_contact_request",
+    {
+      p_action_id: randomUUID(),
+      p_request_id: first.request_id,
+    },
+    "PT409",
+  );
+  const next = await request(sender, recipient, groupId);
+  await call(recipient, "get_own_member_contact_request", {
+    p_request_id: next.request_id,
+  });
+  const declineAction = randomUUID();
+  equal(
+    (await decide(recipient, "decline", next, declineAction)).outcome,
+    "declined",
+    "named recipient deliberately declines pending consent",
+  );
+  equal(
+    (await decide(recipient, "decline", next, declineAction)).replayed,
+    true,
+    "lost Decline response replays the same decision",
+  );
+  await denied(
+    recipient,
+    "accept_member_contact_request",
+    {
+      p_action_id: randomUUID(),
+      p_request_id: next.request_id,
+    },
+    "PT409",
+  );
+  for (const [from, to] of [
+    [sender, recipient],
+    [recipient, sender],
+  ]) {
+    equal(
+      (
+        await call(from, "get_own_member_contact_context", {
+          p_group_id: groupId,
+          p_recipient_profile_id: to.id,
+        })
+      ).can_request,
+      false,
+      "recent decline cooldown applies to both directions",
+    );
+    await denied(
+      from,
+      "submit_member_contact_request",
+      {
+        p_action_id: randomUUID(),
+        p_group_id: groupId,
+        p_recipient_profile_id: to.id,
+      },
+      "PT409",
+    );
+  }
+  const expired = await historicalRequest(owner, sender, groupId, "pending", {
+    created: 9,
+    expired: 1,
+  });
+  const expiredView = await call(sender, "get_own_member_contact_request", {
+    p_request_id: expired.request_id,
+  });
+  equal(
+    expiredView.status,
+    "expired",
+    "deadline is enforced without a cleanup worker",
+  );
+  equal(expiredView.can_accept, false, "expired consent cannot be accepted");
+  equal(
+    expiredView.request_message,
+    null,
+    "unseen expired introduction remains private",
+  );
+  await denied(
+    sender,
+    "accept_member_contact_request",
+    {
+      p_action_id: randomUUID(),
+      p_request_id: expired.request_id,
+    },
+    "PT409",
+  );
+  const replacement = await request(owner, sender, groupId);
+  const [expiredStored] =
+    await sql`select status from private.member_contact_requests where id=${expired.request_id}::uuid`;
+  equal(
+    expiredStored.status,
+    "expired",
+    "new deliberate request seals old expiry",
+  );
+  await decide(owner, "withdraw", replacement);
+  await historicalRequest(owner, recipient, groupId, "declined", {
+    created: 9,
+    expired: 2,
+    resolved: 8,
+  });
+  const afterCooldown = await request(owner, recipient, groupId);
+  equal(
+    afterCooldown.outcome,
+    "requested",
+    "elapsed decline cooldown permits fresh consent",
+  );
+  await decide(owner, "withdraw", afterCooldown);
+
+  const [{ limits }] = await sql`select private.member_contact_limits() limits`;
+  equal(
+    {
+      actor_daily: limits.actor_daily,
+      messages_per_minute: limits.messages_per_minute,
+    },
+    { actor_daily: 20, messages_per_minute: 30 },
+    "documented candidate operational bounds",
+  );
+  // SQL quota fixture contains resolved requests only. The last permitted request,
+  // overflow, recovery and safe exits below all execute through real Auth.
+  const [{ n: priorRequests }] =
+    await sql`select count(*)::int n from private.member_contact_requests
+    where sender_profile_id=${sender.id}::uuid and created_at>clock_timestamp()-interval '1 day'`;
+  const requestPadding = limits.actor_daily - 1 - priorRequests;
+  assert.ok(
+    requestPadding >= 0,
+    "Request fixture remains below the intended boundary",
+  );
+  await sql`insert into private.member_contact_requests(pair_id,sender_profile_id,recipient_profile_id,
+      group_name,sender_display_name,recipient_display_name,status,resolved_at,resolved_by)
+    select p.id,s.id,r.id,g.name,s.display_name,r.display_name,'withdrawn',clock_timestamp(),s.id
+    from private.member_contact_pairs p join private.community_groups g on g.id=p.group_id
+      join public.profiles s on s.id=${sender.id}::uuid join public.profiles r on r.id=${owner.id}::uuid
+      cross join generate_series(1,${requestPadding}::integer)
+    where p.id=${expired.pair_id}::uuid`;
+  const lastRequest = await request(sender, owner, groupId);
+  equal(
+    lastRequest.outcome,
+    "requested",
+    "last request inside daily bound succeeds",
+  );
+  const overflowAction = randomUUID();
+  await denied(
+    sender,
+    "submit_member_contact_request",
+    {
+      p_action_id: overflowAction,
+      p_group_id: groupId,
+      p_recipient_profile_id: owner.id,
+    },
+    "PT429",
+  );
+  equal(
+    await call(sender, "recover_member_contact_action", {
+      p_action_id: overflowAction,
+    }),
+    null,
+    "rate rejection creates no success receipt",
+  );
+  await decide(sender, "withdraw", lastRequest);
+  const recovered = await call(sender, "recover_member_contact_action", {
+    p_action_id: withdrawalAction,
+  });
+  equal(
+    recovered.request_id,
+    first.request_id,
+    "daily quota does not block historical recovery",
+  );
+  equal(
+    recovered.current_status,
+    "withdrawn",
+    "recovery retains the terminal status",
+  );
+  const incoming = await request(owner, sender, groupId);
+  await call(sender, "get_own_member_contact_request", {
+    p_request_id: incoming.request_id,
+  });
+  const [noteReport] = await call(sender, "submit_moderation_report", {
+    p_expected_reporter_profile_id: sender.id,
+    p_client_submission_id: randomUUID(),
+    p_category: "spam",
+    p_explanation: "Synthetic report at the request bound.",
+    p_target_kind: "member_contact_request",
+    p_target_id: incoming.request_id,
+  });
+  assert.ok(
+    noteReport.case_id,
+    "Reporting remains available at the daily request bound",
+  );
+  await decide(sender, "decline", incoming);
+  // Use another origin for sending; the preceding decline intentionally prevents
+  // reopening the first origin before cooldown. The owner initiates fresh consent.
+  const sendGroup = await group(owner, "rate-messages");
+  await join(owner, sender, sendGroup);
+  await denied(
+    sender,
+    "submit_member_contact_request",
+    {
+      p_action_id: randomUUID(),
+      p_group_id: sendGroup,
+      p_recipient_profile_id: owner.id,
+    },
+    "PT429",
+  );
+  const conversation = await accept(
+    sender,
+    await request(owner, sender, sendGroup),
+  );
+  const firstSendAction = randomUUID();
+  const firstMessage = await send(
+    sender,
+    conversation,
+    "First bounded message.",
+    firstSendAction,
+  );
+  // Explicit SQL message-count fixture; does not claim these 28 historical writes
+  // were client sends. Ordinals and genuine incoming edges remain consistent.
+  await sql.begin(async (tx) => {
+    const padding = limits.messages_per_minute - 2;
+    const [{ last_ordinal: end }] = await tx`update private.member_contact_pairs
+      set last_ordinal=last_ordinal+${padding} where id=${conversation.chat_id}::uuid returning last_ordinal`;
+    await tx`insert into private.member_contact_messages(pair_id,episode_id,sender_profile_id,sender_display_name,body,ordinal)
+      select ${conversation.chat_id}::uuid,${conversation.episode_id}::uuid,${sender.id}::uuid,p.display_name,
+        'Synthetic rate-bound history.',n from public.profiles p cross join generate_series(${end - padding + 1}::bigint,${end}::bigint) n
+      where p.id=${sender.id}::uuid`;
+    await tx`insert into private.member_contact_incoming(profile_id,pair_id,ordinal)
+      select ${owner.id}::uuid,${conversation.chat_id}::uuid,n from generate_series(${end - padding + 1}::bigint,${end}::bigint) n`;
+  });
+  equal(
+    (await send(sender, conversation, "Last message inside minute bound."))
+      .outcome,
+    "sent",
+    "last message inside minute bound succeeds",
+  );
+  await denied(
+    sender,
+    "send_member_contact_message",
+    {
+      p_action_id: randomUUID(),
+      p_chat_id: conversation.chat_id,
+      p_episode_id: conversation.episode_id,
+      p_body: "Message over the minute bound.",
+    },
+    "PT429",
+  );
+  equal(
+    (
+      await send(
+        sender,
+        conversation,
+        "First bounded message.",
+        firstSendAction,
+      )
+    ).message_id,
+    firstMessage.message_id,
+    "send replay bypasses rate accounting without another body",
+  );
+  equal(
+    (
+      await call(sender, "recover_member_contact_action", {
+        p_action_id: firstSendAction,
+      })
+    ).message_id,
+    firstMessage.message_id,
+    "receipt recovery remains available at both bounds",
+  );
+  const inbound = await send(
+    owner,
+    conversation,
+    "Incoming message remains reportable at bounds.",
+  );
+  const feed = await call(sender, "get_own_member_contact_feed", {
+    p_chat_id: conversation.chat_id,
+  });
+  await call(sender, "acknowledge_member_contact_read", {
+    p_chat_id: conversation.chat_id,
+    p_boundary: feed.read_boundary,
+  });
+  const [messageReport] = await call(sender, "submit_moderation_report", {
+    p_expected_reporter_profile_id: sender.id,
+    p_client_submission_id: randomUUID(),
+    p_category: "spam",
+    p_explanation: "Synthetic message report at both bounds.",
+    p_target_kind: "member_contact_message",
+    p_target_id: inbound.message_id,
+    p_context_kind: "member_contact_chat",
+    p_context_id: conversation.chat_id,
+  });
+  assert.ok(
+    messageReport.case_id,
+    "Message report remains available at both bounds",
+  );
+  await call(sender, "close_member_contact_conversation", {
+    p_action_id: randomUUID(),
+    p_chat_id: conversation.chat_id,
+    p_episode_id: conversation.episode_id,
+  });
+  const fresh = await accept(sender, await request(owner, sender, sendGroup));
+  await denied(
+    sender,
+    "send_member_contact_message",
+    {
+      p_action_id: randomUUID(),
+      p_chat_id: fresh.chat_id,
+      p_episode_id: fresh.episode_id,
+      p_body: "New consent cannot reset the actor rate bound.",
+    },
+    "PT429",
+  );
+  await call(sender, "leave_member_contact_conversation", {
+    p_action_id: randomUUID(),
+    p_chat_id: fresh.chat_id,
+    p_episode_id: fresh.episode_id,
+  });
+  const [{ n: sentCount }] =
+    await sql`select count(*)::int n from private.member_contact_messages
+    where pair_id=${conversation.chat_id}::uuid and sender_profile_id=${sender.id}::uuid`;
+  equal(
+    sentCount,
+    limits.messages_per_minute,
+    "quota rejection and replay add no extra human message",
+  );
+}
+async function verifySyntheticAccountErasure(owner, staff, groupIds) {
+  const erased = await user("erasure-only");
+  for (const groupId of groupIds) await join(owner, erased, groupId);
+  const requested = await request(erased, owner, groupIds[0]);
+  const conversation = await accept(owner, requested);
+  const message = await send(
+    erased,
+    conversation,
+    "Synthetic history before account erasure.",
+  );
+  const replyAction = randomUUID();
+  await send(owner, conversation, "Synthetic survivor reply.", replyAction);
+  const before = await call(owner, "get_own_member_contact_feed", {
+    p_chat_id: conversation.chat_id,
+  });
+  const pending = await request(erased, owner, groupIds[1]);
+  await call(owner, "get_own_member_contact_request", {
+    p_request_id: pending.request_id,
+  });
+  const provenance = () => sql`select
+    (select count(*)::int from private.member_contact_pairs where ${erased.id}::uuid in(low_profile_id,high_profile_id)) pairs,
+    (select count(*)::int from private.member_contact_requests where sender_profile_id=${erased.id}::uuid) requests,
+    (select count(*)::int from private.member_contact_episodes where pair_id=${conversation.chat_id}::uuid) episodes,
+    (select count(*)::int from private.member_contact_messages where pair_id=${conversation.chat_id}::uuid) messages,
+    (select count(*)::int from private.member_contact_receipts where profile_id=${erased.id}::uuid) receipts`;
+  const [prior] = await provenance();
+  // There is no automated Plan 10 deletion RPC. Match the existing GRP erasure
+  // verifiers, limited to this freshly created synthetic identity. Do not touch
+  // audit/retention records, disable FKs, or claim hosted deletion/anonymization.
+  await sql.begin(async (tx) => {
+    const [identity] =
+      await tx`select email from auth.users where id=${erased.id}::uuid for update`;
+    equal(
+      identity?.email,
+      `m-contact-${run}-erasure-only@planets.invalid`,
+      "erase only this run's dedicated synthetic account",
+    );
+    const profiles =
+      await tx`delete from public.profiles where id=${erased.id}::uuid returning id`;
+    equal(
+      profiles.length,
+      1,
+      "synthetic profile erasure succeeds without new blockers",
+    );
+    const accounts =
+      await tx`delete from auth.users where id=${erased.id}::uuid returning id`;
+    equal(
+      accounts.length,
+      1,
+      "synthetic Auth erasure succeeds without new blockers",
+    );
+  });
+  equal(
+    (await provenance())[0],
+    prior,
+    "account erasure retains member consent/message provenance",
+  );
+  for (const [name, params] of [
+    ["get_own_member_contact_feed", { p_chat_id: conversation.chat_id }],
+    ["get_own_member_contact_request", { p_request_id: pending.request_id }],
+    ["recover_member_contact_action", { p_action_id: randomUUID() }],
+  ])
+    await denied(erased, name, params);
+  const signal = await erased.client.rpc("can_receive_member_contact_signal", {
+    p_topic: `member-contact:profile:${erased.id}`,
+  });
+  equal(signal.error, null, "old token reaches the canonical signal predicate");
+  equal(
+    signal.data,
+    false,
+    "erased account's old token cannot subscribe to member hints",
+  );
+  const ended = await call(owner, "get_own_member_contact_conversation", {
+    p_chat_id: conversation.chat_id,
+  });
+  equal(
+    ended.is_read_only,
+    true,
+    "surviving peer retains only read-only history",
+  );
+  equal(
+    ended.ended_reason,
+    "context_ended",
+    "account loss permanently seals the episode",
+  );
+  await denied(
+    owner,
+    "send_member_contact_message",
+    {
+      p_action_id: randomUUID(),
+      p_chat_id: conversation.chat_id,
+      p_episode_id: conversation.episode_id,
+      p_body: "No send after account erasure.",
+    },
+    "PT409",
+  );
+  await denied(owner, "submit_member_contact_request", {
+    p_action_id: randomUUID(),
+    p_group_id: groupIds[0],
+    p_recipient_profile_id: erased.id,
+  });
+  await denied(owner, "acknowledge_member_contact_read", {
+    p_chat_id: conversation.chat_id,
+    p_boundary: before.read_boundary,
+  });
+  equal(
+    (
+      await call(owner, "get_own_member_contact_feed", {
+        p_chat_id: conversation.chat_id,
+      })
+    ).items,
+    before.items,
+    "erasure does not broaden or remove the survivor's prior authorized history",
+  );
+  const unavailable = await call(owner, "get_own_member_contact_request", {
+    p_request_id: pending.request_id,
+  });
+  equal(
+    unavailable.status,
+    "unavailable",
+    "pending consent invalidates on account erasure",
+  );
+  equal(
+    unavailable.can_accept,
+    false,
+    "erased requester cannot obtain later acceptance",
+  );
+  await denied(
+    owner,
+    "accept_member_contact_request",
+    {
+      p_action_id: randomUUID(),
+      p_request_id: pending.request_id,
+    },
+    "PT409",
+  );
+  const [notices] = await sql`select
+    private.member_contact_notice_allowed(${pending.request_id}::uuid,${owner.id}::uuid) request_allowed,
+    private.member_contact_message_notice_allowed(${conversation.chat_id}::uuid,${owner.id}::uuid) message_allowed`;
+  equal(
+    notices,
+    { request_allowed: false, message_allowed: false },
+    "erasure suppresses request and message notices",
+  );
+  equal(
+    (
+      await call(owner, "recover_member_contact_action", {
+        p_action_id: replyAction,
+      })
+    ).current_status,
+    "read_only",
+    "survivor receipt recovery rechecks current erasure state",
+  );
+  for (const [kind, id, context] of [
+    ["member_contact_request", pending.request_id, {}],
+    [
+      "member_contact_message",
+      message.message_id,
+      {
+        p_context_kind: "member_contact_chat",
+        p_context_id: conversation.chat_id,
+      },
+    ],
+  ]) {
+    const [report] = await call(owner, "submit_moderation_report", {
+      p_expected_reporter_profile_id: owner.id,
+      p_client_submission_id: randomUUID(),
+      p_category: "spam",
+      p_explanation: "Synthetic known content after account erasure.",
+      p_target_kind: kind,
+      p_target_id: id,
+      ...context,
+    });
+    assert.ok(
+      report.case_id,
+      "Previously authorized content remains reportable after erasure",
+    );
+    const evidence = await call(staff, "get_moderation_case_group_contact", {
+      p_expected_staff_profile_id: staff.id,
+      p_case_id: report.case_id,
+    });
+    equal(
+      evidence.target_id,
+      id,
+      "post-erasure report retains its exact known target",
+    );
+    equal(
+      evidence.body,
+      kind === "member_contact_request"
+        ? "A fictional personal introduction."
+        : "Synthetic history before account erasure.",
+      "post-erasure case evidence preserves only the reported content",
+    );
+    const [reportCase] =
+      await sql`select subject_profile_id from private.moderation_cases where id=${report.case_id}::uuid`;
+    equal(
+      reportCase.subject_profile_id,
+      null,
+      "post-erasure report does not invent a live subject identity",
+    );
+  }
+}
 async function afterGroupWait(groupId, rpcName, launch, transition) {
   let readySignal, release;
   const ready = new Promise((resolve) => {
@@ -717,8 +1305,10 @@ try {
   const [retained] =
     await sql`select count(*)::int n from private.group_memberships where id=${aMembership}::uuid and ended_at is null`;
   equal(retained.n, 1, "conversation lifecycle never changes Group membership");
+  await verifyTerminalAndRateBoundaries(owner, g1);
+  await verifySyntheticAccountErasure(owner, staff, [g1, g2]);
   console.log(
-    `Member contact real Auth/PostgREST verification: ${checks} checks passed; observed lock waits; synthetic equal-time fixture identified separately.`,
+    `Member contact real Auth/PostgREST verification: ${checks} checks passed; observed lock waits; explicit synthetic time/rate fixtures and scoped account erasure.`,
   );
 } finally {
   await sql.end();

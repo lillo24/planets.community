@@ -185,6 +185,28 @@ member Groups enter the same predecessor union, plus private helper privileges.
 Its equal-timestamp message fixture is explicitly injected with SQL; it does not
 claim those fixture writes occurred through the mobile client.
 
+The acceptance extension also exercises real-Auth Decline/Withdraw, wrong-actor
+denial, stale Accept, exact terminal receipt replay, unseen withdrawn/expired-note
+privacy, two-direction decline cooldown, expiry replacement and elapsed cooldown.
+Historical requests are inserted explicitly with past timestamps; immutable
+provenance is never rewritten and no trigger is disabled. Separate, clearly
+marked SQL fixtures fill the request/day and message/minute counters to one below
+their documented bounds. The final permitted command and `PT429` overflow use
+real Auth, as do recovery, reporting, ACK, Close and Leave at those bounds. Another
+origin or newly accepted episode cannot reset an actor's counter.
+
+The erasure scenario creates a dedicated synthetic account with active consent,
+messages and a second-origin pending request. There is no automated Plan 10
+deletion RPC, so it follows the existing Group verifiers: verify this run's exact
+synthetic email, then delete only that profile and Auth row in one transaction.
+It preserves existing constraints and audit/retention records. Real requests with
+the old token must fail; the survivor retains only prior authorized read-only
+history, old ACK tokens fail, pending consent and notices stop, and known content
+remains reportable with exact staff evidence and a null live subject. This tests
+invalidation and absence of new blockers, not a production erasure/anonymization
+workflow or a retention decision. The acceptance extension has syntax/format/diff
+checks only until the integration owner runs it after the native DB slot returns.
+
 `npm run member:contact:upgrade:verify:local` resets the explicitly disposable
 loopback stack to the pre-member migration, populates legacy/D records, hashes
 all prior columns/rows, applies the additive migrations twice and proves no new
