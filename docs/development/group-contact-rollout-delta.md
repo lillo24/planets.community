@@ -13,6 +13,15 @@ the accepting representative enter bilateral history. Other managers see minimal
 resolved metadata; neither group membership nor Project authority is granted.
 Representatives can Block and report received contact content.
 
+The D/M revision also proposes named personal contact from canonical Group People.
+The selected origin Group and optional introduction are shared only with the
+named recipient. Acceptance creates an explicitly consented episode for that
+pair and Group; managers have no triage or conversation oversight. The synthetic
+candidate stops sending/notices when either loses their last qualifying origin
+relationship and retains pre-end history read-only. Rejoin, Close or Leave does
+not silently revive consent. This personal lifetime/history choice is separately
+pending in the [revision ledger](group-contact-parallel-handoff.md).
+
 Coordination shares a fresh note and initiator identity with the two original
 representatives and invited groups' eligible managers. Claimants explicitly share
 their own person/group seat with the originals. Complete identity disclosure to
@@ -40,6 +49,11 @@ of current privacy/terms and Android/iOS data disclosures before distribution.
 | `private.group_coordination_proposals/seats/seen`         | Private source ID, fresh note, historical named seats/grant episodes, versioned confirmations, known-note receipts | Canonical bounded projection; source link only after independent authorization |
 | Existing `private.moderation_cases/reports/events`        | Immutable typed D request/message/coordination targets and narrow case context                                     | Existing manual staff case workflow; no ordinary staff history access          |
 | Existing private audit and read-state owners              | Metadata-only D action/consent/exit audit, unread/frontier/token data                                              | Existing private security/audit boundaries; no public metadata source IDs      |
+| `private.member_contact_pairs/requests/episodes/messages` | Named pair/origin, contextual names, optional note, consent boundaries and immutable human messages | Pair-only accepted pre-end history; no manager oversight or automatic re-entry |
+| `private.member_contact_receipts/seen_requests` | Exact actor/action/intent metadata and known-note evidence | Own verified identity; protected exact reporting after context ends |
+| `private.member_contact_preferences/incoming/read_frontiers/read_snapshots` | Actor mute, incoming ordinals, rendered ACK frontier and short-lived proof token | Private actor-bound read state; mute and exit do not acknowledge |
+| `private.contact_activity_notifications/progress/events` | Minimal typed request targets, recipient, read state, source outbox identity and bounded delivery cursor | Current actionable authorization rechecked before page/count/read; no private note or roster |
+| `private.group_contact_preferences` | Own actor/conversation mute | Independent message-alert eligibility; no new history or unread permission |
 
 New D actor IDs remain raw UUID provenance rather than new restrictive Auth/profile
 foreign keys. Reads and post-lock commands verify live Auth/profile state; deleted
