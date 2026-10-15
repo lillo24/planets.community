@@ -22,6 +22,11 @@ messaging.
 - `presentation/resource_request_screen.dart` owns the dedicated owner/requester
   history and pending actions. Accepted episodes expose only `Open conversation`;
   no agreement controls are present.
+  Pending requester details keep withdrawal and the localized acceptance/chat
+  explanation together. Public listing details expose only `View request` for
+  that pending episode; other active status information remains visible there.
+  The canonical public interest count sits beside the listing mode above its
+  title, wrapping at narrow widths or large text scales with one semantic label.
 
 Requester history loads once per authenticated identity and is reused by public
 listing detail. Every mutation reloads canonical request/listing/Messages state;

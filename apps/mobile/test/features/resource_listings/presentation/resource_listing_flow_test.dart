@@ -32,6 +32,7 @@ import 'package:planets_mobile/features/resource_listings/data/resource_listing_
 import 'package:planets_mobile/features/resource_listings/domain/resource_listing_models.dart';
 import 'package:planets_mobile/features/resource_requests/data/resource_request_gateway.dart';
 import 'package:planets_mobile/features/resource_requests/domain/resource_request_models.dart';
+import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import 'package:planets_mobile/features/resource_loans/data/resource_loan_gateway.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -442,7 +443,7 @@ void main() {
       );
       expect(
         find.byKey(const Key('resource-request-flow-helper')),
-        findsOneWidget,
+        findsNothing,
       );
       for (final deferred in ['Claim', 'Reserve', 'Message owner', 'Buy']) {
         expect(find.text(deferred), findsNothing);
@@ -532,6 +533,16 @@ void main() {
     expect(find.text('2 people interested'), findsOneWidget);
     await _tap(tester, 'resource-card-$resourceListingId');
     expect(find.text('2 people interested'), findsOneWidget);
+    final count = find.byKey(const Key('resource-detail-interest-count'));
+    final mode = find.byKey(const Key('resource-mode-donate'));
+    expect(
+      tester.getRect(count).center.dy,
+      closeTo(tester.getRect(mode).center.dy, 1),
+    );
+    expect(
+      tester.getTopLeft(count).dx,
+      greaterThan(tester.getBottomRight(mode).dx),
+    );
   });
 
   testWidgets('card places age, mode, interest and location semantically', (
@@ -593,7 +604,7 @@ void main() {
       expect(find.textContaining('ago ago'), findsNothing);
       expect(
         find.byKey(const Key('resource-request-flow-helper')),
-        findsOneWidget,
+        findsNothing,
       );
 
       await _tap(tester, 'resource-signed-out-request-action');
@@ -606,40 +617,213 @@ void main() {
     },
   );
 
-  testWidgets('requester sees canonical active request actions on detail', (
-    tester,
-  ) async {
-    final listingGateway = FakeResourceListingGateway()
-      ..publicDetail = publicResourceListingDetailFixture();
-    final request = resourceRequestFixture(requesterProfileId: otherProfileId);
-    final requestGateway = FakeResourceRequestGateway()
-      ..history = [request]
-      ..detail = request;
-    final app = await _pump(
+  for (final locale in ['en', 'it']) {
+    testWidgets('pending requester opens details and withdraws ($locale)', (
       tester,
-      gateway: listingGateway,
-      identityId: otherProfileId,
-      resourceRequests: requestGateway,
-    );
-    app.read(appRouterProvider).go('/resources/$resourceListingId');
-    await tester.pumpAndSettle();
+    ) async {
+      tester.platformDispatcher.localesTestValue = [Locale(locale)];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      final listingGateway = FakeResourceListingGateway()
+        ..publicDetail = publicResourceListingDetailFixture();
+      final request = resourceRequestFixture(
+        requesterProfileId: otherProfileId,
+      );
+      final requestGateway = FakeResourceRequestGateway()
+        ..history = [request]
+        ..detail = request;
+      final app = await _pump(
+        tester,
+        gateway: listingGateway,
+        identityId: otherProfileId,
+        resourceRequests: requestGateway,
+      );
+      app.read(appRouterProvider).go('/resources/$resourceListingId');
+      await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('resource-request-action')), findsNothing);
-    expect(find.byKey(const Key('resource-request-view')), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('resource-request-flow-helper')),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(
-      find.byKey(const Key('resource-request-flow-helper')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const Key('resource-request-inline-withdraw')),
-      findsOneWidget,
-    );
-  });
+      expect(find.byKey(const Key('resource-request-action')), findsNothing);
+      expect(find.byKey(const Key('resource-request-view')), findsOneWidget);
+      expect(
+        find.byKey(const Key('resource-request-flow-helper')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('resource-request-inline-withdraw')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('resource-request-status-pending')),
+        findsNothing,
+      );
+      await _tap(tester, 'resource-request-view');
+      expect(
+        app.read(appRouterProvider).state.uri.path,
+        '/messages/requests/resource/$resourceRequestId',
+      );
+      final withdraw = find.byKey(const Key('resource-request-withdraw'));
+      final helper = find.byKey(const Key('resource-request-flow-helper'));
+      await tester.scrollUntilVisible(
+        withdraw,
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      await tester.ensureVisible(helper);
+      await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(tester.element(helper));
+      expect(find.text(l10n.resourceRequestFlowHelper), findsOneWidget);
+      expect(
+        tester.getTopLeft(helper).dy,
+        greaterThan(tester.getBottomLeft(withdraw).dy),
+      );
+      expect(
+        find.byKey(const Key('resource-request-status-pending')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('resource-request-accept')), findsNothing);
+      expect(find.byKey(const Key('resource-request-reject')), findsNothing);
+      // A failed mutation stays pending with its retryable withdrawal section.
+      requestGateway.mutationError = StateError('offline');
+      await _tap(tester, 'resource-request-withdraw');
+      expect(requestGateway.detail?.status, ResourceRequestStatus.pending);
+      expect(helper, findsOneWidget);
+      expect(find.text(l10n.resourceRequestUnableUpdate), findsOneWidget);
+      final mutation = Completer<void>();
+      requestGateway.mutationDelay = mutation.future;
+      await tester.ensureVisible(withdraw);
+      await tester.tap(withdraw);
+      await tester.pump();
+      expect(tester.widget<OutlinedButton>(withdraw).onPressed, isNull);
+      mutation.complete();
+      await tester.pumpAndSettle();
+      expect(requestGateway.detail?.status, ResourceRequestStatus.withdrawn);
+      expect(withdraw, findsNothing);
+      expect(helper, findsNothing);
+      expect(
+        requestGateway.calls.where((c) => c == 'list:$otherProfileId').length,
+        greaterThan(1),
+      );
+      expect(listingGateway.calls, contains('list-public'));
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(
+        app.read(appRouterProvider).state.uri.path,
+        '/resources/$resourceListingId',
+      );
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('resource-request-action')),
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      expect(find.byKey(const Key('resource-request-action')), findsOneWidget);
+      expect(find.byKey(const Key('resource-request-view')), findsNothing);
+    });
+  }
+
+  for (final mode in ResourceListingMode.values) {
+    for (final count in [0, 1, 3]) {
+      for (final locale in ['en', 'it']) {
+        testWidgets(
+          'top count $mode/$count/$locale wraps at 320px and 2x text',
+          (tester) async {
+            tester.platformDispatcher.textScaleFactorTestValue = 2;
+            tester.platformDispatcher.localesTestValue = [Locale(locale)];
+            addTearDown(
+              tester.platformDispatcher.clearTextScaleFactorTestValue,
+            );
+            addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+            final listingGateway = FakeResourceListingGateway()
+              ..publicDetail = PublicResourceListingDetail(
+                summary: publicResourceListingFixture(
+                  mode: mode,
+                  activeRequestCount: count,
+                ),
+                ownerProfileId: resourceOwnerProfileId,
+                ownerDisplayName: 'Casey',
+              );
+            final app = await _pump(
+              tester,
+              gateway: listingGateway,
+              signedIn: count != 0,
+              identityId: count == 1 ? otherProfileId : resourceOwnerProfileId,
+            );
+            // The shared flow harness starts on a tall desktop surface.
+            await tester.binding.setSurfaceSize(const Size(320, 640));
+            app.read(appRouterProvider).go('/resources/$resourceListingId');
+            await tester.pumpAndSettle();
+            final row = find.byKey(const Key('resource-detail-badges'));
+            final countWidget = find.byKey(
+              const Key('resource-detail-interest-count'),
+            );
+            final badge = find.byKey(Key('resource-mode-${mode.wireValue}'));
+            final l10n = AppLocalizations.of(tester.element(row));
+            final label = l10n.resourceInterestCount(count);
+            expect(
+              find.descendant(of: row, matching: countWidget),
+              findsOneWidget,
+            );
+            expect(find.text(label), findsOneWidget);
+            expect(find.bySemanticsLabel(label), findsOneWidget);
+            expect(
+              tester.getTopLeft(countWidget).dy,
+              greaterThan(tester.getBottomLeft(badge).dy),
+            );
+            expect(
+              tester.getBottomRight(countWidget).dx,
+              lessThanOrEqualTo(320),
+            );
+            expect(
+              listingGateway.calls.where(
+                (c) => c == 'get-public:$resourceListingId',
+              ),
+              hasLength(1),
+            );
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
+    }
+  }
+
+  for (final owner in [true, false]) {
+    for (final status in ResourceRequestStatus.values) {
+      if (!owner && status == ResourceRequestStatus.pending) continue;
+      testWidgets('helper absent in request details for owner=$owner/$status', (
+        tester,
+      ) async {
+        final request = resourceRequestFixture(status: status);
+        final app = await _pump(
+          tester,
+          gateway: FakeResourceListingGateway(),
+          identityId: owner ? resourceOwnerProfileId : otherProfileId,
+          resourceRequests: FakeResourceRequestGateway()..detail = request,
+        );
+        app.read(appRouterProvider).go(resourceRequestMessageRoute(request.id));
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('resource-request-view-listing')),
+          200,
+          scrollable: find.byType(Scrollable).hitTestable().first,
+        );
+        expect(
+          find.byKey(const Key('resource-request-flow-helper')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const Key('resource-request-withdraw')),
+          findsNothing,
+        );
+        if (owner && status == ResourceRequestStatus.pending) {
+          expect(
+            find.byKey(const Key('resource-request-accept')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const Key('resource-request-reject')),
+            findsOneWidget,
+          );
+        }
+      });
+    }
+  }
 
   testWidgets('non-owner without an active episode can open the composer', (
     tester,
