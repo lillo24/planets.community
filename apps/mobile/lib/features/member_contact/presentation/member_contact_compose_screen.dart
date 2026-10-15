@@ -189,7 +189,9 @@ class _ComposeState extends ConsumerState<MemberContactComposeScreen> {
               ),
               Text(l.memberContactOrigin(c.groupName)),
               Text(l.memberContactPrivacy),
-              if (!c.canRequest) Text(l.memberContactNotEligible),
+              // The pending request may be this unresolved delivery itself.
+              if (!c.canRequest && attempt?.ambiguous != true)
+                Text(l.memberContactNotEligible),
             ] else if (!loading) ...[
               Text(l.contactRequestUnavailable),
               TextButton(onPressed: load, child: Text(l.retryAction)),

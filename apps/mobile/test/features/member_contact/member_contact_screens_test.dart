@@ -10,6 +10,7 @@ import 'package:planets_mobile/features/blocking/data/blocking_gateway.dart';
 import 'package:planets_mobile/features/group_contact/data/group_contact_gateway.dart'
     show ContactRpc;
 import 'package:planets_mobile/features/group_membership/domain/group_relationships.dart';
+import 'package:planets_mobile/features/member_contact/application/member_contact_access_changes.dart';
 import 'package:planets_mobile/features/member_contact/data/member_contact_gateway.dart';
 import 'package:planets_mobile/features/member_contact/presentation/member_contact_compose_screen.dart';
 import 'package:planets_mobile/features/member_contact/presentation/member_contact_request_screen.dart';
@@ -181,6 +182,58 @@ void main() {
     expect(sent, hasLength(2));
     expect(sent[0], sent[1]);
     expect(find.text('A fictional private introduction'), findsOneWidget);
+  });
+
+  testWidgets('ambiguous delivery overrides refreshed request ineligibility', (
+    tester,
+  ) async {
+    final submitted = <Map<String, dynamic>>[];
+    final recovered = <Map<String, dynamic>>[];
+    var contextReads = 0;
+    final (container, _) = await pumpMember(tester, (name, args) async {
+      if (name == 'get_own_member_contact_context') {
+        contextReads++;
+        return {...contextRow(), 'can_request': submitted.isEmpty};
+      }
+      if (name == 'submit_member_contact_request') {
+        submitted.add(Map.of(args));
+        throw StateError('Lost response after commit');
+      }
+      if (name == 'recover_member_contact_action') {
+        recovered.add(Map.of(args));
+        return null;
+      }
+      return basic(name, args);
+    });
+    final l = AppLocalizations.of(
+      tester.element(find.byType(MemberContactComposeScreen)),
+    );
+    await reveal(tester, find.byKey(const Key('member-contact-submit')));
+    await tester.tap(find.byKey(const Key('member-contact-submit')));
+    await tester.pumpAndSettle();
+    container.read(memberContactAccessChangesProvider.notifier).changed(actor);
+    await tester.pumpAndSettle();
+    expect(contextReads, 2);
+    // Inspect the top too: an offscreen denial must not make this pass.
+    tester
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position
+        .jumpTo(0);
+    await tester.pumpAndSettle();
+    expect(find.text(l.memberContactNotEligible), findsNothing);
+    await reveal(tester, find.text(l.contactDeliveryPending));
+    expect(find.text(l.contactDeliveryPending), findsOneWidget);
+    await reveal(tester, find.text(l.contactRecover));
+    await tester.tap(find.text(l.contactRecover));
+    await tester.pumpAndSettle();
+    expect(recovered, [
+      {
+        'p_expected_profile_id': actor,
+        'p_action_id': submitted.single['p_action_id'],
+      },
+    ]);
+    expect(submitted, hasLength(1));
+    expect(find.text(l.contactDeliveryPending), findsOneWidget);
   });
 
   testWidgets('accept requires explicit recipient confirmation', (
