@@ -1,7 +1,7 @@
 # PLANETS UXFIX01 — Remove the Explore/Log in flash at startup
 
 **Plan ID:** `UXFIX01`  
-**Status:** Pending implementation — this file is a Codex handoff prompt, **not evidence that the fix is implemented**.  
+**Status:** Implemented in the UXFIX01 change; see the startup and Auth module READMEs and PR validation. Installed Play-build verification and physical-device QA remain unperformed; the fix requires a new app build/release.  
 **Scope:** Narrow Flutter startup/authentication bug fix. Work from the latest `main` of `lillo24/planets.community`; incorporate subsequent changes already merged there. Do not make unrelated UI changes.
 
 ## Objective

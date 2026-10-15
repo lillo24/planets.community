@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
@@ -7,6 +9,27 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import '../../../support/fake_auth.dart';
 
 void main() {
+  test('late recovery cannot replace an explicit sign-out', () async {
+    final recovery = Completer<void>();
+    final auth = FakeAuthGateway(
+      snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'old-user')),
+    )..restorationDelay = recovery.future;
+    final profile = FakeProfileAnchorGateway()..exists = true;
+    final container = _container(auth, profile);
+    addTearDown(container.dispose);
+    addTearDown(auth.close);
+    final controller = container.read(authSessionProvider.notifier);
+    final start = controller.start();
+    await controller.start();
+    controller.markSignedOut();
+    recovery.complete();
+    await start;
+    expect(
+      container.read(authSessionProvider).phase,
+      AuthSessionPhase.signedOut,
+    );
+    expect(profile.existsCount, 0);
+  });
   test(
     'failed stream setup can retry restoration without faking sign-out',
     () async {

@@ -5,7 +5,9 @@ import '../../../core/backend/supabase_backend.dart';
 import '../domain/auth_models.dart';
 
 abstract interface class AuthGateway {
-  AuthSnapshot get currentSnapshot;
+  /// Resolves persisted recovery before reporting a definitive signed-out state.
+  /// Throws on restoration failure; retry must perform recovery again.
+  Future<AuthSnapshot> restoreSnapshot();
 
   Stream<AuthSnapshot> get authStateChanges;
 
@@ -31,11 +33,28 @@ class SupabaseAuthGateway implements AuthGateway {
   final SupabaseClient _client;
 
   @override
-  AuthSnapshot get currentSnapshot => _toSnapshot(_client.auth.currentSession);
+  Future<AuthSnapshot> restoreSnapshot() async {
+    // supabase_flutter 2.17.2 installs the persisted session before initialize
+    // returns, but refreshes expired tokens in the background. Await that refresh
+    // (GoTrue coalesces concurrent refreshes by token), never treat it as logout.
+    final session = _client.auth.currentSession;
+    if (session?.isExpired == true && session?.refreshToken != null) {
+      try {
+        await _client.auth.refreshSession();
+      } on AuthException {
+        // An invalid refresh token clears the SDK session. Offline/retryable
+        // failures retain it and must reach the actionable restoration state.
+        if (_client.auth.currentSession != null) rethrow;
+      }
+    }
+    return _toSnapshot(_client.auth.currentSession);
+  }
 
   @override
-  Stream<AuthSnapshot> get authStateChanges =>
-      _client.auth.onAuthStateChange.map(
+  Stream<AuthSnapshot> get authStateChanges => _client.auth.onAuthStateChange
+      // Initial persisted state is owned by restoreSnapshot, including recovery.
+      .where((state) => state.event != AuthChangeEvent.initialSession)
+      .map(
         (authState) => _toSnapshot(
           authState.session,
           isTokenRefresh: authState.event == AuthChangeEvent.tokenRefreshed,

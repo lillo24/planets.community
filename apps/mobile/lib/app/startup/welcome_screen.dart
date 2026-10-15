@@ -7,9 +7,9 @@ import 'package:go_router/go_router.dart';
 import '../../core/widgets/planets_hero.dart';
 import '../../features/auth/application/auth_session_controller.dart';
 import '../../features/auth/domain/auth_models.dart';
-import '../../features/auth/presentation/auth_status.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'startup_flow.dart';
+import 'startup_session_screen.dart';
 
 enum _WelcomeAction { explore, login }
 
@@ -49,9 +49,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     final session = ref.watch(authSessionProvider);
     final l10n = AppLocalizations.of(context);
     if (session.phase != AuthSessionPhase.signedOut) {
-      return const Scaffold(
-        body: SafeArea(child: Center(child: AuthStatus())),
-      );
+      return const StartupSessionScreen();
     }
     return Scaffold(
       key: const Key('welcome-screen'),
