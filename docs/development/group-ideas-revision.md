@@ -6,30 +6,30 @@ Implementation is in progress on cumulative PR #257. Starting source is C `e8c5c
 
 ## Decision ledger
 
-| Class | Decision |
-| --- | --- |
-| User decision | One automatic durable General per eligible published Group; explicit Idea Join; Group-visible or invitation-only plus current managers; full earlier history on admission; bounded pre-exit history. |
-| User decision | Creator and current managers manage Ideas; ordinary members can create when the setting allows; only Group Creator/Co-creator publish Group Projects. |
-| User decision | Conversion Option A: explicit ordinary Project joining, never automatic enrollment; planning freezes at publication and retains independent authorization. |
-| Existing implemented contract | Independent Group membership/delegation; real human Project authorship; GRP03C publication, Idea/Defined lifecycle, Project participation/photo/capacity/block rules; private named HTTPS links. |
-| Reversible implementation default | Creation setting starts managers-only; approximately seven days means seven complete days against server activity; General is never quiet-hidden. |
-| Reversible implementation choice | General's durable room owns the Group-wide named-link collection; Ideas keep their own collections. Shared presentation does not merge their audiences. |
-| Outside C authority | D personal/representative audiences; production hosting; legal retention periods; account suspension in the separate unmerged policy stack. |
+| Class                             | Decision                                                                                                                                                                                             |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User decision                     | One automatic durable General per eligible published Group; explicit Idea Join; Group-visible or invitation-only plus current managers; full earlier history on admission; bounded pre-exit history. |
+| User decision                     | Creator and current managers manage Ideas; ordinary members can create when the setting allows; only Group Creator/Co-creator publish Group Projects.                                                |
+| User decision                     | Conversion Option A: explicit ordinary Project joining, never automatic enrollment; planning freezes at publication and retains independent authorization.                                           |
+| Existing implemented contract     | Independent Group membership/delegation; real human Project authorship; GRP03C publication, Idea/Defined lifecycle, Project participation/photo/capacity/block rules; private named HTTPS links.     |
+| Reversible implementation default | Creation setting starts managers-only; approximately seven days means seven complete days against server activity; General is never quiet-hidden.                                                    |
+| Reversible implementation choice  | General's durable room owns the Group-wide named-link collection; Ideas keep their own collections. Shared presentation does not merge their audiences.                                              |
+| Outside C authority               | D personal/representative audiences; production hosting; legal retention periods; account suspension in the separate unmerged policy stack.                                                          |
 
 ## Access matrix
 
 All private operations require the live canonical identity and applicable Group lifecycle/accountability checks. Suppression/archive/unpublication are distinct from per-person hiding. No erased identity regains access through an old token. Staff alone receive only exact reported evidence, never room access.
 
-| Actor | Discovery / history | Current collections / sending | Room administration | Project publication |
-| --- | --- | --- | --- | --- |
-| Current Group person, General | Automatic General/full history | Current links; send | Current managers only | Independent GRP03C |
-| Current Group person, unjoined visible Idea | Title, purpose, creator; no messages | No current links, roster or send | None unless manager/eligible creator | None from discovery |
-| Targeted invitee / valid capability holder | Minimal acceptance context, current Group eligibility required | No pre-accept history/send | No fresh restricted-room grants | None |
-| Current admitted planner | Full history including before admission | Current links/roster; send while active | Eligible Idea creator or manager; ordinary visible-Idea participant may suggest a targeted invite | None from room admission |
-| Current Group manager | Disclosed discovery/read/manage every Idea | Current links; deliberate participation remains separate | Yes, without structural Group editor powers for Co-organizers | Creator/Co-creator only |
-| Former planner | Only known room snapshot and messages through committed exit sequence | No later title/activity/roster/current links/send/alerts | None from provenance | Independent Project rights only |
-| Former manager | No perpetual room directory; retain only an actually entered/read frontier or independent room admission | Revoked authority cannot manage | None from former role | Independent current rights only |
-| Project-only participant | Canonical Project history; no private origin metadata | Project rights only | No source right | Canonical Project role only |
+| Actor                                       | Discovery / history                                                                                      | Current collections / sending                            | Room administration                                                                               | Project publication             |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------- |
+| Current Group person, General               | Automatic General/full history                                                                           | Current links; send                                      | Current managers only                                                                             | Independent GRP03C              |
+| Current Group person, unjoined visible Idea | Title, purpose, creator; no messages                                                                     | No current links, roster or send                         | None unless manager/eligible creator                                                              | None from discovery             |
+| Targeted invitee / valid capability holder  | Minimal acceptance context, current Group eligibility required                                           | No pre-accept history/send                               | No fresh restricted-room grants                                                                   | None                            |
+| Current admitted planner                    | Full history including before admission                                                                  | Current links/roster; send while active                  | Eligible Idea creator or manager; ordinary visible-Idea participant may suggest a targeted invite | None from room admission        |
+| Current Group manager                       | Disclosed discovery/read/manage every Idea                                                               | Current links; deliberate participation remains separate | Yes, without structural Group editor powers for Co-organizers                                     | Creator/Co-creator only         |
+| Former planner                              | Only known room snapshot and messages through committed exit sequence                                    | No later title/activity/roster/current links/send/alerts | None from provenance                                                                              | Independent Project rights only |
+| Former manager                              | No perpetual room directory; retain only an actually entered/read frontier or independent room admission | Revoked authority cannot manage                          | None from former role                                                                             | Independent current rights only |
+| Project-only participant                    | Canonical Project history; no private origin metadata                                                    | Project rights only                                      | No source right                                                                                   | Canonical Project role only     |
 
 Independent current membership and delegation are checked separately. Ending one role closes that authority frontier, without falsely ending another valid admission right. A fresh accepted room action is needed after all supporting Group entitlement ends. Replayed receipts never rejoin. A manager's actual observed room frontier must be recorded without creating ordinary participation.
 

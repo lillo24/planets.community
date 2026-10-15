@@ -1,5 +1,13 @@
 # Validation workflow
 
+The revised C lane adds `group:ideas:upgrade:verify:local` before the final fresh
+reset and `group:ideas:verify:local` / `group:conversion:verify:local` after the
+existing discussion/link checks. The extra populated reset is required because
+the approved revision changes old C history and General access while preserving
+stored identities. The real-Auth checks cover these new authorization paths and
+atomic conversion/opt-in membership. All three also run in `check:db`; they add
+no job, provider call or trigger. Shared workflow edits still select all areas.
+
 C01 adds `group:discussions:upgrade:verify:local` before clean replay and
 `group:discussions:verify:local` after Group Project verification. The populated
 check reuses bounded fictional producers, preserves every original public/private

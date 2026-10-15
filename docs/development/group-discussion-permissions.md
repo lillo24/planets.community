@@ -1,6 +1,12 @@
 # C00 — Internal Group discussion permissions
 
-**Status: PROVISIONAL; founder approval pending.** Prepared 14 October 2026
+**Status: historical provisional matrix, superseded by the approved
+[C-R00 revision](group-ideas-revision.md).** The General, manager oversight,
+full-history, former-history and conversion decisions in the 15 October package
+replace the corresponding choices below. This file preserves the historical
+review context; it is not the current implementation acceptance oracle.
+
+Prepared 14 October 2026
 against `58c5b184c6a83bcca4b3ca950be13d3a08bd1a84`. This document is a proposed
 acceptance oracle for the isolated C01–C04 draft stack, not an accepted product
 policy or evidence of a deployed feature.

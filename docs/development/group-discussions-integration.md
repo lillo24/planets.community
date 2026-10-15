@@ -1,5 +1,11 @@
 # C cumulative integration and approval packet
 
+> Historical C00–C04 qualification. The founder's 15 October revised C package
+> supplies the C access decisions and authorizes merge after revised validation.
+> Follow [C-R00](group-ideas-revision.md) and the
+> [current lane handoff](c01-parallel-handoff.md). Results below qualify only the
+> older source heads; they do not qualify the revision now in progress.
+
 This is a provisional review-only stack. The C00 permission/history contract in
 `group-discussion-permissions.md` requires explicit scoped founder approval;
 tests do not approve access policy. There is no shared/hosted migration, deployment

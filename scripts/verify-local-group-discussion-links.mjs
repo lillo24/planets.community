@@ -147,6 +147,74 @@ try {
     p_client_request_id: randomUUID(),
     p_token: role.invite_token,
   });
+  const settings = await rpc(creator, "get_group_discussion_settings", {
+    ...expected(creator),
+    p_group_id: group,
+  });
+  const general = settings.general_room_id;
+  const generalManager = await rpc(manager, "get_group_discussion_v2", {
+    ...expected(manager),
+    p_room_id: general,
+  });
+  const generalMember = await rpc(member, "get_group_discussion_v2", {
+    ...expected(member),
+    p_room_id: general,
+  });
+  const shared = await add(
+    manager,
+    general,
+    generalManager.access_id,
+    "Group communication",
+    "https://example.invalid/group-communication",
+  );
+  equal(
+    (await exact(member, general, generalMember.access_id, shared.object_id))
+      .name,
+    "Group communication",
+    "General owns the current Group-wide workspace",
+  );
+  await denied(member, "add_group_discussion_link", {
+    ...command(member, general, generalMember.access_id),
+    p_name: "Member cannot edit General",
+    p_url: "https://example.invalid/no",
+  });
+  await denied(other, "list_group_discussion_links", {
+    ...expected(other),
+    p_room_id: general,
+  });
+  await rpc(creator, "set_group_discussion_settings", {
+    ...expected(creator),
+    p_group_id: group,
+    p_client_request_id: randomUUID(),
+    p_expected_version: settings.version,
+    p_creation_policy: "members",
+  });
+  const memberIdea = await rpc(member, "create_group_discussion_v2", {
+    ...expected(member),
+    p_group_id: group,
+    p_client_request_id: randomUUID(),
+    p_title: "Member planning",
+    p_purpose: "Planning with disclosed manager oversight",
+    p_visibility: "group",
+  });
+  const memberLink = await add(
+    member,
+    memberIdea.room_id,
+    memberIdea.object_id,
+    "Creator's plan",
+    "https://example.invalid/member-plan",
+  );
+  equal(
+    (await list(member, memberIdea.room_id, memberIdea.object_id)).can_manage,
+    true,
+    "Eligible ordinary Idea creator manages their own links",
+  );
+  await denied(member, "get_group_discussion_link", {
+    ...expected(member),
+    p_room_id: general,
+    p_expected_admission_id: generalMember.access_id,
+    p_link_id: memberLink.object_id,
+  });
   const created = await rpc(creator, "create_group_discussion", {
       ...expected(creator),
       p_group_id: group,
@@ -162,7 +230,7 @@ try {
     "Documento precedente",
     "https://example.invalid/older",
   );
-  for (const p of [member, manager, other]) {
+  for (const p of [member, other]) {
     await denied(p, "list_group_discussion_links", {
       ...expected(p),
       p_room_id: room,
@@ -174,6 +242,23 @@ try {
       p_link_id: old.object_id,
     });
   }
+  // Revised C: manager oversight is independent of explicit room participation.
+  const oversight = await rpc(manager, "get_group_discussion_v2", {
+    ...expected(manager),
+    p_room_id: room,
+  });
+  const oversightAccess = oversight.access_id;
+  equal(
+    (await list(manager, room, oversightAccess)).items.length,
+    1,
+    "Current manager reads the full collection without room admission",
+  );
+  await denied(manager, "get_group_discussion_link", {
+    ...expected(manager),
+    p_room_id: room,
+    p_expected_admission_id: creatorAdmission,
+    p_link_id: old.object_id,
+  });
   const invitation = await rpc(creator, "invite_group_discussion_member", {
     ...expected(creator),
     p_room_id: room,
@@ -193,16 +278,15 @@ try {
     }),
     admission = accepted.object_id;
   equal(
-    (await list(member, room, admission)).items,
-    [],
-    "Admission does not reveal older destinations",
+    (await list(member, room, admission)).items.length,
+    1,
+    "Revised admission reads the full current collection",
   );
-  await denied(member, "get_group_discussion_link", {
-    ...expected(member),
-    p_room_id: room,
-    p_expected_admission_id: admission,
-    p_link_id: old.object_id,
-  });
+  equal(
+    (await exact(member, room, admission, old.object_id)).url,
+    "https://example.invalid/older",
+    "Earlier current link is visible",
+  );
   const intent = {
     ...command(creator, room, creatorAdmission),
     p_name: "Foglio",
@@ -244,7 +328,7 @@ try {
     "Two deliberate identical entries remain distinct",
   );
   const visible = await list(member, room, admission);
-  equal(visible.items.length, 2, "Current entitled collection only");
+  equal(visible.items.length, 3, "Full current entitled collection");
   equal(visible.can_manage, false, "Member is a reader");
   equal(
     (await exact(member, room, admission, added.object_id)).url,
@@ -406,6 +490,108 @@ try {
     ...expected(creator),
     p_room_id: project,
   });
+  await rpc(creator, "set_project_group", {
+    ...expected(creator),
+    p_project_id: project,
+    p_expected_version: 1,
+    p_group_id: group,
+    p_client_request_id: randomUUID(),
+  });
+  const binding = await rpc(creator, "get_own_project_group", {
+    ...expected(creator),
+    p_project_id: project,
+  });
+  await rpc(creator, "publish_project_with_group", {
+    ...expected(creator),
+    p_project_id: project,
+    p_group_id: group,
+    p_expected_version: binding.version,
+    p_idea: false,
+  });
+  const [projectInvitation] = await rpc(
+    creator,
+    "create_project_participant_invitation",
+    {
+      ...expected(creator),
+      p_project_id: project,
+    },
+  );
+  await rpc(other, "accept_project_participant_invitation", {
+    ...expected(other),
+    p_token: projectInvitation.invite_token,
+    p_client_action_id: randomUUID(),
+  });
+  const projectRows = await rpc(other, "list_group_project_conversations", {
+    ...expected(other),
+    p_group_id: group,
+  });
+  equal(
+    projectRows.length,
+    1,
+    "Independent Project participant receives one canonical chat",
+  );
+  equal(
+    projectRows[0].project_id,
+    project,
+    "Folder preserves canonical Project identity",
+  );
+  const canonicalRows = await rpc(
+    other,
+    "list_own_scoped_conversation_items_v5",
+    {
+      ...expected(other),
+      p_scope: "groups",
+      p_limit: 25,
+    },
+  );
+  equal(
+    projectRows[0],
+    canonicalRows[0],
+    "Folder Project row exactly matches the installed v5 contract",
+  );
+  equal(
+    await rpc(member, "list_group_project_conversations", {
+      ...expected(member),
+      p_group_id: group,
+    }),
+    [],
+    "Group-only membership grants no Project chat",
+  );
+  const mapping = await rpc(other, "list_own_group_project_chat_folders", {
+    ...expected(other),
+    p_chat_ids: [projectRows[0].chat_id],
+  });
+  equal(
+    mapping[0].group_id,
+    group,
+    "Only independently readable chat maps to Group folder",
+  );
+  equal(
+    await rpc(member, "list_own_group_project_chat_folders", {
+      ...expected(member),
+      p_chat_ids: [projectRows[0].chat_id],
+    }),
+    [],
+    "Guessed Project chat ID does not disclose mapping to Group-only member",
+  );
+  const projectOnlyFolders = await rpc(
+    other,
+    "list_my_discussion_groups_v2",
+    expected(other),
+  );
+  equal(
+    projectOnlyFolders[0].can_read_ideas,
+    false,
+    "Project-only folder does not authorize planning reads",
+  );
+  await denied(other, "list_group_discussions_v2", {
+    ...expected(other),
+    p_group_id: group,
+  });
+  await denied(other, "get_group_discussion_v2", {
+    ...expected(other),
+    p_room_id: room,
+  });
   for (let i = 0; i < 27; i++)
     await add(
       creator,
@@ -426,10 +612,14 @@ try {
       p_before_id: last.link_id,
     });
   equal(first.items.length, 25, "Server bounded first page");
-  equal(next.items.length, 3, "Cursor keeps the tied-time tail");
+  equal(
+    next.items.length,
+    4,
+    "Cursor keeps the tied-time tail and earlier link",
+  );
   equal(
     new Set([...first.items, ...next.items].map((i) => i.link_id)).size,
-    28,
+    29,
     "No gap/duplicate in tied-time pages",
   );
   await denied(
@@ -558,9 +748,9 @@ try {
     p_response: "accepted",
   });
   equal(
-    (await list(member, room, renewed.object_id)).items,
-    [],
-    "Renewed admission never resurrects old destinations",
+    (await exact(member, room, renewed.object_id, old.object_id)).url,
+    "https://example.invalid/older",
+    "Fresh explicit rejoin restores full current links",
   );
   await denied(member, "get_group_discussion_link", {
     ...expected(member),

@@ -1,5 +1,11 @@
 # Private Group discussions — C01
 
+> The provisional policy described below is historical. The approved
+> [General / Ideas revision](group-ideas-revision.md) supersedes its no-General,
+> admission-only manager, since-admission and no-former-history choices. Revised
+> runtime and validation are in progress in the cumulative C lane; see
+> [current coordination](c01-parallel-handoff.md).
+
 This review-only implementation follows the
 [provisional C00 matrix](group-discussion-permissions.md). Founder access/history
 approval remains pending. It uses PostgreSQL/Supabase and preserves the released
