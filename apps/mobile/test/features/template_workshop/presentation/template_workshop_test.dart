@@ -12,6 +12,7 @@ import 'package:planets_mobile/core/widgets/browse_filter_button.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/group_projects/domain/group_project_creation_return.dart';
 import 'package:planets_mobile/features/cover_media/application/project_cover_reconciler.dart';
 import 'package:planets_mobile/features/moderation/data/moderation_gateway.dart';
 import 'package:planets_mobile/features/moderation/domain/moderation_models.dart';
@@ -622,6 +623,8 @@ pumpWorkshop(
                   proposalId: s.pathParameters['id'],
                   readObserver: s.extra is ProposalEditorReadObserver
                       ? s.extra! as ProposalEditorReadObserver
+                      : s.extra is GroupProjectCreationReturn
+                      ? (s.extra! as GroupProjectCreationReturn).readObserver
                       : null,
                 ),
               ),

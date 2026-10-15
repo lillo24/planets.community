@@ -14,7 +14,9 @@ void main() {
         .map((m) => m[0]!)
         .where((block) => block.contains('android.intent.action.VIEW'))
         .toList();
-    expect(filters, hasLength(7));
+    // C adds its explicit-consent Idea invitation family alongside the seven
+    // existing HTTPS families. The route parser still validates the token.
+    expect(filters, hasLength(8));
     final patterns = <RegExp>[];
     for (final filter in filters) {
       expect(filter, contains('android:autoVerify="true"'));
@@ -39,6 +41,7 @@ void main() {
       '/groups/$id',
       '/join/group/${'A' * 43}',
       '/invite/group/${'A' * 43}',
+      '/messages/discussions/invite/${'a' * 64}',
     ]) {
       expect(claimed(path), isTrue, reason: 'Public path family must match');
       expect(claimed('$path/edit'), isFalse);
@@ -57,6 +60,7 @@ void main() {
       '/proposals/mine',
       '/proposals/invalid',
       '/join/project/short',
+      '/messages/discussions/invite/short',
     ]) {
       expect(
         claimed(path),

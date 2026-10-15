@@ -1,5 +1,23 @@
 # Repository scripts
 
+- `verify-local-group-ideas.mjs` checks the revised General/Idea roles, full
+  history, exact exit cutoffs and independent participation/oversight rights.
+  `verify-local-group-ideas-upgrade.mjs` separately resets an explicitly disposable
+  loopback stack to the complete old C predecessor and proves populated row and
+  admission preservation across repeated forward application.
+- `verify-local-group-discussion-links.mjs` checks General and Idea workspaces,
+  versioned mutations, full current collections and canonical Project-only folders.
+  `verify-local-group-discussion-conversion.mjs` checks reviewed publication,
+  frozen source history and deliberate Project admission. These verifiers run in
+  the existing Database job; the upgrade runs before its final fresh reset.
+
+- `verify-local-group-discussions.mjs` owns C01 real OTP consent, episode/history
+  denial, command receipts, canonical unread/read snapshots, exact staff evidence
+  and observed Group-lock races. `--upgrade` requires CI or
+  `PLANETS_DISPOSABLE_QA=1`, resets the selected loopback stack to C01's predecessor,
+  populates existing demo/Group/moderation histories and compares every old column
+  and row after additive and repeated migration application.
+
 - `verify-local-group-membership.mjs` owns GRP03A genuine Auth/PostgREST
   relationship, role, block, retry and observed multi-connection lock races.
   `--upgrade` resets an explicitly disposable loopback stack, populates GRP01,

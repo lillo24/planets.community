@@ -14,7 +14,9 @@ Future<List<Map<String, dynamic>>> readOwnerCollection(
     page: (after, limit) async {
       var query = client.rpc<List<dynamic>>(rpc, params: params);
       if (after != null) query = query.gt(idColumn, after);
-      return (await query.order(idColumn).limit(limit))
+      // The installed PostgREST client defaults to descending order. UUID
+      // continuation uses `gt`, so explicitly order ascending before collecting.
+      return (await query.order(idColumn, ascending: true).limit(limit))
           .cast<Map<String, dynamic>>();
     },
   );

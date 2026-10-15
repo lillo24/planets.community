@@ -31,7 +31,7 @@ class SupabaseMessageUnreadGateway implements MessageUnreadGateway {
   Future<MessageUnreadSummary> summary(String profileId) async =>
       MessageUnreadSummary.parse(
         await client.rpc<Object?>(
-          'get_own_message_unread_summary',
+          'get_own_message_unread_summary_with_discussions',
           params: {'p_expected_profile_id': profileId},
         ),
       );
@@ -41,17 +41,30 @@ class SupabaseMessageUnreadGateway implements MessageUnreadGateway {
     String kind,
     String chatId,
     String boundary,
-  ) async => MessageUnreadSummary.parse(
-    await client.rpc<Object?>(
-      'acknowledge_own_message_read',
-      params: {
-        'p_expected_profile_id': profileId,
-        'p_kind': kind,
-        'p_chat_id': chatId,
-        'p_boundary': boundary,
-      },
-    ),
-  );
+  ) async {
+    if (kind == 'group_discussion') {
+      await client.rpc<void>(
+        'acknowledge_group_discussion_read_v2',
+        params: {
+          'p_expected_profile_id': profileId,
+          'p_room_id': chatId,
+          'p_snapshot_token': boundary,
+        },
+      );
+    } else {
+      await client.rpc<Object?>(
+        'acknowledge_own_message_read',
+        params: {
+          'p_expected_profile_id': profileId,
+          'p_kind': kind,
+          'p_chat_id': chatId,
+          'p_boundary': boundary,
+        },
+      );
+    }
+    return summary(profileId);
+  }
+
   @override
   MessageUnreadSubscription subscribe(
     String profileId,

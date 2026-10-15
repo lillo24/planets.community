@@ -1,5 +1,6 @@
 import { TemplateRemovalForm } from "./template-removal-form";
 import { GroupReviewView } from "./group-review";
+import { DiscussionEvidenceView } from "./discussion-evidence";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -139,6 +140,9 @@ export function ModerationCaseDetailView({
         </CardContent>
       </Card>
 
+      {detail.discussion ? (
+        <DiscussionEvidenceView evidence={detail.discussion} />
+      ) : null}
       {detail.group ? (
         <GroupReviewView group={detail.group} caseId={detail.caseId} />
       ) : null}

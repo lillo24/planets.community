@@ -265,3 +265,13 @@ It is fixture-authenticated native coverage, not inbox-entry UI, physical-device
 real provider application, iOS or accessibility certification. Screenshots are
 saved under `build/batch-a-screenshots`. Recreate fixtures for each run; cleanup
 only that task's defines, emulator/app and disposable stack.
+
+# Group discussion probe
+
+`prepare_group_discussion_smoke.mjs` prepares verified fictional OTP identities,
+ready profiles, Group membership and a pending room invitation on an explicitly
+disposable loopback backend. `group_discussion_smoke_test.dart` exercises consent,
+history frontier, lost-send recovery, Group/Message entry points, EN/IT and own exit
+through the real C RPCs. `group_discussion_driver.dart` exports native PNGs to the
+OS temporary `planets-c-runtime` directory. Supply private defines outside Git and
+use a task-owned emulator/API reverse mapping; see `docs/development/group-discussions.md`.

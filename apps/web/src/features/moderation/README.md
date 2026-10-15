@@ -50,3 +50,10 @@ content, manager/provenance and latest private suppression context.
 `group-suppression-form.tsx` freezes Hide/Restore intent for exact retries.
 Server reads/actions revalidate active staff; case transitions remain separate.
 See `docs/development/grp02-groups-ui.md` for rollout and recovery boundaries.
+
+# Group discussion evidence
+
+`discussion-evidence.tsx` strictly validates and renders the immutable reported
+message snapshot. `moderation-server.ts` requests it only for a typed Group
+discussion case after live staff authorization. This grants no room browsing,
+member-directory or history capability. An evidence read failure is explicit.

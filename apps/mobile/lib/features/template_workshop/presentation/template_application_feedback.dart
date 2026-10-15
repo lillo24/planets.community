@@ -6,6 +6,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../group_projects/domain/group_project_creation_return.dart';
 import '../../proposals/domain/proposal_models.dart';
 import '../application/template_controllers.dart';
 import '../domain/template_models.dart';
@@ -20,10 +21,30 @@ Future<void> openTemplateDestination(
       .handoff(requestId);
   if (handoff == null) return;
   try {
-    await context.push(
+    final origin = GoRouterState.of(context).extra;
+    final groupOrigin =
+        origin is GroupProjectCreationReturn &&
+            origin.actor == handoff.observer.actor
+        ? origin
+        : null;
+    final result = await context.push<Object?>(
       '/proposals/${handoff.observer.proposalId}/edit',
-      extra: handoff.observer,
+      extra: groupOrigin == null
+          ? handoff.observer
+          : GroupProjectCreationReturn(
+              groupOrigin.actor,
+              returnPath: groupOrigin.returnPath,
+              readObserver: handoff.observer,
+            ),
     );
+    if (context.mounted &&
+        groupOrigin != null &&
+        result is GroupProjectCreationResult &&
+        result.actor == groupOrigin.actor &&
+        ref.read(authSessionProvider).identity?.id == groupOrigin.actor &&
+        ModalRoute.of(context)?.isCurrent == true) {
+      context.pop(result);
+    }
   } catch (_) {
     handoff.failed();
   } finally {
