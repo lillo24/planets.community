@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -26,6 +27,7 @@ import 'tutorial_presentation.dart';
 import 'tutorial_project_chat_example.dart';
 import 'tutorial_routes.dart';
 import 'tutorial_motion.dart';
+import 'tutorial_project_selection.dart';
 
 class TutorialScreen extends ConsumerStatefulWidget {
   const TutorialScreen({
@@ -45,10 +47,25 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   final _scrollStorage = PageStorageBucket();
   int _index = 0;
   int _generation = 0;
+  int _pageSerial = 0;
   int _attempts = 0;
   Timer? _probe;
   Timer? _transition;
   Timer? _hold;
+  late final _press = AnimationController(
+    vsync: this,
+    duration: tutorialPressDuration,
+  );
+  late final _travel = AnimationController(
+    vsync: this,
+    duration: tutorialTravelDuration,
+    value: 1,
+  );
+  Rect? _pressTarget;
+  int _direction = 1;
+  bool _navigating = false;
+  bool _selectingProject = false;
+  bool _browsePositioned = false;
   late final _reveal =
       AnimationController(vsync: this, duration: tutorialSpotlightFade)
         ..addStatusListener((status) {
@@ -131,6 +148,17 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
 
   void _interrupt({bool preserveReveal = false}) {
     _generation++;
+    final wasNavigating = _navigating;
+    _press.stop();
+    _travel.stop();
+    _pressTarget = null;
+    _travel.value = 1;
+    _navigating = false;
+    if (wasNavigating || !preserveReveal) {
+      _locked = false;
+      _transition?.cancel();
+    }
+    _selectingProject = false;
     _probe?.cancel();
     _focus.stop();
     if (!preserveReveal) {
@@ -179,6 +207,8 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     _hold?.cancel();
     _reveal.dispose();
     _focus.dispose();
+    _press.dispose();
+    _travel.dispose();
     super.dispose();
   }
 
@@ -186,6 +216,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _active = state == AppLifecycleState.resumed;
     _interrupt();
+    setState(() {});
     if (_active) {
       if (_focus.value < 1) _focus.forward();
       _attempts = 0;
@@ -235,7 +266,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   }
 
   void _previous() {
-    if (_saving || _locked || !_active) return;
+    if (_saving || !_active || (_locked && !_navigating)) return;
     if (_index == 0) {
       _leave();
     } else {
@@ -255,14 +286,84 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   void _move(int index) {
     final nextStep = ref.read(startupFlowProvider).registry.steps[index];
     final newPage = _surfaceGroup() != _surfaceGroup(nextStep);
+    final reduced = MediaQuery.disableAnimationsOf(context);
+    final cue =
+        index > _index &&
+        ((_step == TutorialStep.home && nextStep == TutorialStep.projectCard) ||
+            (_step == TutorialStep.projectCard &&
+                nextStep == TutorialStep.projectDetail) ||
+            (_step == TutorialStep.homeResources &&
+                nextStep == TutorialStep.resources));
+    final target = cue && _visibleTargets.isNotEmpty
+        ? _visibleTargets.first
+        : null;
+    final direction = _isDetail && _surfaceGroup(nextStep) == 'projects'
+        ? -1
+        : index > _index
+        ? 1
+        : -1;
     final visibleTargets = _visibleTargets;
-    _interrupt(preserveReveal: !newPage);
+    _interrupt(preserveReveal: true);
+    if (newPage && !reduced) {
+      setState(() {
+        _locked = true;
+        _navigating = true;
+        _direction = direction;
+        _pressTarget = target;
+      });
+      unawaited(_navigate(index, _generation));
+    } else {
+      _commitMove(index, newPage: newPage, visibleTargets: visibleTargets);
+      // Reduced motion commits immediately but retains the same double-tap
+      // guard. Disabling animation must not advance two manually paced steps.
+      setState(() => _locked = true);
+      final committedIndex = _index;
+      _transition?.cancel();
+      _transition = Timer(const Duration(milliseconds: 250), () {
+        if (mounted && committedIndex == _index && !_navigating) {
+          setState(() => _locked = false);
+        }
+      });
+      _scheduleProbe();
+    }
+  }
+
+  Future<void> _navigate(int index, int generation) async {
+    try {
+      if (_pressTarget != null) await _press.forward(from: 0).orCancel;
+      if (!mounted || generation != _generation) return;
+      setState(() => _pressTarget = null);
+      _travel.value = 0;
+      await _travel.animateTo(.5).orCancel;
+      if (!mounted || generation != _generation) return;
+      // Commit copy/progress together with the single live destination. Unlike
+      // AnimatedSwitcher this never retains a second subscribing app surface.
+      _commitMove(index, newPage: true, visibleTargets: const []);
+      await _travel.forward().orCancel;
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _locked = false;
+        _navigating = false;
+      });
+      _scheduleProbe();
+    } on TickerCanceled {
+      // Skip, Back, lifecycle, reflow and replacement invalidate this generation.
+    }
+  }
+
+  void _commitMove(
+    int index, {
+    required bool newPage,
+    required List<Rect> visibleTargets,
+  }) {
     setState(() {
-      _locked = true;
       _index = index;
       _attempts = 0;
       _failed = false;
       if (newPage) {
+        _pageSerial++;
+        _hold?.cancel();
+        _browsePositioned = false;
         _clearTargets();
         _pageRecognized = false;
         _revealPhase = TutorialRevealPhase.entering;
@@ -276,19 +377,13 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
         _pendingFocus = true;
       }
     });
-    // Only the short surface commit is debounced, never the explanation/read
-    // or detail scroll. Previous/Next may interrupt that scroll afterwards.
-    _transition?.cancel();
-    _transition = Timer(const Duration(milliseconds: 250), () {
-      if (mounted) setState(() => _locked = false);
-    });
-    _scheduleProbe();
   }
 
   void _scheduleProbe() {
     if (!mounted ||
         !_active ||
         _saving ||
+        _navigating ||
         _probe?.isActive == true ||
         _scrolling ||
         _noSpotlight) {
@@ -330,6 +425,14 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     final previous = _surfaceSize;
     _surfaceSize = size;
     if (previous == null || previous == size) return;
+    // A new caption can reflow at the page swap. External size/motion changes
+    // still cancel through dependencies; a resize during a press must cancel it.
+    if (_navigating &&
+        _pressTarget == null &&
+        _travel.value >= .5 &&
+        previous.width == size.width) {
+      return;
+    }
     // The actual canvas can resize independently of MediaQuery (explanation
     // reflow, split view or test/native viewport constraints).
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -410,6 +513,8 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       }
       if (_step == TutorialStep.resources) _resourceFallback = true;
       _clearTargets();
+      _pageSerial++;
+      _hold?.cancel();
       _attempts = 0;
       _pageRecognized = false;
       _revealPhase = TutorialRevealPhase.entering;
@@ -437,10 +542,14 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     } else {
       await position.animateTo(
         destination,
-        duration: slow
+        duration: _step == TutorialStep.projectCard
+            ? tutorialBrowseScrollDuration(distance)
+            : slow
             ? tutorialScrollDuration(distance)
             : const Duration(milliseconds: 250),
-        curve: Curves.linear,
+        curve: _step == TutorialStep.projectCard
+            ? Curves.easeOutCubic
+            : Curves.linear,
       );
     }
     if (!mounted || generation != _generation) return;
@@ -450,7 +559,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   }
 
   Future<void> _locate(int generation) async {
-    if (_scrolling || generation != _generation) return;
+    if (_scrolling || _navigating || generation != _generation) return;
     _attempts++;
     final rootBox = _surface.currentContext?.findRenderObject() as RenderBox?;
     if (rootBox == null || !rootBox.hasSize) {
@@ -473,15 +582,22 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
         // later metric/image changes do not restart an already recognized page.
         if (_revealPhase != TutorialRevealPhase.unobscured) {
           setState(() => _revealPhase = TutorialRevealPhase.unobscured);
-          _hold = Timer(tutorialPageHold, () {
-            if (!mounted ||
-                !_active ||
-                _revealPhase != TutorialRevealPhase.unobscured) {
-              return;
-            }
-            _pageRecognized = true;
-            _scheduleProbe();
-          });
+          final pageSerial = _pageSerial;
+          _hold = Timer(
+            _step == TutorialStep.projectCard
+                ? tutorialBrowseHold
+                : tutorialPageHold,
+            () {
+              if (!mounted ||
+                  pageSerial != _pageSerial ||
+                  !_active ||
+                  _revealPhase != TutorialRevealPhase.unobscured) {
+                return;
+              }
+              _pageRecognized = true;
+              _scheduleProbe();
+            },
+          );
         }
         return;
       }
@@ -513,9 +629,16 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
           );
         }
         // Keep the resource card hole separate from its fixed Create action.
-        if (_step == TutorialStep.resources && i == 0) {
-          final fab = _find(const Key('resource-create-action'))
-              ?.findRenderObject();
+        if ((_step == TutorialStep.resources ||
+                _step == TutorialStep.projectCard) &&
+            i == 0) {
+          final fab = _find(
+            Key(
+              _step == TutorialStep.resources
+                  ? 'resource-create-action'
+                  : 'proposal-create-action',
+            ),
+          )?.findRenderObject();
           if (fab is RenderBox && fab.hasSize) {
             viewport = Rect.fromLTRB(
               viewport.left,
@@ -534,6 +657,33 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
             rect.height > viewport.height &&
             rect.intersect(viewport).height <
                 (viewport.height * .5).clamp(0, 96);
+        if (_step == TutorialStep.projectCard && !_browsePositioned) {
+          _browsePositioned = true;
+          // Keep already visible cards still. Otherwise reveal the selected
+          // lazy card near the upper middle, above the fixed Create control.
+          final comfortablyVisible =
+              rect.top >= viewport.top && rect.bottom <= viewport.bottom;
+          if (!comfortablyVisible) {
+            final next =
+                (scrollable.position.pixels +
+                        rect.top -
+                        viewport.top -
+                        viewport.height * .18)
+                    .clamp(
+                      scrollable.position.minScrollExtent,
+                      scrollable.position.maxScrollExtent,
+                    );
+            if ((next - scrollable.position.pixels).abs() > 1) {
+              await _scrollTo(
+                scrollable.position,
+                next,
+                generation,
+                slow: false,
+              );
+              return;
+            }
+          }
+        }
         if (rect.top < viewport.top - 1 ||
             rect.top >= viewport.bottom ||
             tooLow ||
@@ -702,19 +852,62 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     ),
   };
 
-  void _selectProject(PublicProposalsState state) {
-    if (_projectId == null &&
-        !_fallback &&
-        state.phase == ProposalLoadPhase.ready) {
-      // Match the actual browse order, including the authenticated Requested
-      // section. Never skip Full/actionless/photo-less public Projects.
-      if (state.requestedItems.isNotEmpty) {
-        _projectId = state.requestedItems.first.proposal.id;
-      } else if (state.ordinaryItems.isNotEmpty) {
-        _projectId = state.ordinaryItems.first.id;
-      }
-      if (_projectId != null) _attempts = 0;
+  Future<bool> _usableTutorialCover(String path) async {
+    try {
+      return await _decodeTutorialCover(path).timeout(tutorialCoverWait);
+    } catch (_) {
+      // Visual selection has an explicit bounded fallback; the original
+      // provider/image error remains visible in the normal cover UI.
+      return false;
     }
+  }
+
+  Future<bool> _decodeTutorialCover(String path) async {
+    final bytes = await ref.read(publicCoverBytesProvider(path).future);
+    // Both dimensions avoid rounding a wide image's inferred height to zero.
+    // This validation thumbnail is never used by the normal cover renderer.
+    final codec = await ui.instantiateImageCodec(
+      bytes,
+      targetWidth: 1,
+      targetHeight: 1,
+    );
+    try {
+      final frame = await codec.getNextFrame();
+      frame.image.dispose();
+      return true;
+    } finally {
+      codec.dispose();
+    }
+  }
+
+  Future<void> _chooseProject(
+    PublicProposalsState state,
+    int generation,
+  ) async {
+    final selected = await selectTutorialProject(
+      tutorialDisplayedProjects(state),
+      usableCover: _usableTutorialCover,
+    );
+    if (!mounted || generation != _generation || !_active) return;
+    _selectingProject = false;
+    if (!identical(state, ref.read(publicProposalsProvider))) {
+      setState(() {});
+      return;
+    }
+    setState(() {
+      _projectId = selected?.id;
+      _attempts = 0;
+    });
+    if (_projectId != null) {
+      final detail = ref.read(proposalDetailProvider);
+      if (detail.phase == ProposalLoadPhase.idle ||
+          detail.proposalId == _projectId) {
+        unawaited(
+          ref.read(proposalDetailProvider.notifier).ensureLoaded(_projectId!),
+        );
+      }
+    }
+    _scheduleProbe();
   }
 
   void _primeProjects(PublicProposalsState state) {
@@ -722,10 +915,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
         state.phase != ProposalLoadPhase.ready) {
       return;
     }
-    final visible = [
-      ...state.requestedItems.map((item) => item.proposal),
-      ...state.ordinaryItems,
-    ];
+    final visible = tutorialDisplayedProjects(state);
     for (final proposal in visible.take(3)) {
       final path = proposal.coverObjectPath;
       if (path != null && _warmedCovers.add(path)) {
@@ -738,17 +928,14 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
         );
       }
     }
-    if (visible.isNotEmpty && _projectId == null && !_projectFallback) {
-      _projectId = visible.first.id;
-      final detail = ref.read(proposalDetailProvider);
-      // Preserve a different detail belonging to a covered caller during
-      // warmup. Visiting this tour's detail can load its selected ID normally.
-      if (detail.phase == ProposalLoadPhase.idle ||
-          detail.proposalId == _projectId) {
-        unawaited(
-          ref.read(proposalDetailProvider.notifier).ensureLoaded(_projectId!),
-        );
-      }
+    if (visible.isNotEmpty &&
+        _projectId == null &&
+        !_projectFallback &&
+        !_navigating &&
+        !_selectingProject) {
+      _selectingProject = true;
+      _attempts = 0;
+      unawaited(_chooseProject(state, _generation));
     }
   }
 
@@ -782,15 +969,10 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
     final l = AppLocalizations.of(context);
     final projects = ref.watch(publicProposalsProvider);
     // Provider reads/mutations are scheduled outside build; frozen tour
-    // selection remains the first actual canonical visible result.
+    // selection remains one frozen canonical visible result.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _active) _primeProjects(projects);
     });
-    if (_step == TutorialStep.projectCard || _isDetail) {
-      // Next stays available while loading. Keep selection active in detail
-      // until the first public read settles, without substituting an example.
-      _selectProject(ref.watch(publicProposalsProvider));
-    }
     void refreshFocus() {
       _interrupt(preserveReveal: true);
       setState(() {
@@ -860,82 +1042,144 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       _measureSurface(constraints.biggest);
-                      return PageStorage(
-                        bucket: _scrollStorage,
-                        child: Stack(
-                          key: _surface,
-                          fit: StackFit.expand,
-                          children: [
-                            ExcludeSemantics(
-                              excluding:
-                                  _step != TutorialStep.messagesTabs &&
-                                  _step != TutorialStep.messagesScopes &&
-                                  _step != TutorialStep.projectGroupChatExample,
-                              child: IgnorePointer(
-                                // The fictional thread has no product actions.
-                                // Allow reading/scrolling it at expanded text.
-                                ignoring:
-                                    _step !=
-                                    TutorialStep.projectGroupChatExample,
-                                child:
-                                    NotificationListener<
-                                      ScrollMetricsNotification
-                                    >(
-                                      onNotification: (_) {
-                                        if (_isDetail) {
-                                          // Async detail sections can move participation
-                                          // after initial focus. Re-locate real controls
-                                          // from layout metrics without loading data here.
-                                          _attempts = 0;
-                                          if (_targets.isNotEmpty) {
-                                            setState(_clearTargets);
-                                          }
-                                          _scheduleProbe();
-                                        }
-                                        return false;
-                                      },
-                                      child: KeyedSubtree(
-                                        key: ValueKey(
-                                          'tutorial-surface-${_surfaceGroup()}',
-                                        ),
-                                        child: PageAppBarScope(
-                                          child: _content(),
-                                        ),
-                                      ),
-                                    ),
+                      return AnimatedBuilder(
+                        animation: Listenable.merge([_travel, _press]),
+                        builder: (context, child) {
+                          final t = _travel.value;
+                          final outgoing = t < .5;
+                          final part = outgoing ? t * 2 : (t - .5) * 2;
+                          final eased = Curves.easeInOutCubic.transform(part);
+                          final opacity = outgoing ? 1 - eased : eased;
+                          final shift =
+                              (outgoing ? -eased : 1 - eased) *
+                              _direction *
+                              constraints.maxWidth *
+                              .12;
+                          return ClipRect(
+                            child: Opacity(
+                              key: const Key('tutorial-page-opacity'),
+                              opacity: _navigating && _pressTarget == null
+                                  ? opacity
+                                  : 1,
+                              child: Transform.translate(
+                                key: const Key('tutorial-page-slide'),
+                                offset: Offset(
+                                  _navigating && _pressTarget == null
+                                      ? shift
+                                      : 0,
+                                  0,
+                                ),
+                                child: child,
                               ),
                             ),
-                            Positioned.fill(
-                              child: IgnorePointer(
-                                ignoring:
-                                    _step ==
-                                    TutorialStep.projectGroupChatExample,
-                                child: AbsorbPointer(
-                                  key: const Key('tutorial-overlay'),
-                                  child: AnimatedBuilder(
-                                    animation: Listenable.merge([
-                                      _reveal,
-                                      _focus,
-                                    ]),
-                                    builder: (context, child) => CustomPaint(
-                                      key: const Key('tutorial-spotlight'),
-                                      painter: TutorialScrim(
-                                        _visibleTargets,
-                                        _noSpotlight
-                                            ? Colors.transparent
-                                            : Colors.black.withValues(
-                                                alpha: .62 * _reveal.value,
-                                              ),
-                                        opacity: _noSpotlight
-                                            ? 0
-                                            : _reveal.value,
+                          );
+                        },
+                        child: PageStorage(
+                          bucket: _scrollStorage,
+                          child: Stack(
+                            key: _surface,
+                            fit: StackFit.expand,
+                            children: [
+                              ExcludeSemantics(
+                                excluding:
+                                    _step != TutorialStep.messagesTabs &&
+                                    _step != TutorialStep.messagesScopes &&
+                                    _step !=
+                                        TutorialStep.projectGroupChatExample,
+                                child: IgnorePointer(
+                                  // The fictional thread has no product actions.
+                                  // Allow reading/scrolling it at expanded text.
+                                  ignoring:
+                                      _step !=
+                                      TutorialStep.projectGroupChatExample,
+                                  child:
+                                      NotificationListener<
+                                        ScrollMetricsNotification
+                                      >(
+                                        onNotification: (_) {
+                                          if (_isDetail) {
+                                            // Async detail sections can move participation
+                                            // after initial focus. Re-locate real controls
+                                            // from layout metrics without loading data here.
+                                            _attempts = 0;
+                                            if (_targets.isNotEmpty) {
+                                              setState(_clearTargets);
+                                            }
+                                            _scheduleProbe();
+                                          }
+                                          return false;
+                                        },
+                                        child: KeyedSubtree(
+                                          key: ValueKey(
+                                            'tutorial-surface-${_surfaceGroup()}',
+                                          ),
+                                          child: PageAppBarScope(
+                                            child: ExcludeFocus(
+                                              // Pointer barriers alone do not block
+                                              // keyboard activation of real controls.
+                                              excluding:
+                                                  _step !=
+                                                  TutorialStep
+                                                      .projectGroupChatExample,
+                                              child: _content(),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                ),
+                              ),
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  ignoring:
+                                      _step ==
+                                      TutorialStep.projectGroupChatExample,
+                                  child: AbsorbPointer(
+                                    key: const Key('tutorial-overlay'),
+                                    child: AnimatedBuilder(
+                                      animation: Listenable.merge([
+                                        _reveal,
+                                        _focus,
+                                      ]),
+                                      builder: (context, child) => CustomPaint(
+                                        key: const Key('tutorial-spotlight'),
+                                        painter: TutorialScrim(
+                                          _visibleTargets,
+                                          _noSpotlight
+                                              ? Colors.transparent
+                                              : Colors.black.withValues(
+                                                  alpha: .62 * _reveal.value,
+                                                ),
+                                          opacity: _noSpotlight
+                                              ? 0
+                                              : _reveal.value,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                              if (_pressTarget case final target?)
+                                Positioned.fill(
+                                  child: ExcludeSemantics(
+                                    child: IgnorePointer(
+                                      child: AnimatedBuilder(
+                                        animation: _press,
+                                        builder: (context, _) => CustomPaint(
+                                          key: const Key('tutorial-press-cue'),
+                                          painter: TutorialPressCue(
+                                            target,
+                                            _press.value,
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       );
                     },
@@ -951,8 +1195,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                             ? .18
                             : .28),
                   ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: TutorialCaption(
                     child: Semantics(
                       liveRegion: true,
                       child: Column(
@@ -962,6 +1205,8 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                               l.tutorialSlogan,
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
+                          if (_step == TutorialStep.introduction)
+                            const SizedBox(height: 12),
                           Text(
                             tutorialCopy(l, _step),
                             key: ValueKey('tutorial-copy-${_step.name}'),
@@ -988,7 +1233,9 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size.fromHeight(56),
                           ),
-                          onPressed: _saving || _locked ? null : _previous,
+                          onPressed: _saving || (_locked && !_navigating)
+                              ? null
+                              : _previous,
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Text(l.tutorialPrevious),
