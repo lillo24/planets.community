@@ -1,3 +1,5 @@
+import '../../../core/localization/skill_display.dart';
+
 import '../../group_projects/presentation/group_project_widgets.dart';
 
 import 'package:flutter/material.dart';
@@ -145,7 +147,7 @@ class ProposalCard extends StatelessWidget {
                           for (final skill in proposal.skills.where(
                             (s) => s.importance == importance,
                           ))
-                            skill.label,
+                            skillDisplayLabel(context, skill.slug, skill.label),
                       ],
                     ),
                   ],
@@ -181,7 +183,7 @@ class ProposalSkillRequirements extends StatelessWidget {
           for (final skill in skills.where((s) => s.importance == importance))
             _SkillLabel(
               label:
-                  '${importance == ProposalSkillImportance.required ? l10n.proposalSkillRequired : l10n.proposalSkillUseful}: ${skill.label}',
+                  '${importance == ProposalSkillImportance.required ? l10n.proposalSkillRequired : l10n.proposalSkillUseful}: ${skillDisplayLabel(context, skill.slug, skill.label)}',
               multiline: multiline,
             ),
       ],

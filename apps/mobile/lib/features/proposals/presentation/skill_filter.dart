@@ -1,3 +1,5 @@
+import '../../../core/localization/skill_display.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/tag_multi_select.dart';
@@ -27,12 +29,16 @@ class SkillFilter extends StatelessWidget {
       for (final category in categories)
         TagMultiSelectCategory(
           id: category.slug,
-          label: category.label,
+          label: skillCategoryDisplayLabel(
+            context,
+            category.slug,
+            category.label,
+          ),
           options: [
             for (final skill in category.skills)
               TagMultiSelectOption(
                 id: skill.id,
-                label: skill.label,
+                label: skillDisplayLabel(context, skill.slug, skill.label),
                 keyValue: skill.slug,
               ),
           ],
