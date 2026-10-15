@@ -1,5 +1,12 @@
 # Supabase database
 
+The provisional D-M member-contact migrations own named personal pair/origin-Group
+consent, without representative or manager oversight. See the
+[review-only contract](../docs/development/member-contact-backend-review.md) for
+migration owners, current RPC versions, verification and the unapproved lifetime
+boundary. `tests/140_member_contact.test.sql` protects that candidate; green tests
+do not approve source merge or hosted rollout.
+
 GRP01 adds private group identity/authority/receipts/suppression actions, narrow
 public/manager/staff RPCs and a genuine target in the existing reporting queue.
 See the [group contract](../docs/development/persistent-groups.md),

@@ -1,5 +1,12 @@
 # Repository scripts
 
+- `verify-local-member-contact.mjs` owns real local OTP/PostgREST checks for
+  personal consent, retained history, legacy readers and observed context-loss races.
+- `verify-local-member-contact-upgrade.mjs` resets an explicitly disposable local
+  predecessor, hashes existing records and verifies additive/repeated upgrades.
+  Both are in `check:db`; see the [provisional contract](../docs/development/member-contact-backend-review.md)
+  for isolation and the unresolved policy gate. No hosted or peer-stack use.
+
 - `verify-local-group-contact.mjs` owns D01 real Auth/PostgREST checks for
   private requests, explicit conversation admission, receipts, v5/v6 compatibility,
   unread, targeted reporting and observed send/revoke races.
