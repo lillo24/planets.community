@@ -49,7 +49,7 @@ class ContactLocalIdentity implements AuthGateway {
   const ContactLocalIdentity(this.id);
   final String id;
   @override
-  AuthSnapshot get currentSnapshot =>
+  Future<AuthSnapshot> restoreSnapshot() async =>
       AuthSnapshot(identity: AuthIdentity(id: id));
   @override
   Stream<AuthSnapshot> get authStateChanges => const Stream.empty();

@@ -79,8 +79,7 @@ void main() {
       }
       SupabaseClient? currentClient;
       ProviderContainer? currentScope;
-      final containers = <ProviderContainer>[];
-      final clients = <SupabaseClient>[];
+      var identityEpoch = 0;
       var lost = false;
       var lostCoordination = false;
       final originalError = FlutterError.onError;
@@ -98,13 +97,18 @@ void main() {
       }) async {
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pumpAndSettle();
+        // Unmount before disposing the old actor's timers, subscriptions and
+        // lifecycle observers. A later A -> B -> A mount is a fresh identity.
+        currentScope?.dispose();
+        currentScope = null;
+        await currentClient?.dispose();
+        currentClient = null;
         final client = SupabaseClient(
           config.supabaseUrl.toString(),
           config.supabasePublishableKey,
           accessToken: () => Future.value(token),
         );
         currentClient = client;
-        clients.add(client);
         final container = ProviderContainer(
           overrides: [
             appConfigProvider.overrideWithValue(config),
@@ -140,12 +144,11 @@ void main() {
             ),
           ],
         );
-        containers.add(container);
         currentScope = container;
         await container.read(authSessionProvider.notifier).start();
         await tester.pumpWidget(
           UncontrolledProviderScope(
-            key: ValueKey(containers.length),
+            key: ValueKey(++identityEpoch),
             container: container,
             child: const PlanetsApp(),
           ),
@@ -163,12 +166,8 @@ void main() {
       addTearDown(() async {
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pumpAndSettle();
-        for (final container in containers) {
-          container.dispose();
-        }
-        for (final client in clients) {
-          await client.dispose();
-        }
+        currentScope?.dispose();
+        await currentClient?.dispose();
       });
       Future<void> tap(String key) async {
         final finder = find.byKey(Key(key));
@@ -324,7 +323,14 @@ void main() {
       );
       await shot('human-and-group-en');
       cRouter.go(groupContactInfoRoute(chat));
-      await harness.waitFor(tester, find.text('Conversation audience'));
+      // The app-bar title exists during loading; evidence requires the actual
+      // authorized audience, not merely a route that has mounted.
+      await harness.waitFor(tester, find.text('Block Fictional alice'));
+      await harness.waitFor(
+        tester,
+        find.text('Fictional shared garden proposal'),
+      );
+      expect(find.byType(CircularProgressIndicator), findsNothing);
       await shot('audience-en');
       final another = await asPerson(bob, bobToken);
       another.read(appRouterProvider).go(groupContactRequestRoute(request));
