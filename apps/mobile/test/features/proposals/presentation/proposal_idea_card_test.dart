@@ -135,11 +135,7 @@ void main() {
                         await tester.tapAt(coverRect.center);
                       }
                       expect(taps, 1);
-                      final skill = find.text(
-                        locale == 'it'
-                            ? 'Necessaria: Mural painting'
-                            : 'Required: Mural painting',
-                      );
+                      final skill = find.text('Mural painting');
                       expect(skill, findsOneWidget);
                       expect(
                         tester

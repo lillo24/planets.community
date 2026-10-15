@@ -212,7 +212,7 @@ RoutingConfig _routingConfig(
         }
         if (path == '/' &&
             !startupFlow.hasEntered &&
-            session.identity == null) {
+            session.phase == AuthSessionPhase.signedOut) {
           return '/welcome';
         }
         if (path == '/welcome' &&

@@ -10,6 +10,7 @@ class FakeAuthGateway implements AuthGateway {
 
   AuthSnapshot snapshot;
   Object? snapshotError;
+  Future<void>? restorationDelay;
   Object? streamError;
   Object? requestError;
   Object? verifyError;
@@ -29,7 +30,8 @@ class FakeAuthGateway implements AuthGateway {
       StreamController<AuthSnapshot>.broadcast();
 
   @override
-  AuthSnapshot get currentSnapshot {
+  Future<AuthSnapshot> restoreSnapshot() async {
+    if (restorationDelay case final delay?) await delay;
     if (snapshotError != null) throw snapshotError!;
     return snapshot;
   }

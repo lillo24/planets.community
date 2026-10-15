@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/page_app_bar.dart';
+import '../../../core/widgets/event_schedule.dart';
 import '../../../core/widgets/user_scroll_pagination.dart';
 import '../../geographic_discovery/domain/map_discovery.dart';
 import '../../geographic_discovery/presentation/map_view_button.dart';
@@ -16,7 +17,6 @@ import '../../locations/presentation/location_attribution.dart';
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../locations/domain/location_preview.dart';
-import '../../../core/time/event_time.dart';
 import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/browse_filter_button.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -344,7 +344,6 @@ class _PublicRecurringActivityDetailScreenState
       );
     }
     final resolvedDetail = detail!;
-    final locale = Localizations.localeOf(context).toLanguageTag();
     final participation = ProjectParticipationSection(
       projectId: resolvedDetail.id,
       projectKind: ProjectKind.recurring,
@@ -425,9 +424,27 @@ class _PublicRecurringActivityDetailScreenState
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: AppSpacing.small),
-            Text(formatRecurringSchedule(resolvedDetail.schedule, context)),
-            Text(l10n.tavoliTimezone(resolvedDetail.schedule.eventTimezone)),
-            Text(l10n.tavoliDuration(resolvedDetail.schedule.durationMinutes)),
+            ScheduleSurface(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    formatRecurringSchedule(resolvedDetail.schedule, context),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  Text(
+                    l10n.tavoliDuration(
+                      resolvedDetail.schedule.durationMinutes,
+                    ),
+                  ),
+                  Text(
+                    l10n.tavoliTimezone(resolvedDetail.schedule.eventTimezone),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: AppSpacing.large),
             Text(
               l10n.tavoliUpcomingMeetings,
@@ -438,18 +455,12 @@ class _PublicRecurringActivityDetailScreenState
               Text(l10n.tavoliNoUpcomingMeetings)
             else
               for (final occurrence in resolvedDetail.nextOccurrences)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.schedule),
-                  title: Text(
-                    formatEventDateTime(
-                      occurrence.startsAt,
-                      occurrence.eventTimezone,
-                      locale,
-                    ),
-                  ),
-                  subtitle: Text(
-                    '${formatEventDateTime(occurrence.endsAt, occurrence.eventTimezone, locale)} · ${occurrence.eventTimezone}',
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.small),
+                  child: EventSchedule(
+                    startsAt: occurrence.startsAt,
+                    endsAt: occurrence.endsAt,
+                    timeZone: occurrence.eventTimezone,
                   ),
                 ),
             ProjectResourceNeedsSection(projectId: resolvedDetail.id),

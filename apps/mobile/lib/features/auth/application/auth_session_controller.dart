@@ -56,12 +56,18 @@ class AuthSessionController extends Notifier<AuthSessionState> {
   }
 
   Future<void> _restoreSnapshot() async {
+    final revision = _revision;
     try {
-      await _applySnapshot(ref.read(authGatewayProvider).currentSnapshot);
+      final snapshot = await ref.read(authGatewayProvider).restoreSnapshot();
+      // Stream events (including logout/account replacement) take precedence
+      // over an older recovery result and already own their profile check.
+      if (ref.mounted && revision == _revision) await _applySnapshot(snapshot);
     } catch (_) {
       // Gateway snapshot failures must not impersonate an absent session.
-      _revision += 1;
-      state = const AuthSessionState.restorationFailed();
+      if (ref.mounted && revision == _revision) {
+        _revision += 1;
+        state = const AuthSessionState.restorationFailed();
+      }
     }
   }
 

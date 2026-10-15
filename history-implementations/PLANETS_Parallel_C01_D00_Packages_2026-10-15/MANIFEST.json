@@ -1,0 +1,132 @@
+{
+  "version": "PARALLEL-CD-2026-10-15-v1",
+  "prepared": "2026-10-15",
+  "reference_main": "7d4b429019f8d334468e56ca9db465f5ac23d8a8",
+  "files": [
+    {
+      "path": "CHAT_C01/00_SHARED_EXECUTION_CONTRACT.md",
+      "bytes": 19867,
+      "sha256": "72ae40ec308f1b9d87715178d647f0279da90b8a0512a09c83e195122b5478d4"
+    },
+    {
+      "path": "CHAT_C01/00_START_HERE_C01.md",
+      "bytes": 8157,
+      "sha256": "a7d085730ddbe9ad116a65aa598d2c4eb2e6870856a9e80e873b201cd435dce2"
+    },
+    {
+      "path": "CHAT_C01/01_C_R00_DESIGN_CONTRACT.md",
+      "bytes": 4563,
+      "sha256": "42b4aa2c95a20e3ce8baab963f33d8e43930f55974448cb871806244ed2199df"
+    },
+    {
+      "path": "CHAT_C01/02_C_R01_GROUP_ROOMS_AND_SETTINGS.md",
+      "bytes": 4111,
+      "sha256": "8cee47ee6132414adb4be60869f67b98f1b18cbf0d7b6d3d2509f45501733cc9"
+    },
+    {
+      "path": "CHAT_C01/03_C_R02_HISTORY_INVITATIONS_ALERTS.md",
+      "bytes": 6061,
+      "sha256": "91bc55ad62b9a69bb6cd9bbf511192233c13742646e75ff7bb371170932f6371"
+    },
+    {
+      "path": "CHAT_C01/04_C_R03_FOLDERS_HIDE_MUTE.md",
+      "bytes": 5006,
+      "sha256": "deadfbc82eb4e90168bfc2ebf4fc4b21ecf640413ad61d1615b17d8a161fb718"
+    },
+    {
+      "path": "CHAT_C01/05_C_R04_LINKS_EXTERNAL_CHANNELS.md",
+      "bytes": 3425,
+      "sha256": "f98948bcc17fa660ef27fab522bbeffe83cca846ac0c3da32a3e4a905baa4b17"
+    },
+    {
+      "path": "CHAT_C01/06_C_R05_CONVERSION_AND_INVITATIONS.md",
+      "bytes": 5772,
+      "sha256": "99f9a1230b0cdccf9a99c0fae60d595c6fb2491ffff8e20d19bee61773b7b8d1"
+    },
+    {
+      "path": "CHAT_C01/07_C_R06_CONTINUOUS_CHAT.md",
+      "bytes": 4671,
+      "sha256": "8860c3d2317dc92e59aab69bf4be6373a28824b79cba36480a12dfc5fda64a1d"
+    },
+    {
+      "path": "CHAT_C01/08_C_R07_VALIDATE_AND_MERGE.md",
+      "bytes": 4279,
+      "sha256": "4748a3a27d8dd8d2953bc1d6f533f32bc9e2848221797e5c7533d8d2591af338"
+    },
+    {
+      "path": "CHAT_D00/00_SHARED_EXECUTION_CONTRACT.md",
+      "bytes": 19867,
+      "sha256": "72ae40ec308f1b9d87715178d647f0279da90b8a0512a09c83e195122b5478d4"
+    },
+    {
+      "path": "CHAT_D00/00_START_HERE_D00.md",
+      "bytes": 6387,
+      "sha256": "9bbca895cbeec53e1fb11bf0d3f592ac79fbb3d2be83a57d85ee451e9ae4f669"
+    },
+    {
+      "path": "CHAT_D00/01_D_R00_DECISIONS_AND_DELTA.md",
+      "bytes": 4996,
+      "sha256": "84f6d85ecce635e26e5d5d0bb78872695c471339c6e41de0d5af5e48973c63ab"
+    },
+    {
+      "path": "CHAT_D00/02_D_R01_REPRESENTATIVE_CONTACT.md",
+      "bytes": 4517,
+      "sha256": "4ab7e6ced8801c8268b5bf0d9413f0e3374b8e427ef2b6971cce2591908e06c2"
+    },
+    {
+      "path": "CHAT_D00/03_D_M00_MEMBER_CHAT_CONTRACT.md",
+      "bytes": 4267,
+      "sha256": "c479ecda86fd21ee3dcb67cdf6934b29238e7c51ad56226484ed0ef1769522bc"
+    },
+    {
+      "path": "CHAT_D00/04_D_M01_MEMBER_CHAT_BACKEND.md",
+      "bytes": 4547,
+      "sha256": "5a7424f67a0640f58c217393c8a742c4e6873550cfbfdbf05ac2b530a2702b5f"
+    },
+    {
+      "path": "CHAT_D00/05_D_M02_MEMBER_ACTIONS_UI.md",
+      "bytes": 3787,
+      "sha256": "0882a2f3d460ae8dde7421d974d97200407635601bd39dee0d2368ef82341b47"
+    },
+    {
+      "path": "CHAT_D00/06_D_R02_MULTI_GROUP_COORDINATION.md",
+      "bytes": 3581,
+      "sha256": "9ecba5ff0ffa30b5e558da4421e1b3d2c1cff16504f62223dc27cab2cc5cef19"
+    },
+    {
+      "path": "CHAT_D00/07_D_R03_INBOX_NOTICES_INTEGRATION.md",
+      "bytes": 4451,
+      "sha256": "e6d675b30e1baf97cca0b4c89f1edc88c18c3111aa4ae0c6d1a8edcdca343345"
+    },
+    {
+      "path": "CHAT_D00/08_D_R04_VALIDATE_AND_MERGE.md",
+      "bytes": 4336,
+      "sha256": "de5c3f28c98da1e5841102c9a4533d931f1274e8f6b5f69ce4c450599288cd99"
+    },
+    {
+      "path": "PLANETS_Chat_C01_Full_Package_2026-10-15.md",
+      "bytes": 67574,
+      "sha256": "3168691e1097ec605d4f4933facacf7d9f0213394fb55ce6b26621d65e037747"
+    },
+    {
+      "path": "PLANETS_Chat_D00_Full_Package_2026-10-15.md",
+      "bytes": 62398,
+      "sha256": "899038bfaee7816500a42038b1e94d9f4cb32417157aadbc814137cb893e4236"
+    },
+    {
+      "path": "READ_ME_FIRST.md",
+      "bytes": 3658,
+      "sha256": "1774b44e3cec227d9a1d4e642775033bab75810ea2dee7adf1e95c86f98d6194"
+    },
+    {
+      "path": "SHARED_EXECUTION_CONTRACT.md",
+      "bytes": 19867,
+      "sha256": "72ae40ec308f1b9d87715178d647f0279da90b8a0512a09c83e195122b5478d4"
+    },
+    {
+      "path": "SOURCES_AND_PROVENANCE.md",
+      "bytes": 2584,
+      "sha256": "1d1138ac7a6dd81c238dd32cdb64ab043f219265a025d3a6c4fd139f43e16009"
+    }
+  ]
+}

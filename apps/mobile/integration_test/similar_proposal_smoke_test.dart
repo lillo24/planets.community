@@ -351,7 +351,7 @@ class _SmokeIdentity implements AuthGateway {
   const _SmokeIdentity(this.actor);
   final String actor;
   @override
-  AuthSnapshot get currentSnapshot =>
+  Future<AuthSnapshot> restoreSnapshot() async =>
       AuthSnapshot(identity: AuthIdentity(id: actor));
   @override
   Stream<AuthSnapshot> get authStateChanges => const Stream.empty();

@@ -344,6 +344,7 @@ PublicRecurringActivityDetail publicRecurringDetailFixture({
   String creatorProfileId = 'user-1',
   String? coverObjectPath,
   ProjectCapacitySnapshot? capacity,
+  List<RecurringActivityOccurrence>? nextOccurrences,
 }) => PublicRecurringActivityDetail(
   id: id,
   creatorProfileId: creatorProfileId,
@@ -358,9 +359,11 @@ PublicRecurringActivityDetail publicRecurringDetailFixture({
   administrativeArea: 'Emilia-Romagna',
   publicLocationLabel: 'Central Bologna',
   schedule: recurringScheduleFixture(type: type),
-  nextOccurrences: lifecycle == RecurringActivityLifecycle.published
-      ? [publicRecurringSummaryFixture().nextOccurrence]
-      : const [],
+  nextOccurrences:
+      nextOccurrences ??
+      (lifecycle == RecurringActivityLifecycle.published
+          ? [publicRecurringSummaryFixture().nextOccurrence]
+          : const []),
   exactMeetingText: restricted ? null : 'At the long reading-room table',
   exactLocationRestricted: restricted,
   coverObjectPath: coverObjectPath,

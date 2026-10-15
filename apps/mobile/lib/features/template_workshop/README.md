@@ -74,3 +74,7 @@ location remain unset. Receipt recovery never rewrites existing drafts.
 ## Discovery pagination
 
 The feed requests 7 records, then 15, then 20 per successful page. Each user drag within one viewport of the bottom can request one continuation. Failed continuations retain records, cursor and limit and require explicit Retry. Refresh, filters and identity changes reset to 7. Cards construct lazily with zero offscreen cache; public covers retain immutable-path Riverpod caching. Short-content and accessibility navigation have deliberate fallback controls. Template detail return keeps its existing refresh/reset policy. Map search and blueprint paging retain separate behavior.
+
+UIPOLISH01 catalog cards use the shared measured single-row skill preview with
+plain display names and an inert overflow marker under the card's detail action.
+`_TemplateSkills` remains the complete importance-labelled detail presentation.

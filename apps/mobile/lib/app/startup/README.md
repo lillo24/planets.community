@@ -6,6 +6,11 @@ It does not own Auth, profile readiness, native-link delivery or product actions
 - `startup_flow.dart` owns the explicit tutorial version, approved page registry,
   installation preference store, run-only entry/defer flags and sanitized resume
   destinations. Bootstrap restores its preference before launching the app.
+- `startup_session_screen.dart` owns the ordinary root's static bundled logo and
+  existing localized Auth status/retry while session recovery or profile readiness
+  is unresolved. The shell does not mount Home or bottom navigation during this
+  state. Root redirects to Welcome only after definitive sign-out; no loading
+  route, timer, extra navigation stack or external-journey deferral is added.
 - `welcome_screen.dart` uses the shared `core/widgets/planets_hero.dart` native
   circular orbits/stars around the unchanged bundled founder logo. After the
   finite upward entrance, the shared website-speed planet rotations and logo

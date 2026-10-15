@@ -10,6 +10,13 @@ feature never persists a parallel signed-in flag, email address, or OTP value.
   success, cancellation, and safe failure results without SDK objects.
 - `data/auth_gateway.dart` adapts Supabase Auth and the existing `profiles`
   table without leaking SDK objects into application or presentation code.
+  `restoreSnapshot()` resolves initial recovery asynchronously. In resolved
+  supabase_flutter 2.17.2, initialization installs persisted state before returning
+  but expired tokens recover in the background. The gateway awaits a refresh only
+  for expired recoverable sessions; GoTrue 2.27.2 coalesces concurrent refreshes by
+  token. Initial-session stream replays are excluded because this operation owns
+  initial state. Invalid refresh tokens resolve sign-out; retained-session errors
+  expose restoration retry. Valid sessions and absent sessions need no HTTP read.
 - `data/provider_auth_adapter.dart` owns the provider boundary, configuration-gated
   Android Google adapter and canonical Supabase ID-token exchange. The fallback
   makes both providers unavailable.
@@ -18,6 +25,8 @@ feature never persists a parallel signed-in flag, email address, or OTP value.
 - `application/auth_session_controller.dart` restores and observes sessions,
   then distinguishes a missing anchor, an incomplete display name, and a
   completed profile.
+  A newer stream result supersedes an in-flight restore, preventing stale logout
+  and duplicate profile checks when a refresh event arrives before its Future.
 - `application/auth_command_controller.dart` owns explicit request, verify,
   resend, provider, profile-retry, and sign-out commands. Its `_completeSignIn`
   routine owns shared profile-anchor/readiness completion.

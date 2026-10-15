@@ -1,4 +1,7 @@
 {
+  "skillPreviewHidden": "{count} altre competenze. Apri i dettagli per la lista completa.",
+  "@skillPreviewHidden": {"placeholders": {"count": {"type": "int"}}},
+
   "proposalNeedsManageTitle": "Gestisci competenze e risorse",
   "proposalResourcesCreatorOnly": "Solo il Creatore può gestire materiali, cronologia e corrispondenze. Qui sotto trovi le necessità pubbliche attuali.",
   "proposalSkillsSave": "Salva competenze",

@@ -310,12 +310,103 @@ void main() {
       anchor: anchor,
       settle: false,
     );
-    expect(find.byKey(const Key('welcome-screen')), findsNothing);
-    expect(find.byKey(const Key('welcome-explore')), findsNothing);
+    _expectStartupOnly();
+    for (var frame = 0; frame < 4; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      _expectStartupOnly();
+    }
     delay.complete();
     await tester.pumpAndSettle();
     expect(app.read(authSessionProvider).phase, AuthSessionPhase.ready);
     expect(app.read(appRouterProvider).routerDelegate.state.uri.path, '/');
+  });
+
+  for (final completeProfile in [true, false]) {
+    testWidgets(
+      'delayed recovery never paints guest frames (profile=$completeProfile)',
+      (tester) async {
+        final recovery = Completer<void>();
+        final readiness = Completer<void>();
+        final auth = FakeAuthGateway()..restorationDelay = recovery.future;
+        final anchor = FakeProfileAnchorGateway()
+          ..readiness = completeProfile
+              ? ProfileAnchorReadiness.complete
+              : ProfileAnchorReadiness.incomplete
+          ..readinessDelay = readiness.future;
+        final app = await _pump(
+          tester,
+          auth: auth,
+          anchor: anchor,
+          settle: false,
+        );
+        _expectStartupOnly();
+        for (var frame = 0; frame < 4; frame++) {
+          await tester.pump(const Duration(milliseconds: 16));
+          _expectStartupOnly();
+        }
+        // Recovery's event can arrive while the earlier empty snapshot read is
+        // still pending. That older result must not undo the recovered identity.
+        auth.emit(const AuthSnapshot(identity: AuthIdentity(id: 'user-1')));
+        await tester.pump();
+        _expectStartupOnly();
+        recovery.complete();
+        for (var frame = 0; frame < 4; frame++) {
+          await tester.pump(const Duration(milliseconds: 16));
+          _expectStartupOnly();
+        }
+        readiness.complete();
+        await tester.pumpAndSettle();
+        expect(
+          app.read(authSessionProvider).phase,
+          completeProfile
+              ? AuthSessionPhase.ready
+              : AuthSessionPhase.profileSetupRequired,
+        );
+        expect(anchor.existsCount, 1);
+        expect(app.read(appRouterProvider).state.uri.path, '/');
+        expect(find.byKey(const Key('welcome-explore')), findsNothing);
+        expect(find.byKey(const Key('nav-home')), findsOneWidget);
+      },
+    );
+  }
+
+  testWidgets(
+    'delayed definitive guest enters Welcome without deferring tutorial',
+    (tester) async {
+      final recovery = Completer<void>();
+      final auth = FakeAuthGateway()..restorationDelay = recovery.future;
+      final app = await _pump(
+        tester,
+        auth: auth,
+        registry: _pages(),
+        settle: false,
+      );
+      _expectStartupOnly();
+      await tester.pump(const Duration(milliseconds: 16));
+      _expectStartupOnly();
+      recovery.complete();
+      await tester.pumpAndSettle();
+      expect(app.read(startupFlowProvider).hasEntered, isFalse);
+      expect(app.read(startupFlowProvider).tutorialDeferred, isFalse);
+      expect(find.byKey(const Key('welcome-explore')), findsOneWidget);
+      await _tap(tester, 'welcome-explore');
+      expect(app.read(appRouterProvider).state.uri.path, '/intro');
+    },
+  );
+
+  testWidgets('expired unrecoverable session shows normal Welcome', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      auth: FakeAuthGateway(
+        snapshot: const AuthSnapshot(
+          identity: AuthIdentity(id: 'expired'),
+          isExpired: true,
+        ),
+      ),
+    );
+    expect(find.byKey(const Key('welcome-explore')), findsOneWidget);
   });
 
   testWidgets('restoration error shows retry instead of signed-out actions', (
@@ -335,6 +426,48 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('welcome-explore')), findsOneWidget);
   });
+
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'startup loading and authenticated retry fit $brightness at large Italian text',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(320, 480));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        tester.platformDispatcher.localesTestValue = [const Locale('it')];
+        tester.platformDispatcher.platformBrightnessTestValue = brightness;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+        addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+        final recovery = Completer<void>();
+        final auth = FakeAuthGateway()
+          ..restorationDelay = recovery.future
+          ..snapshotError = StateError('offline');
+        final app = await _pump(tester, auth: auth, settle: false);
+        _expectStartupOnly();
+        await tester.pump(const Duration(milliseconds: 16));
+        _expectStartupOnly();
+        recovery.complete();
+        await tester.pumpAndSettle();
+        expect(
+          app.read(authSessionProvider).phase,
+          AuthSessionPhase.restorationFailed,
+        );
+        _expectStartupOnly();
+        auth.snapshotError = null;
+        auth.snapshot = const AuthSnapshot(
+          identity: AuthIdentity(id: 'user-1'),
+        );
+        final retry = find.widgetWithText(FilledButton, 'Riprova');
+        await tester.ensureVisible(retry);
+        await tester.tap(retry);
+        await tester.pumpAndSettle();
+        expect(app.read(authSessionProvider).phase, AuthSessionPhase.ready);
+        expect(find.byKey(const Key('welcome-explore')), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   for (final complete in [true, false]) {
     testWidgets('Welcome OTP returns to public Home with complete=$complete', (
@@ -561,6 +694,15 @@ void main() {
     expect(find.text('PLANETS'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+}
+
+void _expectStartupOnly() {
+  expect(find.byKey(const Key('startup-session-screen')), findsOneWidget);
+  expect(find.byKey(const Key('welcome-screen')), findsNothing);
+  expect(find.byKey(const Key('welcome-explore')), findsNothing);
+  expect(find.byKey(const Key('welcome-login')), findsNothing);
+  expect(find.byKey(const Key('nav-home')), findsNothing);
+  expect(find.byType(NavigationBar), findsNothing);
 }
 
 TutorialRegistry _pages() => TutorialRegistry(
