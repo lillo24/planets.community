@@ -277,6 +277,10 @@ void main() {
     testWidgets(
       '$language slow public Trento preview keeps compact fallback until decoded',
       (t) async {
+        t.view.physicalSize = const Size(320, 800);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.resetPhysicalSize);
+        addTearDown(t.view.resetDevicePixelRatio);
         final tiles = DelayedTiles();
         final pending = Completer<LocationPreview?>();
         const item = PreviewItem('one_time', 'A');
@@ -737,6 +741,9 @@ void main() {
       expect(images.every((image) => image.debugDisposed), true);
       await settle(t);
       expect(find.byKey(const Key('public-detail-overlay')), findsNothing);
+      expect(find.text('Trento'), findsOneWidget);
+      expect(find.byKey(const Key('location-open-maps-A')), findsOneWidget);
+      expect(find.byKey(const Key('location-map-action-A')), findsNothing);
       expect(store.count, 0);
       expect(store.enabled, false);
       expect(static.calls, 0);

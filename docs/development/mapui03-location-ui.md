@@ -28,8 +28,8 @@ light/dark, 320dp and normal/2x text. Tile images in these tests are synthetic.
 Reviewed captures: [manual city](evidence/mapui03/en-light-1.0x-manual.png),
 [provider text at 2x](evidence/mapui03/it-dark-2.0x-geoapify.png), and
 [decoded synthetic canvas](evidence/mapui03/it-synthetic-rendered.png). The last
-capture uses the existing tile-test viewport (800dp); it is not a live Geoapify
-map. The provider capture deliberately exposes the unresolved footer treatment.
+capture is also 320dp and is not a live Geoapify map. The provider capture
+deliberately exposes the unresolved footer treatment.
 
 Focused validation passed: 93 compact/preview/tile widget tests, plus all 31
 `node --test scripts/lib/map-provider.test.mjs` tests. Captures were produced with

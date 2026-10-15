@@ -160,7 +160,7 @@ class ReadOnlyBasemapState extends State<ReadOnlyBasemap> {
       if (_failed) {
         return widget.fallback ?? Text(widget.failureLabel);
       }
-      if (_revoked) return const SizedBox.shrink();
+      if (_revoked) return widget.fallback ?? const SizedBox.shrink();
       if (!_ready) return widget.pending ?? const SizedBox.shrink();
       final canvas = Semantics(
         image: true,
