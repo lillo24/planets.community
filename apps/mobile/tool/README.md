@@ -1,6 +1,7 @@
-# Mobile distribution tooling
+# Mobile maintenance and distribution tooling
 
-This folder owns the closed-test build preflight, separate from runtime config.
+This folder owns closed-test build preflight and offline reference-data updates,
+separate from runtime config.
 
 - `staging_distribution.dart` rejects local/example backends, non-publishable
   keys, extra config keys and enabled/omitted demo tools without logging values.
@@ -15,6 +16,23 @@ This folder owns the closed-test build preflight, separate from runtime config.
   and staging editor search. Check current Play history before choosing the code.
   It builds only; it never installs, uploads or publishes. See
   [MAP-LIVE01](../../../docs/development/map-live01-android-activation.md).
+- `generate_italian_municipalities.py` uses Python 3's standard library to check
+  the pinned ISTAT workbook SHA-256/schema/count, then extract only official
+  municipality name aliases into a const Dart lookup. It invokes the repository's
+  Dart formatter. `data/istat-municipalities-2026-02-21.xlsx` is the original
+  official workbook, retained for reproducibility, not packaged in the app.
+  Source and adaptation are licensed CC BY 4.0; see
+  [the source record](../../../docs/development/mapui03-location-ui.md).
+
+Regenerate from `apps/mobile` with Python 3 on PATH:
+
+```text
+python tool/generate_italian_municipalities.py tool/data/istat-municipalities-2026-02-21.xlsx
+```
+
+A source refresh deliberately fails until the workbook checksum, expected schema/
+municipality count, source/retrieval dates and licence notice are reviewed and
+updated together. Normal Flutter builds need neither Python nor network access.
 
 From `apps/mobile`, run `dart run tool/build_staging_bundle.dart`. The stricter
 managed-project origin/key rules apply only to CT-01 distribution, not local or

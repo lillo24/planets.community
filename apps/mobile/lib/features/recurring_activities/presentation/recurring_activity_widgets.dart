@@ -109,6 +109,7 @@ class RecurringActivityCard extends StatelessWidget {
                         shortPublicLocationLabel(
                           activity.locality,
                           activity.publicLocationLabel,
+                          countryCode: activity.countryCode,
                         ) ??
                         l10n.proposalPlaceUndecided,
                     textKey: Key('tavolo-public-location-${activity.id}'),

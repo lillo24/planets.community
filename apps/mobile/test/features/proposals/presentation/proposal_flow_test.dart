@@ -119,12 +119,14 @@ void main() {
   );
 
   testWidgets(
-    'restricted location uses safe copy and public location is shown',
+    'restricted location uses safe copy and independent public city is shown',
     (tester) async {
       await tester.pumpWidget(
         _localized(ProposalLocation(detail: proposalDetailFixture())),
       );
-      expect(find.text('Central Bologna'), findsOneWidget);
+      expect(find.text('Bologna'), findsOneWidget);
+      expect(find.text('Central Bologna'), findsNothing);
+      expect(find.byKey(const Key('location-attribution')), findsNothing);
       expect(
         find.text('Exact location available after joining.'),
         findsOneWidget,

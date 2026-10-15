@@ -11,6 +11,7 @@ import '../../../core/widgets/user_scroll_pagination.dart';
 import '../../geographic_discovery/domain/map_discovery.dart';
 import '../../geographic_discovery/presentation/map_view_button.dart';
 import '../../locations/presentation/location_attribution.dart';
+import '../../locations/presentation/independent_public_city.dart';
 
 import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
@@ -251,8 +252,15 @@ class _PublicRecurringActivitiesScreenState
                         .load(reset: false),
                     child: Text(l10n.tavoliLoadMore),
                   ),
-                // DTOs omit provider provenance; nonempty labels may be derived.
-                if (state.items.isNotEmpty || state.requestedItems.isNotEmpty)
+                // Independent catalogue names require no Geoapify footer.
+                if ([
+                  ...state.items,
+                  ...state.requestedItems.map((x) => x.activity),
+                ].any(
+                  (x) =>
+                      cataloguedPublicCityName(x.locality, x.countryCode) ==
+                      null,
+                ))
                   const LocationAttribution(),
                 // Let credit links scroll above the floating Create action.
                 const SizedBox(height: 80),
