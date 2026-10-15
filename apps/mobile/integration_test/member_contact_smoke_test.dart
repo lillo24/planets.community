@@ -83,6 +83,13 @@ void main() {
     var identityEpoch = 0, submits = 0;
     var dropped = false;
     String? submittedRequest;
+    final originalError = FlutterError.onError;
+    FlutterErrorDetails? lastError;
+    FlutterError.onError = (details) {
+      lastError = details;
+      originalError?.call(details);
+    };
+    addTearDown(() => FlutterError.onError = originalError);
     Future<ProviderContainer> asPerson(
       String id,
       String token, {
@@ -242,7 +249,14 @@ void main() {
       }
       await loaded();
       await tester.pump(const Duration(milliseconds: 600));
-      expect(tester.takeException(), isNull, reason: 'Native layout $name');
+      final exception = tester.takeException();
+      if (exception != null) {
+        debugPrint(lastError?.toString());
+        await binding
+            .takeScreenshot('m02-render-failure-$name')
+            .timeout(const Duration(seconds: 30));
+      }
+      expect(exception, isNull, reason: 'Native layout $name');
       final context = tester.element(find.byType(Scaffold).last);
       expect(MediaQuery.sizeOf(context).width, closeTo(320, 0.5));
       expect(MediaQuery.textScalerOf(context).scale(10), 20);

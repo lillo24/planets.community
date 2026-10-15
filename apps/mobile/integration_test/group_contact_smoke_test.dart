@@ -331,7 +331,11 @@ void main() {
       final exception = tester.takeException();
       if (exception != null) {
         debugPrint('D native render failure: ${exception.runtimeType}');
+        debugPrint(lastError?.toString());
         debugPrintStack(stackTrace: lastError?.stack);
+        await binding
+            .takeScreenshot('d04-render-failure-$name')
+            .timeout(const Duration(seconds: 30));
       }
       expect(exception, isNull);
       final context = tester.element(find.byType(Scaffold).last);
