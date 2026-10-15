@@ -1,3 +1,5 @@
+import 'independent_public_city.dart';
+
 /// Compact area text from PUBLIC fields only. Never pass exact meeting data.
 /// Without structure, only established Italian province/region suffixes can be
 /// removed. International/manual comma names remain intact; no geocoding occurs.
@@ -5,7 +7,10 @@ String? shortPublicLocationLabel(
   String? locality,
   String? publicLabel, {
   bool manual = false,
+  String? countryCode,
 }) {
+  final independent = cataloguedPublicCityName(locality, countryCode);
+  if (independent != null) return independent;
   final city = locality?.trim();
   if (city != null && city.isNotEmpty) return city;
   final label = publicLabel?.trim();

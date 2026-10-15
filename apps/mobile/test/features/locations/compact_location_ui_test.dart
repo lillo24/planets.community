@@ -89,10 +89,7 @@ void main() {
               find.byKey(const Key('location-map-action-compact')),
               findsNothing,
             );
-            expect(
-              find.byType(LocationAttribution),
-              source == 'manual' ? findsNothing : findsOneWidget,
-            );
+            expect(find.byType(LocationAttribution), findsNothing);
             expect(t.widget<IconButton>(action).tooltip, isNotEmpty);
             expect(t.getSize(action).shortestSide, greaterThanOrEqualTo(48));
             expect(

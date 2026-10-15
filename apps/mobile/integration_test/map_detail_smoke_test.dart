@@ -67,9 +67,7 @@ void main() {
       app.router.go('/proposals/$id');
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-        manual
-            ? find.byKey(Key('location-open-maps-$id'))
-            : find.byType(LocationAttribution),
+        find.byKey(Key('location-preview-$id')),
         200,
         scrollable: find.byType(Scrollable).first,
       );
@@ -121,7 +119,7 @@ void main() {
     app.provider.failure = const MapProviderFailure('budget_exhausted');
     await open();
     expect(find.byKey(Key('location-open-maps-$id')), findsOneWidget);
-    expect(find.byType(LocationAttribution), findsOneWidget);
+    expect(find.byType(LocationAttribution), findsNothing);
     await binding.takeScreenshot('map05-synthetic-detail-budget-fallback');
 
     await close();

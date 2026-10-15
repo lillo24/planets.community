@@ -231,6 +231,7 @@ void main() {
       expect(t.getSize(pending), size);
       expect(find.byKey(const Key('location-open-maps-A')), findsOneWidget);
       expect(find.byKey(const Key('location-map-action-A')), findsNothing);
+      expect(find.byType(LocationAttribution), findsNothing);
       expect(t.takeException(), isNull);
       await t.pumpWidget(const SizedBox());
       c.read(sharedBasemapTilesProvider).clear();
@@ -907,6 +908,7 @@ void main() {
         expect(find.byKey(const Key('location-open-maps-A')), findsOneWidget);
         expect(find.byKey(const Key('location-map-action-A')), findsNothing);
         expect(find.byKey(const Key('public-detail-overlay')), findsNothing);
+        expect(find.byType(LocationAttribution), findsNothing);
         if (mode != 'tile-failure') {
           expect(tiles.tileCalls, isEmpty);
           expect(find.byType(ReadOnlyBasemap), findsNothing);
@@ -1026,7 +1028,9 @@ void main() {
           ),
         );
         await settle(t);
-        expect(find.text('SECRET venue'), findsOneWidget);
+        // Pending imagery exposes only the independent PUBLIC city.
+        expect(find.text('SECRET venue'), findsNothing);
+        expect(find.text('Trento'), findsOneWidget);
         expect(tiles.pending, isNotEmpty);
         entitled = false;
         if (reason == 'lease') {

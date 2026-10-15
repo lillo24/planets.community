@@ -17,6 +17,7 @@ import '../application/public_preview_batch.dart';
 import '../data/location_preview_gateway.dart';
 import '../domain/location_preview.dart';
 import 'location_attribution.dart';
+import 'independent_public_city.dart';
 import 'public_location_label.dart';
 
 /// A location panel with validated tiles or explicitly selected static imagery.
@@ -353,7 +354,13 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     if (!widget.allowLegacyAreaSearch && value.place == null) return null;
     // Text-only actions search the canonical PUBLIC city/country. Never send a
     // provider point or formatted address when no map is being displayed.
-    return googleMapsPreviewUrl(rendered ? value : null, value.legacy);
+    if (rendered) return googleMapsPreviewUrl(value, value.legacy);
+    final city = independentPublicCity(
+      publicArea: value.legacy,
+      publicLabel: value.publicLabel,
+      textSource: value.textSource,
+    );
+    return city == null ? null : googleMapsPreviewUrl(null, city.searchArea);
   }
 
   Future<void> _open({bool rendered = false}) async {
@@ -510,6 +517,11 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
                 manual: textSource == 'manual',
               ) ??
               '';
+    final city = independentPublicCity(
+      publicArea: value?.legacy ?? widget.legacy,
+      publicLabel: value?.publicLabel ?? widget.publicLabel,
+      textSource: textSource,
+    );
     // Only a current canonical projection can offer an outbound destination.
     // Revocation removes the action together with protected labels and pixels.
     final hasDestination = value != null && _mapsDestination(value) != null;
@@ -524,7 +536,11 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
         const SizedBox(width: AppSpacing.small),
         Expanded(
           child: Text(
-            label.isEmpty ? l10n.locationPreviewUnavailable : label,
+            rendered
+                ? label.isEmpty
+                      ? l10n.locationPreviewUnavailable
+                      : label
+                : city?.name ?? l10n.locationPreviewUnavailable,
             key: widget.labelKey,
             style: Theme.of(context).textTheme.bodyLarge,
           ),
@@ -533,16 +549,9 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
       ],
     );
 
-    final fallback = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        textRow(),
-        // Provider/unknown text is still provider content without imagery.
-        // Do not infer independent authorship from a shortened city label.
-        if (place != null || (label.isNotEmpty && textSource != 'manual'))
-          LocationAttribution(centered: widget.detail),
-      ],
-    );
+    // Only independent manual/ISTAT text is displayed without imagery. Provider
+    // place labels and credits are composed together with actual map pixels.
+    final fallback = textRow();
 
     Widget rendered(Widget canvas) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -82,6 +82,51 @@ Future<void> decodedPreview(WidgetTester t) async {
 void main() {
   for (final language in ['en', 'it']) {
     testWidgets(
+      '$language unmatched provider text never becomes a credit-free address',
+      (t) async {
+        final gateway = FakePreviewGateway()
+          ..pending = (item, _) async => LocationPreview(
+            item: item,
+            revision: 1,
+            isProtected: false,
+            publicLabel: 'Provider street address 42',
+            textSource: 'geoapify',
+            legacy: const LegacyPreviewArea('Unclassified place', 'DE'),
+            place: const PreviewPlace(
+              'address',
+              'Provider street address 42',
+              50,
+              10,
+            ),
+          );
+        final c = setup(
+          gateway,
+          FakeStaticPreviewGateway(enabled: false),
+          FakePreviewMapsLauncher(),
+        );
+        addTearDown(c.dispose);
+        await t.pumpWidget(
+          app(c, ListView(children: [panel(detail: true)]), language: language),
+        );
+        await settled(t);
+        expect(find.text('Provider street address 42'), findsNothing);
+        expect(find.text('Unclassified place'), findsNothing);
+        expect(find.byKey(const Key('location-open-maps-item')), findsNothing);
+        expect(find.byType(LocationAttribution), findsNothing);
+        expect(
+          find.text(
+            language == 'en'
+                ? 'Location unavailable'
+                : 'Posizione non disponibile',
+          ),
+          findsOneWidget,
+        );
+        await t.pumpWidget(const SizedBox());
+      },
+    );
+  }
+  for (final language in ['en', 'it']) {
+    testWidgets(
       '$language disabled imagery keeps its action through a slow renewal and parent rebuild',
       (t) async {
         final gateway = FakePreviewGateway();
@@ -171,7 +216,7 @@ void main() {
   );
   for (final language in ['en', 'it']) {
     testWidgets(
-      '$language attribution follows displayed provenance through manual, provider, unknown and failed reads',
+      '$language independent city fallback has no geocoder credits for any stored provenance',
       (t) async {
         final g = FakePreviewGateway();
         final c = setup(
@@ -210,10 +255,7 @@ void main() {
           );
           await settled(t);
           expect(find.text('Rovereto'), findsOneWidget);
-          expect(
-            find.byType(LocationAttribution),
-            source == 'manual' ? findsNothing : findsOneWidget,
-          );
+          expect(find.byType(LocationAttribution), findsNothing);
           expect(
             find.byKey(const Key('location-open-maps-item')),
             findsNothing,
@@ -276,7 +318,10 @@ void main() {
             final l10n = AppLocalizations.of(t.element(find.byType(Scaffold)));
             expect(find.text('Trento'), findsOneWidget);
             expect(find.text(l10n.locationPreviewApproximate), findsNothing);
-            expect(find.byType(LocationAttribution), findsOneWidget);
+            expect(
+              find.byType(LocationAttribution),
+              imagery == 'loaded' ? findsOneWidget : findsNothing,
+            );
             expect(
               find.byType(RawImage),
               imagery == 'loaded' ? findsOneWidget : findsNothing,
@@ -346,7 +391,7 @@ void main() {
         expect(find.text('Trento'), findsOneWidget);
         expect(find.text('Use the public east entrance.'), findsOneWidget);
         expect(find.byType(LocationPreviewPanel), findsOneWidget);
-        expect(find.byType(LocationAttribution), findsOneWidget);
+        expect(find.byType(LocationAttribution), findsNothing);
         expect(
           find.text('Area information · map image unavailable'),
           findsNothing,
@@ -360,7 +405,7 @@ void main() {
     );
   }
   testWidgets(
-    'Resource detail and legacy each retain one label and credit group',
+    'Resource detail and compatibility view use independent city without provider credits',
     (t) async {
       final g = FakePreviewGateway()
         ..pending = (item, _) async => LocationPreview(
@@ -393,8 +438,9 @@ void main() {
           ),
         );
         await settled(t);
-        expect(find.text('Public area'), findsOneWidget);
-        expect(find.byType(LocationAttribution), findsOneWidget);
+        expect(find.text('Trento'), findsOneWidget);
+        expect(find.text('Public area'), findsNothing);
+        expect(find.byType(LocationAttribution), findsNothing);
         expect(
           find.byType(LocationPreviewPanel),
           id == null ? findsNothing : findsOneWidget,
@@ -487,7 +533,7 @@ void main() {
         );
         await settled(t);
         expect(
-          find.text(valid ? 'Trento' : 'Private street 42'),
+          find.text(valid ? 'Trento' : 'Location unavailable'),
           findsOneWidget,
         );
         final action = find.byKey(const Key('location-open-maps-item'));
@@ -528,7 +574,8 @@ void main() {
         ),
       );
       await settled(t);
-      expect(find.text('SECRET synthetic venue'), findsOneWidget);
+      expect(find.text('SECRET synthetic venue'), findsNothing);
+      expect(find.text('Trento'), findsOneWidget);
       await t.tap(find.byKey(const Key('location-open-maps-resource')));
       await settled(t);
       expect(m.urls.single.queryParameters['query'], 'Trento, IT');
@@ -595,8 +642,8 @@ void main() {
         expect(find.byType(TextButton), findsNothing);
         expect(find.byType(IconButton), findsOneWidget);
         expect(find.text('Open in Maps'), findsNothing);
-        expect(find.text('Powered by Geoapify'), findsOneWidget);
-        expect(find.text('© OpenStreetMap contributors'), findsOneWidget);
+        expect(find.text('Powered by Geoapify'), findsNothing);
+        expect(find.text('© OpenStreetMap contributors'), findsNothing);
         await t.tap(find.byKey(const Key('location-open-maps-item')));
         await settled(t);
         expect(g.reads, 2);
@@ -711,8 +758,8 @@ void main() {
       auth.markProfileReady(const AuthIdentity(id: 'Alice'));
       await t.pumpWidget(app(c, ListView(children: [panel(detail: true)])));
       await settled(t);
-      expect(find.text('SECRET synthetic venue'), findsOneWidget);
       await decodedPreview(t);
+      expect(find.text('SECRET synthetic venue'), findsOneWidget);
       expect(find.byType(RawImage), findsOneWidget);
       final first = r.outputs.single;
       auth.markCheckingProfile(const AuthIdentity(id: 'Alice'));
@@ -756,10 +803,7 @@ void main() {
         await settled(t);
         expect(find.byType(RawImage), findsNothing);
         expect(find.text('Map preview unavailable'), findsNothing);
-        expect(
-          find.text('SECRET synthetic venue'),
-          denied ? findsNothing : findsOneWidget,
-        );
+        expect(find.text('SECRET synthetic venue'), findsNothing);
         expect(
           find.byKey(const Key('location-open-maps-item')),
           denied ? findsNothing : findsOneWidget,

@@ -48,11 +48,13 @@ RPCs are documented in the [MAP01 contract](../../../../../docs/development/map0
 Short-lived receipt objects must not enter draft snapshots. The transient
 controller is wired through a **disabled production factory**. Actor/form
 generations, readiness, entitlement denials and expiry revoke transient work.
-MAPFIX01 credits follow displayed content. Verified provider labels/maps retain
-credits even on image failure. Explicit Project manual-city confirmation attests
+MAPFIX01 preserves stored text provenance. Provider results in editors and
+successfully rendered maps retain their credits. MAPUI03 replaces detail's
+text-only provider projection with independent manual/ISTAT city text, without
+changing stored provenance or provider geometry. Explicit manual-city confirmation attests
 only the matching saved public text, through a revision-bound canonical RPC and
 reread; reopening then suppresses credits. Unknown legacy/template text and the
-older Tavolo/resource manual save paths retain conservative credits. No geometry
+older Tavolo/resource manual save paths remain unclassified. No geometry
 absence is treated as evidence of manual authorship. The additive provenance
 migration is required for durable classification; older servers remain readable
 and manual content saves still work with unknown provenance. Nothing is backfilled.
@@ -83,8 +85,16 @@ the action and keeps its canonical point/area destination. The compositor's
 imageBuilder composes text, the 144dp map and one credit group together, avoiding
 parent state callbacks or a frame where enabled transport implies visible pixels.
 Centered small detail credits follow actual imagery with independent 48dp links.
-Provider/unknown text still retains attribution independently of image state;
-the requested independent source for legacy/provider city fallback is unresolved.
+`presentation/independent_public_city.dart` prefers canonically attested manual
+city text, otherwise exactly resolves a public Italian locality through the
+pinned ISTAT name catalogue. `data/italian_municipality_names.g.dart` owns only
+independent official name/alias data; `data/municipality_data_license.dart` owns
+the app's accessible CC BY notice. No coordinates, private label or formatted
+provider address enter this fallback. An unmatched detail shows localized
+unavailability with no Maps action, rather than uncredited provider content.
+Related public cards prefer the same catalogue names. List/compatibility footers
+remain only when unclassified raw geocoding text is actually retained; all-
+catalogue city lists have no Geoapify footer. Editor results retain their credits.
 See [MAPUI03](../../../../../docs/development/mapui03-location-ui.md).
 Denial still revokes protected state.
 Verified locality maps keep approximate-area semantics for screen readers without
@@ -101,7 +111,8 @@ remains a compatibility widget; real detail now uses the shared panel.
 See [MAP03](../../../../../docs/development/map03-location-previews.md).
 
 `presentation/public_location_label.dart` owns compact Project/Tavolo card and
-area-detail text: prefer canonical public structured locality (including async
+area-detail text: prefer an independent catalogue name when country/key match,
+then canonical public structured locality (including async
 preview locality), then a narrowly recognized Italian province/region suffix,
 then the unchanged ambiguous/manual public label or localized undecided state.
 It never consumes protected exact-place fields. Authorized exact labels and Maps
