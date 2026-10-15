@@ -264,3 +264,15 @@ It is fixture-authenticated native coverage, not inbox-entry UI, physical-device
 real provider application, iOS or accessibility certification. Screenshots are
 saved under `build/batch-a-screenshots`. Recreate fixtures for each run; cleanup
 only that task's defines, emulator/app and disposable stack.
+
+## D-M02 member conversation review
+
+`prepare_member_contact_smoke.mjs`, `member_contact_smoke_test.dart` and
+`test_driver/member_contact_screenshots.dart` use genuine local OTP identities and
+canonical ordinary Group memberships. The app journey covers People, explicit
+request/acceptance, Requests/Private routing, unread/mute, Block, Close, Leave,
+origin loss/rejoin without revival, and exact historical-message reporting.
+English and Italian final frames assert actual 320dp width and 2x text scaling.
+See [native ownership, commands and evidence boundaries](../../../docs/development/member-contact-mobile-native.md).
+Only the designated native/database owner executes this fixture and journey;
+source checks alone do not qualify the whole native gate.
