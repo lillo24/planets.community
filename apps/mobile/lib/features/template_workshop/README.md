@@ -26,9 +26,14 @@ reads remain community-only for old clients. See
 - `presentation/template_workshop_screens.dart`: catalog/detail routes, controlled
   skills, authorized source covers, shared template-only Report and ordinary
   editor navigation. No new bottom-navigation branch.
+- `presentation/template_application_feedback.dart`: compact actor-bound outcome
+  notices and exact-destination editor handoff. Opening and retrying are separate
+  from starting another draft.
 
-The catalog separates the search input and competence selector with
-`AppSpacing.medium`, matching public Project discovery. See the focused
+The catalog uses a compact keyword field and the shared Filters disclosure.
+The skill picker is initially collapsed; disclosure preserves selections and
+does not apply, clear or reload a query. Expanded controls retain
+`AppSpacing.medium`. Picker-route return retains public revalidation. See the focused
 [search/input spacing audit](../../../../../docs/development/needs-workshop-polish.md).
 
 Only a ready identity requests the mobile catalog. Signed-out/restoring/setup
@@ -46,12 +51,14 @@ refreshes detail and requires preview review before a new Use action.
 
 Application intent freezes actor/template/token/capacity/request UUID before
 mutation. App-scoped memory retains only these opaque values and accepted
-destination IDs. Retry can read a private receipt; an empty or failed read
+destination IDs, plus presentation-only acknowledgement/read flags keyed by
+request ID. Retry can read a private receipt; an empty or failed read
 replays the exact original command, never rotates the key. Accepted Open works
 without public detail and reads current owner content through a separate editor
 session. Only a deliberate **Start another independent draft** creates another
 key after acceptance. No plaintext preferences, copied text or full receipts
-are stored. Process restart recovery is through confirmed My Proposals only.
+are stored. Process restart drops RAM recovery/feedback, not the saved backend
+draft. Existing draft listings still need to load successfully to reopen it.
 
 Workshop push navigation uses DRAFT01's router guard once. The prior form stays
 bound to its own saved ID; the template is never loaded into it. Entry/return,
@@ -65,8 +72,8 @@ See [the shared contract](../../../../../docs/development/template-workshop.md)
 and [local native smoke](../../../integration_test/README.md). Founder review
 and predecessor/main integration remain pending; SIM01/SIM02/TW05 are deferred.
 
-UI-NEXT-03 places compact keyword and controlled searchable skill filters before
-the context text. Active query/skills expose one reset action; debounce, combined
+UIPOLISH02 places keyword search and a Filters disclosure before concise context
+text. Active query/skills expose one reset action; debounce, combined
 queries, cursors and stale-generation rejection remain unchanged. New canonical
 applications default only the destination timezone to `Europe/Rome`; schedule and
 location remain unset. Receipt recovery never rewrites existing drafts.
@@ -78,3 +85,22 @@ The feed requests 7 records, then 15, then 20 per successful page. Each user dra
 UIPOLISH01 catalog cards use the shared measured single-row skill preview with
 plain display names and an inert overflow marker under the card's detail action.
 `_TemplateSkills` remains the complete importance-labelled detail presentation.
+
+UIPOLISH02 resolves the controlled catalog through `core/localization/skill_display.dart`.
+Known slugs/IDs use EN/IT resources; unknown skills keep their canonical labels.
+Project, Workshop, authoring, filter, profile and contribution-picker displays
+agree without changing IDs, importance, stored data or backend matching. Picker
+search operates on the displayed locale's labels; selection payloads remain IDs.
+
+`templateFeedbackProvider` is separate from frozen application recovery. Confirmed
+success can be explicitly dismissed or acknowledged by the ordinary editor's
+successful canonical read for the exact actor/destination. A navigation return
+never acknowledges it. Unknown outcomes keep their frozen Retry; read/navigation
+failures retain the destination and a reopening action. An empty canonical owner
+read or explicit forbidden read is unavailable, while transport failures remain
+retryable errors. Account epochs reject stale handoff results, including ABA.
+Acknowledged receipts remain available through the detail's explicit Open action
+without being advertised on every catalog visit. The separate Drafts loading
+failure is unchanged; a receipt or editor read proves no Drafts-list success.
+
+See [UIPOLISH02 validation](../../../../../docs/development/uipolish02-workshop-feedback.md).

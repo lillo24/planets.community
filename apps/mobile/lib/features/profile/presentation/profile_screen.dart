@@ -1,3 +1,5 @@
+import '../../../core/localization/skill_display.dart';
+
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -269,7 +271,9 @@ class _ProfileBody extends StatelessWidget {
                     for (final skill in selectedSkills)
                       Chip(
                         key: Key('profile-competence-${skill.id}'),
-                        label: Text(skill.label),
+                        label: Text(
+                          skillDisplayLabel(context, skill.slug, skill.label),
+                        ),
                         visualDensity: VisualDensity.compact,
                       ),
                   ],
