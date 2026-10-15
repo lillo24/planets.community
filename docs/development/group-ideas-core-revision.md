@@ -129,3 +129,13 @@ policy; unrelated legacy projection, retry, block and revocation checks remain.
 Run against the task-owned C local stack using its CLI environment and
 `MAILPIT_URL`. The cumulative evidence report records actual execution results;
 syntax checks alone are not database or Auth verification.
+
+`node scripts/verify-local-group-ideas-upgrade.mjs` additionally resets only an
+explicitly disposable local stack (`CI=true` or `PLANETS_DISPOSABLE_QA=1`) to the
+last migration before this revision. It creates fictional old C state through
+the original canonical endpoints, including immutable messages, a named link,
+current and ended admissions, accepted invitations and command receipts. After
+applying the remaining migrations twice, it checks every original column/row
+against its pre-upgrade value, one General, stable admission IDs and full current
+history without duplicated messages. This is separate from the original
+main-to-C preservation verifier.

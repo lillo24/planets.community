@@ -47,6 +47,10 @@ create trigger group_discussion_room_provenance before update on private.group_d
 execute function private.protect_group_relationship_provenance('title','archived','version','last_sequence','purpose','visibility','frozen_at','last_activity_at','invitation_link_version');
 create trigger group_discussion_admission_provenance before update on private.group_discussion_admissions for each row
 execute function private.protect_group_relationship_provenance('read_sequence','ended_at','ended_by','end_sequence','end_snapshot');
+create trigger group_discussion_view_provenance before update on private.group_discussion_views for each row
+execute function private.protect_group_relationship_provenance('read_sequence','observed_sequence','ended_at','end_sequence','end_snapshot');
+create trigger group_discussion_events_immutable before update or delete on private.group_discussion_events
+for each row execute function private.protect_moderation_append_only();
 
 create function private.group_discussion_person_current(p_group uuid,p_actor uuid) returns boolean
 language sql stable security definer set search_path='' as $$
@@ -256,6 +260,10 @@ end; $$;
 create function private.capture_group_discussion_exit() returns trigger
 language plpgsql security definer set search_path='' as $$
 begin
+ if old.ended_at is not null and (new.ended_at,new.ended_by,new.end_sequence,new.end_snapshot)
+  is distinct from (old.ended_at,old.ended_by,old.end_sequence,old.end_snapshot) then
+  raise sqlstate '55000' using message='An ended discussion admission is immutable.';
+ end if;
  if old.ended_at is null and new.ended_at is not null then
   -- Group relationship commands and room commands use the same Group->room order.
   perform 1 from private.group_discussions where id=new.room_id for update;
