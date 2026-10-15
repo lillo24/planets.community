@@ -336,7 +336,7 @@ create or replace function private.group_discussion_command(p_actor uuid,p_key u
 language plpgsql security definer set search_path='' as $$
 declare actor uuid:=private.require_group_identity(p_actor); intent jsonb; receipt private.group_discussion_receipts%rowtype;
  room private.group_discussions%rowtype; admission private.group_discussion_admissions%rowtype; invitation private.group_discussion_invitations%rowtype;
- source jsonb; result jsonb; target uuid; object_id uuid; access_id uuid; policy text; manager boolean; token text; link private.group_discussion_invitation_links%rowtype;
+ source jsonb; result jsonb; target uuid; object_id uuid; policy text; manager boolean; token text; link private.group_discussion_invitation_links%rowtype;
 begin
  if p_key is null or p_arguments is null or p_operation is null then raise sqlstate '22023' using message='The discussion command is invalid.'; end if;
  if p_operation in ('create','update') and (p_arguments->>'title' is null or char_length(p_arguments->>'title') not between 1 and 120
@@ -425,7 +425,7 @@ begin
    on conflict(room_id,profile_id) do update set muted=excluded.muted,hidden=excluded.hidden;
   object_id:=room.id;
  else
-  access_id:=private.ensure_group_discussion_access(p_room,actor);
+  perform private.ensure_group_discussion_access(p_room,actor);
   manager:=private.group_discussion_can_manage(p_room,actor);
   select * into admission from private.group_discussion_admissions where id=private.group_discussion_admission(p_room,actor);
   if room.frozen_at is not null or room.archived and p_operation<>'update' then raise sqlstate '55000' using message='The discussion is read-only.'; end if;
@@ -640,6 +640,7 @@ do $$ declare definition text; signature text; begin
   execute definition;
  end loop;
  definition:=pg_get_functiondef('public.submit_group_discussion_report(uuid,uuid,uuid,text,text)'::regprocedure);
+ definition:=replace(definition,'admission private.group_discussion_admissions%rowtype;','');
  definition:=replace(definition,'select * into admission from private.group_discussion_admissions where id=private.require_group_discussion(message.room_id,actor);','perform private.require_group_identity(actor);');
  definition:=replace(definition,'message.sequence<=admission.frontier','private.group_discussion_history_frontier(message.room_id,actor) is null or message.sequence>private.group_discussion_history_frontier(message.room_id,actor)');
  definition:=replace(definition,'''title'',room.title','''title'',private.group_discussion_summary_v2(room.id,actor)->>''title''');

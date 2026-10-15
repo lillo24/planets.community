@@ -313,7 +313,7 @@ end; $$;
 -- C's exact current-access/version check. Nothing copies automatically.
 create function public.share_discussion_link_to_project(p_expected_profile_id uuid,p_client_request_id uuid,p_room_id uuid,p_project_id uuid,p_expected_access_id uuid,p_link_id uuid,p_expected_version bigint) returns uuid
 language plpgsql security definer set search_path='' as $$
-declare actor uuid:=private.require_group_actor(p_expected_profile_id); room private.group_discussions%rowtype;
+declare actor uuid:=private.require_group_actor(p_expected_profile_id);
   link private.group_discussion_links%rowtype; receipt private.group_discussion_conversion_receipts%rowtype;
   intent jsonb:=jsonb_build_array('share-link',p_room_id,p_project_id,p_expected_access_id,p_link_id,p_expected_version); destination uuid;
 begin
@@ -321,7 +321,7 @@ begin
   perform pg_advisory_xact_lock(hashtextextended('discussion-conversion:'||actor::text||':'||p_client_request_id::text,0));
   perform private.require_project_workspace_manager(actor,p_project_id);
   perform 1 from private.community_groups where id=(select group_id from private.group_discussions where id=p_room_id) for update;
-  select * into room from private.group_discussions where id=p_room_id for update;
+  perform 1 from private.group_discussions where id=p_room_id for update;
   perform private.require_group_actor(actor);
   if private.require_group_discussion_access(p_room_id,actor)<>p_expected_access_id
     or not exists(select 1 from private.group_discussion_conversions where room_id=p_room_id and project_id=p_project_id and published_at is not null) then

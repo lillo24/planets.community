@@ -28,7 +28,7 @@ const command = (p, room, admission) => ({
 });
 async function rpc(p, name, args) {
   const r = await p.client.rpc(name, args);
-  equal(r.error?.code ?? null, null, `${name} succeeds`);
+  equal(r.error?.code ?? null, null, `${name}: ${r.error?.message ?? "ok"}`);
   return r.data;
 }
 async function denied(p, name, args, code = "42501") {
@@ -43,6 +43,7 @@ async function user(label) {
     verifierName: "group discussion links",
   });
   await sql`insert into public.profiles(id,display_name) values(${p.id}::uuid,${`Fictional C03 ${label}`})`;
+  await sql`insert into public.profile_photos(profile_id,object_path,audience) values(${p.id}::uuid,${`${p.id}/${randomUUID()}.webp`},'interactions')`;
   return p;
 }
 const list = (p, room, admission = null, extra = {}) =>
@@ -491,10 +492,14 @@ try {
     ...expected(creator),
     p_room_id: project,
   });
+  const initialBinding = await rpc(creator, "get_own_project_group", {
+    ...expected(creator),
+    p_project_id: project,
+  });
   await rpc(creator, "set_project_group", {
     ...expected(creator),
     p_project_id: project,
-    p_expected_version: 1,
+    p_expected_version: initialBinding.version,
     p_group_id: group,
     p_client_request_id: randomUUID(),
   });
@@ -597,10 +602,14 @@ try {
     ...projectDraftArgs,
     p_title: "C03 second fictional Project",
   });
+  const secondInitialBinding = await rpc(creator, "get_own_project_group", {
+    ...expected(creator),
+    p_project_id: secondProject,
+  });
   await rpc(creator, "set_project_group", {
     ...expected(creator),
     p_project_id: secondProject,
-    p_expected_version: 1,
+    p_expected_version: secondInitialBinding.version,
     p_group_id: group,
     p_client_request_id: randomUUID(),
   });

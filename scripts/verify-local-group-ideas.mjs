@@ -485,13 +485,56 @@ try {
     "former",
     "Receipt replay never revives a left episode",
   );
-  await rpc(bea, "revoke_group_discussion_invitation_link", {
-    ...command(bea, restricted),
-    p_expected_version: capability.invitation_link_version,
-  });
+  const revokedCapability = await rpc(
+    bea,
+    "revoke_group_discussion_invitation_link",
+    {
+      ...command(bea, restricted),
+      p_expected_version: capability.invitation_link_version,
+    },
+  );
   await denied(manager, "preview_group_discussion_invitation_link", {
     ...expected(manager),
     p_token: capability.token,
+  });
+  const replacement = await rpc(
+    bea,
+    "create_group_discussion_invitation_link",
+    {
+      ...command(bea, restricted),
+      p_expected_version: revokedCapability.invitation_link_version,
+    },
+  );
+  const rotated = await rpc(bea, "create_group_discussion_invitation_link", {
+    ...command(bea, restricted),
+    p_expected_version: replacement.invitation_link_version,
+  });
+  await denied(manager, "preview_group_discussion_invitation_link", {
+    ...expected(manager),
+    p_token: replacement.token,
+  });
+  await denied(manager, "accept_group_discussion_invitation_link", {
+    ...command(manager),
+    p_token: replacement.token,
+  });
+  equal(
+    (
+      await rpc(manager, "preview_group_discussion_invitation_link", {
+        ...expected(manager),
+        p_token: rotated.token,
+      })
+    ).room_id,
+    restricted,
+    "Only the latest explicitly shared capability previews the room",
+  );
+  await sql`update private.group_discussion_invitation_links set expires_at=clock_timestamp()-interval '1 second' where room_id=${restricted}::uuid`;
+  await denied(manager, "preview_group_discussion_invitation_link", {
+    ...expected(manager),
+    p_token: rotated.token,
+  });
+  await denied(manager, "accept_group_discussion_invitation_link", {
+    ...command(manager),
+    p_token: rotated.token,
   });
   const beforeExit = await history(carlo, idea);
   await leave(carlo, idea, admitted.object_id);
@@ -679,7 +722,7 @@ try {
   );
   const retainedHistory = await history(carlo, idea);
   const report = await rpc(carlo, "submit_group_discussion_report", {
-    ...expected(carlo),
+    p_expected_reporter_profile_id: carlo.id,
     p_client_submission_id: randomUUID(),
     p_message_id: retainedHistory.items.at(-1).message_id,
     p_category: "other",
@@ -696,7 +739,7 @@ try {
     "Fictional message after the Group exit report frontier.",
   );
   await denied(carlo, "submit_group_discussion_report", {
-    ...expected(carlo),
+    p_expected_reporter_profile_id: carlo.id,
     p_client_submission_id: randomUUID(),
     p_message_id: later.object_id,
     p_category: "other",

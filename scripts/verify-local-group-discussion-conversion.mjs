@@ -34,6 +34,56 @@ async function denied(person, name, parameters, code = "42501") {
   const result = await person.client.rpc(name, parameters);
   equal(result.error?.code, code, `${name} denial`);
 }
+async function waitForLock(blocker, functionName) {
+  for (let i = 0; i < 200; i++) {
+    const rows = await sql`select pid from pg_stat_activity
+      where wait_event_type='Lock' and query like ${`%${functionName}%`}
+        and pg_blocking_pids(pid) @> array[${blocker}::integer]`;
+    if (rows.length === 1) {
+      checks++;
+      return rows[0].pid;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  assert.fail(
+    `Expected ${functionName} to wait on the independently held row.`,
+  );
+}
+
+async function publishAheadOfQueuedSend(publisher, sender, project, room) {
+  const held = await sql.reserve();
+  let publication, sending;
+  try {
+    await held`begin`;
+    const [{ pid }] = await held`select pg_backend_pid() pid`;
+    // The fixture holds only the terminal room lock and requests no other lock.
+    // The genuine publisher must first own Project/Group, then wait here.
+    await held`select id from private.group_discussions where id=${room}::uuid for update`;
+    publication = rpc(publisher, "publish_proposal_idea", {
+      p_expected_creator_profile_id: publisher.id,
+      p_proposal_id: project,
+    });
+    const publisherPid = await waitForLock(pid, "publish_proposal_idea");
+    sending = denied(
+      sender,
+      "send_group_discussion_message",
+      {
+        ...expected(sender),
+        ...key(),
+        p_room_id: room,
+        p_body: "Queued during publication; must not commit after the marker.",
+      },
+      "55000",
+    );
+    await waitForLock(publisherPid, "send_group_discussion_message");
+    await held`commit`;
+    await Promise.all([publication, sending]);
+  } finally {
+    await held`rollback`;
+    await Promise.allSettled([publication, sending].filter(Boolean));
+    held.release();
+  }
+}
 async function person(label) {
   const identity = await signInLocalOtpUser({
     ...status,
@@ -338,10 +388,7 @@ try {
     "PT409",
   );
   await sql`update private.group_discussions set archived=false where id=${room}::uuid`;
-  await rpc(publisher, "publish_proposal_idea", {
-    p_expected_creator_profile_id: publisher.id,
-    p_proposal_id: project,
-  });
+  await publishAheadOfQueuedSend(publisher, alice, project, room);
   await rpc(publisher, "publish_proposal_idea", {
     p_expected_creator_profile_id: publisher.id,
     p_proposal_id: project,
