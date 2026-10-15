@@ -40,7 +40,9 @@ Mobile opens the canonical typed request route; that route reauthorizes again.
 
 Contact access hints clear cached contact rows and stale load/mutation epochs
 before rereading, even offline. Legacy rows can remain while the contact refresh
-fails explicitly. Account changes clear the entire actor-bound state.
+fails explicitly. Ordinary message refresh hints only revalidate the inbox; they
+do not revoke a valid identity or cancel an activity read mutation. Account changes
+clear the entire actor-bound state.
 
 ## Mute and message separation
 

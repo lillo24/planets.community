@@ -43,7 +43,7 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
       memberContactAccessChangesProvider,
       (_, _) => _invalidateContacts(),
     );
-    ref.listen(messageChatsRefreshProvider, (_, _) => _invalidateContacts());
+    ref.listen(messageChatsRefreshProvider, (_, _) => _refreshContacts());
     ref.listen(
       authSessionProvider.select(
         (session) =>
@@ -60,6 +60,13 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
       _loadRevision++;
     });
     return const NotificationsUnreadState();
+  }
+
+  void _refreshContacts() {
+    final id = state.expectedProfileId;
+    if (id != null && _hasReadyIdentity(id)) {
+      unawaited(load(id, refresh: true));
+    }
   }
 
   void _invalidateContacts() {
@@ -161,6 +168,12 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
       ref.read(authSessionProvider).phase == AuthSessionPhase.ready &&
       ref.read(authSessionProvider).identity?.id == profileId;
 
+  bool _hasReadyIdentity(String profileId) {
+    final session = ref.read(authSessionProvider);
+    return session.phase == AuthSessionPhase.ready &&
+        session.identity?.id == profileId;
+  }
+
   void _requireReadyIdentity(String profileId) {
     final session = ref.read(authSessionProvider);
     if (session.phase != AuthSessionPhase.ready ||
@@ -224,7 +237,7 @@ class NotificationsInboxController extends Notifier<NotificationsInboxState> {
       memberContactAccessChangesProvider,
       (_, _) => _invalidateContacts(),
     );
-    ref.listen(messageChatsRefreshProvider, (_, _) => _invalidateContacts());
+    ref.listen(messageChatsRefreshProvider, (_, _) => _refreshContacts());
     ref.listen(
       authSessionProvider.select(
         (session) =>
@@ -245,6 +258,13 @@ class NotificationsInboxController extends Notifier<NotificationsInboxState> {
       _pendingReadIds.clear();
     });
     return const NotificationsInboxState();
+  }
+
+  void _refreshContacts() {
+    final id = state.expectedProfileId;
+    if (id != null && _hasReadyIdentity(id)) {
+      unawaited(load(id, refresh: true));
+    }
   }
 
   void _invalidateContacts() {
