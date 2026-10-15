@@ -2,7 +2,7 @@
 
 Authority: the founder-supplied [complete C package](../../history-implementations/PLANETS_Parallel_C01_D00_Packages_2026-10-15/PLANETS_Chat_C01_Full_Package_2026-10-15.md), version PARALLEL-CD-2026-10-15-v1. This contract supersedes the provisional C00 audience/history matrix. The older C evidence remains evidence for its exact historical source, not this revision.
 
-Implementation is in progress on cumulative PR #257. Starting source is C `e8c5c8c`; latest main `6b5f419` is incorporated at `aec2ce1`. D #254 remains unmerged at `db17cd2` and is not incorporated. Source merge is authorized only after the complete revised lane and its required validation pass. No hosted operation is authorized.
+Implementation is in progress on cumulative PR #257. Starting source is C `e8c5c8c`; latest main `5c3d50b4` is incorporated at `a7092c99`. D #254 remains unmerged and is not incorporated; the lane handoff records the inspected peer interfaces. Source merge is authorized only after the complete revised lane and its required validation pass. No hosted operation is authorized.
 
 ## Decision ledger
 

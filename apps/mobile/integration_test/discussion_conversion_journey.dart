@@ -7,6 +7,7 @@ import 'package:planets_mobile/core/backend/supabase_backend.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/group_discussions/presentation/discussion_routes.dart';
 import 'package:planets_mobile/features/messages/presentation/messages_routes.dart';
+import 'package:planets_mobile/features/messages/presentation/messages_navigation.dart';
 import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
 import 'package:planets_mobile/features/settings/domain/language_preference.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -136,20 +137,27 @@ Future<void> runDiscussionConversionJourney(
   await tester.pump(const Duration(milliseconds: 300));
   await tap(find.text('Close'));
 
-  final invitations = await memberClient.rpc<List<dynamic>>(
-    'list_my_discussion_project_invitations',
-    params: {'p_expected_profile_id': member},
+  Future<void> invitations(ProviderContainer scope) async {
+    scope.read(messagesNavigationProvider.notifier).selectTab(1);
+    await show(scope, '/messages');
+    await harness.waitFor(tester, find.text('Invitation to participate'));
+    await tap(find.text('Invitation to participate').first);
+    await harness.waitFor(tester, find.text('Decline invitation'));
+  }
+
+  await invitations(memberContainer);
+  await shot('conversion-invitation-decline-en');
+  await tap(find.text('Decline invitation'));
+  await harness.waitUntil(
+    tester,
+    () => find.text('Decline invitation').evaluate().isEmpty,
   );
-  final invitation = invitations.cast<Map>().singleWhere(
-    (i) => i['project_id'] == project,
-  );
-  await memberClient.rpc(
-    'respond_discussion_project_invitation',
-    params: {
-      'p_expected_profile_id': member,
-      'p_invitation_id': invitation['invitation_id'],
-      'p_response': 'declined',
-    },
+  expect(
+    (await memberClient.rpc<List<dynamic>>(
+      'list_my_discussion_project_invitations',
+      params: {'p_expected_profile_id': member},
+    )).cast<Map>().where((i) => i['project_id'] == project),
+    isEmpty,
   );
   expect((await source(memberClient, member))['project_chat_id'], isNull);
   expect(
@@ -166,14 +174,22 @@ Future<void> runDiscussionConversionJourney(
   final plannerInvite = plannerInvites.cast<Map>().singleWhere(
     (i) => i['project_id'] == project,
   );
-  await planner.rpc(
-    'respond_discussion_project_invitation',
-    params: {
-      'p_expected_profile_id': plannerId,
-      'p_invitation_id': plannerInvite['invitation_id'],
-      'p_response': 'opened',
-    },
+  await invitations(plannerContainer);
+  await shot('conversion-invitation-open-en');
+  await tap(find.text('View Project and request to join'));
+  await harness.waitFor(tester, find.text('Request to join'));
+  expect((await source(planner, plannerId))['project_chat_id'], isNull);
+  final opened = await planner.rpc<List<dynamic>>(
+    'list_my_discussion_project_invitations',
+    params: {'p_expected_profile_id': plannerId},
   );
+  expect(
+    opened.cast<Map>().singleWhere(
+      (i) => i['invitation_id'] == plannerInvite['invitation_id'],
+    )['status'],
+    'opened',
+  );
+  await shot('conversion-open-does-not-enroll-en');
   for (final (client, actor) in [
     (planner, plannerId),
     (newcomer, newcomerId),

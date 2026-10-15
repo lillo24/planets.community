@@ -1,6 +1,6 @@
 # C01 parallel handoff — PARALLEL-CD-2026-10-15-v1
 
-Status: final qualification in progress; cumulative [PR #257](https://github.com/lillo24/planets.community/pull/257). Main `94af1c2` incorporated at `33fa116`; inherited C `e8c5c8c`. D cumulative #254 inspected at `73c90a30`, unmerged and not imported. C decisions and Option A are explicitly supplied by the package; the prior missing-C00-approval gate is superseded. Runtime completion/validation remains required. Intermediate draft pushes skipped CI to avoid qualifying an incomplete head; the final source must receive the complete classified CI gate.
+Status: final qualification in progress; cumulative [PR #257](https://github.com/lillo24/planets.community/pull/257). Main `5c3d50b4` incorporated at `a7092c99`; inherited C `e8c5c8c`. D cumulative #254 inspected at `73c90a30`, unmerged and not imported. C decisions and Option A are explicitly supplied by the package; the prior missing-C00-approval gate is superseded. Runtime completion/validation remains required. Intermediate draft pushes skipped CI to avoid qualifying an incomplete head; the final source must receive the complete classified CI gate.
 
 See [approved C contract](group-ideas-revision.md). Evidence below distinguishes completed local gates from pending database/Auth/native qualification. Historical evidence in `group-discussions-integration.md` qualifies only its recorded old heads.
 
@@ -66,7 +66,7 @@ contention, followed by the standard lint/typecheck/build/invitation checks.
 Site's 19 tests, lint/typecheck/build and deploy dry-run passed. Actual CI must
 still qualify default timeouts and the committed head. Fresh revised migration
 replay and canonical database type generation succeeded on the isolated C stack.
-Revised SQL/Auth/native qualification remains pending. Manifest assertions
+The corrected forward SQL passed a clean replay, schema lint/security advisors and all 145 pgTAP files / 5,845 assertions. Populated old C upgrade passed 56 assertions across six original tables, including repeated application. Genuine Auth passed revised Ideas195, links/folders180 and conversion49 (including an observed publication-before-queued-send lock race). These focused counts are not summed as unique cases. Full CI Database and final native qualification remain pending. Manifest assertions
 intentionally change for the added Idea invitation family. Final command counts,
 native artifacts and source SHA will be recorded after the required checks.
 
