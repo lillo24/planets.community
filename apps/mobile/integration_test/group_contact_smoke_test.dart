@@ -540,6 +540,83 @@ void main() {
     await tap('coordination-confirm');
     await tap('coordination-confirm-dialog');
     await confirmed(alice, proposalId);
+    final earlierAudience = await coordination(alice, proposalId);
+    // Re-selecting the same Group deliberately retires its named seat. The
+    // existing consent cannot silently transfer to the new selection round.
+    await tap('coordination-change');
+    await harness.waitFor(tester, find.byKey(const Key('coordination-search')));
+    await tester.enterText(
+      find.byKey(const Key('coordination-search')),
+      libraryName,
+    );
+    await tap('coordination-search-run');
+    await hideKeyboard();
+    await tap('coordination-group-$library');
+    await tap('coordination-use-groups');
+    await tap('coordination-confirm-dialog');
+    final replacementDeadline = DateTime.now().add(const Duration(seconds: 45));
+    var replacedAudience = await coordination(alice, proposalId);
+    while (replacedAudience['version'] == earlierAudience['version'] &&
+        DateTime.now().isBefore(replacementDeadline)) {
+      await tester.pump(const Duration(milliseconds: 200));
+      replacedAudience = await coordination(alice, proposalId);
+    }
+    expect(
+      replacedAudience['version'],
+      (earlierAudience['version'] as int) + 1,
+    );
+    expect(replacedAudience['chat_id'], isNull);
+    expect(replacedAudience['own_confirmed'], isFalse);
+    expect(replacedAudience['all_seats_named'], isFalse);
+    expect(replacedAudience['can_confirm'], isFalse);
+    expect(
+      (replacedAudience['audience'] as List).cast<Map<String, dynamic>>().every(
+        (person) => person['confirmed'] == false,
+      ),
+      isTrue,
+    );
+    expect(
+      (replacedAudience['groups'] as List)
+          .cast<Map<String, dynamic>>()
+          .singleWhere((group) => group['group_id'] == library)['is_claimed'],
+      isFalse,
+    );
+    await expectLater(
+      currentClient!.rpc(
+        'confirm_group_coordination_audience',
+        params: {
+          'p_expected_profile_id': alice,
+          'p_action_id': const Uuid().v4(),
+          'p_proposal_id': proposalId,
+          'p_expected_version': earlierAudience['version'],
+        },
+      ),
+      throwsA(
+        isA<PostgrestException>().having(
+          (error) => error.code,
+          'code',
+          'PT409',
+        ),
+      ),
+    );
+    await shot('coordination-changed-consent-reset-en');
+    final reclaimed = await asPerson(dave, daveToken);
+    reclaimed.read(appRouterProvider).go(coordinationProposalRoute(proposalId));
+    await tap('coordination-claim-$library');
+    await tap('coordination-confirm-dialog');
+    await harness.waitFor(
+      tester,
+      find.text(
+        'The original representatives must confirm the complete named audience before it is shared with invitees.',
+      ),
+    );
+    final renewedConsent = await asPerson(alice, aliceToken);
+    renewedConsent
+        .read(appRouterProvider)
+        .go(coordinationProposalRoute(proposalId));
+    await tap('coordination-confirm');
+    await tap('coordination-confirm-dialog');
+    await confirmed(alice, proposalId);
     final secondConsent = await asPerson(carol, carolToken);
     secondConsent
         .read(appRouterProvider)

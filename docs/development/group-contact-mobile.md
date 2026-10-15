@@ -91,6 +91,7 @@ database and finish cold image downloads before the emulator on a memory-limited
 host. The documented viewport is asserted as 320dp by the test.
 
 The complete synthetic review journey includes a declined coordination proposal,
+an explicit audience replacement that retires the selected seat and old consent,
 three exact human/Group consent pairs, no conversation before final consent,
 recovery after a deliberately lost final reply, and a fresh conversation whose
 new representative cannot read the source. It checks actual unread changes,
