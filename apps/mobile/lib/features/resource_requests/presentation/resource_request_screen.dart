@@ -338,15 +338,28 @@ class _Actions extends ConsumerWidget {
     );
     final role = item.viewerRoleFor(expectedProfileId);
     if (role == ResourceRequestViewerRole.requester) {
-      return OutlinedButton.icon(
-        key: const Key('resource-request-withdraw'),
-        onPressed: state.isActing
-            ? null
-            : () => controller.withdraw(expectedProfileId),
-        icon: state.action == ResourceRequestMutation.withdrawing
-            ? const _ActionProgress()
-            : const Icon(Icons.undo),
-        label: Text(l10n.resourceRequestWithdraw),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          OutlinedButton.icon(
+            key: const Key('resource-request-withdraw'),
+            onPressed: state.isActing
+                ? null
+                : () => controller.withdraw(expectedProfileId),
+            icon: state.action == ResourceRequestMutation.withdrawing
+                ? const _ActionProgress()
+                : const Icon(Icons.undo),
+            label: Text(l10n.resourceRequestWithdraw),
+          ),
+          const SizedBox(height: AppSpacing.small),
+          Text(
+            l10n.resourceRequestFlowHelper,
+            key: const Key('resource-request-flow-helper'),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       );
     }
     return Row(
