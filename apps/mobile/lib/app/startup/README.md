@@ -31,11 +31,13 @@ It does not own Auth, profile readiness, native-link delivery or product actions
   screen widgets, painted target lookup using stable keys, adaptive interruptible
   detail scrolling, layout/lifecycle guards, and a barrier against product actions.
   Only the inert fictional conversation allows reading gestures/scrolling.
-- `tutorial_presentation.dart` owns localized step copy, the spotlight painter,
-  and clearly labelled illustrations. Examples are widgets only, never records
+- `tutorial_presentation.dart` owns localized step copy, spotlight/press painters,
+  the caption surface and clearly labelled illustrations. Examples are widgets only, never records
   injected into canonical public providers or Supabase.
 - `tutorial_motion.dart` defines the explicit entering/unobscured/fading/ready
-  phases, reveal timings and distance-based scroll velocity.
+  phases, reveal/press/travel timings and distance-based scroll velocity.
+- `tutorial_project_selection.dart` matches displayed Requested/ordinary order
+  and bounds the cover-aware choice without changing filters, pages or records.
 - `tutorial_project_chat_example.dart` owns a purely local, localized mural
   conversation with Giulia, Marco and Sara. It reuses the real chat's Card/bubble
   conventions without mounting `ProjectChatScreen` or accepting any identity,
@@ -51,7 +53,7 @@ It does not own Auth, profile readiness, native-link delivery or product actions
 
 Production retains `interactive-2`; completed/dismissed installations are not
 re-onboarded. Explicit Help replay includes the new order. Its twelve manually paced focus states are:
-introduction (no spotlight), Home Projects, first displayed Project card, its
+introduction (no spotlight), Home Projects, selected displayed Project card, its
 detail/participation, browse Create, browse Drafts, fictional Project group chat,
 Messages Requests inbox, Messages Private/Groups, Home Scambio–Dona, Scambio's
 card/Create/Drafts together, and farewell (no spotlight). The chat explains
@@ -60,17 +62,21 @@ distinguishes private conversations and Requests. Explanation text never advance
 Only Next advances; tapping the preview or explanation leaves the step unchanged.
 Previous and system Back move
 one state backward and restore the surface, frozen selection and scroll position.
-Back on the introduction exits safely. Only the 250 ms surface commit is debounced;
-Next/Previous can interrupt the detail scroll without waiting for it to finish.
+Back on the introduction exits safely. Instant/same-surface commits retain a
+250ms double-tap guard, including reduced motion. Next/Previous can interrupt
+guided scrolling; Previous/Back can cancel an in-flight page demonstration.
 Previous and Next share a 56dp bottom row; the header contains progress/Skip.
 The existing Create explanation distinguishes people's skills (using a mixer)
 from resources to obtain/bring (paintbrushes/paint); it adds no step or action.
 The 19sp explanation uses the theme's title style and scrolls within a bounded
 pane. The chat step uses a smaller 18%-height explanation pane to preserve reading
 space for its pinned label and scrollable bubbles at large accessibility text.
-Other steps retain the 28% bound. New surfaces first paint meaningful content
+Other steps retain the 28% bound. The caption has a theme-derived faded gradient,
+rounded translucent panel and opaque on-surface text, without blur. Its contents
+remain bounded and scrollable. New surfaces first paint meaningful content
 (or a bounded honest fallback),
-hold unobscured for 600ms, then fade scrim/holes together over 380ms. Focus changes
+hold unobscured for 600ms (one second on Project-list entry), then fade scrim/holes
+together over 380ms after any guided movement. Focus changes
 within one surface move only the hole/border over 180ms, keeping the current
 scrim alpha and any unfinished page hold/fade. Retargeting captures the currently
 visible geometry, including after interruption. Explanation reflow retains that
@@ -78,8 +84,21 @@ hole until the new real anchor is measured. Page and focus use independent
 controllers, both paused by lifecycle; no same-page dimmer reset occurs.
 Ordinary provider/image/layout updates remeasure without repeating page entry. Reduced motion settles after content is ready.
 
-Selection follows the existing public browse order (Requested first when present,
-then ordinary Projects), including Full, closed, photo-less and actionless items.
+TUT07 page navigation uses a 220ms decorative press cue only for real Home
+discovery controls and the chosen Project card, followed by 300ms slide/fade.
+Outgoing content unmounts at the midpoint before the incoming live surface mounts;
+progress and caption commit with that destination. Previous and return from detail
+reverse direction. Same-surface focus retains page alpha and never fakes an editor
+or scope click. Reduced motion commits immediately without press/travel/scroll.
+All movement is run/generation bound; cancellation never routes the real preview.
+
+Selection follows actual displayed order (phase-filtered visible Requested first,
+then deduplicated ordinary Projects), including Full, closed, photo-less and
+actionless items. Prefer the third card with a usable cover, then the first other
+covered card. Each of those at most two download/decode checks has a 600ms bound.
+If neither is usable, choose the third real card when present, otherwise the first;
+the normal image error/placeholder stays truthful. Empty/failed feeds retain the
+labelled bundled illustration. No extra public page is requested.
 Published Ideas may have no dates, timezone or city; the tour uses their actual
 card/detail without requiring logistics or implying membership in the sample chat.
 The selected identity is fixed for this tour. Public read waits are bounded to
@@ -95,7 +114,8 @@ Public Project loading begins during introduction, preserving current filters,
 page size and the existing controller's busy guard. The first three visible
 canonical summaries warm their existing `publicCoverBytesProvider` entries;
 warmup failures remain errors in that cache and in the normal cover UI.
-Only the first selected detail is prefetched. `ensureLoaded` coalesces by ID and
+Choosing a covered card beyond those three can warm one additional authorized
+cover. Only the frozen selected detail is prefetched. `ensureLoaded` coalesces by ID and
 session, rejects replaced-session results and reuses ready public data. Warmup
 does not replace a different detail belonging to a covered caller. Explicit
 normal detail loads/retries remain fresh. No tour ID/content is persisted.
@@ -106,6 +126,11 @@ at the real Join action or truthful Full/participation status. Body and Needs te
 are not spotlighted. Reflow, backgrounding, Next/Previous, account replacement and
 disposal invalidate old probes/scroll callbacks. Reduced motion uses immediate
 focus. PageStorage belongs to the tour and is never persisted beyond it.
+Project browse stays still for one second after meaningful content paints, then
+seeks a lazy selected card in bounded viewport increments and eases out to an
+upper-middle position above Create. Already visible cards avoid unnecessary
+movement. Spotlight focus waits until scrolling settles; rebuilds and late images
+do not repeat the dwell. Re-entry owns a fresh page hold, preserving PageStorage.
 Detail scroll-metric changes refresh focus after late section layout updates, so
 the spotlight follows the real participation control without another data read.
 The opt-in tutorial preview lays out the same real sections eagerly so it can
@@ -207,3 +232,10 @@ TUT05 multi-frame capture uses `integration_test/tutorial_visual_probe_test.dart
 and `test_driver/tutorial_visual_probe.dart`. See
 [the evidence record](../../../../../docs/development/evidence/tut05/README.md) for
 before/after sources, capture commands, phase/alpha records and native QA limits.
+
+TUT07 adds `integration_test/tutorial_guided_transitions_test.dart` and
+`test_driver/tutorial_guided_transitions.dart` for successive native transition,
+browse-scroll and caption frames. The driver accepts only the task-owned
+`emulator-5592`; it downloads synthetic fixture captures rather than recording a
+signed-in account. The evidence record under `docs/development/evidence/tut07`
+documents the renderer/sampling flags and the limits of that visual check.

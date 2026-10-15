@@ -5,6 +5,75 @@ import '../../core/widgets/page_app_bar.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'startup_flow.dart';
 
+/// Decorative activation only: never synthesizes a gesture or exposes an action.
+class TutorialPressCue extends CustomPainter {
+  TutorialPressCue(this.target, this.progress, this.color);
+  final Rect target;
+  final double progress;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final strength = (1 - (2 * progress - 1).abs()).clamp(0.0, 1.0);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(target, const Radius.circular(16)),
+      Paint()..color = color.withValues(alpha: .18 * strength),
+    );
+    canvas.drawCircle(
+      target.center,
+      9 + 17 * progress,
+      Paint()
+        ..color = color.withValues(alpha: .85 * strength)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
+  }
+
+  @override
+  bool shouldRepaint(TutorialPressCue old) =>
+      old.target != target || old.progress != progress || old.color != color;
+}
+
+class TutorialCaption extends StatelessWidget {
+  const TutorialCaption({required this.child, super.key});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      key: const Key('tutorial-caption-surface'),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            colors.surface.withValues(alpha: 0),
+            colors.surfaceContainerLow.withValues(alpha: .9),
+          ],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.surfaceContainerHighest.withValues(alpha: .45),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: SingleChildScrollView(
+            key: const Key('tutorial-caption-scroll'),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: DefaultTextStyle.merge(
+              style: TextStyle(color: colors.onSurface),
+              child: child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// A bundled, labelled illustration, never a provider item or backend record.
 class TutorialExampleCard extends StatelessWidget {
   const TutorialExampleCard({

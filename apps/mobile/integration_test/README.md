@@ -253,3 +253,15 @@ It is fixture-authenticated native coverage, not inbox-entry UI, physical-device
 real provider application, iOS or accessibility certification. Screenshots are
 saved under `build/batch-a-screenshots`. Recreate fixtures for each run; cleanup
 only that task's defines, emulator/app and disposable stack.
+
+## Guided tutorial frames (TUT07)
+
+`tutorial_guided_transitions_test.dart` samples the actual tutorial's Home press,
+Project-list travel/scroll/focus, card-to-detail and return, same-page focus and
+light/dark captions with synthetic public gateways. Its matching
+`test_driver/tutorial_guided_transitions.dart` accepts only task-owned
+`emulator-5592` and downloads PNGs plus measured frame metadata. It needs no backend
+or credentials. The [TUT07 evidence record](../../../docs/development/evidence/tut07/README.md)
+owns reproduction commands, slowed screenshot sampling, the software-renderer
+workaround and the limits of this visual check. Production motion timing is
+verified separately by the focused widget tests.
