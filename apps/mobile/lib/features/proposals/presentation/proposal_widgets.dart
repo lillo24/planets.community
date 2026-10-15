@@ -1,3 +1,7 @@
+import 'dart:math' as math;
+
+import 'package:intl/intl.dart';
+
 import '../../group_projects/presentation/group_project_widgets.dart';
 
 import 'package:flutter/material.dart';
@@ -138,20 +142,151 @@ class ProposalCard extends StatelessWidget {
                   ),
                   if (proposal.skills.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.medium),
-                    Text(
-                      AppLocalizations.of(context).proposalSkillsTitle,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    ProposalSkillRequirements(
-                      skills: proposal.skills,
-                      multiline:
-                          MediaQuery.textScalerOf(context).scale(14) > 18,
-                    ),
+                    ProposalCardSkillPreview(skills: proposal.skills),
                   ],
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A compact single-row preview. The detail retains all skills and their
+/// Required/Useful metadata.
+class ProposalCardSkillPreview extends StatelessWidget {
+  const ProposalCardSkillPreview({required this.skills, super.key});
+
+  final List<ProposalSkill> skills;
+
+  static const double _gap = AppSpacing.small;
+  static const double _pillHorizontalPadding = 10;
+
+  @override
+  Widget build(BuildContext context) {
+    final ordered = [
+      ...skills.where((s) => s.importance == ProposalSkillImportance.required),
+      ...skills.where((s) => s.importance == ProposalSkillImportance.useful),
+    ];
+    if (ordered.isEmpty) return const SizedBox.shrink();
+
+    final style = Theme.of(context).textTheme.labelMedium ??
+        const TextStyle(fontSize: 12);
+    final textScaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+
+    double pillWidth(String label) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: direction,
+        textScaler: textScaler,
+        maxLines: 1,
+      )..layout();
+      final width = painter.width + _pillHorizontalPadding * 2;
+      painter.dispose();
+      return width;
+    }
+
+    final moreWidth = pillWidth('...');
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final available = constraints.maxWidth;
+        final limit = math.min(3, ordered.length);
+        var shown = 0;
+        var used = 0.0;
+        for (var i = 0; i < limit; i++) {
+          final next = used +
+              (shown == 0 ? 0.0 : _gap) +
+              pillWidth(ordered[i].label);
+          // Make space for the ellipsis if any skills remain hidden.
+          final reserve = i + 1 < ordered.length ? _gap + moreWidth : 0.0;
+          if (next + reserve > available) break;
+          shown++;
+          used = next;
+        }
+
+        // An unusually long first label is truncated instead of suppressing
+        // the preview altogether.
+        if (shown == 0 && available > 0) shown = 1;
+        final hasMore = shown < ordered.length;
+        final firstMaxWidth = math.max(
+          0.0,
+          available - (hasMore ? _gap + moreWidth : 0.0),
+        );
+        final semantics =
+            '${AppLocalizations.of(context).proposalSkillsTitle}: '
+            '${ordered.map((skill) => skill.label).join(', ')}';
+
+        return Semantics(
+          label: semantics,
+          child: ExcludeSemantics(
+            child: Row(
+              key: const Key('proposal-card-skills-preview'),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < shown; i++) ...[
+                  if (i > 0) const SizedBox(width: _gap),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: i == 0 && shown == 1
+                          ? firstMaxWidth
+                          : available,
+                    ),
+                    child: _CardSkillPill(
+                      key: Key('proposal-card-skill-${ordered[i].id}'),
+                      label: ordered[i].label,
+                      style: style,
+                    ),
+                  ),
+                ],
+                if (hasMore) ...[
+                  if (shown > 0) const SizedBox(width: _gap),
+                  _CardSkillPill(
+                    key: const Key('proposal-card-skills-more'),
+                    label: '...',
+                    style: style,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CardSkillPill extends StatelessWidget {
+  const _CardSkillPill({
+    required this.label,
+    required this.style,
+    super.key,
+  });
+
+  final String label;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: ProposalCardSkillPreview._pillHorizontalPadding,
+          vertical: AppSpacing.xSmall,
+        ),
+        child: Text(
+          label,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          style: style,
         ),
       ),
     );
@@ -206,6 +341,144 @@ class _SkillLabel extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         child: Text(label, style: theme.textTheme.labelLarge),
       ),
+    );
+  }
+}
+
+/// Display-only Project schedule, formatted in its canonical event timezone.
+class ProposalSchedulePanel extends StatelessWidget {
+  const ProposalSchedulePanel({required this.proposal, super.key});
+
+  final ProposalSummary proposal;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final start = proposal.startsAt;
+    final end = proposal.endsAt;
+    final zone = proposal.eventTimezone;
+    final hasSchedule = start != null && end != null && zone != null;
+    final scheme = Theme.of(context).colorScheme;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+
+    return Card(
+      key: const Key('proposal-schedule-panel'),
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.medium),
+        child: !hasSchedule
+            ? Row(
+                children: [
+                  const Icon(Icons.event_outlined, size: 24),
+                  const SizedBox(width: AppSpacing.medium),
+                  Expanded(child: Text(l10n.proposalDateUndecided)),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _ScheduleMoment(
+                    key: const Key('proposal-schedule-start'),
+                    icon: Icons.event_available_outlined,
+                    title: l10n.proposalStartLabel,
+                    instant: start,
+                    zone: zone,
+                    locale: locale,
+                  ),
+                  const Divider(height: AppSpacing.large),
+                  _ScheduleMoment(
+                    key: const Key('proposal-schedule-end'),
+                    icon: Icons.event_outlined,
+                    title: l10n.proposalEndLabel,
+                    instant: end,
+                    zone: zone,
+                    locale: locale,
+                  ),
+                  const SizedBox(height: AppSpacing.medium),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.public_outlined,
+                        size: 16,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: AppSpacing.small),
+                      Expanded(
+                        child: Text(
+                          zone,
+                          key: const Key('proposal-schedule-timezone'),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _ScheduleMoment extends StatelessWidget {
+  const _ScheduleMoment({
+    required this.icon,
+    required this.title,
+    required this.instant,
+    required this.zone,
+    required this.locale,
+    super.key,
+  });
+
+  final IconData icon;
+  final String title;
+  final DateTime instant;
+  final String zone;
+  final String locale;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final wallTime = proposalUtcToWallTime(instant, zone);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.medium,
+            color: scheme.primaryContainer,
+          ),
+          child: SizedBox.square(
+            dimension: 44,
+            child: Icon(icon, color: scheme.onPrimaryContainer),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.medium),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+              Text(
+                DateFormat.MMMEd(locale).add_y().format(wallTime),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              Text(
+                DateFormat.Hm(locale).format(wallTime),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
