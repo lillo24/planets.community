@@ -7,6 +7,7 @@ import '../../../core/backend/revalidate_window.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../group_contact/application/contact_access_changes.dart';
+import '../../member_contact/application/member_contact_access_changes.dart';
 import '../../messages/application/message_chats_refresh.dart';
 import '../data/notifications_gateway.dart';
 import '../domain/notification_models.dart';
@@ -38,6 +39,10 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
   @override
   NotificationsUnreadState build() {
     ref.listen(contactAccessChangesProvider, (_, _) => _invalidateContacts());
+    ref.listen(
+      memberContactAccessChangesProvider,
+      (_, _) => _invalidateContacts(),
+    );
     ref.listen(messageChatsRefreshProvider, (_, _) => _invalidateContacts());
     ref.listen(
       authSessionProvider.select(
@@ -215,6 +220,10 @@ class NotificationsInboxController extends Notifier<NotificationsInboxState> {
   @override
   NotificationsInboxState build() {
     ref.listen(contactAccessChangesProvider, (_, _) => _invalidateContacts());
+    ref.listen(
+      memberContactAccessChangesProvider,
+      (_, _) => _invalidateContacts(),
+    );
     ref.listen(messageChatsRefreshProvider, (_, _) => _invalidateContacts());
     ref.listen(
       authSessionProvider.select(

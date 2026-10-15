@@ -6,6 +6,7 @@ import 'package:planets_mobile/features/auth/application/auth_session_controller
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/group_contact/application/contact_access_changes.dart';
+import 'package:planets_mobile/features/member_contact/application/member_contact_access_changes.dart';
 import 'package:planets_mobile/features/notifications/application/notifications_controllers.dart';
 import 'package:planets_mobile/features/notifications/data/notifications_gateway.dart';
 import 'package:planets_mobile/features/notifications/domain/notification_models.dart';
@@ -14,6 +15,40 @@ import '../../../support/fake_auth.dart';
 import '../../../support/fake_notifications.dart';
 
 void main() {
+  test(
+    'member access hint clears own cached notice when reload fails',
+    () async {
+      const parser = NotificationsPayloadParser();
+      final notice = parser.notification({
+        'notification_id': '00000000-0000-4000-8000-000000000911',
+        'category_slug': 'participation',
+        'notification_kind': 'member_contact_request',
+        'destination_kind': 'member_contact_request',
+        'contact_target_id': '00000000-0000-4000-8000-000000000912',
+        'created_at': '2026-10-15T10:00:00Z',
+        'read_at': null,
+      });
+      final gateway = FakeNotificationsGateway()..items = [notice];
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final controller = session.container.read(
+        notificationsInboxProvider.notifier,
+      );
+      await controller.load('user-1');
+      gateway.listError = StateError('offline');
+      session.container
+          .read(memberContactAccessChangesProvider.notifier)
+          .changed('user-1');
+      await Future<void>.delayed(Duration.zero);
+      expect(session.container.read(notificationsInboxProvider).items, isEmpty);
+      expect(
+        session.container.read(notificationsInboxProvider).failure,
+        NotificationsFailureKind.unavailable,
+      );
+    },
+  );
+
   test('access change clears contact notices offline and defeats stale read rollback', () async {
     const parser = NotificationsPayloadParser();
     final notice = parser.notification({
