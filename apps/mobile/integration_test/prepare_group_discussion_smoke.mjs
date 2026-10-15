@@ -1,4 +1,5 @@
 // Fictional verified OTP sessions on an explicitly disposable loopback stack.
+import { prepareConversion } from "./prepare_discussion_conversion_smoke.mjs";
 import { randomUUID } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -33,7 +34,7 @@ const expected = (person) => ({ p_expected_profile_id: person.id });
 try {
   const people = {},
     run = randomUUID().slice(0, 8);
-  for (const label of ["creator", "member"]) {
+  for (const label of ["creator", "member", "planner", "newcomer"]) {
     const person = await signInLocalOtpUser({
       ...status,
       mailpitUrl,
@@ -48,7 +49,7 @@ try {
     await ensureLocalProfilePhoto(person);
     people[label] = person;
   }
-  const { creator, member } = people;
+  const { creator, member, planner } = people;
   const group = await rpc(creator, "create_group_draft", {
     ...expected(creator),
     p_client_request_id: randomUUID(),
@@ -78,11 +79,14 @@ try {
     p_client_request_id: randomUUID(),
     p_token: offer.invite_token,
   });
-  const room = await rpc(creator, "create_group_discussion", {
+  await rpc(planner, "accept_group_participant_invitation", {...expected(planner), p_client_request_id: randomUUID(), p_token: offer.invite_token});
+  const room = await rpc(creator, "create_group_discussion_v2", {
     ...expected(creator),
     p_client_request_id: randomUUID(),
     p_group_id: group,
     p_title: "Parco",
+    p_purpose: "Fictional invitation-only planning.",
+    p_visibility: "invitation",
   });
   await rpc(creator, "send_group_discussion_message", {
     ...expected(creator),
@@ -96,7 +100,11 @@ try {
     p_room_id: room.room_id,
     p_profile_id: member.id,
   });
+  const visible = await rpc(creator, "create_group_discussion_v2", {...expected(creator), p_client_request_id: randomUUID(), p_group_id: group, p_title: "Visible unjoined Idea", p_purpose: "Fictional hide and discovery fixture.", p_visibility: "group"});
+  const conversion = await prepareConversion({rpc, expected, sql, people, group, run, status, mailpitUrl});
   const values = {
+    ...conversion,
+    C_VISIBLE_ROOM: visible.room_id,
     APP_ENV: "local",
     ENABLE_DEMO_TOOLS: false,
     SUPABASE_URL: status.apiUrl,

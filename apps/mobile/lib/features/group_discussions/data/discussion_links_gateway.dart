@@ -30,7 +30,7 @@ class SupabaseDiscussionLinksGateway implements DiscussionLinksGateway {
     Map<String, dynamic>? cursor,
   ) async => DiscussionLinkPage(
     await client.rpc<Object?>(
-      'list_group_discussion_links',
+      'list_group_discussion_links_v2',
       params: {
         'p_expected_profile_id': actor,
         'p_room_id': room,
@@ -52,7 +52,7 @@ class SupabaseDiscussionLinksGateway implements DiscussionLinksGateway {
     String link,
   ) async => DiscussionLink(
     await client.rpc<Object?>(
-      'get_group_discussion_link',
+      'get_group_discussion_link_v2',
       params: {
         'p_expected_profile_id': actor,
         'p_room_id': room,

@@ -48,17 +48,20 @@ mixin DiscussionCursor implements DiscussionPageRow {
 
 class DiscussionGroup with DiscussionCursor {
   DiscussionGroup(Object? value) {
+    final revised = value is Map && value.containsKey('can_read_ideas');
     final r = discussionObject(value, {
       'group_id',
       'name',
       'created_at',
       'room_count',
       'unread_count',
+      if (revised) 'can_read_ideas',
     });
     id = groupUuid(r['group_id']);
     name = groupText(r['name'], 120);
     createdAt = groupDate(r['created_at']);
-    roomCount = discussionCount(r['room_count'], minimum: 1);
+    roomCount = discussionCount(r['room_count']);
+    canReadIdeas = revised ? groupBool(r['can_read_ideas']) : true;
     unreadCount = discussionCount(r['unread_count']);
   }
   @override
@@ -67,11 +70,30 @@ class DiscussionGroup with DiscussionCursor {
   @override
   late final DateTime createdAt;
   late final int roomCount, unreadCount;
+  late final bool canReadIdeas;
 }
 
 class DiscussionRoom with DiscussionCursor {
   DiscussionRoom(Object? value) {
+    final revised = value is Map && value.containsKey('room_kind');
     final r = discussionObject(value, {
+      if (revised) ...{
+        'room_kind',
+        'visibility',
+        'purpose',
+        'creator_id',
+        'access_id',
+        'access',
+        'can_join',
+        'can_send',
+        'can_invite',
+        'can_read_links',
+        'muted',
+        'manually_hidden',
+        'automatically_hidden',
+        'frozen',
+        'invitation_link_version',
+      },
       'kind',
       'room_id',
       'group_id',
@@ -96,7 +118,49 @@ class DiscussionRoom with DiscussionCursor {
     archived = groupBool(r['archived']);
     version = discussionCount(r['version'], minimum: 1);
     createdAt = groupDate(r['created_at']);
-    admissionId = groupUuid(r['admission_id']);
+    if (!revised) groupUuid(r['admission_id']);
+    actualAdmissionId = r['admission_id'] == null
+        ? null
+        : groupUuid(r['admission_id']);
+    accessId = revised && r['access_id'] != null
+        ? groupUuid(r['access_id'])
+        : actualAdmissionId;
+    // A discovery row has no grant. Its room identity only anchors local UI;
+    // actualAdmissionId is required for admission-specific commands.
+    admissionId = accessId ?? id;
+    roomKind = revised ? groupText(r['room_kind'], 20) : 'idea';
+    visibility = revised ? groupText(r['visibility'], 20) : 'invitation';
+    access = revised ? groupText(r['access'], 20) : 'joined';
+    if (!{'general', 'idea'}.contains(roomKind) ||
+        !{'group', 'invitation'}.contains(visibility) ||
+        !{
+          'joined',
+          'oversight',
+          'general',
+          'former',
+          'discoverable',
+        }.contains(access)) {
+      throw const FormatException('Invalid Idea audience or access.');
+    }
+    purpose = revised && r['purpose'] != null && r['purpose'] != ''
+        ? groupText(r['purpose'], 500)
+        : '';
+    creatorId = revised ? groupUuid(r['creator_id']) : null;
+    canJoin = revised ? groupBool(r['can_join']) : false;
+    canSend = revised ? groupBool(r['can_send']) : !archived;
+    canInvite = revised
+        ? groupBool(r['can_invite'])
+        : groupBool(r['can_manage']);
+    canReadLinks = revised ? groupBool(r['can_read_links']) : true;
+    muted = revised ? groupBool(r['muted']) : false;
+    manuallyHidden = revised ? groupBool(r['manually_hidden']) : false;
+    automaticallyHidden = revised
+        ? groupBool(r['automatically_hidden'])
+        : false;
+    frozen = revised ? groupBool(r['frozen']) : false;
+    invitationLinkVersion = revised
+        ? discussionCount(r['invitation_link_version'])
+        : 0;
     canManage = groupBool(r['can_manage']);
     canPublish = groupBool(r['can_publish']);
     unreadCount = discussionCount(r['unread_count']);
@@ -113,6 +177,52 @@ class DiscussionRoom with DiscussionCursor {
   late final bool archived, canManage, canPublish;
   late final int version, unreadCount;
   late final String? preview;
+  late final String roomKind, visibility, purpose, access;
+  late final String? creatorId, actualAdmissionId, accessId;
+  late final int invitationLinkVersion;
+  late final bool canJoin,
+      canSend,
+      canInvite,
+      canReadLinks,
+      muted,
+      manuallyHidden,
+      automaticallyHidden,
+      frozen;
+  bool get isGeneral => roomKind == 'general';
+  bool get canReadHistory => access != 'discoverable';
+  bool get isFormer => access == 'former';
+  bool get canReadPeople => canReadHistory && !isFormer;
+  bool get canLeave =>
+      !isGeneral && access == 'joined' && actualAdmissionId != null;
+  bool get canHide => !isGeneral && access == 'discoverable';
+}
+
+class DiscussionSettings {
+  DiscussionSettings(Object? value) {
+    final r = discussionObject(value, {
+      'group_id',
+      'creation_policy',
+      'version',
+      'can_edit',
+      'can_create',
+      'general_room_id',
+    });
+    groupId = groupUuid(r['group_id']);
+    policy = groupText(r['creation_policy'], 20);
+    if (!{'managers', 'members'}.contains(policy)) {
+      throw const FormatException('Invalid Idea creation policy.');
+    }
+    version = discussionCount(r['version'], minimum: 1);
+    canEdit = groupBool(r['can_edit']);
+    canCreate = groupBool(r['can_create']);
+    generalRoomId = r['general_room_id'] == null
+        ? null
+        : groupUuid(r['general_room_id']);
+  }
+  late final String groupId, policy;
+  late final String? generalRoomId;
+  late final int version;
+  late final bool canEdit, canCreate;
 }
 
 class DiscussionInvitation with DiscussionCursor {
@@ -223,6 +333,7 @@ class DiscussionHistory {
     required bool newest,
     required String expectedActor,
     required String expectedRoom,
+    bool allowReadOnlySnapshot = false,
   }) {
     final r = discussionObject(value, {
       'items',
@@ -250,11 +361,13 @@ class DiscussionHistory {
     if (!newest && token != null ||
         newest &&
             messages.isNotEmpty &&
-            (token == null ||
-                !RegExp(r'^[0-9]+:[0-9a-f-]{36}:[0-9a-f]{64}$')
-                    .hasMatch(token!) ||
-                token!.split(':')[0] != messages.first.sequence.toString() ||
-                token!.split(':')[1] != messages.first.id) ||
+            (!allowReadOnlySnapshot && token == null ||
+                token != null &&
+                    (!RegExp(r'^[0-9]+:[0-9a-f-]{36}:[0-9a-f]{64}$')
+                            .hasMatch(token!) ||
+                        token!.split(':')[0] !=
+                            messages.first.sequence.toString() ||
+                        token!.split(':')[1] != messages.first.id)) ||
         newest && messages.isEmpty && token != null) {
       throw const FormatException('Invalid discussion read snapshot.');
     }

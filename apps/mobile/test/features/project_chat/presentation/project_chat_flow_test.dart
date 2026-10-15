@@ -1,3 +1,4 @@
+import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
 import 'package:planets_mobile/features/project_chat/application/project_needs_controller.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 
@@ -1517,7 +1518,8 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
+        discussionProjectsGatewayProvider.overrideWithValue(EmptyDiscussionProjectsGateway()),
+      discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
         preacceptedPolicyFixture,
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(

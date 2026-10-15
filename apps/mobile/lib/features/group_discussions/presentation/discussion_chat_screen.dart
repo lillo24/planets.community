@@ -19,6 +19,7 @@ import 'discussion_feedback.dart';
 import 'discussion_routes.dart';
 import 'discussion_project_start.dart';
 import 'discussion_widgets.dart';
+import 'discussion_room_actions.dart';
 
 class DiscussionChatScreen extends ConsumerStatefulWidget {
   const DiscussionChatScreen({required this.roomId, super.key});
@@ -98,7 +99,7 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
 
   Future<void> send(DiscussionChatController c) async {
     final room = c.room;
-    if (room == null || room.archived) return;
+    if (room == null || !room.canSend) return;
     final commands = ref.read(discussionCommandsProvider),
         slot = 'send/${room.admissionId}';
     final attempt = commands.attempts[slot],
@@ -215,6 +216,38 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
                 child: Column(
                   children: [
                     if (c.busy) const LinearProgressIndicator(),
+                    if (room.isGeneral)
+                      ListTile(
+                        leading: const Icon(Icons.folder_shared_outlined),
+                        title: Text(l.discussionGroupWorkspace),
+                        subtitle: Text(l.discussionExternalHint),
+                        onTap: room.canReadLinks
+                            ? () => context.push(discussionLinksRoute(room.id))
+                            : null,
+                      ),
+                    if (!room.isGeneral)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ExpansionTile(
+                              tilePadding: EdgeInsets.zero,
+                              title: Text(room.isFormer
+                                  ? l.discussionFormerHistory
+                                  : room.visibility == 'group'
+                                  ? l.discussionGroupVisible
+                                  : l.discussionInviteOnly),
+                              children: [
+                                if (room.purpose.isNotEmpty) Text(room.purpose),
+                                if (!room.isFormer) Text(l.discussionManagerDisclosure),
+                                DiscussionRoomActions(room: room, onChanged: c.refresh),
+                              ],
+                            ),
+                            if (!room.canReadHistory) DiscussionRoomActions(room: room, onChanged: c.refresh),
+                          ],
+                        ),
+                      ),
                     if (c.error != null)
                       DiscussionError(
                         c.error!,
@@ -286,7 +319,11 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
                               child: Text(l.discussionOlder),
                             ),
                           if (c.messages.isEmpty && !c.busy && c.error == null)
-                            Text(l.discussionNoMessages),
+                            Text(
+                              room.canReadHistory
+                                  ? l.discussionNoMessages
+                                  : l.discussionJoinPreview,
+                            ),
                           for (final m in c.messages)
                             DiscussionBubble(
                               key: ValueKey(m.id),
@@ -321,13 +358,15 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
                         vertical: 4,
                       ),
                       child: Text(
-                        room.archived
-                            ? l.discussionReadOnly
+                        !room.canSend
+                            ? (room.isFormer
+                                  ? l.discussionFormerHistory
+                                  : l.discussionReadOnly)
                             : l.discussionHistory,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
-                    if (!room.archived)
+                    if (room.canSend)
                       SafeArea(
                         top: false,
                         child: Padding(
@@ -397,36 +436,44 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
                 }
               },
               actions: [
-                if (room?.canPublish == true && c != null)
+                if (room != null &&
+                    !room.isGeneral &&
+                    room.canReadHistory &&
+                    c != null)
                   DiscussionProjectStart(
                     controller: c,
-                    source: room!,
+                    source: room,
                     enabled:
                         attempt?.busy != true && attempt?.uncertain != true,
                   ),
-                if (room != null)
+                if (room?.canReadLinks == true)
                   IconButton(
                     key: const Key('discussion-workspace'),
                     tooltip: l.discussionWorkspace,
                     onPressed:
                         attempt?.busy == true || attempt?.uncertain == true
                         ? null
-                        : () => context.push(discussionLinksRoute(room.id)),
+                        : () => context.push(discussionLinksRoute(room!.id)),
                     icon: const Icon(Icons.folder_shared_outlined),
                   ),
-                if (room != null)
+                if (room?.canReadPeople == true)
                   IconButton(
                     tooltip: l.discussionPeople,
                     onPressed: () =>
-                        context.push(discussionPeopleRoute(room.id)),
+                        context.push(discussionPeopleRoute(room!.id)),
                     icon: const Icon(Icons.people_outline),
                   ),
-                if (room != null)
+                if (room != null &&
+                    !room.isGeneral &&
+                    (room.canManage || room.canLeave))
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'leave') {
                         context.push(
-                          discussionLeaveRoute(room.id, room.admissionId),
+                          discussionLeaveRoute(
+                            room.id,
+                            room.actualAdmissionId!,
+                          ),
                         );
                       } else {
                         showDialog<void>(
@@ -453,10 +500,11 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
                                 : l.discussionArchive,
                           ),
                         ),
-                      PopupMenuItem(
-                        value: 'leave',
-                        child: Text(l.discussionLeave),
-                      ),
+                      if (room.canLeave)
+                        PopupMenuItem(
+                          value: 'leave',
+                          child: Text(l.discussionLeave),
+                        ),
                     ],
                   ),
               ],
@@ -482,7 +530,8 @@ class _DiscussionEditDialog extends ConsumerStatefulWidget {
 }
 
 class _DiscussionEditDialogState extends ConsumerState<_DiscussionEditDialog> {
-  late final TextEditingController title;
+  late final TextEditingController title, purpose;
+  late String visibility;
   late int version;
   late bool archive;
   late final String admission;
@@ -499,6 +548,10 @@ class _DiscussionEditDialogState extends ConsumerState<_DiscussionEditDialog> {
     title = TextEditingController(
       text: attempt?.intent['p_title'] as String? ?? r.title,
     );
+    purpose = TextEditingController(
+      text: attempt?.intent['p_purpose'] as String? ?? r.purpose,
+    );
+    visibility = attempt?.intent['p_visibility'] as String? ?? r.visibility;
     version = attempt?.intent['p_expected_version'] as int? ?? r.version;
     archive =
         attempt?.intent['p_archived'] as bool? ?? widget.archive ?? r.archived;
@@ -508,6 +561,7 @@ class _DiscussionEditDialogState extends ConsumerState<_DiscussionEditDialog> {
   @override
   void dispose() {
     title.dispose();
+    purpose.dispose();
     super.dispose();
   }
 
@@ -547,6 +601,8 @@ class _DiscussionEditDialogState extends ConsumerState<_DiscussionEditDialog> {
               'p_room_id': c.roomId,
               'p_expected_version': version,
               'p_title': text,
+              'p_purpose': attempt?.intent['p_purpose'] ?? purpose.text.trim(),
+              'p_visibility': attempt?.intent['p_visibility'] ?? visibility,
               'p_archived': archive,
             },
           );
@@ -582,6 +638,41 @@ class _DiscussionEditDialogState extends ConsumerState<_DiscussionEditDialog> {
                       maxLength: 120,
                       decoration: InputDecoration(labelText: l.discussionName),
                     ),
+                  if (widget.archive == null) ...[
+                    TextField(
+                      controller: purpose,
+                      readOnly: attempt != null,
+                      maxLength: 500,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: l.discussionPurpose,
+                      ),
+                    ),
+                    DropdownButtonFormField<String>(
+                      initialValue: visibility,
+                      isExpanded: true,
+                      items: [
+                        DropdownMenuItem(
+                          value: 'group',
+                          child: Text(
+                            l.discussionGroupVisible,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'invitation',
+                          child: Text(
+                            l.discussionInviteOnly,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                      onChanged: attempt == null
+                          ? (v) => setState(() => visibility = v!)
+                          : null,
+                    ),
+                    Text(l.discussionManagerDisclosure),
+                  ],
                   if (attempt?.error != null) DiscussionError(attempt!.error!),
                   if (attempt?.uncertain == true) Text(l.discussionUncertain),
                   if (reviewError != null) DiscussionError(reviewError!),

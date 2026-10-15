@@ -44,7 +44,7 @@ class SupabaseMessageUnreadGateway implements MessageUnreadGateway {
   ) async {
     if (kind == 'group_discussion') {
       await client.rpc<void>(
-        'acknowledge_group_discussion_read',
+        'acknowledge_group_discussion_read_v2',
         params: {
           'p_expected_profile_id': profileId,
           'p_room_id': chatId,

@@ -1,3 +1,4 @@
+import '../../group_discussions/presentation/discussion_group_conversations.dart';
 import '../../group_projects/presentation/group_project_widgets.dart';
 
 import 'dart:async';
@@ -539,6 +540,7 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                   ),
                   const SizedBox(height: AppSpacing.small),
                   ProjectGroupBadge(detail.summary.groupAttribution),
+                  if (detail.summary.groupAttribution?.groupId != null) GroupCommunicationEntry(groupId: detail.summary.groupAttribution!.groupId!),
                   Text(
                     detail.summary.summary,
                     key: detail.description == null

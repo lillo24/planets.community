@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../data/discussion_gateway.dart';
+import '../data/discussion_projects_gateway.dart';
 import '../domain/discussion_models.dart';
 
 /// One account subscription, shared by mounted C destinations. Each consumer
@@ -23,6 +24,17 @@ final discussionSignalsProvider =
       return ref
           .watch(discussionGatewayProvider)
           .signals(session.identity!.id)
+          .map((connected) => (connected: connected, event: ++event));
+    });
+
+final discussionGroupSignalsProvider = StreamProvider.autoDispose
+    .family<({bool connected, int event}), String>((ref, group) {
+      final actor = discussionActor(ref);
+      if (actor == null) return const Stream.empty();
+      var event = 0;
+      return ref
+          .watch(discussionGatewayProvider)
+          .groupSignals(actor, group)
           .map((connected) => (connected: connected, event: ++event));
     });
 
@@ -265,6 +277,8 @@ class DiscussionChatController extends ChangeNotifier {
   final String actor, roomId;
   final bool Function() authorized;
   DiscussionRoom? room;
+  StreamSubscription<bool>? groupSubscription;
+  String? observedGroup;
   List<DiscussionMessage> messages = [];
   Object? error;
   String? token;
@@ -290,6 +304,30 @@ class DiscussionChatController extends ChangeNotifier {
     notifyListeners();
     try {
       final context = await gateway.room(actor, roomId);
+      if (disposed || epoch != revision || !authorized()) return;
+      if (observedGroup != context.groupId && !context.isFormer) {
+        unawaited(groupSubscription?.cancel());
+        observedGroup = context.groupId;
+        groupSubscription = gateway.groupSignals(actor, context.groupId).listen(
+          (connected) {
+            if (connected) invalidate();
+          },
+        );
+      }
+      if (context.isFormer) {
+        unawaited(groupSubscription?.cancel());
+        groupSubscription = null;
+        observedGroup = null;
+      }
+      if (!context.canReadHistory) {
+        if (disposed || epoch != revision || !authorized()) return;
+        room = context;
+        messages = [];
+        token = null;
+        more = false;
+        latestAvailable = false;
+        return;
+      }
       final page = await gateway.history(actor, roomId);
       if (page.admissionId != context.admissionId) {
         throw const FormatException(
@@ -297,7 +335,7 @@ class DiscussionChatController extends ChangeNotifier {
         );
       }
       if (disposed || epoch != revision || !authorized()) return;
-      final sameEpisode = room?.admissionId == context.admissionId;
+      final sameEpisode = room?.admissionId == context.admissionId && room?.access == context.access && !context.isFormer;
       final overlap =
           messages.isEmpty ||
           page.messages.any((m) => messages.any((old) => old.id == m.id));
@@ -395,6 +433,7 @@ class DiscussionChatController extends ChangeNotifier {
     room = null;
     messages = [];
     token = null;
+    unawaited(groupSubscription?.cancel());
     super.dispose();
   }
 }
@@ -448,6 +487,9 @@ final discussionRoomsProvider = Provider.autoDispose
       ref.listen(discussionSignalsProvider, (_, next) {
         if (next.asData?.value.connected == true) p.invalidate();
       });
+      ref.listen(discussionGroupSignalsProvider(group), (_, next) {
+        if (next.asData?.value.connected == true) p.invalidate();
+      });
       ref.onDispose(p.dispose);
       return p;
     });
@@ -467,4 +509,46 @@ final discussionChatProvider = Provider.autoDispose
       });
       ref.onDispose(c.dispose);
       return c;
+    });
+
+final discussionHiddenRoomsProvider = Provider.autoDispose
+    .family<DiscussionPager<DiscussionRoom>?, String>((ref, group) {
+      final session = ref.watch(authSessionProvider);
+      final actor = session.phase == AuthSessionPhase.ready
+          ? session.identity?.id
+          : null;
+      if (actor == null) return null;
+      final p = DiscussionPager<DiscussionRoom>(
+        (cursor) => ref
+            .read(discussionGatewayProvider)
+            .rooms(actor, group, cursor, hidden: true),
+        () => discussionActor(ref) == actor,
+      );
+      ref.listen(discussionSignalsProvider, (_, next) {
+        if (next.asData?.value.connected == true) p.invalidate();
+      });
+      ref.listen(discussionGroupSignalsProvider(group), (_, next) {
+        if (next.asData?.value.connected == true) p.invalidate();
+      });
+      ref.onDispose(p.dispose);
+      return p;
+    });
+final discussionProjectsProvider = Provider.autoDispose
+    .family<DiscussionPager<DiscussionProjectRow>?, String>((ref, group) {
+      final session = ref.watch(authSessionProvider);
+      final actor = session.phase == AuthSessionPhase.ready
+          ? session.identity?.id
+          : null;
+      if (actor == null) return null;
+      final p = DiscussionPager<DiscussionProjectRow>(
+        (cursor) => ref
+            .read(discussionProjectsGatewayProvider)
+            .projects(actor, group, cursor),
+        () => discussionActor(ref) == actor,
+      );
+      ref.listen(discussionSignalsProvider, (_, next) {
+        if (next.asData?.value.connected == true) p.invalidate();
+      });
+      ref.onDispose(p.dispose);
+      return p;
     });

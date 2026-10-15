@@ -17,15 +17,30 @@ import 'discussion_link_open.dart';
 import 'discussion_link_editor.dart';
 import 'discussion_link_widgets.dart';
 import 'discussion_routes.dart';
+import 'discussion_share_link.dart';
 
 IconData discussionLinkIcon(DiscussionLink link) =>
-    switch (classifyProjectWorkspace(link.name, link.url.uri)) {
-      ProjectWorkspaceIconType.document => Icons.description_outlined,
-      ProjectWorkspaceIconType.spreadsheet => Icons.table_chart_outlined,
-      ProjectWorkspaceIconType.video => Icons.videocam_outlined,
-      ProjectWorkspaceIconType.drive => Icons.folder_shared_outlined,
-      ProjectWorkspaceIconType.link => Icons.link,
-    };
+    {
+      'wa.me',
+      'whatsapp.com',
+      'chat.whatsapp.com',
+      'www.whatsapp.com',
+    }.contains(link.url.hostname)
+    ? Icons.chat_outlined
+    : {
+        't.me',
+        'telegram.me',
+        'telegram.org',
+        'www.telegram.org',
+      }.contains(link.url.hostname)
+    ? Icons.send_outlined
+    : switch (classifyProjectWorkspace(link.name, link.url.uri)) {
+        ProjectWorkspaceIconType.document => Icons.description_outlined,
+        ProjectWorkspaceIconType.spreadsheet => Icons.table_chart_outlined,
+        ProjectWorkspaceIconType.video => Icons.videocam_outlined,
+        ProjectWorkspaceIconType.drive => Icons.folder_shared_outlined,
+        ProjectWorkspaceIconType.link => Icons.link,
+      };
 bool isDiscussionLinkAction(DiscussionAction action) => {
   DiscussionAction.addLink,
   DiscussionAction.editLink,
@@ -232,6 +247,7 @@ class _DiscussionLinksScreenState extends ConsumerState<DiscussionLinksScreen>
                                 link,
                               ),
                             ),
+                            if (c != null) DiscussionShareLinkButton(actor: c.actor, link: link),
                             if (c?.canManage == true)
                               Wrap(
                                 spacing: 8,

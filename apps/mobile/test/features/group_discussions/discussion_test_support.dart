@@ -90,6 +90,18 @@ class Gateway implements DiscussionGateway {
   Future<DiscussionReceipt> Function(String, Map<String, dynamic>)? write;
   final keys = <String>[];
   @override
+  Stream<bool> groupSignals(String actor, String group) => const Stream.empty();
+  @override
+  Future<DiscussionSettings> settings(String actor, String group) async =>
+      DiscussionSettings({
+        'group_id': group,
+        'creation_policy': 'managers',
+        'version': 1,
+        'can_edit': true,
+        'can_create': true,
+        'general_room_id': null,
+      });
+  @override
   Future<List<DiscussionGroup>> groups(
     String a,
     Map<String, dynamic>? cursor,
@@ -102,8 +114,9 @@ class Gateway implements DiscussionGateway {
   Future<List<DiscussionRoom>> rooms(
     String a,
     String g,
-    Map<String, dynamic>? cursor,
-  ) async {
+    Map<String, dynamic>? cursor, {
+    bool hidden = false,
+  }) async {
     roomReads++;
     return [context];
   }

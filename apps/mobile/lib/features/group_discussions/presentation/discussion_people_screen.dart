@@ -15,6 +15,7 @@ import '../data/discussion_gateway.dart';
 import '../domain/discussion_models.dart';
 import 'discussion_feedback.dart';
 import 'discussion_routes.dart';
+import 'discussion_invitation_link.dart';
 
 class DiscussionPeopleScreen extends ConsumerStatefulWidget {
   const DiscussionPeopleScreen({required this.roomId, super.key});
@@ -48,7 +49,7 @@ class _DiscussionPeopleScreenState
       ref.read(authSessionProvider).identity?.id == c.actor;
   void bind(DiscussionChatController c) {
     final r = c.room;
-    if (r == null) return;
+    if (r == null || !r.canReadPeople) return;
     people?.dispose();
     invitations?.dispose();
     invitations = null;
@@ -74,13 +75,13 @@ class _DiscussionPeopleScreenState
 
   void choose(DiscussionChatController c) {
     final r = c.room;
-    if (r == null || !r.canManage || r.archived) return;
+    if (r == null || !r.canInvite || r.archived || r.frozen) return;
     candidates?.dispose();
     final p = GroupRelationshipPager<GroupPerson>(
       (cursor) => ref
           .read(groupRelationshipGatewayProvider)
           .people(c.actor, r.groupId, cursor),
-      () => valid(c, r.admissionId) && c.room?.canManage == true,
+      () => valid(c, r.admissionId) && c.room?.canInvite == true,
     );
     setState(() {
       candidates = p;
@@ -98,7 +99,10 @@ class _DiscussionPeopleScreenState
     if (room == null) return;
     final commands = ref.read(discussionCommandsProvider),
         slot = '${action.name}/$object';
-    if (!room.canManage && commands.attempts[slot] == null) {
+    if (!(action == DiscussionAction.invite
+            ? room.canInvite
+            : room.canManage) &&
+        commands.attempts[slot] == null) {
       return;
     }
     final intent = {
@@ -176,7 +180,7 @@ class _DiscussionPeopleScreenState
         ?invitations,
       ]),
       builder: (context, _) {
-        final room = c?.room;
+        final room = c?.room?.canReadPeople == true ? c?.room : null;
         if (room == null &&
             c?.error != null &&
             discussionFailure(c!.error!) == DiscussionFailure.denied &&
@@ -204,7 +208,7 @@ class _DiscussionPeopleScreenState
             }
           });
         }
-        if (room == null || !room.canManage) {
+        if (room == null || !room.canInvite) {
           if (invitations != null || candidates != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
@@ -255,6 +259,12 @@ class _DiscussionPeopleScreenState
                       const CircularProgressIndicator(),
                   ],
                   if (room != null) ...[
+                    if (room.canManage && !room.isGeneral && !room.frozen)
+                      DiscussionInvitationLinkControls(
+                        room: room,
+                        actor: c!.actor,
+                        onChanged: c.refresh,
+                      ),
                     for (final entry in commands.attempts.entries.where(
                       (e) =>
                           {
@@ -318,7 +328,7 @@ class _DiscussionPeopleScreenState
                           child: Text(l.discussionLoadMore),
                         ),
                     ],
-                    if (room.canManage && !room.archived)
+                    if (room.canInvite && !room.archived && !room.frozen)
                       OutlinedButton.icon(
                         onPressed: () => choose(c!),
                         icon: const Icon(Icons.person_add_outlined),

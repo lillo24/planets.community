@@ -1,3 +1,5 @@
+import '../../support/fake_group_discussions.dart';
+import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -47,7 +49,8 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           authSessionProvider.overrideWith(Session.new),
-          discussionGatewayProvider.overrideWithValue(gateway),
+          discussionProjectsGatewayProvider.overrideWithValue(EmptyDiscussionProjectsGateway()),
+      discussionGatewayProvider.overrideWithValue(gateway),
           discussionCommandsProvider.overrideWithValue(commands),
         ],
       );
@@ -59,7 +62,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: app(const DiscussionFolders()),
+          child: app(const DiscussionRequests()),
         ),
       );
       await tester.pumpAndSettle();
@@ -118,7 +121,8 @@ void main() {
       final actual = ProviderContainer(
         overrides: [
           authSessionProvider.overrideWith(Session.new),
-          discussionGatewayProvider.overrideWithValue(g),
+          discussionProjectsGatewayProvider.overrideWithValue(EmptyDiscussionProjectsGateway()),
+      discussionGatewayProvider.overrideWithValue(g),
         ],
       );
       addTearDown(() async {

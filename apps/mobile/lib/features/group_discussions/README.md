@@ -1,6 +1,6 @@
-# Private registered Group discussions
+# Group General and Ideas
 
-This feature owns C's accepted-room audience. It is independent of Project,
+This feature owns the revised C General / Ideas audience. It is independent of Project,
 Resource and representative conversations.
 
 - `domain/discussion_models.dart` strictly parses bounded C projections,
@@ -34,6 +34,43 @@ Resource and representative conversations.
   opening the ordinary Group-attributed Project chooser. Its private navigation
   result returns to the retained room without granting Project access.
 
-The backend is authoritative. See the provisional permissions contract and
+The backend is authoritative. See the revised permissions contract and
 reproduction notes in `docs/development/group-discussions.md`. Controllers do not
 persist private room content or automatically execute a restored action.
+
+## Revised mobile boundaries
+
+V2 room readers separate discoverable summaries, explicit admissions, General,
+manager oversight and former history. Discovery never fetches messages. Former
+history is read-only and its snapshots cannot acknowledge current unread.
+
+Group settings default to managers. Authorized structural editors may select all
+current members. Creation explains planning, public publication, manager
+oversight, full earlier history and independent Project participation.
+
+The Group folder loads General/Ideas and entitled Project conversations on
+expansion. Project authorization is filtered before the bounded query limit.
+Project-only folders never load Group Ideas. Canonical outside cards use a
+bounded authorized mapping to avoid duplicate conversations.
+
+- `discussion_room_actions.dart` owns deliberate Join and independent mute/hide.
+  The server classifies quiet Ideas after about seven days. Hiding changes no
+  unread or subscription; Show hidden includes the ordinary list.
+- `discussion_notices.dart` exposes authorized Group activity in Notifications.
+  Structured invitation acceptance belongs to Requests. A tap never accepts.
+- `discussion_invitation_link.dart` owns revocable 30-day room capabilities.
+  Only exact HTTPS planets.community native paths are accepted. Tokens stay in
+  memory and are copied only by deliberate action.
+- `discussion_projects_gateway.dart` owns bounded canonical Project folder
+  queries. `discussion_group_conversations.dart` owns deduplication and the
+  independently authorized Group workspace entry on Project detail.
+
+General's link collection is the Group-wide workspace. Idea and Project
+collections remain separate. Current authorized readers see complete current
+links; former message history grants no current collection. Exact authorization
+still precedes external launch. WhatsApp/Telegram use local icons, with no
+provider fetches or automatic joining.
+
+D integration hook: Group People may link to an Idea's People picker through
+`discussionPeopleRoute(roomId)` and reuse canonical invitation/acceptance.
+No personal-chat button appears until D owns that action.

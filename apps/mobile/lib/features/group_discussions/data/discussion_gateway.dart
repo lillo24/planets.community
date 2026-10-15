@@ -8,17 +8,20 @@ import '../../../core/backend/supabase_backend.dart';
 import '../domain/discussion_models.dart';
 
 enum DiscussionAction {
-  create('create_group_discussion'),
+  create('create_group_discussion_v2'),
+  join('join_group_discussion'),
+  settings('set_group_discussion_settings'),
+  preferences('set_group_discussion_preferences'),
   send('send_group_discussion_message'),
   invite('invite_group_discussion_member'),
   respond('respond_group_discussion_invitation'),
   withdraw('withdraw_group_discussion_invitation'),
   leave('leave_group_discussion'),
   remove('remove_group_discussion_member'),
-  update('update_group_discussion'),
-  addLink('add_group_discussion_link'),
-  editLink('update_group_discussion_link'),
-  removeLink('remove_group_discussion_link');
+  update('update_group_discussion_v2'),
+  addLink('add_group_discussion_link_v2'),
+  editLink('update_group_discussion_link_v2'),
+  removeLink('remove_group_discussion_link_v2');
 
   const DiscussionAction(this.rpc);
   final String rpc;
@@ -32,8 +35,10 @@ abstract interface class DiscussionGateway {
   Future<List<DiscussionRoom>> rooms(
     String actor,
     String group,
-    Map<String, dynamic>? cursor,
-  );
+    Map<String, dynamic>? cursor, {
+    bool hidden = false,
+  });
+  Future<DiscussionSettings> settings(String actor, String group);
   Future<List<DiscussionInvitation>> invitations(
     String actor,
     Map<String, dynamic>? cursor,
@@ -57,6 +62,7 @@ abstract interface class DiscussionGateway {
     Map<String, dynamic> intent,
   );
   Stream<bool> signals(String actor);
+  Stream<bool> groupSignals(String actor, String group);
 }
 
 class SupabaseDiscussionGateway implements DiscussionGateway {
@@ -84,6 +90,12 @@ class SupabaseDiscussionGateway implements DiscussionGateway {
         : DateTime.parse(parameters['p_before_created_at'] as String);
     String? id = parameters['p_before_id'] as String?;
     for (final row in rows) {
+      if (row is DiscussionRoom && row.isGeneral) {
+        // Reserved General is first regardless of creation date.
+        date = null;
+        id = null;
+        continue;
+      }
       if (date != null &&
           (row.createdAt.isAfter(date) ||
               row.createdAt.isAtSameMomentAs(date) &&
@@ -100,17 +112,19 @@ class SupabaseDiscussionGateway implements DiscussionGateway {
   Future<List<DiscussionGroup>> groups(
     String actor,
     Map<String, dynamic>? cursor,
-  ) => page('list_my_discussion_groups', actor, {
+  ) => page('list_my_discussion_groups_v2', actor, {
     ...?cursor,
   }, DiscussionGroup.new);
   @override
   Future<List<DiscussionRoom>> rooms(
     String actor,
     String group,
-    Map<String, dynamic>? cursor,
-  ) async {
-    final rows = await page('list_group_discussions', actor, {
+    Map<String, dynamic>? cursor, {
+    bool hidden = false,
+  }) async {
+    final rows = await page('list_group_discussions_v2', actor, {
       'p_group_id': group,
+      'p_hidden': hidden,
       ...?cursor,
     }, DiscussionRoom.new);
     if (rows.any((r) => r.groupId != group)) {
@@ -119,6 +133,14 @@ class SupabaseDiscussionGateway implements DiscussionGateway {
     return rows;
   }
 
+  @override
+  Future<DiscussionSettings> settings(String actor, String group) async =>
+      DiscussionSettings(
+        await client.rpc<Object?>(
+          'get_group_discussion_settings',
+          params: {...expected(actor), 'p_group_id': group},
+        ),
+      );
   @override
   Future<List<DiscussionInvitation>> invitations(
     String actor,
@@ -148,7 +170,7 @@ class SupabaseDiscussionGateway implements DiscussionGateway {
   Future<DiscussionRoom> room(String actor, String room) async {
     final result = DiscussionRoom(
       await client.rpc<Object?>(
-        'get_group_discussion',
+        'get_group_discussion_v2',
         params: {...expected(actor), 'p_room_id': room},
       ),
     );
@@ -165,7 +187,7 @@ class SupabaseDiscussionGateway implements DiscussionGateway {
     int? before,
   }) async => DiscussionHistory(
     await client.rpc<Object?>(
-      'get_group_discussion_message_page',
+      'get_group_discussion_message_page_v2',
       params: {
         ...expected(actor),
         'p_room_id': room,
@@ -176,6 +198,7 @@ class SupabaseDiscussionGateway implements DiscussionGateway {
     newest: before == null,
     expectedActor: actor,
     expectedRoom: room,
+    allowReadOnlySnapshot: true,
   );
   @override
   Future<DiscussionReceipt> command(
@@ -190,13 +213,18 @@ class SupabaseDiscussionGateway implements DiscussionGateway {
     ),
   );
   @override
-  Stream<bool> signals(String actor) {
+  Stream<bool> signals(String actor) =>
+      subscribe('group-discussions:profile:$actor', 'profile_id', actor);
+  @override
+  Stream<bool> groupSignals(String actor, String group) =>
+      subscribe('group-discussions:group:$group', 'group_id', group);
+  Stream<bool> subscribe(String topic, String field, String expectedId) {
     late final RealtimeChannel channel;
     late final StreamController<bool> events;
     events = StreamController<bool>(
       onListen: () {
         channel = client.channel(
-          'group-discussions:profile:$actor',
+          topic,
           opts: const RealtimeChannelConfig(private: true),
         );
         channel
@@ -204,10 +232,10 @@ class SupabaseDiscussionGateway implements DiscussionGateway {
               event: 'changed',
               callback: (value) {
                 try {
-                  final data = privateBroadcastPayload(value, 'changed', const {
-                    'profile_id',
+                  final data = privateBroadcastPayload(value, 'changed', {
+                    field,
                   });
-                  if (data['profile_id'] != actor) {
+                  if (data[field] != expectedId) {
                     throw const FormatException(
                       'Invalid discussion recipient.',
                     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../group_discussions/presentation/discussion_folders.dart';
+import '../../group_discussions/presentation/discussion_group_conversations.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -182,7 +183,38 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
         ),
         const SizedBox(height: AppSpacing.small),
         Expanded(
-          child: scope == MessageChatScope.groups && items.isEmpty
+          child: scope == MessageChatScope.groups
+              ? RefreshIndicator(
+                  onRefresh: widget.onRefresh,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(AppSpacing.medium),
+                    children: [
+                      DiscussionGroupConversations(
+                        items: items,
+                        card: (item) => _ChatCard(item: item, photoEntry: null),
+                      ),
+                      if (initialLoading)
+                        LoadingState(message: l10n.messageChatsLoading),
+                      if (state.failure != null)
+                        ErrorState(
+                          message: messageChatsFailureMessage(
+                            l10n,
+                            state.failure!,
+                          ),
+                          onRetry: widget.onRefresh,
+                        ),
+                      if (state.hasMore)
+                        TextButton(
+                          onPressed: state.isBusy
+                              ? null
+                              : () => widget.onLoadMore(scope),
+                          child: Text(l10n.messagesLoadMore),
+                        ),
+                    ],
+                  ),
+                )
+              : scope == MessageChatScope.groups && items.isEmpty
               ? RefreshIndicator(
                   onRefresh: widget.onRefresh,
                   child: ListView(
@@ -605,10 +637,15 @@ class _RequestsTab extends ConsumerWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: EmptyState(
-                title: l10n.messagesEmptyTitle,
-                message: l10n.messagesEmptyMessage,
-                icon: Icons.mail_outline,
+              child: Column(
+                children: [
+                  const DiscussionRequests(),
+                  EmptyState(
+                    title: l10n.messagesEmptyTitle,
+                    message: l10n.messagesEmptyMessage,
+                    icon: Icons.mail_outline,
+                  ),
+                ],
               ),
             ),
           ),
@@ -630,17 +667,21 @@ class _RequestsTab extends ConsumerWidget {
           key: const Key('messages-request-list'),
           storageKey: ('messages-request-list', expectedProfileId),
           rowIds: [
+            'idea-invitations',
             if (state.failure != null) 'error',
             for (final item in items) item.compositeId,
             if (state.hasMore) 'more',
           ],
           rowValues: [
+            expectedProfileId,
             if (state.failure != null) state.failure,
             ...items,
             if (state.hasMore) (state.phase, state.failure, showFallback),
           ],
           padding: const EdgeInsets.all(AppSpacing.medium),
           itemBuilder: (context, index) {
+            if (index == 0) return const DiscussionRequests();
+            index--;
             if (state.failure != null && index == 0) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.small),

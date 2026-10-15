@@ -13,6 +13,10 @@ import '../domain/discussion_models.dart';
 import 'discussion_feedback.dart';
 import 'discussion_routes.dart';
 import 'discussion_widgets.dart';
+import 'discussion_room_actions.dart';
+import 'discussion_project_invitations.dart';
+import '../../messages/presentation/messages_routes.dart';
+import '../data/discussion_projects_gateway.dart';
 
 class DiscussionFolders extends ConsumerStatefulWidget {
   const DiscussionFolders({super.key});
@@ -23,7 +27,6 @@ class DiscussionFolders extends ConsumerStatefulWidget {
 class _DiscussionFoldersState extends ConsumerState<DiscussionFolders>
     with WidgetsBindingObserver {
   DiscussionPager<DiscussionGroup>? groups;
-  DiscussionPager<DiscussionInvitation>? invitations;
   @override
   void initState() {
     super.initState();
@@ -40,59 +43,24 @@ class _DiscussionFoldersState extends ConsumerState<DiscussionFolders>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       groups?.invalidate();
-      invitations?.invalidate();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final g = ref.watch(discussionGroupsProvider),
-        i = ref.watch(discussionInvitationsProvider),
         l = AppLocalizations.of(context);
-    if (g == null || i == null) return const SizedBox.shrink();
+    if (g == null) return const SizedBox.shrink();
     if (groups != g) {
       groups = g;
       Future.microtask(g.load);
     }
-    if (invitations != i) {
-      invitations = i;
-      Future.microtask(i.load);
-    }
     final commands = ref.watch(discussionCommandsProvider);
     return ListenableBuilder(
-      listenable: Listenable.merge([g, i, commands]),
+      listenable: Listenable.merge([g, commands]),
       builder: (context, _) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            l.discussionTitle,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          if (i.rows.isNotEmpty) ...[
-            Text(l.discussionInvitations),
-            for (final invitation in i.rows)
-              DiscussionInvitationTile(
-                invitation,
-                key: ValueKey(invitation.id),
-              ),
-          ],
-          if (i.error != null)
-            DiscussionError(i.error!, retry: () => unawaited(i.refresh())),
-          for (final entry in commands.attempts.entries.where(
-            (e) =>
-                e.value.action == DiscussionAction.respond &&
-                e.value.intent['p_response'] == 'accepted' &&
-                e.value.receipt == null &&
-                !i.rows.any(
-                  (row) => row.id == e.value.intent['p_invitation_id'],
-                ),
-          ))
-            _InvitationRecovery(slot: entry.key, attempt: entry.value),
-          if (i.loaded && i.more)
-            TextButton(
-              onPressed: i.busy ? null : () => unawaited(i.load()),
-              child: Text(l.discussionLoadMore),
-            ),
           if (!g.loaded && g.error == null || g.busy)
             const LinearProgressIndicator(),
           if (g.error != null)
@@ -109,12 +77,6 @@ class _DiscussionFoldersState extends ConsumerState<DiscussionFolders>
               onPressed: g.busy ? null : () => unawaited(g.load()),
               child: Text(l.discussionLoadMore),
             ),
-          const SizedBox(height: 16),
-          Text(
-            l.discussionProjectChats,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
         ],
       ),
     );
@@ -183,6 +145,7 @@ class _DiscussionFolder extends ConsumerStatefulWidget {
 
 class _DiscussionFolderState extends ConsumerState<_DiscussionFolder> {
   bool expanded = false;
+  DiscussionPager<DiscussionProjectRow>? projects;
   DiscussionPager<DiscussionRoom>? pager;
   @override
   void didUpdateWidget(covariant _DiscussionFolder old) {
@@ -192,7 +155,14 @@ class _DiscussionFolderState extends ConsumerState<_DiscussionFolder> {
 
   @override
   Widget build(BuildContext context) {
-    final p = expanded
+    final projectPage = expanded
+        ? ref.watch(discussionProjectsProvider(widget.group.id))
+        : null;
+    if (projectPage != null && projects != projectPage) {
+      projects = projectPage;
+      Future.microtask(projectPage.load);
+    }
+    final p = expanded && widget.group.canReadIdeas
         ? ref.watch(discussionRoomsProvider(widget.group.id))
         : null;
     if (p != null && pager != p) {
@@ -208,22 +178,50 @@ class _DiscussionFolderState extends ConsumerState<_DiscussionFolder> {
           expanded: expanded,
           onToggle: () => setState(() => expanded = !expanded),
         ),
-        if (expanded && p != null)
+        if (expanded)
           Padding(
             padding: const EdgeInsets.only(left: 16),
-            child: DiscussionRoomList(p),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (projectPage != null) DiscussionProjectList(projectPage),
+                if (p != null) ...[
+                  Text(
+                    AppLocalizations.of(context).discussionTitle,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  DiscussionRoomList(p),
+                ],
+              ],
+            ),
           ),
       ],
     );
   }
 }
 
-class DiscussionRoomList extends StatelessWidget {
+class DiscussionRoomList extends ConsumerStatefulWidget {
   const DiscussionRoomList(this.pager, {super.key});
   final DiscussionPager<DiscussionRoom> pager;
   @override
+  ConsumerState<DiscussionRoomList> createState() => _DiscussionRoomListState();
+}
+
+class _DiscussionRoomListState extends ConsumerState<DiscussionRoomList> {
+  bool showHidden = false;
+  DiscussionPager<DiscussionRoom>? hiddenPager;
+  @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final group = widget.pager.rows.firstOrNull?.groupId;
+    final hidden = showHidden && group != null
+        ? ref.watch(discussionHiddenRoomsProvider(group))
+        : null;
+    if (hidden != null && hiddenPager != hidden) {
+      hiddenPager = hidden;
+      Future.microtask(hidden.load);
+    }
+    final pager = hidden ?? widget.pager;
     return ListenableBuilder(
       listenable: pager,
       builder: (context, _) => Column(
@@ -238,42 +236,185 @@ class DiscussionRoomList extends StatelessWidget {
             ),
           if (pager.loaded && pager.rows.isEmpty && pager.error == null)
             Text(l.discussionNoRooms),
-          for (final r in pager.rows)
-            ListTile(
-              key: ValueKey('discussion-${r.id}'),
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                r.title,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: r.preview == null
-                  ? null
-                  : Text(
-                      r.preview!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-              trailing: r.unreadCount == 0
-                  ? null
-                  : Semantics(
-                      label: l.discussionUnread(r.unreadCount),
-                      child: Badge(
-                        label: Text(
-                          r.unreadCount > 99 ? '99+' : '${r.unreadCount}',
+          for (final r in [
+            ...pager.rows.where((r) => r.isGeneral),
+            ...pager.rows.where((r) => !r.isGeneral),
+          ])
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ListTile(
+                  key: ValueKey('discussion-${r.id}'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    r.isGeneral ? l.discussionGeneral : r.title,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: r.isGeneral
+                        ? Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold)
+                        : null,
+                  ),
+                  subtitle: Text(
+                    r.isFormer
+                        ? l.discussionFormerHistory
+                        : r.manuallyHidden
+                        ? l.discussionHidden
+                        : r.automaticallyHidden
+                        ? l.discussionQuiet
+                        : r.preview ?? r.purpose,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: r.unreadCount == 0
+                      ? null
+                      : Semantics(
+                          label: l.discussionUnread(r.unreadCount),
+                          child: Badge(
+                            label: Text(
+                              r.unreadCount > 99 ? '99+' : '${r.unreadCount}',
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-              leading: Icon(
-                r.archived
-                    ? Icons.inventory_2_outlined
-                    : Icons.chat_bubble_outline,
-              ),
-              onTap: () => context.push(discussionRoute(r.id)),
+                  leading: Icon(
+                    r.isGeneral
+                        ? Icons.push_pin_outlined
+                        : r.muted
+                        ? Icons.notifications_off_outlined
+                        : r.archived || r.frozen
+                        ? Icons.inventory_2_outlined
+                        : Icons.chat_bubble_outline,
+                  ),
+                  onTap: () => context.push(discussionRoute(r.id)),
+                ),
+                if (r.canHide)
+                  DiscussionRoomActions(
+                    room: r,
+                    onChanged: () async {
+                      await widget.pager.refresh();
+                      await hiddenPager?.refresh();
+                    },
+                  ),
+              ],
             ),
           if (pager.loaded && pager.more)
             TextButton(
               onPressed: pager.busy ? null : () => unawaited(pager.load()),
+              child: Text(l.discussionLoadMore),
+            ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(l.discussionShowHidden),
+            value: showHidden,
+            onChanged: (value) => setState(() => showHidden = value),
+          ),
+          Text(
+            l.discussionHiddenHelp,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DiscussionProjectList extends StatelessWidget {
+  const DiscussionProjectList(this.pager, {super.key});
+  final DiscussionPager<DiscussionProjectRow> pager;
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return ListenableBuilder(
+      listenable: pager,
+      builder: (context, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l.discussionProjectChats,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          if (pager.busy) const LinearProgressIndicator(),
+          if (pager.error != null)
+            DiscussionError(
+              pager.error!,
+              retry: () => unawaited(pager.refresh()),
+            ),
+          if (pager.loaded && pager.rows.isEmpty && pager.error == null)
+            Text(l.discussionNoProjectChats),
+          for (final row in pager.rows)
+            ListTile(
+              title: Text(row.item.displayTitle),
+              subtitle: row.item.lastVisibleMessageBody == null
+                  ? null
+                  : Text(
+                      row.item.lastVisibleMessageBody!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+              leading: const Icon(Icons.groups_outlined),
+              trailing: row.item.unreadCount == 0
+                  ? null
+                  : Badge(label: Text('${row.item.unreadCount}')),
+              onTap: () => context.push(projectChatRoute(row.id)),
+            ),
+          if (pager.loaded && pager.more)
+            TextButton(
+              onPressed: pager.busy ? null : () => unawaited(pager.load()),
+              child: Text(l.discussionLoadMore),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class DiscussionRequests extends ConsumerStatefulWidget {
+  const DiscussionRequests({super.key});
+  @override
+  ConsumerState<DiscussionRequests> createState() => _DiscussionRequestsState();
+}
+
+class _DiscussionRequestsState extends ConsumerState<DiscussionRequests> {
+  DiscussionPager<DiscussionInvitation>? bound;
+  bool projectInvitationsOpen = false;
+  @override
+  Widget build(BuildContext context) {
+    final p = ref.watch(discussionInvitationsProvider),
+        commands = ref.watch(discussionCommandsProvider),
+        l = AppLocalizations.of(context);
+    if (p == null) return const SizedBox.shrink();
+    if (bound != p) {
+      bound = p;
+      Future.microtask(p.load);
+    }
+    return ListenableBuilder(
+      listenable: Listenable.merge([p, commands]),
+      builder: (context, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (p.rows.isNotEmpty)
+            Text(
+              l.discussionInvitations,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          for (final invitation in p.rows)
+            DiscussionInvitationTile(invitation, key: ValueKey(invitation.id)),
+          if (p.busy) const LinearProgressIndicator(),
+          if (p.error != null)
+            DiscussionError(p.error!, retry: () => unawaited(p.refresh())),
+          for (final entry in commands.attempts.entries.where(
+            (e) =>
+                e.value.action == DiscussionAction.respond &&
+                e.value.intent['p_response'] == 'accepted' &&
+                e.value.receipt == null &&
+                !p.rows.any(
+                  (row) => row.id == e.value.intent['p_invitation_id'],
+                ),
+          ))
+            _InvitationRecovery(slot: entry.key, attempt: entry.value),
+          if (p.loaded && p.more)
+            TextButton(
+              onPressed: p.busy ? null : () => unawaited(p.load()),
               child: Text(l.discussionLoadMore),
             ),
         ],
@@ -344,6 +485,7 @@ class DiscussionInvitationTile extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+            ExpansionTile(title: Text(l.discussionProjectInvitation), onExpansionChanged: (open) => setState(() => projectInvitationsOpen = open), children: [if (projectInvitationsOpen && ref.watch(authSessionProvider).identity != null) DiscussionProjectInvitations(actor: ref.watch(authSessionProvider).identity!.id)]),
                   Text(
                     invitation.title,
                     style: Theme.of(context).textTheme.titleMedium,

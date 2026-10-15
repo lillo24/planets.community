@@ -1,3 +1,4 @@
+import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
 import 'package:planets_mobile/features/project_request_chat/application/project_request_chat_controller.dart';
 import 'package:planets_mobile/features/resource_chat/application/resource_chat_controller.dart';
 import 'package:planets_mobile/features/messages/application/messages_controllers.dart';
@@ -3122,7 +3123,8 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
+        discussionProjectsGatewayProvider.overrideWithValue(EmptyDiscussionProjectsGateway()),
+      discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
         preacceptedPolicyFixture,
         coverMediaGatewayProvider.overrideWithValue(
           cover ?? FakeCoverMediaGateway(),
