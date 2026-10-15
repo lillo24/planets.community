@@ -347,14 +347,16 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     }
   }
 
-  Uri? _mapsDestination(LocationPreview value) {
+  Uri? _mapsDestination(LocationPreview value, {bool rendered = false}) {
     // A typed city is discovery text, not a chosen meeting destination. Other
     // item kinds keep their existing canonical-locality search behavior.
     if (!widget.allowLegacyAreaSearch && value.place == null) return null;
-    return googleMapsPreviewUrl(value, value.legacy);
+    // Text-only actions search the canonical PUBLIC city/country. Never send a
+    // provider point or formatted address when no map is being displayed.
+    return googleMapsPreviewUrl(rendered ? value : null, value.legacy);
   }
 
-  Future<void> _open() async {
+  Future<void> _open({bool rendered = false}) async {
     if (_opening || !_foreground || !_visible) return;
     var epoch = _epoch;
     final actor = _actor;
@@ -382,7 +384,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
         _preview = current;
         _opening = true;
       });
-      final url = _mapsDestination(current);
+      final url = _mapsDestination(current, rendered: rendered);
       if (url == null ||
           !await ref.read(previewMapsLauncherProvider).open(url)) {
         throw const PreviewUnavailable();
@@ -419,7 +421,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
         label:
             '${l10n.locationOpenGoogleMaps}: ${place.label}'
             '${place.isArea ? '. ${l10n.locationPreviewApproximate}' : ''}',
-        onTap: enabled ? _open : null,
+        onTap: enabled ? () => _open(rendered: true) : null,
         excludeSemantics: true,
         child: ClipRRect(
           borderRadius: AppRadii.medium,
@@ -431,7 +433,7 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
                 child: Material(
                   type: MaterialType.transparency,
                   child: InkWell(
-                    onTap: enabled ? _open : null,
+                    onTap: enabled ? () => _open(rendered: true) : null,
                     child: Align(
                       alignment: Alignment.bottomRight,
                       child: Padding(
@@ -460,35 +462,12 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     );
   }
 
-  Widget _fallbackAction() => Align(
-    alignment: Alignment.centerLeft,
-    child: TextButton.icon(
-      key: Key('location-open-maps-${widget.item.id}'),
-      onPressed: _opening ? null : _open,
-      style: widget.detail
-          ? TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-              minimumSize: const Size(48, 48),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            )
-          : null,
-      icon: const Icon(Icons.open_in_new, size: 20),
-      label: Text(
-        _opening
-            ? AppLocalizations.of(context).locationLoading
-            : AppLocalizations.of(context).locationOpenGoogleMaps,
-      ),
-    ),
-  );
-
-  Widget _pendingImage() => ConstrainedBox(
-    key: Key('location-map-pending-${widget.item.id}'),
-    // Let localized loading text wrap at accessibility sizes without clipping.
-    constraints: const BoxConstraints(minHeight: 48),
-    child: Align(
-      alignment: Alignment.centerLeft,
-      child: Text(AppLocalizations.of(context).locationLoading),
-    ),
+  Widget _fallbackAction() => IconButton(
+    key: Key('location-open-maps-${widget.item.id}'),
+    onPressed: _opening ? null : _open,
+    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+    tooltip: AppLocalizations.of(context).locationOpenGoogleMaps,
+    icon: const Icon(Icons.open_in_new, size: 20),
   );
 
   @override
@@ -534,36 +513,51 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
     // Only a current canonical projection can offer an outbound destination.
     // Revocation removes the action together with protected labels and pixels.
     final hasDestination = value != null && _mapsDestination(value) != null;
-    final fallback = hasDestination ? _fallbackAction() : null;
     final showTiles =
         tiled && tileStore!.enabled && value != null && place != null;
     final showStatic = !tiled && value != null && _bytes != null;
-    // A canonical renewal is not imagery loading when rendering is disabled.
-    final loadingStatic =
-        !tiled && ref.watch(staticPreviewGatewayProvider).enabled && _loading;
+
+    Widget textRow({bool rendered = false}) => Row(
+      key: Key('location-preview-${widget.item.id}'),
+      children: [
+        const ExcludeSemantics(child: Icon(Icons.location_on_outlined)),
+        const SizedBox(width: AppSpacing.small),
+        Expanded(
+          child: Text(
+            label.isEmpty ? l10n.locationPreviewUnavailable : label,
+            key: widget.labelKey,
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        ),
+        if (!rendered && hasDestination) _fallbackAction(),
+      ],
+    );
+
+    final fallback = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        textRow(),
+        // Provider/unknown text is still provider content without imagery.
+        // Do not infer independent authorship from a shortened city label.
+        if (place != null || (label.isNotEmpty && textSource != 'manual'))
+          LocationAttribution(centered: widget.detail),
+      ],
+    );
+
+    Widget rendered(Widget canvas) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        textRow(rendered: true),
+        _mapAction(canvas, value!),
+        LocationAttribution(centered: widget.detail),
+      ],
+    );
+
     return Padding(
       key: _box,
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.small),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            key: Key('location-preview-${widget.item.id}'),
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const ExcludeSemantics(child: Icon(Icons.location_on_outlined)),
-              const SizedBox(width: AppSpacing.small),
-              Expanded(
-                child: Text(
-                  label.isEmpty ? l10n.locationPreviewUnavailable : label,
-                  key: widget.labelKey,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ),
-            ],
-          ),
-          if (showTiles)
-            ReadOnlyBasemap(
+      child: showTiles
+          ? ReadOnlyBasemap(
               key: _tiles,
               store: tileStore,
               latitude: place.latitude,
@@ -574,39 +568,26 @@ class _LocationPreviewPanelState extends ConsumerState<LocationPreviewPanel>
                   ? '${place.label}. ${l10n.locationPreviewApproximate}'
                   : place.label,
               failureLabel: l10n.locationPreviewImageFailed,
-              imageBuilder: (canvas) => _mapAction(canvas, value),
+              imageBuilder: rendered,
               fallback: fallback,
-              pending: _pendingImage(),
-            ),
-          // Disabled imagery has no reserved space or availability boilerplate.
-          if (showStatic)
-            _UncachedPreviewImage(
+              pending: fallback,
+            )
+          : showStatic
+          ? _UncachedPreviewImage(
               key: _bitmap,
               bytes: _bytes!,
               failureLabel: l10n.locationPreviewImageFailed,
               fallback: fallback,
-              pending: _pendingImage(),
-              imageBuilder: (image) => _mapAction(
+              pending: fallback,
+              imageBuilder: (image) => rendered(
                 SizedBox(
                   height: widget.detail ? 144 : 80,
                   width: double.infinity,
                   child: image,
                 ),
-                value,
               ),
-            ),
-          if (_failed) Text(l10n.locationPreviewImageFailed),
-          if (!showTiles && !showStatic)
-            if (loadingStatic && value?.place != null)
-              _pendingImage()
-            else
-              ?fallback,
-          // Known manual text alone needs no credit. Unknown legacy text stays
-          // conservative; provider text still needs credit after image failure.
-          if (place != null || (label.isNotEmpty && textSource != 'manual'))
-            LocationAttribution(centered: widget.detail),
-        ],
-      ),
+            )
+          : fallback,
     );
   }
 
@@ -696,10 +677,7 @@ class _UncachedPreviewImageState extends State<_UncachedPreviewImage> {
   @override
   Widget build(BuildContext context) {
     if (_failed) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [Text(widget.failureLabel), ?widget.fallback],
-      );
+      return widget.fallback ?? Text(widget.failureLabel);
     }
     if (_image == null) return widget.pending;
     return widget.imageBuilder(

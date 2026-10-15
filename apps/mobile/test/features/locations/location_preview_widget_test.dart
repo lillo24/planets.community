@@ -504,7 +504,7 @@ void main() {
     );
   }
   testWidgets(
-    'public Resource exact preview keeps its canonical place and one action',
+    'text-only Resource preserves authorized text but searches only the public city',
     (t) async {
       final g = FakePreviewGateway()
         ..pending = (item, _) async => previewFixture(item, exact: true);
@@ -531,7 +531,7 @@ void main() {
       expect(find.text('SECRET synthetic venue'), findsOneWidget);
       await t.tap(find.byKey(const Key('location-open-maps-resource')));
       await settled(t);
-      expect(m.urls.single.queryParameters['query'], '44.0,10.0');
+      expect(m.urls.single.queryParameters['query'], 'Trento, IT');
       await t.pumpWidget(const SizedBox());
     },
   );
@@ -591,14 +591,16 @@ void main() {
           findsNothing,
         );
         expect(find.text('Map preview unavailable'), findsNothing);
-        // Detail credits are compact InkWell links; only the fallback is a button.
-        expect(find.byType(TextButton), findsOneWidget);
+        // Fallback is an accessible trailing icon; credits retain their links.
+        expect(find.byType(TextButton), findsNothing);
+        expect(find.byType(IconButton), findsOneWidget);
+        expect(find.text('Open in Maps'), findsNothing);
         expect(find.text('Powered by Geoapify'), findsOneWidget);
         expect(find.text('© OpenStreetMap contributors'), findsOneWidget);
         await t.tap(find.byKey(const Key('location-open-maps-item')));
         await settled(t);
         expect(g.reads, 2);
-        expect(m.urls.single.queryParameters['map_action'], 'map');
+        expect(m.urls.single.queryParameters['query'], 'Trento, IT');
         expect(t.takeException(), isNull);
         await t.pumpWidget(const SizedBox());
       },
@@ -753,7 +755,7 @@ void main() {
         await t.pumpWidget(app(c, ListView(children: [panel(detail: true)])));
         await settled(t);
         expect(find.byType(RawImage), findsNothing);
-        expect(find.text('Map preview unavailable'), findsOneWidget);
+        expect(find.text('Map preview unavailable'), findsNothing);
         expect(
           find.text('SECRET synthetic venue'),
           denied ? findsNothing : findsOneWidget,
@@ -766,14 +768,14 @@ void main() {
           await t.tap(find.byKey(const Key('location-open-maps-item')));
           await settled(t);
           expect(m.urls.single.path, '/maps/search/');
-          expect(m.urls.single.queryParameters['query'], '44.0,10.0');
+          expect(m.urls.single.queryParameters['query'], 'Trento, IT');
         }
         await t.pumpWidget(const SizedBox());
       },
     );
   }
   testWidgets(
-    'pending private image has no Maps action and sign-out rejects late private bytes',
+    'pending private image offers public-city action and sign-out rejects late private bytes',
     (t) async {
       final g = FakePreviewGateway()
         ..protected = true
@@ -794,7 +796,7 @@ void main() {
       g
         ..protected = false
         ..exact = false;
-      expect(find.byKey(const Key('location-open-maps-item')), findsNothing);
+      expect(find.byKey(const Key('location-open-maps-item')), findsOneWidget);
       c.read(authSessionProvider.notifier).markSignedOut();
       await settled(t);
       expect(m.urls, isEmpty);

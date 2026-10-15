@@ -74,13 +74,18 @@ read-only precision and Maps URLs; location_preview_gateway owns RPCs, the
 disabled static factory and launcher. public_preview_batch owns bounded
 public-only read/image caches. location_preview_panel owns laziness, generations,
 leases, uncached native decoding and one freshly reauthorized Maps action.
-MAP-UX01 removes preview panels from feed cards. Detail panels show authorized
-text immediately, no image space when disabled, a modest pending label with a
-48dp minimum that grows for localized accessibility text during tile transport/native
-decode, a 144dp decoded map, and one fallback on settled rendering failure.
-Pending imagery never mounts a text Maps action. A decoded map is itself the action; only
-unavailable imagery uses a compact text action with a valid canonical destination.
-Centered small detail credits follow the image with independent 48dp links.
+MAP-UX01 removes preview panels from feed cards. MAPUI03 detail panels show
+authorized text with a trailing 48dp icon-only Maps action while imagery is
+disabled, pending or failed, without reserved map space or technical status copy.
+That action searches only the freshly authorized public city/country; city-only
+Projects still opt out when no selected place exists. A decoded map is itself
+the action and keeps its canonical point/area destination. The compositor's
+imageBuilder composes text, the 144dp map and one credit group together, avoiding
+parent state callbacks or a frame where enabled transport implies visible pixels.
+Centered small detail credits follow actual imagery with independent 48dp links.
+Provider/unknown text still retains attribution independently of image state;
+the requested independent source for legacy/provider city fallback is unresolved.
+See [MAPUI03](../../../../../docs/development/mapui03-location-ui.md).
 Denial still revokes protected state.
 Verified locality maps keep approximate-area semantics for screen readers without
 a visible area/no-pin banner. Empty optional arrival instructions render nothing;
