@@ -78,6 +78,7 @@ node apps/mobile/integration_test/prepare_group_contact_smoke.mjs "$env:TEMP/pla
 adb -s emulator-5580 reverse tcp:55321 tcp:55321
 adb -s emulator-5580 shell wm size 720x1600
 adb -s emulator-5580 shell wm density 360
+adb -s emulator-5580 shell settings put secure show_ime_with_hard_keyboard 1
 cd apps/mobile
 flutter drive -d emulator-5580 --no-dds --no-pub --driver=test_driver/group_contact_screenshots.dart --target=integration_test/group_contact_smoke_test.dart --dart-define-from-file="$env:TEMP/planets-d-r04-native-defines.json"
 ```
@@ -110,6 +111,12 @@ source or fixtures, and allow for the genuine fixture tokens' expiry when
 coordinating validation slots; do not extend token lifetime to make a run pass.
 The instrumented APK contains the private compile-time fixture tokens too: keep
 it ignored locally and remove it with those defines after QA.
+
+The owned emulator must allow its software keyboard even when a host keyboard is
+present. Keyboard checkpoints require a real positive bottom view inset; they do
+not fake IME geometry. The native scroll helpers exclude text fields' inner
+scroll positions so lazy page actions after a field are actually revealed. A
+missing visible target saves a failure frame and still fails the original check.
 
 The complete synthetic review journey includes a declined coordination proposal,
 an explicit audience replacement that retires the selected seat and old consent,

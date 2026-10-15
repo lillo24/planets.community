@@ -28,7 +28,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import 'contact_local_identity.dart';
-import 'groups_smoke_test.dart' as harness show waitUntil, waitFor;
+import 'groups_smoke_test.dart' as harness show waitUntil;
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -170,6 +170,10 @@ void main() {
     });
 
     Future<void> reveal(Finder finder) async {
+      // ListView children below the 2x viewport may not be mounted yet. Every
+      // expected UI checkpoint must scroll the current route before deciding
+      // the content failed to load; a bare finder wait cannot build those rows.
+      // Exclude EditableText's inner scrolling, which cannot reveal later rows.
       final deadline = DateTime.now().add(const Duration(seconds: 45));
       ScrollPosition? searched;
       while (DateTime.now().isBefore(deadline)) {
@@ -185,7 +189,9 @@ void main() {
           matching: find.byType(Scrollable),
         );
         final elements = scrolls.evaluate().where(
-          (element) => ModalRoute.of(element)?.isCurrent != false,
+          (element) =>
+              ModalRoute.of(element)?.isCurrent != false &&
+              element.findAncestorWidgetOfExactType<EditableText>() == null,
         );
         if (elements.isNotEmpty) {
           final state =
@@ -207,6 +213,10 @@ void main() {
         }
         await tester.pump(const Duration(milliseconds: 200));
       }
+      debugPrint('D native missing visible content: $finder');
+      await binding
+          .takeScreenshot('d04-missing-visible-content')
+          .timeout(const Duration(seconds: 30));
       expect(
         finder.hitTestable(),
         findsWidgets,
@@ -219,7 +229,7 @@ void main() {
       if (key.startsWith('contact-confirm-') ||
           key == 'coordination-confirm-dialog' ||
           key.startsWith('blocking-confirm-')) {
-        await harness.waitFor(tester, finder);
+        await reveal(finder);
       }
       // Route/auth/access refreshes can replace a lazy ListView while waiting.
       // Re-find its scrollable after each frame rather than retaining a finder
@@ -237,7 +247,9 @@ void main() {
             matching: find.byType(Scrollable),
           );
           final elements = scrolls.evaluate().where(
-            (element) => ModalRoute.of(element)?.isCurrent != false,
+            (element) =>
+                ModalRoute.of(element)?.isCurrent != false &&
+                element.findAncestorWidgetOfExactType<EditableText>() == null,
           );
           if (elements.isNotEmpty) {
             final state =
@@ -301,6 +313,16 @@ void main() {
     }
 
     Future<void> shot(String name) async {
+      if (name.contains('keyboard')) {
+        await harness.waitUntil(
+          tester,
+          () =>
+              MediaQuery.viewInsetsOf(
+                tester.element(find.byType(Scaffold).last),
+              ).bottom >
+              0,
+        );
+      }
       await harness.waitUntil(
         tester,
         () => find.byType(CircularProgressIndicator).evaluate().isEmpty,
@@ -367,11 +389,10 @@ void main() {
     final aRouter = a.read(appRouterProvider);
     aRouter.go('/proposals/$project');
     await tap('contact-group-entry');
-    await harness.waitFor(tester, find.text('Propose collaboration'));
     await reveal(find.text('Propose collaboration'));
     await shot('public-context-en');
     await tapFinder(find.text('Propose collaboration'));
-    await harness.waitFor(tester, find.text('Fictional Neighbourhood Garden'));
+    await reveal(find.text('Fictional Neighbourhood Garden'));
     await tapFinder(find.text('Fictional Neighbourhood Garden'));
     await reveal(find.byKey(const Key('contact-title')));
     await tester.enterText(
@@ -386,10 +407,7 @@ void main() {
     await shot('composer-keyboard-en');
     await hideKeyboard();
     await tap('contact-submit');
-    await harness.waitFor(
-      tester,
-      find.byKey(const Key('contact-recover-submit')),
-    );
+    await reveal(find.byKey(const Key('contact-recover-submit')));
     await shot('delivery-pending-en');
     await tap('contact-recover-submit');
     await harness.waitUntil(
@@ -399,52 +417,43 @@ void main() {
       ),
     );
     final request = aRouter.routerDelegate.state.uri.pathSegments.last;
-    await harness.waitFor(tester, find.text('Pending'));
+    await reveal(find.text('Pending'));
     await shot('sent-request-en');
     final b = await asPerson(bob, bobToken);
     b.read(appRouterProvider).go(groupContactRequestRoute(request));
-    await harness.waitFor(tester, find.byKey(const Key('contact-accept')));
+    await reveal(find.byKey(const Key('contact-accept')));
     await shot('creator-triage-en');
     final c = await asPerson(carol, carolToken);
     final cRouter = c.read(appRouterProvider);
     cRouter.go(groupContactRequestRoute(request));
     await tap('contact-accept');
     await tap('contact-confirm-accept');
-    await harness.waitFor(tester, find.text('Open conversation'));
+    await reveal(find.text('Open conversation'));
     final own = await currentClient!.rpc<Map<String, dynamic>>(
       'get_own_group_contact_request',
       params: {'p_expected_profile_id': carol, 'p_request_id': request},
     );
     final chat = own['chat_id'] as String;
     await tapFinder(find.text('Open conversation'));
-    await harness.waitFor(
-      tester,
-      find.byKey(const Key('contact-message-body')),
-    );
+    await reveal(find.byKey(const Key('contact-message-body')));
     await tester.enterText(
       find.byKey(const Key('contact-message-body')),
       'Fictional human reply from Carol.',
     );
     await hideKeyboard();
     await tap('contact-message-send');
-    await harness.waitFor(
-      tester,
-      find.text('Fictional human reply from Carol.'),
-    );
+    await reveal(find.text('Fictional human reply from Carol.'));
     await shot('human-and-group-en');
     cRouter.go(groupContactInfoRoute(chat));
     // The app-bar title exists during loading; evidence requires the actual
     // authorized audience, not merely a route that has mounted.
-    await harness.waitFor(tester, find.text('Block Fictional alice'));
-    await harness.waitFor(
-      tester,
-      find.text('Fictional shared garden proposal'),
-    );
+    await reveal(find.text('Block Fictional alice'));
+    await reveal(find.text('Fictional shared garden proposal'));
     expect(find.byType(CircularProgressIndicator), findsNothing);
     await shot('audience-en');
     final another = await asPerson(bob, bobToken);
     another.read(appRouterProvider).go(groupContactRequestRoute(request));
-    await harness.waitFor(tester, find.text('Accepted'));
+    await reveal(find.text('Accepted'));
     expect(find.text('Open conversation'), findsNothing);
     expect(
       find.text('Private synthetic idea to coordinate local garden tools.'),
@@ -455,16 +464,10 @@ void main() {
       final coordinator = await asPerson(alice, aliceToken);
       final coordinatorRouter = coordinator.read(appRouterProvider);
       coordinatorRouter.go(groupContactInfoRoute(chat));
-      await harness.waitFor(
-        tester,
-        find.text('Fictional shared garden proposal'),
-      );
+      await reveal(find.text('Fictional shared garden proposal'));
       await tap('contact-coordinate');
       await tap('coordination-pick');
-      await harness.waitFor(
-        tester,
-        find.byKey(const Key('coordination-search')),
-      );
+      await reveal(find.byKey(const Key('coordination-search')));
       await tester.enterText(
         find.byKey(const Key('coordination-search')),
         libraryName,
@@ -520,7 +523,7 @@ void main() {
     await tap('coordination-confirm-dialog');
     await tap('coordination-decline');
     await tap('coordination-confirm-dialog');
-    await harness.waitFor(tester, find.text('Declined'));
+    await reveal(find.text('Declined'));
     final declinedState = await coordination(dave, declinedCoordination);
     expect(declinedState['status'], 'declined');
     expect(declinedState['chat_id'], isNull);
@@ -533,8 +536,7 @@ void main() {
     inviteeRouter.go(coordinationProposalRoute(proposalId));
     await tap('coordination-claim-$library');
     await tap('coordination-confirm-dialog');
-    await harness.waitFor(
-      tester,
+    await reveal(
       find.text(
         'The original representatives must confirm the complete named audience before it is shared with invitees.',
       ),
@@ -546,10 +548,7 @@ void main() {
     firstConsent
         .read(appRouterProvider)
         .go(coordinationProposalRoute(proposalId));
-    await harness.waitFor(
-      tester,
-      find.text('Fresh fictional three-group coordination'),
-    );
+    await reveal(find.text('Fresh fictional three-group coordination'));
     await tap('coordination-confirm');
     await tap('coordination-confirm-dialog');
     await confirmed(alice, proposalId);
@@ -557,7 +556,7 @@ void main() {
     // Re-selecting the same Group deliberately retires its named seat. The
     // existing consent cannot silently transfer to the new selection round.
     await tap('coordination-change');
-    await harness.waitFor(tester, find.byKey(const Key('coordination-search')));
+    await reveal(find.byKey(const Key('coordination-search')));
     await tester.enterText(
       find.byKey(const Key('coordination-search')),
       libraryName,
@@ -617,8 +616,7 @@ void main() {
     reclaimed.read(appRouterProvider).go(coordinationProposalRoute(proposalId));
     await tap('coordination-claim-$library');
     await tap('coordination-confirm-dialog');
-    await harness.waitFor(
-      tester,
+    await reveal(
       find.text(
         'The original representatives must confirm the complete named audience before it is shared with invitees.',
       ),
@@ -634,10 +632,7 @@ void main() {
     secondConsent
         .read(appRouterProvider)
         .go(coordinationProposalRoute(proposalId));
-    await harness.waitFor(
-      tester,
-      find.text('Fresh fictional three-group coordination'),
-    );
+    await reveal(find.text('Fresh fictional three-group coordination'));
     await tap('coordination-confirm');
     await tap('coordination-confirm-dialog');
     await confirmed(carol, proposalId);
@@ -667,10 +662,7 @@ void main() {
     await tap('coordination-confirm-dialog');
     await tap('coordination-recover');
     await tap('coordination-open');
-    await harness.waitFor(
-      tester,
-      find.byKey(const Key('contact-message-body')),
-    );
+    await reveal(find.byKey(const Key('contact-message-body')));
     final freshChat = finalRouter.routerDelegate.state.uri.pathSegments.last;
     final activated = await coordination(dave, proposalId);
     expect(activated['status'], 'active');
@@ -713,10 +705,7 @@ void main() {
     );
     await hideKeyboard();
     await tap('contact-message-send');
-    await harness.waitFor(
-      tester,
-      find.text('A fresh human message from Fictional Dave.'),
-    );
+    await reveal(find.text('A fresh human message from Fictional Dave.'));
     await shot('coordination-new-human-history-en');
     // Compact Italian audience consent uses the same real canonical proposal.
     await tester.pumpWidget(
@@ -735,7 +724,7 @@ void main() {
         ),
       ),
     );
-    await harness.waitFor(tester, find.text('Coordinamento pronto'));
+    await reveal(find.text('Coordinamento pronto'));
     await reveal(find.textContaining('Fictional dave'));
     await shot('coordination-audience-it-320dp-2x');
     // Separate bilateral decline/withdraw controls never change the activated
@@ -744,10 +733,7 @@ void main() {
       final sender = await asPerson(alice, aliceToken);
       final router = sender.read(appRouterProvider);
       router.go(groupContactComposeRoute(target));
-      await harness.waitFor(
-        tester,
-        find.text('Fictional Neighbourhood Garden'),
-      );
+      await reveal(find.text('Fictional Neighbourhood Garden'));
       await tapFinder(find.text('Fictional Neighbourhood Garden'));
       await reveal(find.byKey(const Key('contact-title')));
       await tester.enterText(find.byKey(const Key('contact-title')), subject);
@@ -769,7 +755,7 @@ void main() {
 
     await anotherRequest(workshop, 'Synthetic withdraw path');
     await tap('contact-withdraw');
-    await harness.waitFor(tester, find.text('Withdrawn'));
+    await reveal(find.text('Withdrawn'));
     await shot('safe-withdraw-en');
     final declinedRequest = await anotherRequest(
       library,
@@ -780,7 +766,7 @@ void main() {
         .read(appRouterProvider)
         .go(groupContactRequestRoute(declinedRequest));
     await tap('contact-decline');
-    await harness.waitFor(tester, find.text('Declined'));
+    await reveal(find.text('Declined'));
     await shot('explicit-decline-en');
     final bClient = SupabaseClient(
       config.supabaseUrl.toString(),
@@ -799,10 +785,7 @@ void main() {
       reason: 'Both genuine incoming conversations are unread before opening.',
     );
     reader.read(appRouterProvider).go(groupContactChatRoute(chat));
-    await harness.waitFor(
-      tester,
-      find.text('Fictional human reply from Carol.'),
-    );
+    await reveal(find.text('Fictional human reply from Carol.'));
     await tester.pump(const Duration(seconds: 2));
     final unread = await currentClient!.rpc<Map<String, dynamic>>(
       'get_own_message_unread_summary_v2',
@@ -824,8 +807,7 @@ void main() {
     );
     final former = await asPerson(carol, carolToken);
     former.read(appRouterProvider).go(groupContactChatRoute(freshChat));
-    await harness.waitFor(
-      tester,
+    await reveal(
       find.text('Earlier synthetic message available for reporting.'),
     );
     await harness.waitUntil(
@@ -844,10 +826,7 @@ void main() {
     );
     // The subscribed own-account access hint must clear the live body; no local
     // forced refresh is used to disguise a missing authorization invalidation.
-    await harness.waitFor(
-      tester,
-      find.text('Report a previously received message'),
-    );
+    await reveal(find.text('Report a previously received message'));
     expect(
       find.text('Earlier synthetic message available for reporting.'),
       findsNothing,
@@ -855,7 +834,7 @@ void main() {
     expect(find.byKey(const Key('contact-message-send')), findsNothing);
     await shot('former-denied-known-report-en');
     await tapFinder(find.text('Report a previously received message'));
-    await harness.waitFor(tester, find.byKey(const Key('moderation-category')));
+    await reveal(find.byKey(const Key('moderation-category')));
     final reportTarget =
         former.read(appRouterProvider).routerDelegate.state.extra
             as ModerationReportTarget;
@@ -872,7 +851,7 @@ void main() {
     );
     await hideKeyboard();
     await tap('moderation-submit');
-    await harness.waitFor(tester, find.byKey(const Key('moderation-received')));
+    await reveal(find.byKey(const Key('moderation-received')));
     await shot('protected-report-en');
     final reports = await currentClient!.rpc<List<dynamic>>(
       'list_own_moderation_reports_v3',
@@ -922,8 +901,7 @@ void main() {
       );
     }
     former.read(appRouterProvider).go(groupContactChatRoute(freshChat));
-    await harness.waitFor(
-      tester,
+    await reveal(
       find.text(
         'This conversation is unavailable. Your group membership is unchanged.',
       ),
@@ -949,8 +927,7 @@ void main() {
         ),
       ),
     );
-    await harness.waitFor(
-      tester,
+    await reveal(
       find.text(
         'Questa conversazione non è disponibile. La partecipazione al gruppo resta invariata.',
       ),
@@ -977,10 +954,10 @@ void main() {
     // D did not grant Project participation. Its existing request remains explicit.
     final joiner = await asPerson(alice, aliceToken);
     joiner.read(appRouterProvider).go(groupContactInfoRoute(freshChat));
-    await harness.waitFor(tester, find.text('Block Fictional carol'));
+    await reveal(find.text('Block Fictional carol'));
     await tapFinder(find.text('Block Fictional carol'));
     await tap('blocking-confirm-block');
-    await harness.waitFor(tester, find.text('Unblock Fictional carol'));
+    await reveal(find.text('Unblock Fictional carol'));
     await shot('block-permitted-history-en');
     joiner.read(appRouterProvider).go(groupContactInfoRoute(freshChat));
     await tap('contact-close');
@@ -1013,10 +990,7 @@ void main() {
       isEmpty,
     );
     joiner.read(appRouterProvider).go('/proposals/$project/join');
-    await harness.waitFor(
-      tester,
-      find.byKey(const Key('participation-message-field')),
-    );
+    await reveal(find.byKey(const Key('participation-message-field')));
     await tester.enterText(
       find.byKey(const Key('participation-message-field')),
       'Independent fictional Project participation request.',

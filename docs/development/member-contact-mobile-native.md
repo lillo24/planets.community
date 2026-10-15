@@ -36,6 +36,7 @@ node apps/mobile/integration_test/prepare_member_contact_smoke.mjs "$env:TEMP/pl
 adb -s emulator-5580 reverse tcp:55321 tcp:55321
 adb -s emulator-5580 shell wm size 720x1600
 adb -s emulator-5580 shell wm density 360
+adb -s emulator-5580 shell settings put secure show_ime_with_hard_keyboard 1
 cd apps/mobile
 flutter drive -d emulator-5580 --no-dds --no-pub --driver=test_driver/member_contact_screenshots.dart --target=integration_test/member_contact_smoke_test.dart --dart-define-from-file="$env:TEMP/planets-member-native-defines.json"
 ```
@@ -58,6 +59,11 @@ used throughout. English and Italian frames come from the same real screen,
 after loaded content has replaced progress indicators. The screenshot driver
 writes PNGs under ignored `apps/mobile/build/member-contact-screenshots` and
 retains failure response data.
+
+Keyboard frames additionally require a real positive bottom view inset. Enable
+the owned emulator's software keyboard as above; no keyboard geometry is faked.
+Visibility waits scroll the page rather than a text field's inner viewport, and
+save a failure frame if the required action never becomes visible.
 
 The complete journey verifies:
 

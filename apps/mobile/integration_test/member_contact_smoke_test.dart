@@ -23,7 +23,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import 'contact_local_identity.dart';
-import 'groups_smoke_test.dart' as harness show waitUntil, waitFor;
+import 'groups_smoke_test.dart' as harness show waitUntil;
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -154,6 +154,8 @@ void main() {
     AppLocalizations strings() =>
         AppLocalizations.of(tester.element(find.byType(Scaffold).last));
     Future<void> reveal(Finder finder) async {
+      // Build below-fold lazy rows through the route's scroll view. EditableText
+      // owns another Scrollable that cannot reveal an action after the field.
       final deadline = DateTime.now().add(const Duration(seconds: 45));
       ScrollPosition? searched;
       while (DateTime.now().isBefore(deadline)) {
@@ -165,7 +167,11 @@ void main() {
         final elements = find
             .byType(Scrollable)
             .evaluate()
-            .where((element) => ModalRoute.of(element)?.isCurrent != false);
+            .where(
+              (element) =>
+                  ModalRoute.of(element)?.isCurrent != false &&
+                  element.findAncestorWidgetOfExactType<EditableText>() == null,
+            );
         if (elements.isNotEmpty) {
           final position =
               ((elements.last as StatefulElement).state as ScrollableState)
@@ -186,6 +192,10 @@ void main() {
         }
         await tester.pump(const Duration(milliseconds: 200));
       }
+      debugPrint('M native missing visible content: $finder');
+      await binding
+          .takeScreenshot('m02-missing-visible-content')
+          .timeout(const Duration(seconds: 30));
       expect(
         finder.hitTestable(),
         findsWidgets,
@@ -195,6 +205,7 @@ void main() {
 
     Future<void> tapFinder(Finder finder) async {
       await reveal(finder);
+      expect(finder.hitTestable(), findsOneWidget);
       await harness.waitUntil(tester, () {
         final matches = finder.evaluate();
         if (matches.isEmpty) return false;
@@ -219,6 +230,16 @@ void main() {
           find.byType(LinearProgressIndicator).evaluate().isEmpty,
     );
     Future<void> shot(String name) async {
+      if (name.contains('keyboard')) {
+        await harness.waitUntil(
+          tester,
+          () =>
+              MediaQuery.viewInsetsOf(
+                tester.element(find.byType(Scaffold).last),
+              ).bottom >
+              0,
+        );
+      }
       await loaded();
       await tester.pump(const Duration(milliseconds: 600));
       expect(tester.takeException(), isNull, reason: 'Native layout $name');
@@ -321,17 +342,14 @@ void main() {
       ),
     );
     Future<void> send(String body) async {
-      await harness.waitFor(
-        tester,
-        find.byKey(const Key('contact-message-body')),
-      );
+      await reveal(find.byKey(const Key('contact-message-body')));
       await tester.enterText(
         find.byKey(const Key('contact-message-body')),
         body,
       );
       await hideKeyboard();
       await tap('contact-message-send');
-      await harness.waitFor(tester, find.text(body));
+      await reveal(find.text(body));
     }
 
     // All three episodes begin through canonical private People and explicit
@@ -347,7 +365,6 @@ void main() {
       router.go('/groups/$group');
       await tap('group-people');
       await tapFinder(find.text('Fictional Bob'));
-      await harness.waitFor(tester, find.text(strings().memberContactAction));
       await reveal(find.text(strings().memberContactAction));
       if (evidence) await shotPair('people-sheet');
       await tapFinder(find.text(strings().memberContactAction));
@@ -362,10 +379,7 @@ void main() {
       await hideKeyboard();
       await tap('member-contact-submit');
       if (loseSubmit) {
-        await harness.waitFor(
-          tester,
-          find.text(strings().contactDeliveryPending),
-        );
+        await reveal(find.text(strings().contactDeliveryPending));
         if (evidence) await shotPair('request-ambiguous');
         await tapFinder(find.text(strings().contactRecover));
       }
@@ -382,7 +396,7 @@ void main() {
         before + 1,
         reason: 'Recovery reads the original committed receipt.',
       );
-      await harness.waitFor(tester, find.text(strings().contactPending));
+      await reveal(find.text(strings().contactPending));
       if (evidence) await shotPair('outgoing-request');
       final recipient = await asPerson(bob, bobToken);
       final receiverRouter = recipient.read(appRouterProvider);
@@ -396,7 +410,7 @@ void main() {
           matching: find.byType(ListTile),
         ),
       );
-      await harness.waitFor(tester, find.byKey(const Key('contact-accept')));
+      await reveal(find.byKey(const Key('contact-accept')));
       expect(
         (await bobClient.rpc<Map<String, dynamic>>(
           'get_own_member_contact_request',
@@ -418,7 +432,7 @@ void main() {
         'pending',
       );
       await tap('contact-confirm-accept');
-      await harness.waitFor(tester, find.text(strings().contactOpen));
+      await reveal(find.text(strings().contactOpen));
       final accepted = await bobClient.rpc<Map<String, dynamic>>(
         'get_own_member_contact_request',
         params: {'p_expected_profile_id': bob, 'p_request_id': request},
@@ -502,10 +516,7 @@ void main() {
         matching: find.byType(ListTile),
       ),
     );
-    await harness.waitFor(
-      tester,
-      find.text('Synthetic close reply from Fictional Bob.'),
-    );
+    await reveal(find.text('Synthetic close reply from Fictional Bob.'));
     await untilRpc(
       () async =>
           (await conversation(
@@ -525,26 +536,20 @@ void main() {
       () => tapFinder(find.text(strings().blockingBlockGenericAction)),
     );
     await tap('blocking-confirm-block');
-    await harness.waitFor(
-      tester,
-      find.text(strings().blockingUnblockGenericAction),
-    );
+    await reveal(find.text(strings().blockingUnblockGenericAction));
     expect(
       (await conversation(aliceClient, alice, primary.chat))['is_read_only'],
       true,
     );
     await deniedSend(bobClient, bob, primary.chat, primary.episode);
     readerRouter.go(memberContactChatRoute(primary.chat));
-    await harness.waitFor(tester, find.text(strings().memberContactReadOnly));
+    await reveal(find.text(strings().memberContactReadOnly));
     expect(find.byKey(const Key('contact-message-send')), findsNothing);
     await shotPair('blocked-retained-history');
     readerRouter.go(memberContactInfoRoute(primary.chat));
     await tapFinder(find.text(strings().blockingUnblockGenericAction));
     await tap('blocking-confirm-unblock');
-    await harness.waitFor(
-      tester,
-      find.text(strings().blockingBlockGenericAction),
-    );
+    await reveal(find.text(strings().blockingBlockGenericAction));
     await tap('member-contact-close');
     await dialogPair('close-confirmation', () => tap('member-contact-close'));
     await confirmDialog();
@@ -554,7 +559,7 @@ void main() {
     expect(closed['current_episode_id'], isNull);
     await deniedSend(bobClient, bob, primary.chat, primary.episode);
     readerRouter.go(memberContactChatRoute(primary.chat));
-    await harness.waitFor(tester, find.text(strings().memberContactReadOnly));
+    await reveal(find.text(strings().memberContactReadOnly));
     await shotPair('closed-history');
 
     final leave = await consent(leaveGroup, 'leave');
@@ -583,7 +588,7 @@ void main() {
     currentScope!
         .read(appRouterProvider)
         .go(memberContactChatRoute(leave.chat));
-    await harness.waitFor(tester, find.text(strings().memberContactReadOnly));
+    await reveal(find.text(strings().memberContactReadOnly));
     await shotPair('left-history');
 
     // End the last ordinary relationship through the actual Group Leave UI.
@@ -604,7 +609,7 @@ void main() {
     currentScope!
         .read(appRouterProvider)
         .go(memberContactChatRoute(context.chat));
-    await harness.waitFor(tester, find.text(strings().memberContactReadOnly));
+    await reveal(find.text(strings().memberContactReadOnly));
     await shotPair('context-ended-history');
     final invitations = await ownerClient.rpc<List<dynamic>>(
       'create_group_participant_invitation',
@@ -625,31 +630,28 @@ void main() {
     final rejoined = await asPerson(bob, bobToken);
     rejoined.read(appRouterProvider).go('/groups/$contextGroup');
     await tap('group-people');
-    await harness.waitFor(tester, find.text('Fictional Alice'));
+    await reveal(find.text('Fictional Alice'));
     expect(
       (await conversation(bobClient, bob, context.chat))['is_read_only'],
       true,
     );
     await deniedSend(bobClient, bob, context.chat, context.episode);
     rejoined.read(appRouterProvider).go(memberContactChatRoute(context.chat));
-    await harness.waitFor(tester, find.text(strings().memberContactReadOnly));
+    await reveal(find.text(strings().memberContactReadOnly));
     expect(find.byKey(const Key('contact-message-send')), findsNothing);
     await shotPair('rejoined-no-revival');
 
     // Exact historical incoming evidence remains reportable after origin loss.
     final reporter = await asPerson(alice, aliceToken);
     reporter.read(appRouterProvider).go(memberContactChatRoute(context.chat));
-    await harness.waitFor(
-      tester,
-      find.text('Synthetic context reply from Fictional Bob.'),
-    );
+    await reveal(find.text('Synthetic context reply from Fictional Bob.'));
     final feed = await aliceClient.rpc<Map<String, dynamic>>(
       'get_own_member_contact_feed',
       params: {'p_expected_profile_id': alice, 'p_chat_id': context.chat},
     );
     final message = (feed['items'] as List).single as Map;
     await tapFinder(find.text(strings().contactMessageReport));
-    await harness.waitFor(tester, find.byKey(const Key('moderation-category')));
+    await reveal(find.byKey(const Key('moderation-category')));
     final target =
         reporter.read(appRouterProvider).routerDelegate.state.extra
             as ModerationReportTarget;
@@ -664,7 +666,7 @@ void main() {
     );
     await hideKeyboard();
     await tap('moderation-submit');
-    await harness.waitFor(tester, find.byKey(const Key('moderation-received')));
+    await reveal(find.byKey(const Key('moderation-received')));
     await shotPair('historical-message-report');
     final reports = await aliceClient.rpc<List<dynamic>>(
       'list_own_moderation_reports_v4',
