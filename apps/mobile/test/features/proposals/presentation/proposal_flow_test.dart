@@ -56,13 +56,17 @@ void main() {
             tester.element(find.byType(ProposalCard)),
           );
           await tester.scrollUntilVisible(
-            find.text(l.proposalSkillsTitle),
+            find.byKey(const Key('proposal-card-skills-preview')),
             200,
           );
-          expect(find.text(l.proposalSkillsTitle), findsOneWidget);
+          expect(find.text(l.proposalSkillsTitle), findsNothing);
           expect(
-            find.text('${l.proposalSkillRequired}: Mural painting'),
+            find.text('Mural painting'),
             findsOneWidget,
+          );
+          expect(
+            find.text('Required: Mural painting'),
+            findsNothing,
           );
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
@@ -459,9 +463,15 @@ void main() {
     expect(gateway.calls, ['public-detail:proposal-1']);
     await tester.scrollUntilVisible(find.text('Schedule'), 200);
     expect(find.text('Schedule'), findsOneWidget);
-    expect(find.text('Starts: Sep 10, 2026 12:00'), findsOneWidget);
-    expect(find.text('Ends: Sep 10, 2026 14:00'), findsOneWidget);
+    expect(find.byKey(const Key('proposal-schedule-panel')), findsOneWidget);
+    expect(find.byKey(const Key('proposal-schedule-start')), findsOneWidget);
+    expect(find.byKey(const Key('proposal-schedule-end')), findsOneWidget);
+    expect(find.text('Starts'), findsOneWidget);
+    expect(find.text('Ends'), findsOneWidget);
+    expect(find.text('12:00'), findsOneWidget);
+    expect(find.text('14:00'), findsOneWidget);
     expect(find.text('Europe/Rome'), findsOneWidget);
+    expect(find.textContaining('Sep 10'), findsNWidgets(2));
     await tester.scrollUntilVisible(find.text('Useful: Gardening'), 200);
     expect(find.text('Skills we need from people'), findsOneWidget);
     expect(find.text('Required: Mural painting'), findsOneWidget);
