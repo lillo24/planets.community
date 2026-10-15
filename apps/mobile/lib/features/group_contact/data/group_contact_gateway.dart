@@ -175,6 +175,31 @@ class GroupContactGateway {
     return value == null ? null : ContactReceipt.parse(value);
   }
 
+  Future<bool> muted(String actor, String chat) async {
+    final row = contactRow(
+      await call('get_own_group_contact_preferences', {
+        'p_expected_profile_id': actor,
+        'p_chat_id': chat,
+      }),
+      const {'muted'},
+    );
+    return contactBool(row['muted']);
+  }
+
+  Future<ContactReceipt> setMuted(
+    String actor,
+    String action,
+    String chat,
+    bool value,
+  ) async => ContactReceipt.parse(
+    await call('set_group_contact_muted', {
+      'p_expected_profile_id': actor,
+      'p_action_id': action,
+      'p_chat_id': chat,
+      'p_muted': value,
+    }),
+  );
+
   Future<bool> hasOwnAdmission(String actor, String chat) async => contactBool(
     await call('has_own_group_contact_admission', {
       'p_expected_profile_id': actor,

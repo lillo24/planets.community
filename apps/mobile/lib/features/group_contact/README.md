@@ -29,6 +29,9 @@ are independent.
 - `presentation/group_contact_info_screen.dart` owns permitted audience, blocking
   and confirmed close/leave. Known-message reports and safe own exit remain
   distinct from body access.
+- `presentation/group_contact_mute_control.dart` independently loads the actor's
+  mute preference and recovers uncertain writes with the original intent. It
+  never acknowledges history; a failed preference read is shown explicitly.
 - `presentation/group_contact_routes.dart` owns sanitized group/Project purpose
   continuations and exact request/chat/info routes. Private note text never enters
   a URL. Entry buttons live on public group and group-attributed Project details.

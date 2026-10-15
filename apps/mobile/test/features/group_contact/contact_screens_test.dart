@@ -114,6 +114,7 @@ Object? basic(String name, Map<String, dynamic> args) => switch (name) {
   ],
   'get_own_group_contact_request' => requestRow(),
   'get_own_group_contact_conversation' => chatRow(),
+  'get_own_group_contact_preferences' => {'muted': false},
   'get_own_group_contact_feed' => {
     'items': [messageRow()],
     'read_boundary': token,
@@ -434,6 +435,39 @@ void main() {
       expect(find.byKey(const Key('contact-message-send')), findsNothing);
     },
   );
+
+  testWidgets('mute recovery preserves exact intent and never acknowledges', (
+    tester,
+  ) async {
+    var muted = false;
+    String? actionId;
+    var deliveries = 0;
+    final (_, _, unread) = await pumpContact(tester, (name, args) async {
+      if (name == 'get_own_group_contact_preferences') return {'muted': muted};
+      if (name == 'set_group_contact_muted') {
+        deliveries++;
+        actionId = args['p_action_id'] as String;
+        expect(args['p_muted'], isTrue);
+        muted = true;
+        throw StateError('Response lost after commit');
+      }
+      if (name == 'recover_group_contact_action') {
+        expect(args['p_action_id'], actionId);
+        return {'chat_id': chatId, 'outcome': 'muted', 'replayed': true};
+      }
+      return basic(name, args);
+    }, path: '/info');
+    await reveal(tester, find.byKey(const Key('contact-mute')));
+    await tester.tap(find.byKey(const Key('contact-mute')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('contact-mute-recover')), findsOneWidget);
+    await reveal(tester, find.byKey(const Key('contact-mute-recover')));
+    await tester.tap(find.byKey(const Key('contact-mute-recover')));
+    await tester.pumpAndSettle();
+    expect(find.text('Unmute conversation notifications'), findsOneWidget);
+    expect(deliveries, 1);
+    expect(unread.reads, 0);
+  });
 
   for (final language in ['en', 'it']) {
     testWidgets('$language at 320dp and 2x keeps composer actions accessible', (

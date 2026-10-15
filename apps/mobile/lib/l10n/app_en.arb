@@ -1,4 +1,9 @@
 {
+  "notificationGroupContactRequest": "New contact request for your Group",
+  "notificationGroupCoordinationProposal": "Invitation to coordinate with other Groups",
+  "notificationMemberContactRequest": "New conversation request",
+  "contactMute": "Mute conversation notifications",
+  "contactUnmute": "Unmute conversation notifications",
   "skillPreviewHidden": "{count} more skills. Open details for the full list.",
   "@skillPreviewHidden": {"placeholders": {"count": {"type": "int"}}},
 

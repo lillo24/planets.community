@@ -460,7 +460,10 @@ class ContactReceipt {
       'withdrawn' => const {'request_id', 'outcome', 'replayed'},
       'accepted' => const {'request_id', 'chat_id', 'outcome', 'replayed'},
       'sent' => const {'chat_id', 'message_id', 'outcome', 'replayed'},
-      'closed' || 'left' => const {'chat_id', 'outcome', 'replayed'},
+      'closed' ||
+      'left' ||
+      'muted' ||
+      'unmuted' => const {'chat_id', 'outcome', 'replayed'},
       _ => throw const FormatException('Unsupported contact outcome.'),
     };
     final r = contactRow(value, keys);

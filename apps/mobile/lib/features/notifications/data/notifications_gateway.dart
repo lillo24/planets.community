@@ -46,7 +46,7 @@ class SupabaseNotificationsGateway implements NotificationsGateway {
     NotificationCursor? cursor,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_notifications',
+      'list_own_notifications_with_contacts',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_limit': limit + 1,
@@ -64,7 +64,7 @@ class SupabaseNotificationsGateway implements NotificationsGateway {
   @override
   Future<int> getUnreadCount({required String expectedProfileId}) async {
     final response = await _client.rpc<int>(
-      'get_own_unread_notification_count',
+      'get_own_unread_notification_count_with_contacts',
       params: {'p_expected_profile_id': expectedProfileId},
     );
     if (response < 0) {
@@ -79,7 +79,7 @@ class SupabaseNotificationsGateway implements NotificationsGateway {
     required String notificationId,
   }) async {
     final response = await _client.rpc<String>(
-      'mark_notification_read',
+      'mark_contact_or_legacy_notification_read',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_notification_id': notificationId,
@@ -91,7 +91,7 @@ class SupabaseNotificationsGateway implements NotificationsGateway {
   @override
   Future<int> markAllRead({required String expectedProfileId}) async {
     final response = await _client.rpc<int>(
-      'mark_all_notifications_read',
+      'mark_all_notifications_with_contacts_read',
       params: {'p_expected_profile_id': expectedProfileId},
     );
     if (response < 0) {
@@ -151,6 +151,10 @@ class NotificationsPayloadParser {
     final projectKind = _optionalProjectKind(row['project_kind']);
     final notification = AppNotification(
       notificationId: _requiredUuid(row['notification_id'], 'notification ID'),
+      contactTargetId: _optionalUuid(
+        row['contact_target_id'],
+        'contact target ID',
+      ),
       category: category,
       kind: kind,
       createdAt: requiredDate(row['created_at'], 'notification timestamp'),
@@ -307,6 +311,58 @@ class NotificationsPayloadParser {
     AppNotification item,
     Map<String, dynamic> row,
   ) {
+    final contactDestination = switch (item.destinationKind) {
+      NotificationDestinationKind.groupContactRequest ||
+      NotificationDestinationKind.groupCoordinationProposal ||
+      NotificationDestinationKind.memberContactRequest => true,
+      _ => false,
+    };
+    if (item.kind.isContact ||
+        contactDestination ||
+        item.contactTargetId != null) {
+      final matches = switch ((item.kind, item.destinationKind)) {
+        (
+          NotificationKind.groupContactRequest,
+          NotificationDestinationKind.groupContactRequest,
+        ) ||
+        (
+          NotificationKind.groupCoordinationProposal,
+          NotificationDestinationKind.groupCoordinationProposal,
+        ) ||
+        (
+          NotificationKind.memberContactRequest,
+          NotificationDestinationKind.memberContactRequest,
+        ) => true,
+        _ => false,
+      };
+      if (!matches ||
+          item.category != NotificationCategory.participation ||
+          item.contactTargetId == null ||
+          _hasAny(row, const [
+            'project_id',
+            'project_kind',
+            'project_title',
+            'request_id',
+            'chat_id',
+            'message_id',
+            'actor_profile_id',
+            'actor_display_name',
+            'resource_listing_id',
+            'resource_listing_title',
+            'resource_request_id',
+            'resource_chat_id',
+            'resource_chat_message_id',
+            'resource_agreement_id',
+            'resource_agreement_event_id',
+            'resource_exchange_event_kind',
+            'resource_exchange_leg_kind',
+          ])) {
+        throw const FormatException(
+          'Contact notification context was invalid.',
+        );
+      }
+      return;
+    }
     if (item.category != NotificationCategory.matching &&
         (item.kind == NotificationKind.matchingAvailable ||
             item.destinationKind ==
@@ -400,6 +456,10 @@ class NotificationsPayloadParser {
       );
     }
     switch (item.kind) {
+      case NotificationKind.groupContactRequest:
+      case NotificationKind.groupCoordinationProposal:
+      case NotificationKind.memberContactRequest:
+        throw const FormatException('Contact notification target was missing.');
       case NotificationKind.projectRoleOffered:
         if (item.destinationKind !=
                 NotificationDestinationKind.projectParticipation ||

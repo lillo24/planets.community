@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/group_contact/application/contact_access_changes.dart';
 import 'package:planets_mobile/features/notifications/application/notifications_controllers.dart';
 import 'package:planets_mobile/features/notifications/data/notifications_gateway.dart';
 import 'package:planets_mobile/features/notifications/domain/notification_models.dart';
@@ -13,6 +14,53 @@ import '../../../support/fake_auth.dart';
 import '../../../support/fake_notifications.dart';
 
 void main() {
+  test('access change clears contact notices offline and defeats stale read rollback', () async {
+    const parser = NotificationsPayloadParser();
+    final notice = parser.notification({
+      'notification_id': '00000000-0000-4000-8000-000000000901',
+      'category_slug': 'participation',
+      'notification_kind': 'group_contact_request',
+      'destination_kind': 'group_contact_request',
+      'contact_target_id': '00000000-0000-4000-8000-000000000902',
+      'created_at': '2026-10-15T10:00:00Z',
+      'read_at': null,
+    });
+    final legacy = notificationFixture();
+    final gateway = FakeNotificationsGateway()..items = [notice, legacy];
+    final session = _readyContainer(gateway);
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    final controller = session.container.read(
+      notificationsInboxProvider.notifier,
+    );
+    await controller.load('user-1');
+    final delayedRead = Completer<void>();
+    gateway.mutationDelay = delayedRead.future;
+    final reading = controller.markAllRead('user-1');
+    gateway.listError = StateError('offline');
+    gateway.mutationError = StateError('lost access');
+    session.container
+        .read(contactAccessChangesProvider.notifier)
+        .changed('user-1');
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      session.container
+          .read(notificationsInboxProvider)
+          .items
+          .map((n) => n.notificationId),
+      [legacy.notificationId],
+    );
+    delayedRead.complete();
+    expect(await reading, isFalse);
+    expect(
+      session.container
+          .read(notificationsInboxProvider)
+          .items
+          .any((n) => n.kind.isContact),
+      isFalse,
+    );
+  });
+
   test('older unread response cannot undo successful read counts', () async {
     final gateway = FakeNotificationsGateway()..unreadCount = 2;
     final session = _readyContainer(gateway);

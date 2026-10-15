@@ -27,6 +27,9 @@ enum NotificationCategory {
 }
 
 enum NotificationKind {
+  groupContactRequest,
+  groupCoordinationProposal,
+  memberContactRequest,
   projectRoleOffered,
   participationRequestReceived,
   participationRequestWithdrawn,
@@ -52,6 +55,9 @@ enum NotificationKind {
   unknown;
 
   static NotificationKind fromWire(String value) => switch (value) {
+    'group_contact_request' => NotificationKind.groupContactRequest,
+    'group_coordination_proposal' => NotificationKind.groupCoordinationProposal,
+    'member_contact_request' => NotificationKind.memberContactRequest,
     'project_role_offered' => NotificationKind.projectRoleOffered,
     'participation_request_received' =>
       NotificationKind.participationRequestReceived,
@@ -88,6 +94,13 @@ enum NotificationKind {
     _ => NotificationKind.unknown,
   };
 
+  bool get isContact => switch (this) {
+    NotificationKind.groupContactRequest ||
+    NotificationKind.groupCoordinationProposal ||
+    NotificationKind.memberContactRequest => true,
+    _ => false,
+  };
+
   bool get isResource => switch (this) {
     NotificationKind.resourceRequestReceived ||
     NotificationKind.resourceRequestWithdrawn ||
@@ -118,6 +131,9 @@ enum NotificationKind {
 }
 
 enum NotificationDestinationKind {
+  groupContactRequest,
+  groupCoordinationProposal,
+  memberContactRequest,
   participationRequest,
   projectParticipation,
   projectDetail,
@@ -128,6 +144,11 @@ enum NotificationDestinationKind {
   unknown;
 
   static NotificationDestinationKind fromWire(String value) => switch (value) {
+    'group_contact_request' => NotificationDestinationKind.groupContactRequest,
+    'group_coordination_proposal' =>
+      NotificationDestinationKind.groupCoordinationProposal,
+    'member_contact_request' =>
+      NotificationDestinationKind.memberContactRequest,
     'participation_request' => NotificationDestinationKind.participationRequest,
     'project_participation' => NotificationDestinationKind.projectParticipation,
     'project_detail' => NotificationDestinationKind.projectDetail,
@@ -192,6 +213,7 @@ enum ResourceNotificationLegKind {
 
 class AppNotification {
   const AppNotification({
+    this.contactTargetId,
     required this.notificationId,
     required this.category,
     required this.kind,
@@ -218,6 +240,7 @@ class AppNotification {
   });
 
   final String notificationId;
+  final String? contactTargetId;
   final NotificationCategory category;
   final NotificationKind kind;
   final DateTime createdAt;
@@ -243,6 +266,7 @@ class AppNotification {
 
   Object get refreshValue => (
     notificationId,
+    contactTargetId,
     category,
     kind,
     createdAt,
@@ -271,6 +295,7 @@ class AppNotification {
 
   AppNotification withReadAt(DateTime value) => AppNotification(
     notificationId: notificationId,
+    contactTargetId: contactTargetId,
     category: category,
     kind: kind,
     createdAt: createdAt,

@@ -12,6 +12,7 @@ import '../application/contact_attempt.dart';
 import '../application/contact_access_changes.dart';
 import '../data/group_contact_gateway.dart';
 import '../domain/group_contact_models.dart';
+import 'group_contact_mute_control.dart';
 import '../../group_coordination/data/coordination_gateway.dart';
 import '../../group_coordination/presentation/coordination_routes.dart';
 
@@ -220,6 +221,7 @@ class _GroupContactInfoScreenState
             ] else ...[
               Text(c.title, style: Theme.of(context).textTheme.titleLarge),
               Text(c.summary),
+              GroupContactMuteControl(chatId: c.id),
               if (c.kind == 'bilateral' && !c.readOnly)
                 OutlinedButton(
                   key: const Key('contact-coordinate'),

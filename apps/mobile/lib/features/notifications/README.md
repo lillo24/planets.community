@@ -147,3 +147,10 @@ navigation offers a deliberate fallback. Count reconciliation, read mutations
 and destination navigation retain their separate owners.
 
 Inbox revalidation rereads the loaded keyset range atomically and serializes with paging/read mutations. See [MSGREFRESH01](../../../../../docs/development/msgrefresh01-stable-refresh.md). No new Realtime/push service or private disk persistence is introduced.
+
+D-R03 uses additive `with_contacts` readers for minimal typed pending contact and
+coordination notices. Contact access invalidation drops their cached target IDs
+and rejects stale read/load completions before refreshing. Legacy kinds retain
+their existing routing/copy. See
+[contact activity notices](../../../../../docs/development/contact-activity-notices.md)
+for bounded projection, delivery preferences and the synthetic privacy gate.

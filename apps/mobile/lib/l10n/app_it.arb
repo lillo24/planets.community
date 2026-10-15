@@ -1,4 +1,9 @@
 {
+  "notificationGroupContactRequest": "Nuova richiesta di contatto per il gruppo",
+  "notificationGroupCoordinationProposal": "Invito a coordinare più gruppi",
+  "notificationMemberContactRequest": "Nuova richiesta di conversazione",
+  "contactMute": "Silenzia le notifiche della conversazione",
+  "contactUnmute": "Riattiva le notifiche della conversazione",
   "skillPreviewHidden": "{count} altre competenze. Apri i dettagli per la lista completa.",
   "@skillPreviewHidden": {"placeholders": {"count": {"type": "int"}}},
 
