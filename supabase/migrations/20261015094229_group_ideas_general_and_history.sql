@@ -367,7 +367,8 @@ begin
   -- Replayed consent is only its original receipt; never a new admission.
   return receipt.result;
  end if;
- if p_operation not in ('leave','respond') and not exists(select 1 from public.profiles where id=actor and display_name is not null) then
+ if p_operation<>'leave' and (p_operation<>'respond' or p_arguments->>'response'='accepted')
+  and not exists(select 1 from public.profiles where id=actor and display_name is not null) then
   raise sqlstate '55000' using message='A complete profile is required.'; end if;
  if p_operation='create' then
   select idea_creation_policy into policy from private.community_groups where id=p_group;
