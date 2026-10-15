@@ -341,9 +341,9 @@ try {
     });
     const accepted = await accept(member, room, invitation);
     equal(
-      (await history(member, room)).items,
-      [],
-      "Acceptance starts after committed history",
+      (await history(member, room)).items.map((m) => m.message_id),
+      [older.object_id],
+      "Approved revision grants earlier history after explicit acceptance",
     );
     const newest = await send(
       creator,
@@ -360,8 +360,8 @@ try {
     let page = await history(member, room);
     equal(
       page.items.map((m) => m.message_id),
-      [newest.object_id],
-      "Only post-admission message is visible",
+      [newest.object_id, older.object_id],
+      "Full admitted history is independent of equal timestamps",
     );
     equal(await unread(member), 1, "Complete canonical unread count");
     const baseSummary = await rpc(
@@ -488,8 +488,9 @@ try {
       p_category: "other",
       p_explanation: "Fictional report evidence for a local test.",
     };
-    await denied(member, "submit_group_discussion_report", {
+    await rpc(member, "submit_group_discussion_report", {
       ...reportArgs,
+      p_client_submission_id: randomUUID(),
       p_message_id: older.object_id,
     });
     const report = (
@@ -606,9 +607,11 @@ try {
     });
     await accept(member, room, await invite(creator, member, room));
     equal(
-      (await history(member, room)).items,
-      [],
-      "Fresh admission after rejoin excludes all old messages",
+      (await history(member, room)).items.some(
+        (m) => m.message_id === older.object_id,
+      ),
+      true,
+      "Deliberate fresh admission after Group rejoin grants full earlier history",
     );
     const restored = await context(member, room);
     await rpc(member, "leave_group_discussion", {

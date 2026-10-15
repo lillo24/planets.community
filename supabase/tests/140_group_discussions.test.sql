@@ -18,8 +18,8 @@ select ok(not exists(select 1 from pg_constraint c join pg_attribute a on a.attr
     and a.attname in ('actor_id','profile_id','creator_id','sender_id','inviter_id','recipient_id','source_id')),'New raw actor provenance adds no deletion-blocking foreign keys');
 select has_trigger('private','group_discussion_messages','group_discussion_messages_immutable','Messages are immutable');
 select has_trigger('private','group_discussion_receipts','group_discussion_receipts_immutable','Receipts are immutable');
-select has_trigger('private','group_memberships','group_memberships_end_discussion_source','Group leave ends concrete admission');
-select has_trigger('private','group_delegates','group_delegates_end_discussion_source','Role revocation ends concrete admission');
+select has_trigger('private','group_memberships','group_memberships_end_discussion_source','Group leave reconciles independent supporting rights');
+select has_trigger('private','group_delegates','group_delegates_end_discussion_source','Role revocation closes oversight and preserves independent participation');
 select has_column('private','moderation_cases','target_group_discussion_message_id','Reports are genuine typed cases');
 select has_trigger('private','moderation_cases','moderation_cases_discussion_identity','New evidence is immutable');
 set local role anon;
