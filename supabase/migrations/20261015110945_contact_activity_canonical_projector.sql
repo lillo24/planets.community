@@ -22,7 +22,7 @@ begin
     where p.oid='public.process_notification_outbox_batch(integer)'::regprocedure;
   -- A peer may have revised the public worker after the contact migration.
   -- Fail before DROP rather than silently removing that peer's composition.
-  if btrim(current_wrapper,E' \t\r\n') is distinct from btrim(expected_wrapper,E' \t\r\n') then
+  if btrim(current_wrapper,E' \t\r\n') is distinct from btrim(replace(expected_wrapper,E'\r\n',E'\n'),E' \t\r\n') then
     raise exception 'Review the changed public notification worker before restoring canonical ownership.';
   end if;
   definition:=replace(pg_get_functiondef('private.process_notification_outbox_before_contacts(integer)'::regprocedure),E'\r\n',E'\n');
