@@ -83,15 +83,17 @@ class ProjectParticipationSection extends ConsumerWidget {
     if (session.phase == AuthSessionPhase.ready &&
         profileId != null &&
         (!hasCurrentRole || roleState.phase == ProjectDelegateLoadPhase.idle)) {
-      Future<void>.microtask(
-        () => ref
+      Future<void>.microtask(() async {
+        // A lazy detail section can leave the viewport before this runs.
+        if (!context.mounted) return;
+        await ref
             .read(projectManagementRoleProvider.notifier)
             .load(
               expectedProfileId: profileId,
               projectId: projectId,
               projectKind: projectKind,
-            ),
-      );
+            );
+      });
     }
     final ownState = ref.watch(ownParticipationProvider);
     final hasReadyOwnState =
@@ -107,9 +109,10 @@ class ProjectParticipationSection extends ConsumerWidget {
         profileId != null &&
         ownState.expectedProfileId != profileId &&
         !ownState.isBusy) {
-      Future<void>.microtask(
-        () => ref.read(ownParticipationProvider.notifier).load(profileId),
-      );
+      Future<void>.microtask(() async {
+        if (!context.mounted) return;
+        await ref.read(ownParticipationProvider.notifier).load(profileId);
+      });
     }
 
     final meetingState = ref.watch(participantMeetingDetailsProvider);
@@ -121,23 +124,25 @@ class ProjectParticipationSection extends ConsumerWidget {
         (meetingState.expectedProfileId != profileId ||
             meetingState.projectId != projectId ||
             meetingState.phase == ParticipationLoadPhase.idle)) {
-      Future<void>.microtask(
-        () => ref
+      Future<void>.microtask(() async {
+        if (!context.mounted) return;
+        await ref
             .read(participantMeetingDetailsProvider.notifier)
             .load(
               expectedProfileId: profileId,
               projectId: projectId,
               projectKind: projectKind,
-            ),
-      );
+            );
+      });
     } else if (!canReadProtectedMeeting &&
         meetingState.projectId == projectId &&
         meetingState.details != null) {
-      Future<void>.microtask(
-        () => ref
+      Future<void>.microtask(() {
+        if (!context.mounted) return;
+        ref
             .read(participantMeetingDetailsProvider.notifier)
-            .clearProject(projectId),
-      );
+            .clearProject(projectId);
+      });
     }
 
     final hasReadyMeeting =
@@ -164,11 +169,12 @@ class ProjectParticipationSection extends ConsumerWidget {
         (!blockingState.hasExactStatus(creatorProfileId) &&
             !blockingState.isLoadingStatus(creatorProfileId) &&
             !blockingState.hasStatusFailure(creatorProfileId))) {
-      Future<void>.microtask(
-        () => ref
+      Future<void>.microtask(() async {
+        if (!context.mounted) return;
+        await ref
             .read(blockingProvider.notifier)
-            .loadStatus(profileId, creatorProfileId),
-      );
+            .loadStatus(profileId, creatorProfileId);
+      });
     }
     final organizerBlocked =
         profileId != null &&

@@ -36,6 +36,7 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
   late final ResourceExchangeController _exchangeController;
   final _composer = TextEditingController();
   final _scrollController = ScrollController();
+  final _summaryScrollController = ScrollController();
   var _didInitialScroll = false;
 
   @override
@@ -54,6 +55,7 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
     _controller.stopSignals();
     _composer.dispose();
     _scrollController.dispose();
+    _summaryScrollController.dispose();
     super.dispose();
   }
 
@@ -134,6 +136,14 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
     });
   }
 
+  void _showSummaryWarning() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _summaryScrollController.hasClients) {
+        _summaryScrollController.jumpTo(0);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -145,6 +155,10 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
     final messages = belongs ? state.messages : const <ResourceChatMessage>[];
 
     ref.listen(resourceChatDetailProvider, (previous, next) {
+      if ((next.failure != null && previous?.failure != next.failure) ||
+          (next.hasConnectionIssue && previous?.hasConnectionIssue != true)) {
+        _showSummaryWarning();
+      }
       final becameReady =
           next.expectedProfileId == _expectedProfileId &&
           next.chatId == widget.chatId &&
@@ -152,6 +166,13 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
       if (becameReady && !_didInitialScroll) {
         _didInitialScroll = true;
         _scrollToBottom();
+      }
+    });
+    ref.listen(resourceExchangeProvider, (previous, next) {
+      if ((next.failure != null && previous?.failure != next.failure) ||
+          (next.eventLoadFailure && previous?.eventLoadFailure != true) ||
+          (next.hasRefreshWarning && previous?.hasRefreshWarning != true)) {
+        _showSummaryWarning();
       }
     });
 
@@ -188,122 +209,187 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
                   message: resourceChatFailureMessage(l10n, state.failure!),
                   onRetry: _load,
                 )
-              : Column(
-                  children: [
-                    if (summary != null)
-                      _CounterpartyHeader(
-                        summary: summary,
-                        onBlockingChanged: _refresh,
-                      ),
-                    if (summary != null)
-                      ResourceExchangeAgreementSection(
-                        listingTitle: summary.listingTitle,
-                        ownerDisplayName: summary.ownerDisplayName,
-                        requesterDisplayName: summary.requesterDisplayName,
-                      ),
-                    if (state.hasConnectionIssue)
-                      Semantics(
-                        liveRegion: true,
-                        child: Container(
-                          key: const Key('resource-chat-connection-issue'),
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(AppSpacing.small),
-                          color: Theme.of(context).colorScheme.errorContainer,
-                          child: Text(l10n.resourceChatConnectionIssue),
+              : LayoutBuilder(
+                  builder: (context, constraints) => Column(
+                    children: [
+                      // Bound only the summary's share of available height. Its
+                      // full content scrolls independently of message read/paging.
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: constraints.maxHeight * .45,
                         ),
-                      ),
-                    if (state.failure case final failure?)
-                      Semantics(
-                        liveRegion: true,
-                        child: Container(
-                          key: const Key('resource-chat-inline-error'),
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(AppSpacing.small),
-                          color: Theme.of(context).colorScheme.errorContainer,
-                          child: Text(
-                            resourceChatFailureMessage(l10n, failure),
-                          ),
-                        ),
-                      ),
-                    Expanded(
-                      child: RefreshIndicator(
-                        onRefresh: _refresh,
-                        child: ConversationHistoryList<ResourceChatMessage>(
-                          key: const Key('resource-chat-history'),
-                          controller: _scrollController,
-                          items: messages,
-                          itemKey: (item) => item.messageId,
-                          itemBuilder: (context, message) => _MessageBubble(
-                            message: message,
-                            isMine:
-                                message.senderProfileId == _expectedProfileId,
-                            onReport:
-                                message.senderProfileId == _expectedProfileId
-                                ? null
-                                : () => ModerationRoutes.openReport(
-                                    context,
-                                    resourceMessageReportTarget(
-                                      message.messageId,
-                                      l10n.moderationResourceMessageTarget,
-                                    ),
-                                  ),
-                          ),
-                          enabled:
-                              belongs &&
-                              summary != null &&
-                              _hasExpectedIdentity,
-                          hasMore: state.hasMoreOlder,
-                          loading: state.isLoadingOlder,
-                          failed: state.failure != null,
-                          onLoadOlder: _loadOlder,
-                          fallbackLabel: l10n.resourceChatLoadOlder,
-                          buttonKey: const Key('resource-chat-load-older'),
-                          empty: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.xLarge,
-                            ),
+                        child: Scrollbar(
+                          controller: _summaryScrollController,
+                          thumbVisibility: true,
+                          child: SingleChildScrollView(
+                            key: const Key('resource-chat-summary-scroll'),
+                            controller: _summaryScrollController,
                             child: Column(
                               children: [
-                                Text(
-                                  l10n.resourceChatNoMessages,
-                                  key: const Key('resource-chat-empty'),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium,
-                                ),
-                                if (summary?.hasSendEntitlement == true) ...[
-                                  const SizedBox(height: AppSpacing.small),
-                                  Text(
-                                    l10n.resourceChatEmptyGuidance,
-                                    textAlign: TextAlign.center,
+                                const ResourceExchangeFeedback(),
+                                if (state.hasConnectionIssue)
+                                  Semantics(
+                                    liveRegion: true,
+                                    child: Container(
+                                      key: const Key(
+                                        'resource-chat-connection-issue',
+                                      ),
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(
+                                        AppSpacing.small,
+                                      ),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .errorContainer,
+                                      child: Text(
+                                        l10n.resourceChatConnectionIssue,
+                                      ),
+                                    ),
                                   ),
-                                ],
+                                if (state.failure case final failure?)
+                                  Semantics(
+                                    liveRegion: true,
+                                    child: Container(
+                                      key: const Key(
+                                        'resource-chat-inline-error',
+                                      ),
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(
+                                        AppSpacing.small,
+                                      ),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .errorContainer,
+                                      child: Text(
+                                        resourceChatFailureMessage(
+                                          l10n,
+                                          failure,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                if (summary != null)
+                                  _CounterpartyHeader(
+                                    summary: summary,
+                                    onBlockingChanged: _refresh,
+                                  ),
+                                if (summary != null)
+                                  ResourceExchangeAgreementSection(
+                                    listingTitle: summary.listingTitle,
+                                    ownerDisplayName: summary.ownerDisplayName,
+                                    requesterDisplayName:
+                                        summary.requesterDisplayName,
+                                  ),
                               ],
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    if (summary?.hasSendEntitlement == true)
-                      _Composer(
-                        controller: _composer,
-                        isSending: state.isSending,
-                        onSend: _send,
-                      )
-                    else if (summary != null)
-                      Semantics(
-                        liveRegion: true,
-                        child: Container(
-                          key: const Key('resource-chat-read-only'),
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(AppSpacing.medium),
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                          child: Text(l10n.resourceChatReadOnlyNotice),
+                      Expanded(
+                        child: RefreshIndicator(
+                          onRefresh: _refresh,
+                          child: ConversationHistoryList<ResourceChatMessage>(
+                            key: const Key('resource-chat-history'),
+                            controller: _scrollController,
+                            items: messages,
+                            itemKey: (item) => item.messageId,
+                            itemBuilder: (context, message) => _MessageBubble(
+                              message: message,
+                              isMine:
+                                  message.senderProfileId == _expectedProfileId,
+                              onReport:
+                                  message.senderProfileId == _expectedProfileId
+                                  ? null
+                                  : () => ModerationRoutes.openReport(
+                                      context,
+                                      resourceMessageReportTarget(
+                                        message.messageId,
+                                        l10n.moderationResourceMessageTarget,
+                                      ),
+                                    ),
+                            ),
+                            enabled:
+                                belongs &&
+                                summary != null &&
+                                _hasExpectedIdentity,
+                            hasMore: state.hasMoreOlder,
+                            loading: state.isLoadingOlder,
+                            failed: state.failure != null,
+                            onLoadOlder: _loadOlder,
+                            fallbackLabel: l10n.resourceChatLoadOlder,
+                            buttonKey: const Key('resource-chat-load-older'),
+                            empty: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSpacing.medium,
+                              ),
+                              child: Column(
+                                children: [
+                                  const Icon(
+                                    Icons.chat_bubble_outline,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(height: AppSpacing.small),
+                                  Text(
+                                    l10n.resourceChatNoMessages,
+                                    key: const Key('resource-chat-empty'),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium,
+                                  ),
+                                  if (summary?.hasSendEntitlement == true) ...[
+                                    const SizedBox(height: AppSpacing.small),
+                                    Text(
+                                      l10n.resourceChatEmptyGuidance,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                  ],
+                      if (summary?.hasSendEntitlement == true)
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: constraints.maxHeight * .45,
+                          ),
+                          child: SingleChildScrollView(
+                            key: const Key('resource-chat-composer-scroll'),
+                            primary: false,
+                            reverse: true,
+                            child: _Composer(
+                              controller: _composer,
+                              isSending: state.isSending,
+                              onSend: _send,
+                            ),
+                          ),
+                        )
+                      else if (summary != null)
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: constraints.maxHeight * .45,
+                          ),
+                          child: SingleChildScrollView(
+                            primary: false,
+                            child: Semantics(
+                              liveRegion: true,
+                              child: Container(
+                                key: const Key('resource-chat-read-only'),
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(
+                                  AppSpacing.medium,
+                                ),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
+                                child: Text(l10n.resourceChatReadOnlyNotice),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
         ),
       ),
@@ -351,13 +437,20 @@ class _CounterpartyHeader extends ConsumerWidget {
           ),
           const SizedBox(width: AppSpacing.small),
           Expanded(
-            child: Text(
-              l10n.resourceChatCounterparty(
-                role,
-                summary.counterpartyDisplayName,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Tooltip(
+                  message: summary.counterpartyDisplayName,
+                  child: Text(
+                    summary.counterpartyDisplayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                Text(role, style: Theme.of(context).textTheme.bodySmall),
+              ],
             ),
           ),
           BlockingActionButton(
@@ -468,12 +561,9 @@ class _Composer extends StatelessWidget {
     return Material(
       elevation: 4,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.small,
-          AppSpacing.small,
-          AppSpacing.small,
-          AppSpacing.small + MediaQuery.viewInsetsOf(context).bottom,
-        ),
+        // Scaffold resizes the body and removes its bottom view inset.
+        // Composer padding stays independent of keyboard metrics.
+        padding: const EdgeInsets.all(AppSpacing.small),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [

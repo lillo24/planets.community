@@ -1054,7 +1054,14 @@ void main() {
     app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
 
-    expect(find.text('Requester: Jordan'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('resource-chat-counterparty')),
+        matching: find.text('Jordan'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Requester'), findsOneWidget);
     expect(find.text('Canonical history message'), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('resource-chat-composer')),
@@ -2854,6 +2861,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(
+      find.byKey(const Key('resource-exchange-more')).hitTestable(),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
       find.byKey(const Key('resource-exchange-history')).hitTestable(),
     );
     await tester.pumpAndSettle();
@@ -2916,7 +2928,7 @@ void main() {
     );
     expect(
       tester
-          .widget<OutlinedButton>(
+          .widget<TextButton>(
             find.byKey(const Key('resource-exchange-progress-action')),
           )
           .onPressed,
@@ -3024,6 +3036,11 @@ void main() {
       resourceExchange: exchange,
     );
     app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('resource-exchange-more')).hitTestable(),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(

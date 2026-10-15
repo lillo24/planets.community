@@ -80,13 +80,13 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          await tester.scrollUntilVisible(find.text(l.proposalSkillsHint), 250);
-          expect(find.text(l.proposalSkillsHint), findsOneWidget);
+          await tester.scrollUntilVisible(find.text(l.detailSkillsHint), 250);
+          expect(find.text(l.detailSkillsHint), findsOneWidget);
           await tester.scrollUntilVisible(
-            find.text(l.projectResourcesHint),
+            find.text(l.detailMaterialsHint),
             250,
           );
-          expect(find.text(l.projectResourcesNeededTitle), findsOneWidget);
+          expect(find.text(l.detailMaterialsTitle), findsOneWidget);
           expect(resources.calls, ['list-public:proposal-1']);
           expect(tester.takeException(), isNull);
         },
@@ -458,10 +458,12 @@ void main() {
     expect(find.text('September 10, 2026'), findsOneWidget);
     expect(find.text('12:00 – 14:00'), findsOneWidget);
     expect(find.text('Europe/Rome'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Useful: Gardening'), 200);
-    expect(find.text('Skills we need from people'), findsOneWidget);
-    expect(find.text('Required: Mural painting'), findsOneWidget);
-    expect(find.text('Useful: Gardening'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Gardening'), 200);
+    expect(find.text('Skills'), findsOneWidget);
+    expect(find.text('Required'), findsOneWidget);
+    expect(find.text('Mural painting'), findsOneWidget);
+    expect(find.text('Useful'), findsOneWidget);
+    expect(find.text('Gardening'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
