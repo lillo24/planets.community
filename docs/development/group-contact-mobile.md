@@ -95,7 +95,7 @@ three exact human/Group consent pairs, no conversation before final consent,
 recovery after a deliberately lost final reply, and a fresh conversation whose
 new representative cannot read the source. It checks actual unread changes,
 role revocation/regrant without old admission revival, the exact protected report
-target and persisted report, blocking, safe former-member leave, close with
+target and persisted report, blocking, safe former-representative leave, close with
 permitted history, and a separate pending Project request without membership.
 The fixtures and postconditions use the real backend; only initial UI identity
 and the two lost responses are injected. Account switches dispose the preceding
