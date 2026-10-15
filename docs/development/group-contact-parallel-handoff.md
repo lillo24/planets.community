@@ -150,12 +150,27 @@ Actual commands/results and final source references will be appended as complete
   phone was stopped. C was updated through
   [its coordination thread](https://github.com/lillo24/planets.community/pull/257#issuecomment-6190007066).
 - Member migrations `20261015095004`/`20261015095042` and notice migration
-  `20261015095248` add three forward files. Their clean/populated replay,
-  real-Auth verification, pgTAP, generated types and final CI remain pending.
+  `20261015095248` add three forward files. All three applied successfully on the
+  isolated D stack. Focused pgTAP `140_member_contact` and `143_contact_activity_notices`
+  passed 96 assertions. Database lint and security advisors passed after initial
+  host connection timeouts. Actual schema types were regenerated with the standard
+  nullability postprocessing at `1388d77a`; no generated types were hand-edited.
+  Clean/populated replay, real-Auth verification and final CI remain pending.
   [Contact activity notices](contact-activity-notices.md) documents the bounded
   worker, additive readers and mute/message separation.
 
 All privacy questions in the decision ledger remain open. User instruction to
 continue execution does not select one of those consequential policy alternatives.
 No dependent runtime has merged to main or been applied to a hosted environment.
+
+The final member native target is now committed at `08edbe48`. It passed analysis,
+fixture Node syntax and debug bundle compilation, with a fresh kernel artifact.
+Actual driver execution and visual inspection remain required. It covers the
+canonical People entry point, deliberate lost-response request/recovery, named
+acceptance, Private/unread, mute, Block/unblock, independent origin episodes,
+Close, Leave, last-context loss/rejoin and exact historical-message reporting.
+The final notification controller regression run passed 17 tests at `070bdf3a`,
+including ordinary message refresh preserving a pending activity read and member
+access loss clearing cached notices offline. These are focused results; they are
+not a completed full Mobile or native qualification.
 No hosted operation has been performed.
