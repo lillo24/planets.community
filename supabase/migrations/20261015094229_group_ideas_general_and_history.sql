@@ -143,11 +143,10 @@ language sql stable security definer set search_path='' as $$
 $$;
 create function private.group_discussion_summary_v2(p_room uuid,p_actor uuid) returns jsonb
 language plpgsql stable security definer set search_path='' as $$
-declare r private.group_discussions%rowtype; g private.community_groups%rowtype; snapshot jsonb; access_id uuid; joined uuid;
+declare r private.group_discussions%rowtype; snapshot jsonb; access_id uuid; joined uuid;
  current_read boolean; discover boolean; historical boolean; manager boolean; prefs private.group_discussion_preferences%rowtype;
 begin
  select * into r from private.group_discussions where id=p_room;
- select * into g from private.community_groups where id=r.group_id;
  joined:=private.group_discussion_admission(p_room,p_actor); current_read:=private.group_discussion_can_read_current(p_room,p_actor);
  discover:=private.group_discussion_person_current(r.group_id,p_actor) and (r.visibility='group' or current_read);
  historical:=not current_read and private.group_discussion_history_frontier(p_room,p_actor) is not null;
@@ -586,12 +585,12 @@ create function private.group_discussion_project_invite_recipient(p_project uuid
 language sql stable security definer set search_path='' as $$select false;$$;
 create function private.group_discussion_notice_available(p_event uuid,p_actor uuid) returns boolean
 language sql stable security definer set search_path='' as $$
- select coalesce((select e.actor_id<>p_actor and private.group_discussion_person_current(r.group_id,p_actor)
+ select coalesce((select (e.actor_id<>p_actor or e.event_kind='created') and private.group_discussion_person_current(r.group_id,p_actor)
  and (e.target_id is null or e.target_id=p_actor)
  and case e.event_kind
   when 'invited' then private.group_discussion_invitation_available(e.object_id)
-  when 'created' then (e.visibility='group' and r.visibility='group' or private.group_authority_role(r.group_id,p_actor) is not null)
-   and (exists(select 1 from private.community_group_managers c where c.group_id=r.group_id and c.profile_id=p_actor)
+  when 'created' then (e.actor_id=p_actor and private.group_discussion_can_read_current(r.id,p_actor) or e.visibility='group' and r.visibility='group' or private.group_authority_role(r.group_id,p_actor) is not null)
+   and (e.actor_id=p_actor or exists(select 1 from private.community_group_managers c where c.group_id=r.group_id and c.profile_id=p_actor)
     or exists(select 1 from private.group_delegates d where d.group_id=r.group_id and d.profile_id=p_actor and d.revoked_at is null and d.granted_at<=e.created_at)
     or e.visibility='group' and exists(select 1 from private.group_memberships m where m.group_id=r.group_id and m.profile_id=p_actor and m.ended_at is null and m.joined_at<=e.created_at))
   when 'message' then private.group_discussion_can_read_current(r.id,p_actor)
