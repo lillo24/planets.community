@@ -127,13 +127,13 @@ try {
     p_name: "Fictional original workspace",
     p_url: "https://example.invalid/original-planning",
   });
-  async function admit() {
+  async function admit(targetRoom = room) {
     const invitation = await rpc(creator, "invite_group_discussion_member", {
-      ...command(creator, room),
+      ...command(creator, targetRoom),
       p_profile_id: member.id,
     });
     return rpc(member, "respond_group_discussion_invitation", {
-      ...command(member, room),
+      ...command(member, targetRoom),
       p_invitation_id: invitation.object_id,
       p_response: "accepted",
     });
@@ -148,6 +148,28 @@ try {
     p_admission_id: ended.object_id,
   });
   const active = await admit();
+  const retiredRoom = (
+    await rpc(creator, "create_group_discussion", {
+      ...command(creator),
+      p_group_id: group,
+      p_title: "Private predecessor title at exit",
+    })
+  ).room_id;
+  const retiredAdmission = await admit(retiredRoom);
+  await rpc(member, "leave_group_discussion", {
+    ...command(member, retiredRoom),
+    p_admission_id: retiredAdmission.object_id,
+  });
+  const retiredContext = await rpc(creator, "get_group_discussion", {
+    ...expected(creator),
+    p_room_id: retiredRoom,
+  });
+  await rpc(creator, "update_group_discussion", {
+    ...command(creator, retiredRoom),
+    p_expected_version: retiredContext.version,
+    p_title: "Private title changed AFTER original exit",
+    p_archived: false,
+  });
   const tables = [
     "group_discussions",
     "group_discussion_admissions",
@@ -223,6 +245,21 @@ try {
     await sql`select count(*)::int n from private.group_discussion_messages where room_id=${room}::uuid`;
   assert.equal(messageCount.n, 2, "Upgrade does not duplicate messages");
   checks++;
+  for (const name of [
+    "get_group_discussion_v2",
+    "get_group_discussion_message_page_v2",
+  ]) {
+    const response = await member.client.rpc(name, {
+      ...expected(member),
+      p_room_id: retiredRoom,
+    });
+    assert.equal(
+      response.error?.code,
+      "42501",
+      `${name}: old exited private episode must not reveal post-exit metadata`,
+    );
+    checks++;
+  }
   console.log(
     `Populated old C to revised C upgrade passed: ${checks} assertions across ${tables.length} original tables.`,
   );

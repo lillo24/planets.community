@@ -420,6 +420,22 @@ void main() {
         find.byKey(const Key('discussion-link-add')),
       );
       await shot('general-workspace-empty-en');
+      await tester.tap(find.byKey(const Key('discussion-link-add')));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('discussion-link-name')),
+      );
+      await tester.enterText(
+        find.byKey(const Key('discussion-link-name')),
+        'Group-wide shared workspace',
+      );
+      await tester.enterText(
+        find.byKey(const Key('discussion-link-url')),
+        'https://example.invalid/group-wide',
+      );
+      await tester.tap(find.byKey(const Key('discussion-link-save')));
+      await harness.waitFor(tester, find.text('Group-wide shared workspace'));
+      await shot('general-workspace-manager-en');
 
       await container
           .read(languagePreferenceProvider.notifier)
@@ -430,6 +446,10 @@ void main() {
           child: const PlanetsApp(),
         ),
       );
+      router.go(discussionLinksRoute(settings.generalRoomId!));
+      await harness.waitFor(tester, find.text('Group-wide shared workspace'));
+      expect(find.byKey(const Key('discussion-link-add')), findsNothing);
+      await shot('general-workspace-member-en');
       router.go(discussionCreateRoute(group));
       await harness.waitFor(tester, find.byKey(const Key('discussion-name')));
       await tester.enterText(
@@ -466,6 +486,35 @@ void main() {
         ).room(creator, memberRoom)).access,
         'oversight',
       );
+      publisherRouter.go(discussionRoute(memberRoom));
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: publisher,
+          child: const PlanetsApp(),
+        ),
+      );
+      await harness.waitFor(
+        tester,
+        find.text('Member-created restricted Idea'),
+      );
+      expect(
+        publisher
+            .read(discussionChatProvider(memberRoom))!
+            .room!
+            .actualAdmissionId,
+        isNull,
+      );
+      await shot('restricted-manager-oversight-en');
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const PlanetsApp(),
+        ),
+      );
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('discussion-composer')),
+      );
       await tester.tap(find.text('Invitation-only + Group managers'));
       await harness.waitFor(tester, find.byKey(const Key('discussion-mute')));
       await tester.tap(find.byKey(const Key('discussion-mute')));
@@ -488,6 +537,10 @@ void main() {
       await tester.tap(find.text('Show hidden Ideas'));
       await harness.waitFor(tester, find.text('Visible unjoined Idea'));
       await shot('show-hidden-en');
+      tester.platformDispatcher.textScaleFactorTestValue = 1.8;
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+      await tester.pump(const Duration(milliseconds: 500));
+      await shot('folder-en-large-dark');
       await container
           .read(languagePreferenceProvider.notifier)
           .select(LanguagePreference.italian);
@@ -515,10 +568,42 @@ void main() {
       );
       addTearDown(planner.dispose);
       addTearDown(newcomer.dispose);
+      final newcomerProbe = _PlanningReadProbe(newcomer);
+      ProviderContainer participantScope(
+        String actor,
+        SupabaseClient authClient,
+      ) => ProviderContainer(
+        overrides: [
+          appConfigProvider.overrideWithValue(config),
+          supabaseClientProvider.overrideWithValue(authClient),
+          authGatewayProvider.overrideWithValue(_VerifiedIdentity(actor)),
+          policyAcceptanceStoreProvider.overrideWithValue(
+            _RealPolicyStore(authClient),
+          ),
+          initialLanguagePreferenceProvider.overrideWithValue(
+            LanguagePreference.english,
+          ),
+          if (actor == newcomerId)
+            discussionGatewayProvider.overrideWithValue(newcomerProbe),
+        ],
+      );
+      final plannerScope = participantScope(plannerId, planner),
+          newcomerScope = participantScope(newcomerId, newcomer);
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        plannerScope.dispose();
+        newcomerScope.dispose();
+      });
+      await plannerScope.read(authSessionProvider.notifier).start();
+      await newcomerScope.read(authSessionProvider.notifier).start();
       await runDiscussionConversionJourney(
         tester,
         publisher: publisher,
         memberContainer: container,
+        plannerContainer: plannerScope,
+        newcomerContainer: newcomerScope,
+        newcomerPlanningReads: () => newcomerProbe.reads,
         planner: planner,
         newcomer: newcomer,
         plannerId: plannerId,
@@ -530,6 +615,22 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+}
+
+class _PlanningReadProbe extends SupabaseDiscussionGateway {
+  _PlanningReadProbe(super.client);
+  int reads = 0;
+  @override
+  Future<DiscussionRoom> room(String actor, String room) {
+    reads++;
+    return super.room(actor, room);
+  }
+
+  @override
+  Future<DiscussionHistory> history(String actor, String room, {int? before}) {
+    reads++;
+    return super.history(actor, room, before: before);
+  }
 }
 
 class _LostSendReply extends SupabaseDiscussionGateway {

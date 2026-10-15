@@ -132,7 +132,7 @@ void main() {
       'https://planets.community$path#x',
       'https://planets.community/messages/discussions/invite/${token}a',
       'http://planets.community$path',
-      'https://planets.community/messages/discussions/invite/%61${token.substring(1)}',
+      'https://planets.community/messages/discussions/invite/%2F${token.substring(1)}',
     ]) {
       expect(nativeProjectDestination(Uri.parse(url)), isNull, reason: url);
     }

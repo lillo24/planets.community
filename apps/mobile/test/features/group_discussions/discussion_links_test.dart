@@ -1,4 +1,9 @@
 import 'dart:async';
+
+import '../../support/fake_group_discussions.dart';
+
+import 'package:planets_mobile/features/group_discussions/data/discussion_conversion_gateway.dart';
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -279,6 +284,9 @@ void main() {
           authSessionProvider.overrideWith(Session.new),
           discussionGatewayProvider.overrideWithValue(rooms),
           discussionLinksGatewayProvider.overrideWithValue(g),
+          discussionConversionGatewayProvider.overrideWithValue(
+            emptyDiscussionConversionGateway(),
+          ),
         ],
       );
       addTearDown(() async {
@@ -294,6 +302,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(g.reads, 1);
       expect(rooms.historyReads, 0);
+      // The revised current-audience disclosure can fill the narrow 2x first
+      // viewport. Scrolling must reveal the same already-loaded collection.
+      await tester.scrollUntilVisible(find.text('Documento 9'), 100);
       expect(find.text('Documento 9'), findsOneWidget);
       expect(find.byKey(const Key('discussion-link-add')), findsNothing);
       expect(tester.takeException(), isNull);

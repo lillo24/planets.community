@@ -8,6 +8,11 @@ its API boundary; the cumulative C handoff owns qualification and merge status.
 admissions, invitations, messages and receipts. No planning message is copied
 into a Project, and no Group right grants Project or D contact access.
 
+An authorized rendered-message ACK advances all of that actor's overlapping
+current room grants. Their identities and exit snapshots remain independent;
+leaving explicit participation while retaining oversight cannot resurrect unread
+already rendered in the same canonical room. Ended grants never advance.
+
 ## Durable records and authorization
 
 - Each eligible published Group gets one reserved `general` room, enforced by a
@@ -32,9 +37,18 @@ into a Project, and no Group right grants Project or D contact access.
   oversight reader retains only the highest sequence actually fetched. Unknown
   rooms are never materialized as permanent grants for former managers.
 - Existing already-ended C admissions cannot reconstruct an exact committed
-  cutoff from timestamps. Their upgrade cutoff is conservatively zero. Their
-  IDs and records remain intact; fresh deliberate readmission grants full
-  history. This is a migration limitation, not an invented historical boundary.
+  cutoff or exit metadata from timestamps. Their upgrade marker is conservatively
+  zero, with no reconstructed historical grant or snapshot: the old denial stays
+  in force unless an independent current grant or fresh deliberate readmission
+  authorizes access. Today's private title is never fabricated as an exit snapshot.
+  Their IDs and records remain intact. This is a migration limitation, not an
+  invented historical boundary.
+
+Historical folders enumerate only independently retained room scopes. Their
+Project section applies canonical Project entitlement and can legitimately be
+empty; retained planning history never grants a Project conversation or newer
+Group Idea discovery.
+
 - Former reads return frozen metadata and messages through the permitted
   sequence. They cannot read current rosters, edited links, previews or live
   unread/notifications. Group suppression and missing accountable identity

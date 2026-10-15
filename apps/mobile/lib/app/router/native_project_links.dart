@@ -1,5 +1,7 @@
 /// The OS filters are shape globs; this is the application trust boundary.
 /// Internal app navigation remains independent of the public HTTPS allowlist.
+/// Uri canonicalizes percent-encoded unreserved characters before this boundary;
+/// authorization uses the resulting exact token, never its raw URL spelling.
 String? nativeProjectDestination(Uri uri) {
   if (uri.scheme != 'https' ||
       uri.host != 'planets.community' ||

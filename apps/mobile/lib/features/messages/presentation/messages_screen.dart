@@ -167,7 +167,7 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
     final initialLoading =
         !belongs || (state.phase == MessageChatsPhase.loading && items.isEmpty);
 
-    return Column(
+    Widget content(List<MessageChatItem> items, Widget? folders) => Column(
       children: [
         MessageChatScopeToggle(
           scope: scope,
@@ -183,45 +183,17 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
         ),
         const SizedBox(height: AppSpacing.small),
         Expanded(
-          child: scope == MessageChatScope.groups
+          child:
+              scope == MessageChatScope.groups &&
+                  items.isEmpty &&
+                  !state.hasMore
               ? RefreshIndicator(
                   onRefresh: widget.onRefresh,
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(AppSpacing.medium),
                     children: [
-                      DiscussionGroupConversations(
-                        items: items,
-                        card: (item) => _ChatCard(item: item, photoEntry: null),
-                      ),
-                      if (initialLoading)
-                        LoadingState(message: l10n.messageChatsLoading),
-                      if (state.failure != null)
-                        ErrorState(
-                          message: messageChatsFailureMessage(
-                            l10n,
-                            state.failure!,
-                          ),
-                          onRetry: widget.onRefresh,
-                        ),
-                      if (state.hasMore)
-                        TextButton(
-                          onPressed: state.isBusy
-                              ? null
-                              : () => widget.onLoadMore(scope),
-                          child: Text(l10n.messagesLoadMore),
-                        ),
-                    ],
-                  ),
-                )
-              : scope == MessageChatScope.groups && items.isEmpty
-              ? RefreshIndicator(
-                  onRefresh: widget.onRefresh,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(AppSpacing.medium),
-                    children: [
-                      const DiscussionFolders(),
+                      folders!,
                       if (initialLoading)
                         LoadingState(message: l10n.messageChatsLoading)
                       else if (state.phase == MessageChatsPhase.failure)
@@ -231,12 +203,6 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                             state.failure!,
                           ),
                           onRetry: widget.onRefresh,
-                        )
-                      else
-                        EmptyState(
-                          title: l10n.projectChatsEmptyTitle,
-                          message: l10n.projectChatsEmptyMessage,
-                          icon: Icons.groups_outlined,
                         ),
                     ],
                   ),
@@ -248,7 +214,7 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                   message: messageChatsFailureMessage(l10n, state.failure!),
                   onRetry: widget.onRefresh,
                 )
-              : items.isEmpty
+              : items.isEmpty && scope != MessageChatScope.groups
               ? RefreshIndicator(
                   onRefresh: widget.onRefresh,
                   child: LayoutBuilder(
@@ -302,7 +268,9 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                       ],
                       rowValues: [
                         if (scope == MessageChatScope.groups)
-                          widget.expectedProfileId,
+                          // The alias resolver can finish without changing any
+                          // canonical chat row; replace its cached header too.
+                          (widget.expectedProfileId, folders),
                         if (state.hasConnectionIssue) state.hasConnectionIssue,
                         if (state.failure != null) state.failure,
                         for (final item in items)
@@ -326,7 +294,7 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                       padding: const EdgeInsets.all(AppSpacing.medium),
                       itemBuilder: (context, index) {
                         if (scope == MessageChatScope.groups) {
-                          if (index == 0) return const DiscussionFolders();
+                          if (index == 0) return folders!;
                           index--;
                         }
                         if (state.hasConnectionIssue && index == 0) {
@@ -411,6 +379,14 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
         ),
       ],
     );
+    return scope == MessageChatScope.groups
+        ? DiscussionGroupConversations(
+            items: items,
+            expectedActor: widget.expectedProfileId,
+            refreshKey: (state.phase, state.hasConnectionIssue),
+            builder: content,
+          )
+        : content(items, null);
   }
 }
 

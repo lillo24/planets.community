@@ -7,6 +7,14 @@ navigation alone never acknowledges that read or grants source/Project access.
 This feature owns the revised C General / Ideas audience. It is independent of Project,
 Resource and representative conversations.
 
+`presentation/discussion_group_conversations.dart` supplies the folder header and
+authorized placement of Project chats to the existing Messages stable list. It
+preserves that list's drag pagination and scroll anchors. Mapping refreshes keep
+already resolved rows with an explicit loading/error state; identity changes,
+authorization denial and malformed responses clear that mapping. The canonical
+list's expected actor binds every lookup, including A→B→A transitions. Collapsed
+folders still fetch no room history, people or links.
+
 - `domain/discussion_models.dart` strictly parses bounded C projections,
   committed-sequence history, actor/room/admission snapshots and metadata receipts.
 - `data/discussion_gateway.dart` owns C RPCs, cursor validation and the single

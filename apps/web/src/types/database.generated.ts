@@ -2572,6 +2572,14 @@ export type Database = {
           replayed: boolean
         }[]
       }
+      accept_group_discussion_invitation_link: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_token: string
+        }
+        Returns: Json
+      }
       accept_group_join_request: {
         Args: {
           p_client_request_id: string
@@ -2712,6 +2720,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      acknowledge_group_discussion_read_v2: {
+        Args: {
+          p_expected_profile_id: string
+          p_room_id: string
+          p_snapshot_token: string
+        }
+        Returns: undefined
+      }
       acknowledge_own_message_read: {
         Args: {
           p_boundary: string
@@ -2730,6 +2746,17 @@ export type Database = {
         Returns: string
       }
       add_group_discussion_link: {
+        Args: {
+          p_client_request_id: string
+          p_expected_admission_id: string
+          p_expected_profile_id: string
+          p_name: string
+          p_room_id: string
+          p_url: string
+        }
+        Returns: Json
+      }
+      add_group_discussion_link_v2: {
         Args: {
           p_client_request_id: string
           p_expected_admission_id: string
@@ -2979,6 +3006,35 @@ export type Database = {
           p_expected_profile_id: string
           p_group_id: string
           p_title: string
+        }
+        Returns: Json
+      }
+      create_group_discussion_invitation_link: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      create_group_discussion_project_draft: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_room_id: string
+        }
+        Returns: string
+      }
+      create_group_discussion_v2: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_group_id: string
+          p_purpose: string
+          p_title: string
+          p_visibility: string
         }
         Returns: Json
       }
@@ -3418,7 +3474,20 @@ export type Database = {
         Args: { p_expected_profile_id: string; p_room_id: string }
         Returns: Json
       }
+      get_group_discussion_conversion: {
+        Args: { p_expected_profile_id: string; p_room_id: string }
+        Returns: Json
+      }
       get_group_discussion_link: {
+        Args: {
+          p_expected_admission_id: string
+          p_expected_profile_id: string
+          p_link_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      get_group_discussion_link_v2: {
         Args: {
           p_expected_admission_id: string
           p_expected_profile_id: string
@@ -3436,9 +3505,26 @@ export type Database = {
         }
         Returns: Json
       }
+      get_group_discussion_message_page_v2: {
+        Args: {
+          p_before_sequence?: number
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      get_group_discussion_settings: {
+        Args: { p_expected_profile_id: string; p_group_id: string }
+        Returns: Json
+      }
       get_group_discussion_unread: {
         Args: { p_expected_profile_id: string }
         Returns: number
+      }
+      get_group_discussion_v2: {
+        Args: { p_expected_profile_id: string; p_room_id: string }
+        Returns: Json
       }
       get_group_participant_invitation_preview: {
         Args: { p_token: string }
@@ -4066,6 +4152,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_project_discussion_origin: {
+        Args: { p_expected_profile_id: string; p_project_id: string }
+        Returns: Json
+      }
       get_project_join_request_resolution_context: {
         Args: { p_expected_profile_id: string; p_request_id: string }
         Returns: {
@@ -4347,6 +4437,14 @@ export type Database = {
         Args: { p_batch: string; p_places: Json }
         Returns: Json
       }
+      join_group_discussion: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
       leave_group: {
         Args: {
           p_client_request_id: string
@@ -4497,6 +4595,17 @@ export type Database = {
         }
         Returns: Json
       }
+      list_group_discussion_links_v2: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_admission_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
       list_group_discussion_managed_invitations: {
         Args: {
           p_before_created_at?: string
@@ -4532,6 +4641,17 @@ export type Database = {
           p_before_id?: string
           p_expected_profile_id: string
           p_group_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_group_discussions_v2: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_group_id: string
+          p_hidden?: boolean
           p_limit?: number
         }
         Returns: Json
@@ -4595,6 +4715,16 @@ export type Database = {
           revoked_by_profile_id: string | null
         }[]
       }
+      list_group_project_conversations: {
+        Args: {
+          p_before_activity_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_group_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_managed_groups: {
         Args: {
           p_before_created_at?: string
@@ -4648,6 +4778,24 @@ export type Database = {
         }[]
       }
       list_my_discussion_groups: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_my_discussion_groups_v2: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_my_discussion_project_invitations: {
         Args: {
           p_before_created_at?: string
           p_before_id?: string
@@ -4722,6 +4870,15 @@ export type Database = {
           target_summary: string
         }[]
       }
+      list_own_group_discussion_notices: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_own_group_join_requests: {
         Args: {
           p_before_created_at?: string
@@ -4762,6 +4919,10 @@ export type Database = {
           originating_request_id: string | null
           profile_id: string
         }[]
+      }
+      list_own_group_project_chat_folders: {
+        Args: { p_chat_ids: string[]; p_expected_profile_id: string }
+        Returns: Json
       }
       list_own_group_role_offers: {
         Args: {
@@ -6092,6 +6253,10 @@ export type Database = {
         Args: { p_expected_profile_id: string }
         Returns: number
       }
+      mark_group_discussion_notice_read: {
+        Args: { p_expected_profile_id: string; p_notice_id: string }
+        Returns: undefined
+      }
       mark_notification_read: {
         Args: { p_expected_profile_id: string; p_notification_id: string }
         Returns: string
@@ -6153,6 +6318,10 @@ export type Database = {
           p_recurring_activity_id: string
         }
         Returns: string
+      }
+      preview_group_discussion_invitation_link: {
+        Args: { p_expected_profile_id: string; p_token: string }
+        Returns: Json
       }
       preview_project_delegate_invitation: {
         Args: { p_token: string }
@@ -6380,6 +6549,17 @@ export type Database = {
         }
         Returns: Json
       }
+      remove_group_discussion_link_v2: {
+        Args: {
+          p_client_request_id: string
+          p_expected_admission_id: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_link_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
       remove_group_discussion_member: {
         Args: {
           p_admission_id: string
@@ -6476,6 +6656,17 @@ export type Database = {
         }
         Returns: string
       }
+      request_group_discussion_publication: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_expected_version?: number
+          p_room_id: string
+          p_summary: string
+          p_title: string
+        }
+        Returns: Json
+      }
       request_resource_listing: {
         Args: {
           p_expected_requester_profile_id: string
@@ -6530,6 +6721,14 @@ export type Database = {
         Args: { p_actor: string; p_suggestion: string }
         Returns: Json
       }
+      respond_discussion_project_invitation: {
+        Args: {
+          p_expected_profile_id: string
+          p_invitation_id: string
+          p_response: string
+        }
+        Returns: string
+      }
       respond_group_discussion_invitation: {
         Args: {
           p_client_request_id: string
@@ -6546,6 +6745,16 @@ export type Database = {
           p_recurring_activity_id: string
         }
         Returns: string
+      }
+      review_group_discussion_publication: {
+        Args: {
+          p_client_request_id: string
+          p_endorse: boolean
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_room_id: string
+        }
+        Returns: Json
       }
       revoke_group_authority_invitation: {
         Args: {
@@ -6578,6 +6787,15 @@ export type Database = {
           relationship_kind: string
           replayed: boolean
         }[]
+      }
+      revoke_group_discussion_invitation_link: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_room_id: string
+        }
+        Returns: Json
       }
       revoke_group_participant_invitation: {
         Args: {
@@ -6701,6 +6919,26 @@ export type Database = {
         }
         Returns: number
       }
+      set_group_discussion_preferences: {
+        Args: {
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_hidden: boolean
+          p_muted: boolean
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      set_group_discussion_settings: {
+        Args: {
+          p_client_request_id: string
+          p_creation_policy: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_group_id: string
+        }
+        Returns: Json
+      }
       set_group_publication_state: {
         Args: {
           p_client_request_id: string
@@ -6817,6 +7055,18 @@ export type Database = {
           updated_at: string
           workspace_url: string
         }[]
+      }
+      share_discussion_link_to_project: {
+        Args: {
+          p_client_request_id: string
+          p_expected_access_id: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_link_id: string
+          p_project_id: string
+          p_room_id: string
+        }
+        Returns: string
       }
       step_down_group_authority: {
         Args: {
@@ -6954,6 +7204,32 @@ export type Database = {
           p_name: string
           p_room_id: string
           p_url: string
+        }
+        Returns: Json
+      }
+      update_group_discussion_link_v2: {
+        Args: {
+          p_client_request_id: string
+          p_expected_admission_id: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_link_id: string
+          p_name: string
+          p_room_id: string
+          p_url: string
+        }
+        Returns: Json
+      }
+      update_group_discussion_v2: {
+        Args: {
+          p_archived: boolean
+          p_client_request_id: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_purpose: string
+          p_room_id: string
+          p_title: string
+          p_visibility: string
         }
         Returns: Json
       }

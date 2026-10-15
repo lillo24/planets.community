@@ -20,13 +20,13 @@ Future<void> openTemplateDestination(
       .read(templateApplicationsProvider.notifier)
       .handoff(requestId);
   if (handoff == null) return;
-  final origin = GoRouterState.of(context).extra;
-  final groupOrigin =
-      origin is GroupProjectCreationReturn &&
-          origin.actor == handoff.observer.actor
-      ? origin
-      : null;
   try {
+    final origin = GoRouterState.of(context).extra;
+    final groupOrigin =
+        origin is GroupProjectCreationReturn &&
+            origin.actor == handoff.observer.actor
+        ? origin
+        : null;
     final result = await context.push<Object?>(
       '/proposals/${handoff.observer.proposalId}/edit',
       extra: groupOrigin == null

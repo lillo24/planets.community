@@ -19,11 +19,17 @@ import 'discussion_routes.dart';
 class DiscussionGroupConversations extends ConsumerStatefulWidget {
   const DiscussionGroupConversations({
     required this.items,
-    required this.card,
+    required this.expectedActor,
+    required this.builder,
+    this.refreshKey,
     super.key,
   });
   final List<MessageChatItem> items;
-  final Widget Function(MessageChatItem) card;
+  final String? expectedActor;
+  final Object? refreshKey;
+  // The Messages owner retains its canonical stable list, drag pagination and
+  // scroll anchors; this wrapper supplies only authorized visual aliases.
+  final Widget Function(List<MessageChatItem>, Widget) builder;
   @override
   ConsumerState<DiscussionGroupConversations> createState() =>
       _DiscussionGroupConversationsState();
@@ -33,26 +39,43 @@ class _DiscussionGroupConversationsState
     extends ConsumerState<DiscussionGroupConversations> {
   String? signature;
   Set<String>? grouped;
+  Set<String> resolved = {};
+  String? owner;
+  bool resolving = false;
   Object? error;
   int revision = 0;
   Future<void> load(String actor, List<String> ids, String key) async {
     final epoch = ++revision;
+    if (mounted) {
+      setState(() {
+        resolving = true;
+        error = null;
+      });
+    }
     try {
       final result = await ref
           .read(discussionProjectsGatewayProvider)
           .grouped(actor, ids);
       if (mounted &&
           epoch == revision &&
+          signature == key &&
           ref.read(authSessionProvider).identity?.id == actor) {
         setState(() {
           grouped = result;
+          resolved = ids.toSet();
+          resolving = false;
           error = null;
         });
       }
     } catch (failure) {
       if (mounted && epoch == revision) {
         setState(() {
-          grouped = null;
+          if (discussionFailure(failure) == DiscussionFailure.denied ||
+              failure is FormatException) {
+            grouped = null;
+            resolved = {};
+          }
+          resolving = false;
           error = failure;
         });
       }
@@ -62,36 +85,64 @@ class _DiscussionGroupConversationsState
   @override
   Widget build(BuildContext context) {
     final actor = ref.watch(authSessionProvider).identity?.id;
+    if (actor == null || actor != widget.expectedActor) {
+      // The canonical list's immutable actor binding survives until its owner
+      // remounts. Never map or render its prior rows for a different identity.
+      revision++;
+      signature = null;
+      grouped = null;
+      resolved = {};
+      owner = null;
+      resolving = false;
+      error = null;
+      return widget.builder([], const SizedBox.shrink());
+    }
     final ids = widget.items
         .whereType<ProjectMessageChatItem>()
         .map((i) => i.chatId)
         .toList(growable: false);
-    final key = '$actor/${ids.join(',')}';
+    // Immutable semantic input keeps ordinary layout rebuilds from restarting
+    // an authorization lookup; a canonical refresh/reconnect still rechecks it.
+    final key = '$actor/${widget.refreshKey}/${ids.join(',')}';
     if (signature != key) {
+      revision++;
       signature = key;
-      grouped = ids.isEmpty ? {} : null;
+      if (owner != actor) {
+        grouped = null;
+        resolved = {};
+        owner = actor;
+      }
+      if (ids.isEmpty) {
+        grouped = {};
+        resolved = {};
+      }
+      resolving = ids.isNotEmpty;
       error = null;
-      if (actor != null && ids.isNotEmpty) {
+      if (ids.isNotEmpty) {
         Future.microtask(() => load(actor, ids, key));
       }
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const DiscussionFolders(),
-        if (grouped == null && error == null) const LinearProgressIndicator(),
-        if (error != null)
-          DiscussionError(
-            error!,
-            retry: () =>
-                actor == null ? null : unawaited(load(actor, ids, key)),
-          ),
-        if (grouped != null)
-          for (final item in widget.items)
-            if (item is! ProjectMessageChatItem ||
-                !grouped!.contains(item.chatId))
-              widget.card(item),
+    return widget.builder(
+      [
+        for (final item in widget.items)
+          if (item is! ProjectMessageChatItem ||
+              grouped != null &&
+                  resolved.contains(item.chatId) &&
+                  !grouped!.contains(item.chatId))
+            item,
       ],
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const DiscussionFolders(),
+          if (resolving) const LinearProgressIndicator(),
+          if (error != null)
+            DiscussionError(
+              error!,
+              retry: () => unawaited(load(actor, ids, key)),
+            ),
+        ],
+      ),
     );
   }
 }

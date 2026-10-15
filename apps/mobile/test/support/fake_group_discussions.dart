@@ -1,6 +1,28 @@
 import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
 import 'package:planets_mobile/features/group_discussions/data/discussion_gateway.dart';
+import 'package:planets_mobile/features/group_discussions/data/discussion_conversion_gateway.dart';
 import 'package:planets_mobile/features/group_discussions/domain/discussion_models.dart';
+
+/// Existing navigation/workspace fixtures have no converted planning origin.
+/// These are valid empty domain reads; unexpected mutations still fail loudly.
+DiscussionConversionGateway emptyDiscussionConversionGateway() =>
+    DiscussionConversionGateway((name, params) async {
+      if (name == 'get_project_discussion_origin') return null;
+      if (name == 'list_my_discussion_project_invitations') return [];
+      if (name == 'get_group_discussion_conversion') {
+        return {
+          'profile_id': params['p_expected_profile_id'],
+          'room_id': params['p_room_id'],
+          'state': 'none',
+          'can_propose': false,
+          'can_review': false,
+          'can_publish': false,
+          'can_open_draft': false,
+          'can_share_links': false,
+        };
+      }
+      throw StateError('No conversion command belongs to this fixture: $name');
+    });
 
 /// Older chat/navigation fixtures deliberately have no registered Group rooms.
 class EmptyDiscussionGateway implements DiscussionGateway {

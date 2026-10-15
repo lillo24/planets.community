@@ -1,14 +1,14 @@
 # C01 parallel handoff — PARALLEL-CD-2026-10-15-v1
 
-Status: implementation in progress; cumulative [PR #257](https://github.com/lillo24/planets.community/pull/257). Main `94af1c2` incorporated at `33fa116`; inherited C `e8c5c8c`. D cumulative #254 inspected at `963ad95`, unmerged and not imported. C decisions and Option A are explicitly supplied by the package; the prior missing-C00-approval gate is superseded. Runtime completion/validation remains required. Intermediate draft pushes may skip CI to avoid qualifying a knowingly incomplete head; the final source must receive the complete classified CI gate.
+Status: final qualification in progress; cumulative [PR #257](https://github.com/lillo24/planets.community/pull/257). Main `94af1c2` incorporated at `33fa116`; inherited C `e8c5c8c`. D cumulative #254 inspected at `73c90a30`, unmerged and not imported. C decisions and Option A are explicitly supplied by the package; the prior missing-C00-approval gate is superseded. Runtime completion/validation remains required. Intermediate draft pushes skipped CI to avoid qualifying an incomplete head; the final source must receive the complete classified CI gate.
 
-See [approved C contract](group-ideas-revision.md). No new runtime validation is claimed by this handoff. Historical evidence in `group-discussions-integration.md` qualifies only its recorded old heads.
+See [approved C contract](group-ideas-revision.md). Evidence below distinguishes completed local gates from pending database/Auth/native qualification. Historical evidence in `group-discussions-integration.md` qualifies only its recorded old heads.
 
 ## Shared seams
 
-Preserve C `group_discussion` and D contact/coordination kinds separately. The later merger must compose Messages list/Requests, unread totals, ACK and account invalidation subscriptions before pagination/limits. Room invitations and activity notices are not human unread. Current C uses `get_own_message_unread_summary_with_discussions`; D's installed draft uses unread v2, Requests v3 and Chats v6. Do not pick either adapter wholesale.
+Preserve C `group_discussion` and D contact/coordination kinds separately. The later merger must compose Messages list/Requests, unread totals, ACK and account invalidation subscriptions before pagination/limits. Room invitations and activity notices are not human unread. Current C uses `get_own_message_unread_summary_with_discussions`; D's installed draft uses unread/ACK v3, Requests v4, Chats v7 and own-report v4. Do not pick either adapter wholesale.
 
-Shared files include router/return destinations, Messages adapters/screens, moderation target constraints/evidence wrappers, EN/IT ARBs, generated database types, package scripts and CI classification. UI-polish #264 was open at start; preserve its skill-label/Workshop changes if it lands. Core C work does not authorize personal or representative contact access.
+Shared files include router/return destinations, Messages adapters/screens, moderation target constraints/evidence wrappers, EN/IT ARBs, generated database types, package scripts and CI classification. UI-polish #264 is incorporated; its skill-label/Workshop changes and editor-read observer are preserved. Core C work does not authorize personal or representative contact access.
 
 C's four historical unshipped migrations are `20261014074255_group_discussions_domain`, `20261014075208_group_discussion_report_evidence`, `20261014085233_group_discussion_mobile_projection`, and `20261014123208_group_discussion_named_links`. Revisions use forward migrations. D's interleaved report constraints/block hooks require populated-order verification when D lands, including before any later corrective migration can run. Main/applied migration history remains immutable.
 
@@ -45,7 +45,7 @@ migration was rewritten or renumbered. They follow the four inherited C files.
   `list_my_discussion_project_invitations` is bounded per actor and exposes only
   public Project metadata; `opened` is not admission. `get_project_discussion_origin`
   separately checks canonical Project and source history rights.
-- `get_own_message_unread_summary_with_discussions_v2` composes C human unread
+- `get_own_message_unread_summary_with_discussions` composes C human unread
   with the installed base totals. A later D merger must compose its newer base
   adapter without counting Project folder aliases twice. Ordinary room refresh
   uses `group-discussions:group:<uuid>` with a Group-ID-only invalidation payload;
@@ -58,10 +58,21 @@ uses the permitted linked read-only source fallback; there is no copied transcri
 or unified interleaved timeline. Workshop return markers compose with #264's actual
 editor-read observer.
 
-Current evidence: full Flutter analysis passed with no issues. Full mobile tests,
-Web gate and isolated engine startup are in progress; no revised SQL/Auth/native
-runtime pass is claimed. Manifest assertions intentionally change for the added
-Idea invitation family. Final command counts, types, native artifacts and source
-SHA will be recorded after the required checks.
+Current local evidence: `check:mobile` passed localization, formatting, analysis
+and 3,489 tests (two existing skips); the additional account-switch mapping
+regression also passed. Web's 98 tooling tests passed; 380 application tests
+passed (two existing skips) with a local 30-second timeout allowance under host
+contention, followed by the standard lint/typecheck/build/invitation checks.
+Site's 19 tests, lint/typecheck/build and deploy dry-run passed. Actual CI must
+still qualify default timeouts and the committed head. Fresh revised migration
+replay and canonical database type generation succeeded on the isolated C stack.
+Revised SQL/Auth/native qualification remains pending. Manifest assertions
+intentionally change for the added Idea invitation family. Final command counts,
+native artifacts and source SHA will be recorded after the required checks.
+
+C explicitly returned the local backend slot to D at 12:10 UTC on 15 October:
+all C containers stopped with volumes retained, and C AVD 5582 had not started.
+D will explicitly return it after its prepared native runs; C performs no
+competing backend/emulator work in that interval. The source CI runs separately.
 
 Core R01/R02, mobile R03/R04 and conversion R05/R06 use separate C worktrees, integrated into #257. Exact revised endpoints, source heads, migration order and executed commands will be added after implementation. The package allows C to merge first; D is not a waiting dependency. Re-fetch main and peer heads before final qualification and immediately before merge.

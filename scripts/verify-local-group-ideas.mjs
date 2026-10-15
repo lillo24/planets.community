@@ -353,9 +353,63 @@ try {
   await get(manager, restricted);
   const oversightPage = await history(manager, restricted);
   equal(
+    (
+      await rpc(manager, "list_group_discussion_people", {
+        ...expected(manager),
+        p_room_id: restricted,
+      })
+    ).length,
+    1,
+    "Oversight can inspect the explicit roster without becoming a participant",
+  );
+  equal(
+    await rpc(manager, "list_group_discussion_managed_invitations", {
+      ...expected(manager),
+      p_room_id: restricted,
+    }),
+    [],
+    "Oversight can administer invitations without admission",
+  );
+  equal(
     oversightPage.items.length,
     1,
     "Manager can inspect restricted history without admission",
+  );
+  const overlapRoom = (
+    await create(
+      alice,
+      group,
+      "Fictional overlapping read grants",
+      "invitation",
+    )
+  ).room_id;
+  await get(manager, overlapRoom);
+  const overlapAdmission = await rpc(
+    manager,
+    "join_group_discussion",
+    command(manager, overlapRoom),
+  );
+  await send(
+    alice,
+    overlapRoom,
+    "One canonical message across oversight and participation.",
+  );
+  const overlapRead = await history(manager, overlapRoom);
+  await rpc(manager, "acknowledge_group_discussion_read_v2", {
+    ...expected(manager),
+    p_room_id: overlapRoom,
+    p_snapshot_token: overlapRead.snapshot_token,
+  });
+  await leave(manager, overlapRoom, overlapAdmission.object_id);
+  equal(
+    (await get(manager, overlapRoom)).access,
+    "oversight",
+    "Explicit exit preserves independent current oversight",
+  );
+  equal(
+    (await get(manager, overlapRoom)).unread_count,
+    0,
+    "Ending one grant never resurrects an already rendered canonical unread",
   );
   await send(bea, restricted, "Not fetched by the oversight reader.");
   const [role] = await rpc(manager, "get_own_group_role", {
@@ -593,6 +647,61 @@ try {
     true,
     "Former planner history remains readable after Group exit",
   );
+  const retainedFolder = (
+    await rpc(carlo, "list_my_discussion_groups_v2", expected(carlo))
+  ).find((f) => f.group_id === group);
+  equal(
+    retainedFolder?.can_read_ideas,
+    true,
+    "The folder retains a route to independently authorized former history",
+  );
+  equal(
+    await rpc(carlo, "list_group_project_conversations", {
+      ...expected(carlo),
+      p_group_id: group,
+    }),
+    [],
+    "Historical planning context grants no Project conversations",
+  );
+  const newerRoom = (
+    await create(alice, group, "Not discoverable after Group exit", "group")
+  ).room_id;
+  const retainedRooms = await rooms(carlo, group, { p_hidden: true });
+  equal(
+    retainedRooms.some((r) => r.room_id === idea),
+    true,
+    "Former history remains browsable from its Group folder",
+  );
+  equal(
+    retainedRooms.some((r) => r.room_id === newerRoom),
+    false,
+    "The historical folder never discovers newer Group Ideas",
+  );
+  const retainedHistory = await history(carlo, idea);
+  const report = await rpc(carlo, "submit_group_discussion_report", {
+    ...expected(carlo),
+    p_client_submission_id: randomUUID(),
+    p_message_id: retainedHistory.items.at(-1).message_id,
+    p_category: "other",
+    p_explanation: "Fictional report from entitled retained planning history.",
+  });
+  equal(
+    typeof report[0].report_id,
+    "string",
+    "Former planner can report an exactly authorized historical message",
+  );
+  const later = await send(
+    bea,
+    idea,
+    "Fictional message after the Group exit report frontier.",
+  );
+  await denied(carlo, "submit_group_discussion_report", {
+    ...expected(carlo),
+    p_client_submission_id: randomUUID(),
+    p_message_id: later.object_id,
+    p_category: "other",
+    p_explanation: "Fictional inaccessible target must not become evidence.",
+  });
   const secondGroup = await rpc(alice, "create_group_draft", {
     ...command(alice),
     p_content: {

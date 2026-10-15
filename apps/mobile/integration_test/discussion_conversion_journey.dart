@@ -20,6 +20,9 @@ Future<void> runDiscussionConversionJourney(
   WidgetTester tester, {
   required ProviderContainer publisher,
   required ProviderContainer memberContainer,
+  required ProviderContainer plannerContainer,
+  required ProviderContainer newcomerContainer,
+  required int Function() newcomerPlanningReads,
   required SupabaseClient planner,
   required SupabaseClient newcomer,
   required String plannerId,
@@ -95,6 +98,12 @@ Future<void> runDiscussionConversionJourney(
   expect(bound['state'], 'draft');
   final project = bound['project_id'] as String;
   expect((await source(memberClient, member))['project_id'], isNull);
+  await harness.reveal(tester, find.byKey(const Key('proposal-description')));
+  await tester.enterText(
+    find.byKey(const Key('proposal-description')),
+    'A fictional garden Project developed from private Group planning, with public dates and place still undecided.',
+  );
+  FocusManager.instance.primaryFocus?.unfocus();
   await harness.reveal(tester, find.byKey(const Key('proposal-mode-idea')));
   await tap(find.byKey(const Key('proposal-mode-idea')));
   await shot('conversion-owned-draft-en');
@@ -214,6 +223,50 @@ Future<void> runDiscussionConversionJourney(
     ),
     isNull,
   );
+  await show(newcomerContainer, projectChatRoute(chat));
+  await harness.waitFor(
+    tester,
+    find.text('Canonical Project conversation after deliberate participation.'),
+  );
+  await tester.pump(const Duration(milliseconds: 500));
+  expect(find.byKey(const Key('project-planning-origin')), findsNothing);
+  expect(
+    find.text('Private conversion planning: our original garden idea.'),
+    findsNothing,
+  );
+  expect(
+    newcomerPlanningReads(),
+    0,
+    reason: 'Project-only UI never requests a private room or its history.',
+  );
+  await shot('conversion-public-newcomer-en');
+  await newcomerContainer
+      .read(languagePreferenceProvider.notifier)
+      .select(LanguagePreference.italian);
+  tester.platformDispatcher.textScaleFactorTestValue = 1.8;
+  tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+  await tester.pump(const Duration(milliseconds: 500));
+  await shot('conversion-public-newcomer-it-large-dark');
+  tester.platformDispatcher.clearTextScaleFactorTestValue();
+  tester.platformDispatcher.clearPlatformBrightnessTestValue();
+  await show(plannerContainer, projectChatRoute(chat));
+  await harness.waitFor(
+    tester,
+    find.byKey(const Key('project-planning-origin')),
+  );
+  await tap(find.byKey(const Key('project-planning-origin')));
+  await harness.waitFor(
+    tester,
+    find.text('Private conversion planning: our original garden idea.'),
+  );
+  expect(find.byKey(const Key('discussion-composer')), findsNothing);
+  await shot('conversion-joined-planner-frozen-source-en');
+  await tester.binding.handlePopRoute();
+  await harness.waitFor(
+    tester,
+    find.text('Canonical Project conversation after deliberate participation.'),
+  );
+  await shot('conversion-planner-return-project-en');
   await show(publisher, projectChatRoute(chat));
   await harness.waitFor(
     tester,

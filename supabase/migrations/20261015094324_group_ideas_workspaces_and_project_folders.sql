@@ -141,6 +141,9 @@ begin
   perform private.group_discussion_page(p_limit,p_before_activity_at,p_before_id);
   if not private.group_discussion_group_available(p_group_id) or not (
     private.group_discussion_source(p_group_id,actor) is not null or exists (
+      select 1 from private.group_discussions r where r.group_id=p_group_id
+        and private.group_discussion_history_frontier(r.id,actor) is not null
+    ) or exists (
       select 1 from public.projects p join public.project_group_chats c on c.project_id=p.id
       where p.attributed_group_id=p_group_id and private.can_read_message_conversation('project_chat',c.id,actor)
     )) then raise sqlstate '42501' using message='The Group Project conversations are unavailable.'; end if;

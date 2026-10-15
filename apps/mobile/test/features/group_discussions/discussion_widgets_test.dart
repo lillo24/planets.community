@@ -1,4 +1,9 @@
 import '../../support/fake_group_discussions.dart';
+import '../../support/fake_message_chats.dart';
+
+import 'dart:async';
+
+import 'package:planets_mobile/features/group_discussions/presentation/discussion_group_conversations.dart';
 
 import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +37,70 @@ Widget app(
   ),
   home: Scaffold(body: SingleChildScrollView(child: child)),
 );
+
+class _HeldProjectMapping extends EmptyDiscussionProjectsGateway {
+  Future<Set<String>> Function()? read;
+  final actors = <String>[];
+  @override
+  Future<Set<String>> grouped(String actor, List<String> chats) {
+    actors.add(actor);
+    return read?.call() ?? Future.value({});
+  }
+}
+
 void main() {
+  testWidgets(
+    'folder mapping never requests or renders a previous actor list across A-B-A',
+    (tester) async {
+      final held = Completer<Set<String>>(), projects = _HeldProjectMapping();
+      projects.read = () => held.future;
+      final container = ProviderContainer(
+        overrides: [
+          authSessionProvider.overrideWith(Session.new),
+          discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
+          discussionProjectsGatewayProvider.overrideWithValue(projects),
+        ],
+      );
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        container.dispose();
+      });
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: app(
+            DiscussionGroupConversations(
+              expectedActor: actor,
+              items: [projectMessageChatFixture()],
+              builder: (rows, header) => Column(
+                children: [
+                  header,
+                  for (final row in rows) Text('canonical:${row.compositeId}'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(projects.actors, [actor]);
+      (container.read(authSessionProvider.notifier) as Session).change(id(7));
+      await tester.pump();
+      held.complete({});
+      await tester.pumpAndSettle();
+      expect(
+        projects.actors,
+        [actor],
+        reason: 'The actor-bound source cannot query through another identity.',
+      );
+      expect(find.textContaining('canonical:'), findsNothing);
+      projects.read = () async => {};
+      (container.read(authSessionProvider.notifier) as Session).change(actor);
+      await tester.pumpAndSettle();
+      expect(projects.actors, [actor, actor]);
+      expect(find.textContaining('canonical:'), findsOneWidget);
+    },
+  );
   testWidgets(
     'accepted invitation with a lost reply remains recoverable after the pending row disappears',
     (tester) async {

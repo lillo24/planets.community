@@ -41,6 +41,7 @@ void main() {
       '/groups/$id',
       '/join/group/${'A' * 43}',
       '/invite/group/${'A' * 43}',
+      '/messages/discussions/invite/${'a' * 64}',
     ]) {
       expect(claimed(path), isTrue, reason: 'Public path family must match');
       expect(claimed('$path/edit'), isFalse);
@@ -59,6 +60,7 @@ void main() {
       '/proposals/mine',
       '/proposals/invalid',
       '/join/project/short',
+      '/messages/discussions/invite/short',
     ]) {
       expect(
         claimed(path),

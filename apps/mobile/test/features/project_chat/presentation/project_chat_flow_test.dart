@@ -7,6 +7,7 @@ import '../../../support/fake_policy.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:planets_mobile/features/group_discussions/data/discussion_conversion_gateway.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/group_discussions/data/discussion_gateway.dart';
@@ -1556,6 +1557,9 @@ Future<ProviderContainer> _pump(
                 ]),
         ),
         projectChatGatewayProvider.overrideWithValue(chats),
+        discussionConversionGatewayProvider.overrideWithValue(
+          emptyDiscussionConversionGateway(),
+        ),
         resourceChatGatewayProvider.overrideWithValue(
           FakeResourceChatGateway(),
         ),

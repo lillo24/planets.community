@@ -16,10 +16,10 @@ create unique index group_discussion_one_general on private.group_discussions(gr
 alter table private.group_discussions add constraint group_discussion_general_shape check(kind<>'general' or (visibility='group' and not archived and frozen_at is null));
 alter table private.group_discussion_admissions add column end_sequence bigint,add column end_snapshot jsonb;
 create index group_discussion_actor_history on private.group_discussion_admissions(profile_id,room_id,end_sequence desc);
--- Old exited episodes did not retain a safe sequence boundary. Conservatively
--- grant zero history for those historical rows rather than inventing a frontier.
-update private.group_discussion_admissions a set end_sequence=0,end_snapshot=jsonb_build_object('title',r.title,'purpose','','visibility','invitation','group_name',g.name,'version',r.version,'archived',r.archived,'frozen',false,'created_at',r.created_at)
-from private.group_discussions r join private.community_groups g on g.id=r.group_id where a.room_id=r.id and a.ended_at is not null;
+-- Old exited episodes retained neither a safe sequence boundary nor exit
+-- metadata. Preserve their old denial: today's private title is not an exit
+-- snapshot. A separate current grant or fresh explicit readmission still works.
+update private.group_discussion_admissions set end_sequence=0 where ended_at is not null;
 alter table private.group_discussion_invitations alter column inviter_admission_id drop not null;
 create table private.group_discussion_views (
   id uuid primary key default gen_random_uuid(), room_id uuid not null references private.group_discussions(id),profile_id uuid not null,
@@ -100,7 +100,7 @@ $$;
 create function private.group_discussion_history_frontier(p_room uuid,p_actor uuid) returns bigint
 language sql stable security definer set search_path='' as $$
  select case when private.group_discussion_can_read_current(r.id,p_actor) then r.last_sequence else
- (select max(h.frontier) from (select a.end_sequence frontier from private.group_discussion_admissions a where a.room_id=r.id and a.profile_id=p_actor and a.ended_at is not null
+ (select max(h.frontier) from (select a.end_sequence frontier from private.group_discussion_admissions a where a.room_id=r.id and a.profile_id=p_actor and a.ended_at is not null and a.end_snapshot is not null
  union all select v.end_sequence from private.group_discussion_views v where v.room_id=r.id and v.profile_id=p_actor and v.ended_at is not null) h) end
  from private.group_discussions r where r.id=p_room and private.group_discussion_group_available(r.group_id)
  and exists(select 1 from auth.users u join public.profiles p on p.id=u.id where u.id=p_actor);
@@ -155,8 +155,8 @@ begin
  snapshot:=private.group_discussion_snapshot(p_room);
  if historical then
   select h.id,h.snapshot into access_id,snapshot from (
-   select a.id,a.end_sequence frontier,a.end_snapshot snapshot,a.ended_at ended from private.group_discussion_admissions a where a.room_id=p_room and a.profile_id=p_actor and a.ended_at is not null
-   union all select v.id,v.end_sequence,v.end_snapshot,v.ended_at from private.group_discussion_views v where v.room_id=p_room and v.profile_id=p_actor and v.ended_at is not null
+   select a.id,a.end_sequence frontier,a.end_snapshot snapshot,a.ended_at ended from private.group_discussion_admissions a where a.room_id=p_room and a.profile_id=p_actor and a.ended_at is not null and a.end_snapshot is not null
+   union all select v.id,v.end_sequence,v.end_snapshot,v.ended_at from private.group_discussion_views v where v.room_id=p_room and v.profile_id=p_actor and v.ended_at is not null and v.end_snapshot is not null
   ) h order by h.frontier desc,h.ended desc,h.id desc limit 1;
  end if;
  select * into prefs from private.group_discussion_preferences where room_id=p_room and profile_id=p_actor;
@@ -547,8 +547,14 @@ begin
  if p_snapshot_token is null or p_snapshot_token!~'^[0-9]+:[0-9a-f-]{36}:[0-9a-f]{64}$' then raise sqlstate '22023' using message='The read snapshot is invalid.'; end if;
  select * into message from private.group_discussion_messages where room_id=p_room_id and id=split_part(p_snapshot_token,':',2)::uuid;
  if message.id is null or p_snapshot_token<>private.group_discussion_read_token(access_id,message.sequence,message.id,room.read_secret) then raise sqlstate '22023' using message='The read snapshot is invalid.'; end if;
- update private.group_discussion_admissions set read_sequence=greatest(read_sequence,message.sequence) where id=access_id;
- update private.group_discussion_views set read_sequence=greatest(read_sequence,message.sequence) where id=access_id;
+ -- A rendered canonical message is read across overlapping CURRENT grants.
+ -- Keep their identities/history independent, so ending explicit participation
+ -- cannot resurrect unread already rendered through that same room's access.
+ update private.group_discussion_admissions set read_sequence=greatest(read_sequence,message.sequence)
+  where room_id=p_room_id and profile_id=actor and ended_at is null;
+ update private.group_discussion_views set read_sequence=greatest(read_sequence,message.sequence)
+  where room_id=p_room_id and profile_id=actor and ended_at is null
+   and (access_kind='general' and room.kind='general' or access_kind='oversight' and private.group_authority_role(room.group_id,actor) is not null);
  perform private.group_discussion_signal(actor);
 end; $$;
 -- Installed readers keep their exact JSON shape. They now obey full-history
