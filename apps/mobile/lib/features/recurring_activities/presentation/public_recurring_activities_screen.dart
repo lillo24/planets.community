@@ -385,7 +385,10 @@ class _PublicRecurringActivityDetailScreenState
             ),
             const SizedBox(height: AppSpacing.large),
             ProjectGroupBadge(resolvedDetail.groupAttribution),
-            if (resolvedDetail.groupAttribution?.groupId != null) GroupCommunicationEntry(groupId: resolvedDetail.groupAttribution!.groupId!),
+            if (resolvedDetail.groupAttribution?.groupId != null)
+              GroupCommunicationEntry(
+                groupId: resolvedDetail.groupAttribution!.groupId!,
+              ),
             Row(
               children: [
                 Expanded(

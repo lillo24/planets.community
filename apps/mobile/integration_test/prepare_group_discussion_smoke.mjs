@@ -79,7 +79,11 @@ try {
     p_client_request_id: randomUUID(),
     p_token: offer.invite_token,
   });
-  await rpc(planner, "accept_group_participant_invitation", {...expected(planner), p_client_request_id: randomUUID(), p_token: offer.invite_token});
+  await rpc(planner, "accept_group_participant_invitation", {
+    ...expected(planner),
+    p_client_request_id: randomUUID(),
+    p_token: offer.invite_token,
+  });
   const room = await rpc(creator, "create_group_discussion_v2", {
     ...expected(creator),
     p_client_request_id: randomUUID(),
@@ -100,8 +104,24 @@ try {
     p_room_id: room.room_id,
     p_profile_id: member.id,
   });
-  const visible = await rpc(creator, "create_group_discussion_v2", {...expected(creator), p_client_request_id: randomUUID(), p_group_id: group, p_title: "Visible unjoined Idea", p_purpose: "Fictional hide and discovery fixture.", p_visibility: "group"});
-  const conversion = await prepareConversion({rpc, expected, sql, people, group, run, status, mailpitUrl});
+  const visible = await rpc(creator, "create_group_discussion_v2", {
+    ...expected(creator),
+    p_client_request_id: randomUUID(),
+    p_group_id: group,
+    p_title: "Visible unjoined Idea",
+    p_purpose: "Fictional hide and discovery fixture.",
+    p_visibility: "group",
+  });
+  const conversion = await prepareConversion({
+    rpc,
+    expected,
+    sql,
+    people,
+    group,
+    run,
+    status,
+    mailpitUrl,
+  });
   const values = {
     ...conversion,
     C_VISIBLE_ROOM: visible.room_id,

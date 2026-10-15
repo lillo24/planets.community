@@ -14,7 +14,9 @@ void main() {
         .map((m) => m[0]!)
         .where((block) => block.contains('android.intent.action.VIEW'))
         .toList();
-    expect(filters, hasLength(7));
+    // C adds its explicit-consent Idea invitation family alongside the seven
+    // existing HTTPS families. The route parser still validates the token.
+    expect(filters, hasLength(8));
     final patterns = <RegExp>[];
     for (final filter in filters) {
       expect(filter, contains('android:autoVerify="true"'));

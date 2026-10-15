@@ -18,7 +18,9 @@ String? nativeProjectDestination(Uri uri) {
     r'^/(?:proposals|tavoli|groups)/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
   );
   if (RegExp(r'^/messages/discussions/invite/[0-9a-f]{64}$').hasMatch(path) &&
-      !uri.hasQuery) return path;
+      !uri.hasQuery) {
+    return path;
+  }
   if (token.hasMatch(path) && !uri.hasQuery) return path;
   if (path.startsWith('/groups/') && uri.hasQuery) {
     return null;

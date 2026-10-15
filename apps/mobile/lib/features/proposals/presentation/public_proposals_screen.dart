@@ -540,7 +540,10 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                   ),
                   const SizedBox(height: AppSpacing.small),
                   ProjectGroupBadge(detail.summary.groupAttribution),
-                  if (detail.summary.groupAttribution?.groupId != null) GroupCommunicationEntry(groupId: detail.summary.groupAttribution!.groupId!),
+                  if (detail.summary.groupAttribution?.groupId != null)
+                    GroupCommunicationEntry(
+                      groupId: detail.summary.groupAttribution!.groupId!,
+                    ),
                   Text(
                     detail.summary.summary,
                     key: detail.description == null

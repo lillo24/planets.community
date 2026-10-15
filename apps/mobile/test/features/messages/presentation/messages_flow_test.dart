@@ -3123,8 +3123,10 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        discussionProjectsGatewayProvider.overrideWithValue(EmptyDiscussionProjectsGateway()),
-      discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
+        discussionProjectsGatewayProvider.overrideWithValue(
+          EmptyDiscussionProjectsGateway(),
+        ),
+        discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
         preacceptedPolicyFixture,
         coverMediaGatewayProvider.overrideWithValue(
           cover ?? FakeCoverMediaGateway(),

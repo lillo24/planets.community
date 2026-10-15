@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../data/discussion_conversion_gateway.dart';
 import '../domain/discussion_links.dart';
 import '../domain/discussion_models.dart';
@@ -24,8 +25,11 @@ class DiscussionShareLinkButton extends ConsumerStatefulWidget {
 class _ShareLinkState extends ConsumerState<DiscussionShareLinkButton> {
   bool busy = false;
   Map<String, dynamic>? pending;
+  int generation = 0;
   bool get current =>
-      mounted && ref.read(authSessionProvider).identity?.id == widget.actor;
+      mounted &&
+      ref.read(authSessionProvider).identity?.id == widget.actor &&
+      ref.read(authSessionProvider).phase == AuthSessionPhase.ready;
   @override
   void didUpdateWidget(covariant DiscussionShareLinkButton oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -33,12 +37,15 @@ class _ShareLinkState extends ConsumerState<DiscussionShareLinkButton> {
         oldWidget.link.id != widget.link.id ||
         oldWidget.link.admissionId != widget.link.admissionId) {
       pending = null;
+      generation++;
+      busy = false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (ref.watch(authSessionProvider).identity?.id != widget.actor) {
+    ref.watch(authSessionProvider);
+    if (!current) {
       return const SizedBox.shrink();
     }
     final scope = (actor: widget.actor, room: widget.link.roomId),
@@ -87,6 +94,7 @@ class _ShareLinkState extends ConsumerState<DiscussionShareLinkButton> {
                           ),
                         );
                         if (accepted != true ||
+                            !context.mounted ||
                             !current ||
                             actor != widget.actor) {
                           return;
@@ -102,11 +110,15 @@ class _ShareLinkState extends ConsumerState<DiscussionShareLinkButton> {
                         });
                       }
                       setState(() => busy = true);
+                      final ticket = generation;
                       try {
                         await ref
                             .read(discussionConversionGatewayProvider)
                             .rpc('share_discussion_link_to_project', pending!);
-                        if (current && actor == widget.actor) {
+                        if (context.mounted &&
+                            current &&
+                            ticket == generation &&
+                            actor == widget.actor) {
                           pending = null;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -115,13 +127,18 @@ class _ShareLinkState extends ConsumerState<DiscussionShareLinkButton> {
                           );
                         }
                       } catch (e) {
-                        if (current && actor == widget.actor) {
+                        if (context.mounted &&
+                            current &&
+                            ticket == generation &&
+                            actor == widget.actor) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(discussionErrorText(l, e))),
                           );
                         }
                       } finally {
-                        if (current && actor == widget.actor) {
+                        if (current &&
+                            ticket == generation &&
+                            actor == widget.actor) {
                           setState(() => busy = false);
                         }
                       }

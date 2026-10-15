@@ -133,7 +133,10 @@ void main() {
         tester,
         find.byKey(const Key('discussion-composer')),
       );
-      expect(find.text('Private message before your admission.'), findsOneWidget);
+      expect(
+        find.text('Private message before your admission.'),
+        findsOneWidget,
+      );
       await shot('empty-frontier-en');
       await tester.enterText(
         find.byKey(const Key('discussion-composer')),
@@ -213,10 +216,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       await shot('chat-it');
       router.push(discussionLinksRoute(room));
-      await harness.waitFor(
-        tester,
-        find.text('Ancora nessun link condiviso.'),
-      );
+      await harness.waitFor(tester, find.text('Ancora nessun link condiviso.'));
       final creatorRoom = await peer.rpc(
         'get_group_discussion_v2',
         params: {'p_expected_profile_id': creator, 'p_room_id': room},
@@ -256,9 +256,7 @@ void main() {
       final context = await gateway.room(member, room);
       router.go(discussionLeaveRoute(room, context.admissionId));
       await harness.waitFor(tester, find.text('Lascia l’Idea'));
-      await tester.tap(
-        find.widgetWithText(FilledButton, 'Lascia l’Idea'),
-      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Lascia l’Idea'));
       await harness.waitFor(tester, find.byType(AlertDialog));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.tap(find.widgetWithText(FilledButton, 'Conferma'));
@@ -270,10 +268,29 @@ void main() {
       expect(former.isFormer, isTrue);
       expect(former.canSend, isFalse);
       expect(former.canReadLinks, isFalse);
-      await peer.rpc('send_group_discussion_message', params: {'p_expected_profile_id': creator, 'p_client_request_id': const Uuid().v4(), 'p_room_id': room, 'p_body': 'After former cutoff.'});
-      expect((await gateway.history(member, room)).messages.any((m) => m.body == 'After former cutoff.'), isFalse);
+      await peer.rpc(
+        'send_group_discussion_message',
+        params: {
+          'p_expected_profile_id': creator,
+          'p_client_request_id': const Uuid().v4(),
+          'p_room_id': room,
+          'p_body': 'After former cutoff.',
+        },
+      );
+      expect(
+        (await gateway.history(
+          member,
+          room,
+        )).messages.any((m) => m.body == 'After former cutoff.'),
+        isFalse,
+      );
       router.go(discussionRoute(room));
-      await harness.waitFor(tester, find.text('La tua cronologia consentita fino all’uscita · sola lettura').first);
+      await harness.waitFor(
+        tester,
+        find
+            .text('La tua cronologia consentita fino all’uscita · sola lettura')
+            .first,
+      );
       expect(find.byKey(const Key('discussion-composer')), findsNothing);
       await shot('former-history-it');
       // A separate genuinely authenticated publisher exercises the handoff.
@@ -382,50 +399,98 @@ void main() {
       await tester.tap(find.byType(DropdownButtonFormField<String>).first);
       await tester.pump(const Duration(milliseconds: 300));
       await tester.tap(find.text('All current Group members').last);
-      await harness.waitUntil(tester, () => !publisher.read(discussionCommandsProvider).attempts.values.any((a) => a.busy));
-      final settings = await SupabaseDiscussionGateway(peer).settings(creator, group);
+      await harness.waitUntil(
+        tester,
+        () => !publisher
+            .read(discussionCommandsProvider)
+            .attempts
+            .values
+            .any((a) => a.busy),
+      );
+      final settings = await SupabaseDiscussionGateway(peer)
+          .settings(creator, group);
       expect(settings.policy, 'members');
       await shot('settings-en');
       publisherRouter.go(discussionRoute(settings.generalRoomId!));
       await harness.waitFor(tester, find.text('General'));
       await shot('general-en');
       publisherRouter.go(discussionLinksRoute(settings.generalRoomId!));
-      await harness.waitFor(tester, find.byKey(const Key('discussion-link-add')));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('discussion-link-add')),
+      );
       await shot('general-workspace-empty-en');
 
-      await container.read(languagePreferenceProvider.notifier).select(LanguagePreference.english);
-      await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const PlanetsApp()));
+      await container
+          .read(languagePreferenceProvider.notifier)
+          .select(LanguagePreference.english);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const PlanetsApp(),
+        ),
+      );
       router.go(discussionCreateRoute(group));
       await harness.waitFor(tester, find.byKey(const Key('discussion-name')));
-      await tester.enterText(find.byKey(const Key('discussion-name')), 'Member-created restricted Idea');
-      await tester.enterText(find.byKey(const Key('discussion-purpose')), 'Fictional member planning with disclosed manager oversight.');
+      await tester.enterText(
+        find.byKey(const Key('discussion-name')),
+        'Member-created restricted Idea',
+      );
+      await tester.enterText(
+        find.byKey(const Key('discussion-purpose')),
+        'Fictional member planning with disclosed manager oversight.',
+      );
       FocusManager.instance.primaryFocus?.unfocus();
       await SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
-      await harness.reveal(tester, find.byType(DropdownButtonFormField<String>));
+      await harness.reveal(
+        tester,
+        find.byType(DropdownButtonFormField<String>),
+      );
       await tester.tap(find.byType(DropdownButtonFormField<String>));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.tap(find.text('Invitation-only + Group managers').last);
-      await harness.reveal(tester, find.byKey(const Key('discussion-create-submit')));
+      await harness.reveal(
+        tester,
+        find.byKey(const Key('discussion-create-submit')),
+      );
       await shot('member-create-en');
       await tester.tap(find.byKey(const Key('discussion-create-submit')));
-      await harness.waitFor(tester, find.byKey(const Key('discussion-composer')));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('discussion-composer')),
+      );
       final memberRoom = router.routerDelegate.state.uri.path.split('/').last;
-      expect((await SupabaseDiscussionGateway(peer).room(creator, memberRoom)).access, 'oversight');
+      expect(
+        (await SupabaseDiscussionGateway(
+          peer,
+        ).room(creator, memberRoom)).access,
+        'oversight',
+      );
       await tester.tap(find.text('Invitation-only + Group managers'));
       await harness.waitFor(tester, find.byKey(const Key('discussion-mute')));
       await tester.tap(find.byKey(const Key('discussion-mute')));
-      await harness.waitUntil(tester, () => container.read(discussionChatProvider(memberRoom))?.room?.muted == true);
+      await harness.waitUntil(
+        tester,
+        () =>
+            container.read(discussionChatProvider(memberRoom))?.room?.muted ==
+            true,
+      );
       await shot('member-idea-muted-en');
       router.go(discussionGroupRoute(group));
       await harness.waitFor(tester, find.text('Visible unjoined Idea'));
       await harness.reveal(tester, find.text('Hide Idea').first);
       await tester.tap(find.text('Hide Idea').first);
-      await harness.waitUntil(tester, () => find.text('Visible unjoined Idea').evaluate().isEmpty);
+      await harness.waitUntil(
+        tester,
+        () => find.text('Visible unjoined Idea').evaluate().isEmpty,
+      );
       await harness.reveal(tester, find.text('Show hidden Ideas'));
       await tester.tap(find.text('Show hidden Ideas'));
       await harness.waitFor(tester, find.text('Visible unjoined Idea'));
       await shot('show-hidden-en');
-      await container.read(languagePreferenceProvider.notifier).select(LanguagePreference.italian);
+      await container
+          .read(languagePreferenceProvider.notifier)
+          .select(LanguagePreference.italian);
       tester.platformDispatcher.textScaleFactorTestValue = 1.8;
       tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
       await tester.pump(const Duration(milliseconds: 500));
@@ -433,11 +498,35 @@ void main() {
       tester.platformDispatcher.clearTextScaleFactorTestValue();
       tester.platformDispatcher.clearPlatformBrightnessTestValue();
 
-      const plannerId = String.fromEnvironment('C_PLANNER_ID'), plannerToken = String.fromEnvironment('C_PLANNER_TOKEN'), newcomerId = String.fromEnvironment('C_NEWCOMER_ID'), newcomerToken = String.fromEnvironment('C_NEWCOMER_TOKEN'), conversionRoom = String.fromEnvironment('C_CONVERSION_ROOM');
-      final planner = SupabaseClient(config.supabaseUrl.toString(), config.supabasePublishableKey, accessToken: () => Future.value(plannerToken));
-      final newcomer = SupabaseClient(config.supabaseUrl.toString(), config.supabasePublishableKey, accessToken: () => Future.value(newcomerToken));
-      addTearDown(planner.dispose); addTearDown(newcomer.dispose);
-      await runDiscussionConversionJourney(tester, publisher: publisher, memberContainer: container, planner: planner, newcomer: newcomer, plannerId: plannerId, newcomerId: newcomerId, groupId: group, roomId: conversionRoom, shot: shot);
+      const plannerId = String.fromEnvironment('C_PLANNER_ID'),
+          plannerToken = String.fromEnvironment('C_PLANNER_TOKEN'),
+          newcomerId = String.fromEnvironment('C_NEWCOMER_ID'),
+          newcomerToken = String.fromEnvironment('C_NEWCOMER_TOKEN'),
+          conversionRoom = String.fromEnvironment('C_CONVERSION_ROOM');
+      final planner = SupabaseClient(
+        config.supabaseUrl.toString(),
+        config.supabasePublishableKey,
+        accessToken: () => Future.value(plannerToken),
+      );
+      final newcomer = SupabaseClient(
+        config.supabaseUrl.toString(),
+        config.supabasePublishableKey,
+        accessToken: () => Future.value(newcomerToken),
+      );
+      addTearDown(planner.dispose);
+      addTearDown(newcomer.dispose);
+      await runDiscussionConversionJourney(
+        tester,
+        publisher: publisher,
+        memberContainer: container,
+        planner: planner,
+        newcomer: newcomer,
+        plannerId: plannerId,
+        newcomerId: newcomerId,
+        groupId: group,
+        roomId: conversionRoom,
+        shot: shot,
+      );
       expect(tester.takeException(), isNull);
     },
   );
@@ -472,7 +561,7 @@ class _VerifiedIdentity implements AuthGateway {
   const _VerifiedIdentity(this.id);
   final String id;
   @override
-  AuthSnapshot get currentSnapshot =>
+  Future<AuthSnapshot> restoreSnapshot() async =>
       AuthSnapshot(identity: AuthIdentity(id: id));
   @override
   Stream<AuthSnapshot> get authStateChanges => const Stream.empty();

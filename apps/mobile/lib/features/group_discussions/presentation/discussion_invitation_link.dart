@@ -101,7 +101,8 @@ class _DiscussionInvitationLinkControlsState
       });
       await widget.onChanged();
     } catch (failure) {
-      if (mounted && ref.read(authSessionProvider).identity?.id == widget.actor) {
+      if (mounted &&
+          ref.read(authSessionProvider).identity?.id == widget.actor) {
         setState(() {
           error = failure;
           uncertain =

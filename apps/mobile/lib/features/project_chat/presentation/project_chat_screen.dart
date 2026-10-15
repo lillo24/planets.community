@@ -247,7 +247,7 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
                   children: [
                     if (summary != null && _expectedProfileId != null)
                       DiscussionProjectOrigin(
-                        actor: _expectedProfileId!,
+                        actor: _expectedProfileId,
                         projectId: summary.projectId,
                       ),
                     if (state.hasConnectionIssue)

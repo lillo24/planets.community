@@ -233,18 +233,28 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
                           children: [
                             ExpansionTile(
                               tilePadding: EdgeInsets.zero,
-                              title: Text(room.isFormer
-                                  ? l.discussionFormerHistory
-                                  : room.visibility == 'group'
-                                  ? l.discussionGroupVisible
-                                  : l.discussionInviteOnly),
+                              title: Text(
+                                room.isFormer
+                                    ? l.discussionFormerHistory
+                                    : room.visibility == 'group'
+                                    ? l.discussionGroupVisible
+                                    : l.discussionInviteOnly,
+                              ),
                               children: [
                                 if (room.purpose.isNotEmpty) Text(room.purpose),
-                                if (!room.isFormer) Text(l.discussionManagerDisclosure),
-                                DiscussionRoomActions(room: room, onChanged: c.refresh),
+                                if (!room.isFormer)
+                                  Text(l.discussionManagerDisclosure),
+                                DiscussionRoomActions(
+                                  room: room,
+                                  onChanged: c.refresh,
+                                ),
                               ],
                             ),
-                            if (!room.canReadHistory) DiscussionRoomActions(room: room, onChanged: c.refresh),
+                            if (!room.canReadHistory)
+                              DiscussionRoomActions(
+                                room: room,
+                                onChanged: c.refresh,
+                              ),
                           ],
                         ),
                       ),

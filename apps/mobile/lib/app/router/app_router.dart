@@ -26,6 +26,7 @@ import '../../features/help/presentation/help_routes.dart';
 import '../../features/help/presentation/help_screen.dart';
 import '../../features/messages/presentation/messages_routes.dart';
 import '../../features/group_discussions/presentation/discussion_routes.dart';
+import '../../features/group_projects/domain/group_project_creation_return.dart';
 import '../../features/group_discussions/presentation/discussion_group_screen.dart';
 import '../../features/group_discussions/presentation/discussion_chat_screen.dart';
 import '../../features/group_discussions/presentation/discussion_people_screen.dart';
@@ -1019,7 +1020,8 @@ RoutingConfig _routingConfig(
                                 state.extra is ProposalEditorReadObserver
                                 ? state.extra! as ProposalEditorReadObserver
                                 : state.extra is GroupProjectCreationReturn
-                                ? (state.extra! as GroupProjectCreationReturn).readObserver
+                                ? (state.extra! as GroupProjectCreationReturn)
+                                      .readObserver
                                 : null,
                           ),
                         ),

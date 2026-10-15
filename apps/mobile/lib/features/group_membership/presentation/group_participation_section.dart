@@ -288,7 +288,8 @@ class _GroupParticipationSectionState
                     (self.membershipId != null || self.authority != null))
                   OutlinedButton.icon(
                     key: const Key('group-start-idea'),
-                    onPressed: () => context.push(discussionCreateRoute(widget.groupId)),
+                    onPressed: () =>
+                        context.push(discussionCreateRoute(widget.groupId)),
                     icon: const Icon(Icons.add_comment_outlined),
                     label: Text(l.discussionCreate),
                   ),

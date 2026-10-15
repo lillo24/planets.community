@@ -397,6 +397,18 @@ class _DiscussionRequestsState extends ConsumerState<DiscussionRequests> {
               l.discussionInvitations,
               style: Theme.of(context).textTheme.titleMedium,
             ),
+          ExpansionTile(
+            title: Text(l.discussionProjectInvitation),
+            onExpansionChanged: (open) =>
+                setState(() => projectInvitationsOpen = open),
+            children: [
+              if (projectInvitationsOpen &&
+                  ref.watch(authSessionProvider).identity != null)
+                DiscussionProjectInvitations(
+                  actor: ref.watch(authSessionProvider).identity!.id,
+                ),
+            ],
+          ),
           for (final invitation in p.rows)
             DiscussionInvitationTile(invitation, key: ValueKey(invitation.id)),
           if (p.busy) const LinearProgressIndicator(),
@@ -485,7 +497,6 @@ class DiscussionInvitationTile extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-            ExpansionTile(title: Text(l.discussionProjectInvitation), onExpansionChanged: (open) => setState(() => projectInvitationsOpen = open), children: [if (projectInvitationsOpen && ref.watch(authSessionProvider).identity != null) DiscussionProjectInvitations(actor: ref.watch(authSessionProvider).identity!.id)]),
                   Text(
                     invitation.title,
                     style: Theme.of(context).textTheme.titleMedium,

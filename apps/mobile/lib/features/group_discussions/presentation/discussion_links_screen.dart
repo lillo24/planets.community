@@ -247,7 +247,11 @@ class _DiscussionLinksScreenState extends ConsumerState<DiscussionLinksScreen>
                                 link,
                               ),
                             ),
-                            if (c != null) DiscussionShareLinkButton(actor: c.actor, link: link),
+                            if (c != null)
+                              DiscussionShareLinkButton(
+                                actor: c.actor,
+                                link: link,
+                              ),
                             if (c?.canManage == true)
                               Wrap(
                                 spacing: 8,

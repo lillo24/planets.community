@@ -150,8 +150,12 @@ class _DiscussionNoticesState extends ConsumerState<DiscussionNotices> {
                             ref.read(authSessionProvider).identity?.id != id) {
                           return;
                         }
-                        if (notice.kind == 'invited') ref.read(messagesNavigationProvider.notifier).selectTab(1);
-            // The destination reauthorizes. An invitation tap never accepts it.
+                        if (notice.kind == 'invited') {
+                          ref
+                              .read(messagesNavigationProvider.notifier)
+                              .selectTab(1);
+                        }
+                        // The destination reauthorizes. An invitation tap never accepts it.
                         context.push(
                           notice.kind == 'invited'
                               ? '/messages'

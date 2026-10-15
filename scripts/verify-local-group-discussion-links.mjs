@@ -468,7 +468,7 @@ try {
     ...expected(creator),
     p_project_id: room,
   });
-  const project = await rpc(creator, "create_proposal_draft", {
+  const projectDraftArgs = {
     p_expected_creator_profile_id: creator.id,
     p_title: "C03 separate fictional Project",
     p_summary: "A separate canonical Project for scope confusion testing.",
@@ -485,7 +485,8 @@ try {
     p_skill_ids: [],
     p_skill_importances: [],
     p_people_capacity: 20,
-  });
+  };
+  const project = await rpc(creator, "create_proposal_draft", projectDraftArgs);
   await denied(creator, "list_group_discussion_links", {
     ...expected(creator),
     p_room_id: project,
@@ -592,6 +593,65 @@ try {
     ...expected(other),
     p_room_id: room,
   });
+  const secondProject = await rpc(creator, "create_proposal_draft", {
+    ...projectDraftArgs,
+    p_title: "C03 second fictional Project",
+  });
+  await rpc(creator, "set_project_group", {
+    ...expected(creator),
+    p_project_id: secondProject,
+    p_expected_version: 1,
+    p_group_id: group,
+    p_client_request_id: randomUUID(),
+  });
+  const secondBinding = await rpc(creator, "get_own_project_group", {
+    ...expected(creator),
+    p_project_id: secondProject,
+  });
+  await rpc(creator, "publish_project_with_group", {
+    ...expected(creator),
+    p_project_id: secondProject,
+    p_group_id: group,
+    p_expected_version: secondBinding.version,
+    p_idea: false,
+  });
+  const secondRequest = await rpc(other, "request_to_join_project", {
+    p_expected_requester_profile_id: other.id,
+    p_project_id: secondProject,
+    p_request_message: "Fictional deliberate folder pagination participation.",
+  });
+  await rpc(creator, "accept_project_join_request", {
+    p_expected_creator_profile_id: creator.id,
+    p_request_id: secondRequest,
+  });
+  const firstProjectPage = await rpc(
+    other,
+    "list_group_project_conversations",
+    { ...expected(other), p_group_id: group, p_limit: 1 },
+  );
+  const secondProjectPage = await rpc(
+    other,
+    "list_group_project_conversations",
+    {
+      ...expected(other),
+      p_group_id: group,
+      p_limit: 1,
+      p_before_activity_at: firstProjectPage[0].activity_at,
+      p_before_id: firstProjectPage[0].chat_id,
+    },
+  );
+  equal(
+    secondProjectPage.length,
+    1,
+    "Project folder has a second independently authorized page",
+  );
+  equal(
+    new Set(
+      [...firstProjectPage, ...secondProjectPage].map((r) => r.project_id),
+    ).size,
+    2,
+    "Project folder cursor pages are disjoint",
+  );
   for (let i = 0; i < 27; i++)
     await add(
       creator,

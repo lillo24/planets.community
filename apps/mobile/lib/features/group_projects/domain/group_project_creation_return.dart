@@ -1,7 +1,13 @@
+import '../../proposals/domain/proposal_models.dart';
+
 /// Private, in-memory navigation marker; it grants no publishing authority.
 /// The optional destination stays in route memory and grants no room access.
 class GroupProjectCreationReturn {
-  const GroupProjectCreationReturn(this.actor, {this.returnPath, this.readObserver});
+  const GroupProjectCreationReturn(
+    this.actor, {
+    this.returnPath,
+    this.readObserver,
+  });
   final String actor;
   final String? returnPath;
   // Compose Workshop's actual editor-read acknowledgement with the private
@@ -14,4 +20,3 @@ class GroupProjectCreationResult {
   const GroupProjectCreationResult(this.actor, this.projectId);
   final String actor, projectId;
 }
-import '../../proposals/domain/proposal_models.dart';

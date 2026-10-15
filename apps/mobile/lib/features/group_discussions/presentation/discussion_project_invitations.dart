@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../data/discussion_conversion_gateway.dart';
 import '../domain/discussion_conversion.dart';
 import 'discussion_feedback.dart';
@@ -23,7 +24,9 @@ class _InvitationsState extends ConsumerState<DiscussionProjectInvitations> {
   Object? error;
   int generation = 0;
   bool get current =>
-      mounted && ref.read(authSessionProvider).identity?.id == widget.actor;
+      mounted &&
+      ref.read(authSessionProvider).identity?.id == widget.actor &&
+      ref.read(authSessionProvider).phase == AuthSessionPhase.ready;
   @override
   void initState() {
     super.initState();
@@ -90,6 +93,7 @@ class _InvitationsState extends ConsumerState<DiscussionProjectInvitations> {
         );
       }
       if (response == 'opened') {
+        if (!mounted) return;
         await context.push<Object?>('/proposals/$project');
       } else {
         setState(() => items.removeWhere((r) => r.id == item.id));

@@ -1,5 +1,9 @@
 # Group General and Ideas
 
+When a Group/source creation flow visits Workshop, its typed private return
+destination composes with Workshop's canonical editor-read observer. A successful
+navigation alone never acknowledges that read or grants source/Project access.
+
 This feature owns the revised C General / Ideas audience. It is independent of Project,
 Resource and representative conversations.
 

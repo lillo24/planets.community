@@ -144,7 +144,7 @@ class _ConversionDialogState extends ConsumerState<_ConversionDialog> {
       final fresh = await ref
           .read(discussionConversionGatewayProvider)
           .read(widget.actor, widget.source.id);
-      if (!current || ticket != epoch) return;
+      if (!mounted || !current || ticket != epoch) return;
       setState(() {
         value = fresh;
         title.text = fresh.title ?? widget.source.title;
@@ -185,6 +185,7 @@ class _ConversionDialogState extends ConsumerState<_ConversionDialog> {
         if (result is! String) {
           throw const FormatException('Missing accepted draft.');
         }
+        if (!mounted) return;
         Navigator.of(context).pop('/proposals/$result/edit');
       } else {
         await load();

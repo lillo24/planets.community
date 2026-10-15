@@ -66,6 +66,12 @@ class EmptyDiscussionGateway implements DiscussionGateway {
 }
 
 class EmptyDiscussionProjectsGateway implements DiscussionProjectsGateway {
-  @override Future<List<DiscussionProjectRow>> projects(String actor, String group, Map<String,dynamic>? cursor) async => [];
-  @override Future<Set<String>> grouped(String actor, List<String> chats) async => {};
+  @override
+  Future<List<DiscussionProjectRow>> projects(
+    String actor,
+    String group,
+    Map<String, dynamic>? cursor,
+  ) async => [];
+  @override
+  Future<Set<String>> grouped(String actor, List<String> chats) async => {};
 }

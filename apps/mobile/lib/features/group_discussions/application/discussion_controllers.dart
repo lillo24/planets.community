@@ -335,7 +335,10 @@ class DiscussionChatController extends ChangeNotifier {
         );
       }
       if (disposed || epoch != revision || !authorized()) return;
-      final sameEpisode = room?.admissionId == context.admissionId && room?.access == context.access && !context.isFormer;
+      final sameEpisode =
+          room?.admissionId == context.admissionId &&
+          room?.access == context.access &&
+          !context.isFormer;
       final overlap =
           messages.isEmpty ||
           page.messages.any((m) => messages.any((old) => old.id == m.id));

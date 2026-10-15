@@ -593,6 +593,39 @@ try {
     true,
     "Former planner history remains readable after Group exit",
   );
+  const secondGroup = await rpc(alice, "create_group_draft", {
+    ...command(alice),
+    p_content: {
+      name: `Fictional second CR ${run}`,
+      description: "Fictional Group folder keyset fixture.",
+      group_kind: "informal",
+      locality: "Trento",
+      volunteering_focus: true,
+    },
+  });
+  await rpc(alice, "set_group_publication_state", {
+    ...command(alice),
+    p_group_id: secondGroup,
+    p_expected_version: 1,
+    p_publication_state: "published",
+  });
+  const firstFolderPage = await rpc(alice, "list_my_discussion_groups_v2", {
+    ...expected(alice),
+    p_limit: 1,
+  });
+  const secondFolderPage = await rpc(alice, "list_my_discussion_groups_v2", {
+    ...expected(alice),
+    p_limit: 1,
+    p_before_created_at: firstFolderPage[0].created_at,
+    p_before_id: firstFolderPage[0].group_id,
+  });
+  equal(secondFolderPage.length, 1, "Group folders have a second bounded page");
+  equal(
+    new Set([...firstFolderPage, ...secondFolderPage].map((f) => f.group_id))
+      .size,
+    2,
+    "Group folder pages are disjoint",
+  );
   console.log(`Group Ideas real Auth verifier passed: ${checks} assertions.`);
 } finally {
   await sql.end();

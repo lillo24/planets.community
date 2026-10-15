@@ -88,7 +88,9 @@ class _DiscussionGroupConversationsState
           ),
         if (grouped != null)
           for (final item in widget.items)
-            if (item is! ProjectMessageChatItem || !grouped!.contains(item.chatId)) widget.card(item),
+            if (item is! ProjectMessageChatItem ||
+                !grouped!.contains(item.chatId))
+              widget.card(item),
       ],
     );
   }

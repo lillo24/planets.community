@@ -1,4 +1,5 @@
 import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
+
 import '../../../support/fake_policy.dart';
 
 import 'dart:async';
@@ -579,8 +580,10 @@ class _Fixture {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          discussionProjectsGatewayProvider.overrideWithValue(EmptyDiscussionProjectsGateway()),
-      discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
+          discussionProjectsGatewayProvider.overrideWithValue(
+            EmptyDiscussionProjectsGateway(),
+          ),
+          discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
           preacceptedPolicyFixture,
           if (tutorialCompleted)
             initialStartupPreferenceProvider.overrideWithValue(
