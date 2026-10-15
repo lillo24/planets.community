@@ -9,14 +9,16 @@ old D privacy model.
 
 - Cumulative source: [D #254](https://github.com/lillo24/planets.community/pull/254),
   `codex/d-integration`; preserves all D00–D03 ancestry.
-- Reconciled commit: `28885237c9b7d7bf11a4815f069469e905a3eac4`.
-- Included main: `6b5f419e8a62763d7dc70952bb135d4b6f8fcf09`.
+- Runtime checkpoint: `bd8e510a2007cd22f09b98494d248d177d1fc801`;
+  final qualification and native follow-up are recorded below.
+- Included main: `94af1c2eb707446baf7b7e027dff6ea997c9813e`.
 - Peer inspected: [C #257](https://github.com/lillo24/planets.community/pull/257),
-  `e8c5c8c7317cf0df22b9a534200586637e7b18f2`; unmerged, not imported.
-- Main merge had no textual conflicts. Startup signed-out handling, compact card
-  skills, event schedules, request UI and STAGING01 evidence were retained.
-- Historical D validation qualifies `db17cd2`, not this revised source. The
-  previous incomplete Android journey is still a failure to qualify, not a pass.
+  `a72e9f867a5e5dda8f6059cbbdf445d494ea8b03`; unmerged, not imported.
+- Main reconciliation preserves startup signed-out handling, compact card skills,
+  event schedules, request UI, STAGING01 evidence and UIPOLISH02. Localization
+  conflicts retain both contact copy and the actual skill/Workshop changes.
+- Historical D validation qualifies `db17cd2`, not this revised source. Current
+  results below distinguish full CI, focused checks and actual native journeys.
 
 ## Decision ledger
 
@@ -73,6 +75,10 @@ is separate from `group_contact_request`, `group_coordination_proposal` and
 `group_contact_chat`.
 
 D migrations span `20261014072939` through `20261014125000` (ten files).
+Four forward files add member domain/safety (`20261015095004` and
+`20261015095042`), contact activity/preferences (`20261015095248`) and canonical
+notification-worker preservation (`20261015110945`). There are fourteen D/M
+migrations and 110 repository migrations at this checkpoint.
 They are absent from main and remain unshipped review source; no applied main
 migration is changed. Later integration must test actual sorted C/D migrations,
 including populated predecessor report constraints and Block helper identity.
@@ -174,3 +180,34 @@ including ordinary message refresh preserving a pending activity read and member
 access loss clearing cached notices offline. These are focused results; they are
 not a completed full Mobile or native qualification.
 No hosted operation has been performed.
+
+## Final qualification checkpoint
+
+- Published `db4035a2` received full classified
+  [Validation run 560](https://github.com/lillo24/planets.community/actions/runs/38723943780).
+  Site, Web and Mobile passed. Database populated upgrades, clean replay, lint
+  and security advisors passed; its full SQL corpus ran 146 files / 5,338 tests
+  with six legacy worker-structure failures. Subsequent Auth/type steps were
+  skipped, so this is not a passing Database gate.
+- The implementation fix is forward migration `20261015110945`, preserving the
+  canonical public worker's original OID and composing the contact-page budget
+  inside its existing resolver/locking loop. Existing failing tests were retained.
+  Unexpected peer changes fail an explicit migration guard before replacement.
+  The populated member upgrade verifier also checks worker identity preservation.
+- That correction applied successfully on the owned database; affected SQL files
+  019, 029, 054, 089, 140 and 143 passed all 208 assertions. The full clean Database
+  and remaining CI gates must run on the final follow-up push.
+- A local clean replay accepted all 109 migrations before the new correction;
+  all fourteen D/M files are now installed after the successful forward apply.
+  This incremental result is not described as a clean 110-file replay.
+- Genuine member Auth verification passed 119 checks after a scoped restart of
+  the verified D Auth container resolved OTP HTTP 504 failures. The earlier
+  interrupted local populated-upgrade attempt is not a pass; CI's completed
+  populated upgrades are the preservation evidence for `db4035a2`.
+- C confirmed its containers and AVD 5582 are stopped while D completes native
+  Auth checks. D uses only project `planets-community-d-qa`, explicit engine
+  `planets-d-qa`, ports 55320–55329, inspector 8183 and AVD 5580. D will explicitly
+  release the slot through the PR discussion after its checks/services finish.
+
+Native completion, final source CI and all unresolved decision rows remain gates.
+No policy answer is inferred from the instruction to continue.
