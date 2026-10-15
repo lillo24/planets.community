@@ -55,15 +55,9 @@ void main() {
           final l = AppLocalizations.of(
             tester.element(find.byType(ProposalCard)),
           );
-          await tester.scrollUntilVisible(
-            find.text(l.proposalSkillsTitle),
-            200,
-          );
-          expect(find.text(l.proposalSkillsTitle), findsOneWidget);
-          expect(
-            find.text('${l.proposalSkillRequired}: Mural painting'),
-            findsOneWidget,
-          );
+          await tester.scrollUntilVisible(find.text('Mural painting'), 200);
+          expect(find.text(l.proposalSkillsTitle), findsNothing);
+          expect(find.text('Mural painting'), findsOneWidget);
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
           final resources = FakeProjectResourceNeedsGateway()
@@ -459,8 +453,8 @@ void main() {
     expect(gateway.calls, ['public-detail:proposal-1']);
     await tester.scrollUntilVisible(find.text('Schedule'), 200);
     expect(find.text('Schedule'), findsOneWidget);
-    expect(find.text('Starts: Sep 10, 2026 12:00'), findsOneWidget);
-    expect(find.text('Ends: Sep 10, 2026 14:00'), findsOneWidget);
+    expect(find.text('September 10, 2026'), findsOneWidget);
+    expect(find.text('12:00 – 14:00'), findsOneWidget);
     expect(find.text('Europe/Rome'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Useful: Gardening'), 200);
     expect(find.text('Skills we need from people'), findsOneWidget);
