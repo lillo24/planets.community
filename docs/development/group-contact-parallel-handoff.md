@@ -26,20 +26,20 @@ present in #244, #247, #249, #253 or #254 when inspected. Current main's product
 decisions do not settle personal or representative chat lifetime. The following
 specific questions were sent to the founder; no answer is inferred from silence.
 
-| Topic | Classification / actual reference | Review candidate and dependent scope |
-| --- | --- | --- |
-| Representation | User decision: package `00_START_HERE_D00`, requested behavior | Current Creator, Co-creator, Co-organizer; real human attribution; ordinary members cannot represent or publish through D |
-| Personal contact | User decision: same section and D-M00 fixed flow | Current canonical Group People; selected origin Group; named recipient explicitly accepts; no Project prerequisite or manager oversight |
-| Group People | Existing implemented contract: GRP03A/GRP03B | Accepted membership and management are independent relationships; pending applicants/outsiders have no People/contact grant |
-| Pending D audience | Unresolved D-R00 question | All eligible target managers triage versus a named recipient; controls request note projections, acceptance, blocking and disclosure |
-| Accepted D audience | Unresolved D-R00 question | Submitter plus first acceptor versus explicit shared management audience; controls every chat projection and grant |
-| Role loss / Leave / regrant | Unresolved D-R00 question | Existing candidate denies former content permanently; alternative retains pre-exit history read-only; replacement never silently inherits identity/history |
-| Multi-group disclosure/history | Unresolved D-R00 question | Existing staged named/versioned all-party consent; fresh room and authored summary; no copied bilateral/C history |
-| Member lifetime/history | Unresolved D-M00 question | Candidate stops sends/notices when either origin relationship ends and retains pre-end history read-only; alternative continues independently consented personal chat |
-| Member identity/re-entry | Review candidate, included in the question | Stable pair plus selected origin Group, separate explicit consent episodes; reverse requests deduplicate; rejoin alone does not restore sending |
-| Bounds | Reversible implementation choices, not founder policy | Existing documented finite operational limits remain synthetic values pending verification; no permanent ban/retention decision inferred |
-| Individual-to-Group | Deferred by active package | No arbitrary individual-to-Group request endpoint |
-| Distribution/erasure | Outside source authorization | No hosted migration, real-user contact, deployment or new legal retention rule |
+| Topic                          | Classification / actual reference                              | Review candidate and dependent scope                                                                                                                                  |
+| ------------------------------ | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Representation                 | User decision: package `00_START_HERE_D00`, requested behavior | Current Creator, Co-creator, Co-organizer; real human attribution; ordinary members cannot represent or publish through D                                             |
+| Personal contact               | User decision: same section and D-M00 fixed flow               | Current canonical Group People; selected origin Group; named recipient explicitly accepts; no Project prerequisite or manager oversight                               |
+| Group People                   | Existing implemented contract: GRP03A/GRP03B                   | Accepted membership and management are independent relationships; pending applicants/outsiders have no People/contact grant                                           |
+| Pending D audience             | Unresolved D-R00 question                                      | All eligible target managers triage versus a named recipient; controls request note projections, acceptance, blocking and disclosure                                  |
+| Accepted D audience            | Unresolved D-R00 question                                      | Submitter plus first acceptor versus explicit shared management audience; controls every chat projection and grant                                                    |
+| Role loss / Leave / regrant    | Unresolved D-R00 question                                      | Existing candidate denies former content permanently; alternative retains pre-exit history read-only; replacement never silently inherits identity/history            |
+| Multi-group disclosure/history | Unresolved D-R00 question                                      | Existing staged named/versioned all-party consent; fresh room and authored summary; no copied bilateral/C history                                                     |
+| Member lifetime/history        | Unresolved D-M00 question                                      | Candidate stops sends/notices when either origin relationship ends and retains pre-end history read-only; alternative continues independently consented personal chat |
+| Member identity/re-entry       | Review candidate, included in the question                     | Stable pair plus selected origin Group, separate explicit consent episodes; reverse requests deduplicate; rejoin alone does not restore sending                       |
+| Bounds                         | Reversible implementation choices, not founder policy          | Existing documented finite operational limits remain synthetic values pending verification; no permanent ban/retention decision inferred                              |
+| Individual-to-Group            | Deferred by active package                                     | No arbitrary individual-to-Group request endpoint                                                                                                                     |
+| Distribution/erasure           | Outside source authorization                                   | No hosted migration, real-user contact, deployment or new legal retention rule                                                                                        |
 
 All runtime depending on unresolved rows stays on this draft branch. A client
 flag cannot make it mergeable. C does not wait for these decisions. Any separately
@@ -47,16 +47,16 @@ merged subset must state its exclusions and prove it has no dependent endpoint.
 
 ## Stage map
 
-| Stage | Owner and work | Gate |
-| --- | --- | --- |
-| D-R00 | This ledger, current-main reconciliation, delta and peer seams | Record actual answers per row before dependent source merge |
-| D-R01 | Existing `group_contact` backend/mobile; preserve receipts and safety | Reconcile candidate or approved audience/history; complete real native path |
-| D-M00 | Member actor/state/history contract | Founder lifetime/history answer; isolated synthetic model may proceed |
+| Stage | Owner and work                                                         | Gate                                                                           |
+| ----- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| D-R00 | This ledger, current-main reconciliation, delta and peer seams         | Record actual answers per row before dependent source merge                    |
+| D-R01 | Existing `group_contact` backend/mobile; preserve receipts and safety  | Reconcile candidate or approved audience/history; complete real native path    |
+| D-M00 | Member actor/state/history contract                                    | Founder lifetime/history answer; isolated synthetic model may proceed          |
 | D-M01 | Separate canonical member authorization, request/episode/message owner | Real Auth, races, reporting, block, erasure, paging, upgrade and type evidence |
-| D-M02 | Canonical People context and compact actions, private chat UI | Deliberate request/accept; actual EN/IT narrow/large-text and Android journey |
-| D-R02 | Existing `group_coordination` extension | Exact audience/history answer and complete three-Group native path |
-| D-R03 | Messages, notices, unread, routing, moderation and current-main seams | Preserve every installed kind and legacy parser; integrate C only after merge |
-| D-R04 | Final affected suites, current mergeability, source merge and cleanup | Actual approved policy and final-source evidence, not historical green CI |
+| D-M02 | Canonical People context and compact actions, private chat UI          | Deliberate request/accept; actual EN/IT narrow/large-text and Android journey  |
+| D-R02 | Existing `group_coordination` extension                                | Exact audience/history answer and complete three-Group native path             |
+| D-R03 | Messages, notices, unread, routing, moderation and current-main seams  | Preserve every installed kind and legacy parser; integrate C only after merge  |
+| D-R04 | Final affected suites, current mergeability, source merge and cleanup  | Actual approved policy and final-source evidence, not historical green CI      |
 
 ## Shared API and migration seams
 
