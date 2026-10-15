@@ -1,3 +1,5 @@
+import '../../../core/localization/skill_display.dart';
+
 import 'dart:async';
 
 import '../../group_projects/application/group_attribution_draft.dart';
@@ -7,6 +9,8 @@ import '../../group_projects/presentation/group_project_widgets.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/compact_skill_preview.dart';
+import '../../../core/widgets/browse_filter_button.dart';
+import 'template_application_feedback.dart';
 
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,6 +51,7 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
   Timer? _debounce;
   bool _active = false;
   bool _visiting = false;
+  bool _filtersExpanded = false;
   @override
   void initState() {
     super.initState();
@@ -128,6 +133,27 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
     }
   }
 
+  Future<void> _resume(TemplateAttempt attempt) async {
+    if (_visiting) return;
+    _visiting = true;
+    final controller = ref.read(templateApplicationsProvider.notifier);
+    final epoch = controller.actorEpoch;
+    try {
+      final id = await controller.retry(attempt.requestId);
+      if (!mounted ||
+          !_active ||
+          !controller.isCurrentActor(attempt.actor, epoch)) {
+        return;
+      }
+      if (id != null) {
+        await openTemplateDestination(context, ref, attempt.requestId);
+      }
+      if (mounted && _active) await _refresh();
+    } finally {
+      _visiting = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -196,43 +222,56 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
               key: const PageStorageKey('template-catalog-scroll'),
               padding: const EdgeInsets.all(AppSpacing.medium),
               children: [
-                TextField(
-                  key: const Key('template-query'),
-                  controller: _query,
-                  maxLength: 120,
-                  decoration: InputDecoration(
-                    labelText: l.proposalSearchLabel,
-                    prefixIcon: const Icon(Icons.search),
-                    isDense: true,
-                    counterText: '',
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.medium,
-                      vertical: AppSpacing.small,
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        key: const Key('template-query'),
+                        controller: _query,
+                        maxLength: 120,
+                        decoration: InputDecoration(
+                          labelText: l.proposalSearchLabel,
+                          prefixIcon: const Icon(Icons.search),
+                          isDense: true,
+                          counterText: '',
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.medium,
+                            vertical: AppSpacing.small,
+                          ),
+                          suffixIcon:
+                              _query.text.isNotEmpty || state.skills.isNotEmpty
+                              ? IconButton(
+                                  key: const Key('template-reset-filters'),
+                                  tooltip: l.skillFilterClear,
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _query.clear();
+                                    _filter(skills: {});
+                                  },
+                                )
+                              : null,
+                        ),
+                        textInputAction: TextInputAction.search,
+                        onChanged: (_) {
+                          setState(() {});
+                          _debounce?.cancel();
+                          _debounce = Timer(
+                            const Duration(milliseconds: 350),
+                            _filter,
+                          );
+                        },
+                        onSubmitted: (_) => _filter(),
+                      ),
                     ),
-                    suffixIcon:
-                        state.query.isNotEmpty || state.skills.isNotEmpty
-                        ? IconButton(
-                            key: const Key('template-reset-filters'),
-                            tooltip: l.skillFilterClear,
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _query.clear();
-                              _filter(skills: {});
-                            },
-                          )
-                        : null,
-                  ),
-                  textInputAction: TextInputAction.search,
-                  onChanged: (_) {
-                    _debounce?.cancel();
-                    _debounce = Timer(
-                      const Duration(milliseconds: 350),
-                      _filter,
-                    );
-                  },
-                  onSubmitted: (_) => _filter(),
+                    BrowseFilterButton(
+                      expanded: _filtersExpanded,
+                      hasActiveFilters: state.skills.isNotEmpty,
+                      onPressed: () =>
+                          setState(() => _filtersExpanded = !_filtersExpanded),
+                    ),
+                  ],
                 ),
-                if (state.categories.isNotEmpty) ...[
+                if (_filtersExpanded && state.categories.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.medium),
                   SkillFilter(
                     categories: state.categories,
@@ -242,27 +281,12 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
                 ],
                 const SizedBox(height: AppSpacing.medium),
                 Text(l.workshopContext),
+                const SizedBox(height: AppSpacing.medium),
                 for (final attempt in attempts)
-                  Builder(
-                    builder: (context) => Card(
-                      margin: const EdgeInsets.only(bottom: AppSpacing.medium),
-                      child: ListTile(
-                        title: Text(
-                          attempt.destinationId == null
-                              ? l.workshopPending
-                              : l.workshopAccepted,
-                        ),
-                        subtitle: Text(l.workshopRecoveryLifetime),
-                        trailing: applications.busy.contains(attempt.requestId)
-                            ? const CircularProgressIndicator()
-                            : null,
-                        onTap: applications.busy.contains(attempt.requestId)
-                            ? null
-                            : () => _visit(
-                                WorkshopRoutes.detail(attempt.templateId),
-                              ),
-                      ),
-                    ),
+                  TemplateApplicationNotice(
+                    attempt: attempt,
+                    catalog: true,
+                    onResume: () => _resume(attempt),
                   ),
                 if (state.loading && state.items.isEmpty)
                   const Center(child: CircularProgressIndicator()),
@@ -308,25 +332,62 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
                                         .textTheme
                                         .titleLarge,
                                   ),
-                                  if (item.isOfficial)
-                                    _DefaultBadge()
-                                  else
-                                    Text(l.workshopCompleted),
+                                  const SizedBox(height: AppSpacing.small),
                                   Text(item.summary),
-                                  Text(
-                                    item.isOfficial
-                                        ? l.workshopOfficialOrganization
-                                        : l.workshopCreator(
-                                            item.creatorName ??
-                                                l.workshopCreatorFallback,
-                                          ),
+                                  const SizedBox(height: AppSpacing.medium),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        item.isOfficial
+                                            ? Icons.verified_outlined
+                                            : Icons.groups_outlined,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: AppSpacing.small),
+                                      Expanded(
+                                        child: Wrap(
+                                          spacing: AppSpacing.small,
+                                          runSpacing: AppSpacing.xSmall,
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
+                                          children: [
+                                            if (item.isOfficial)
+                                              _DefaultBadge()
+                                            else
+                                              Text(
+                                                l.workshopCompleted,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall,
+                                              ),
+                                            Text(
+                                              item.isOfficial
+                                                  ? l.workshopOfficialOrganization
+                                                  : l.workshopCreator(
+                                                      item.creatorName ??
+                                                          l.workshopCreatorFallback,
+                                                    ),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   if (item.skills.isNotEmpty) ...[
-                                    const SizedBox(height: AppSpacing.small),
+                                    const SizedBox(height: AppSpacing.medium),
                                     CompactSkillPreview(
                                       labels: [
                                         for (final skill in item.skills)
-                                          skill.label,
+                                          skillDisplayLabel(
+                                            context,
+                                            skill.slug,
+                                            skill.label,
+                                          ),
                                       ],
                                     ),
                                   ],
@@ -446,22 +507,16 @@ class _TemplateWorkshopDetailScreenState
     }
   }
 
-  Future<void> _open(String id, String actor) async {
+  Future<void> _open(String requestId, String actor) async {
     if (!mounted ||
+        !_active ||
         ref.read(authSessionProvider).phase != AuthSessionPhase.ready ||
         ref.read(authSessionProvider).identity?.id != actor) {
       return;
     }
-    try {
-      // The ordinary editor reads CURRENT owner data and owns its own session.
-      await context.push('/proposals/$id/edit');
-      if (mounted && ref.read(authSessionProvider).identity?.id == actor) {
-        await _refresh();
-      }
-    } catch (_) {
-      if (mounted && ref.read(authSessionProvider).identity?.id == actor) {
-        setState(() => _error = AppLocalizations.of(context).workshopOpenError);
-      }
+    await openTemplateDestination(context, ref, requestId);
+    if (mounted && ref.read(authSessionProvider).identity?.id == actor) {
+      await _refresh();
     }
   }
 
@@ -470,6 +525,7 @@ class _TemplateWorkshopDetailScreenState
     final actor = session.identity?.id;
     if (session.phase != AuthSessionPhase.ready || actor == null) return;
     final controller = ref.read(templateApplicationsProvider.notifier);
+    final epoch = controller.actorEpoch;
     final pending = controller.latest(actor, widget.templateId);
     final detail = ref.read(templateDetailProvider(widget.templateId)).detail;
     setState(() => _error = null);
@@ -490,12 +546,13 @@ class _TemplateWorkshopDetailScreenState
     final request = controller.latest(actor, widget.templateId)?.requestId;
     final id = await operation;
     if (!mounted ||
+        !_active ||
         ref.read(authSessionProvider).phase != AuthSessionPhase.ready ||
-        ref.read(authSessionProvider).identity?.id != actor) {
+        !controller.isCurrentActor(actor, epoch)) {
       return;
     }
     if (id != null) {
-      await _open(id, actor);
+      await _open(request!, actor);
       return;
     }
     final failure = ref.read(templateApplicationsProvider).failures[request];
@@ -504,16 +561,19 @@ class _TemplateWorkshopDetailScreenState
     }
     final l = AppLocalizations.of(context);
     setState(
-      () => _error = switch (failure) {
-        TemplateApplyFailure.groupUnavailable =>
-          l.groupProjectRepresentationUnavailable,
-        TemplateApplyFailure.stale => l.workshopChanged,
-        TemplateApplyFailure.forbidden => l.workshopForbidden,
-        TemplateApplyFailure.profile => l.workshopProfileRequired,
-        TemplateApplyFailure.incompatible => l.workshopIncompatible,
-        TemplateApplyFailure.destination => l.workshopOpenError,
-        TemplateApplyFailure.uncertain => l.workshopApplyUncertain,
-      },
+      () => _error =
+          ref.read(templateApplicationsProvider).attempts.containsKey(request)
+          ? null
+          : switch (failure) {
+              TemplateApplyFailure.groupUnavailable =>
+                l.groupProjectRepresentationUnavailable,
+              TemplateApplyFailure.stale => l.workshopChanged,
+              TemplateApplyFailure.forbidden => l.workshopForbidden,
+              TemplateApplyFailure.profile => l.workshopProfileRequired,
+              TemplateApplyFailure.incompatible => l.workshopIncompatible,
+              TemplateApplyFailure.destination => l.workshopOpenError,
+              TemplateApplyFailure.uncertain => l.workshopApplyUncertain,
+            },
     );
     if (failure == TemplateApplyFailure.stale ||
         failure == TemplateApplyFailure.forbidden) {
@@ -569,7 +629,12 @@ class _TemplateWorkshopDetailScreenState
       _publishRequest = pending?.requestId;
     }
     final busy =
-        attempt != null && applications.busy.contains(attempt.requestId);
+        attempt != null &&
+        (applications.busy.contains(attempt.requestId) ||
+            ref
+                .watch(templateFeedbackProvider)
+                .opening
+                .contains(attempt.requestId));
     final detail = state.detail;
     return Scaffold(
       appBar: pageAppBar(
@@ -692,25 +757,8 @@ class _TemplateWorkshopDetailScreenState
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
-            if (attempt != null) ...[
-              Text(
-                attempt.destinationId == null
-                    ? l.workshopPending
-                    : l.workshopAccepted,
-              ),
-              Text(l.workshopRecoveryLifetime),
-              FilledButton(
-                key: const Key('template-retry-open'),
-                onPressed: busy ? null : _use,
-                child: Text(
-                  busy
-                      ? l.workshopApplying
-                      : attempt.destinationId != null
-                      ? l.workshopOpen
-                      : l.workshopRetry,
-                ),
-              ),
-            ],
+            if (attempt != null)
+              TemplateApplicationNotice(attempt: attempt, onResume: _use),
             if (detail != null &&
                 (attempt == null || attempt.destinationId != null))
               FilledButton(
@@ -755,11 +803,22 @@ class _TemplateSkills extends StatelessWidget {
     final l = AppLocalizations.of(context);
     return Wrap(
       spacing: AppSpacing.small,
+      runSpacing: AppSpacing.small,
       children: [
         for (final skill in skills)
-          Chip(
-            label: Text(
-              '${skill.label} · ${skill.importance == ProposalSkillImportance.required ? l.proposalSkillRequired : l.proposalSkillUseful}',
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Text(
+                '${skillDisplayLabel(context, skill.slug, skill.label)} · ${skill.importance == ProposalSkillImportance.required ? l.proposalSkillRequired : l.proposalSkillUseful}',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
             ),
           ),
       ],

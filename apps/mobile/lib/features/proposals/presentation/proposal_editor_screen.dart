@@ -45,12 +45,14 @@ class ProposalEditorScreen extends ConsumerStatefulWidget {
     this.proposalId,
     this.initialGroupId,
     this.returnToHub = false,
+    this.readObserver,
     super.key,
   });
 
   final String? proposalId;
   final String? initialGroupId;
   final bool returnToHub;
+  final ProposalEditorReadObserver? readObserver;
 
   @override
   ConsumerState<ProposalEditorScreen> createState() =>
@@ -76,11 +78,30 @@ class _ProposalEditorScreenState extends ConsumerState<ProposalEditorScreen> {
         identity != null &&
         (force || _requestedIdentity != identity.id)) {
       _requestedIdentity = identity.id;
+      final loadingSession = _sessionId;
       final controller = ref.read(
         proposalEditorSessionProvider(_sessionId).notifier,
       );
       _releaseSession = controller.releaseSession;
       await controller.load(identity.id, widget.proposalId);
+      if (!mounted || loadingSession != _sessionId) return;
+      final current = ref.read(authSessionProvider);
+      final loaded = ref.read(proposalEditorSessionProvider(loadingSession));
+      final observer = widget.readObserver;
+      if (observer != null &&
+          current.phase == AuthSessionPhase.ready &&
+          current.identity?.id == observer.actor &&
+          identity.id == observer.actor &&
+          widget.proposalId == observer.proposalId &&
+          loaded.expectedCreatorId == observer.actor &&
+          loaded.readOutcome != null) {
+        observer.onRead(
+          loaded.readOutcome == ProposalEditorReadOutcome.loaded &&
+                  loaded.proposal?.id != observer.proposalId
+              ? ProposalEditorReadOutcome.failed
+              : loaded.readOutcome!,
+        );
+      }
     }
   }
 

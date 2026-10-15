@@ -332,9 +332,77 @@ class TemplateApplicationState {
   final Map<String, TemplateApplyFailure> failures;
 }
 
+class TemplateFeedbackState {
+  const TemplateFeedbackState({
+    this.acknowledged = const {},
+    this.opening = const {},
+    this.reads = const {},
+  });
+  final Set<String> acknowledged, opening;
+  final Map<String, ProposalEditorReadOutcome> reads;
+}
+
+/// Presentation only. Receipts and frozen recovery intent remain untouched.
+class TemplateFeedback extends Notifier<TemplateFeedbackState> {
+  @override
+  TemplateFeedbackState build() {
+    ref.listen(authSessionProvider.select((s) => (s.phase, s.identity?.id)), (
+      _,
+      _,
+    ) {
+      state = TemplateFeedbackState(
+        acknowledged: state.acknowledged,
+        reads: state.reads,
+      );
+    });
+    return const TemplateFeedbackState();
+  }
+
+  void _opening(String id, bool value) => state = TemplateFeedbackState(
+    acknowledged: state.acknowledged,
+    reads: state.reads,
+    opening: value ? {...state.opening, id} : ({...state.opening}..remove(id)),
+  );
+  void _acknowledge(String id) => state = TemplateFeedbackState(
+    acknowledged: {...state.acknowledged, id},
+    opening: state.opening,
+    reads: {...state.reads}..remove(id),
+  );
+  void _read(String id, ProposalEditorReadOutcome result) {
+    if (result == ProposalEditorReadOutcome.loaded) {
+      _acknowledge(id);
+    } else {
+      state = TemplateFeedbackState(
+        acknowledged: state.acknowledged,
+        opening: state.opening,
+        reads: {...state.reads, id: result},
+      );
+    }
+    _opening(id, false);
+  }
+}
+
+final templateFeedbackProvider =
+    NotifierProvider<TemplateFeedback, TemplateFeedbackState>(
+      TemplateFeedback.new,
+    );
+
+class TemplateDestinationHandoff {
+  const TemplateDestinationHandoff({
+    required this.observer,
+    required this.failed,
+    required this.returned,
+  });
+  final ProposalEditorReadObserver observer;
+  final void Function() failed, returned;
+}
+
 /// App-scoped, deliberately not auto-disposed: exact retries survive routes.
 class TemplateApplications extends Notifier<TemplateApplicationState> {
   int _epoch = 0;
+  int get actorEpoch => _epoch;
+  bool isCurrentActor(String actor, int epoch) =>
+      ref.mounted && epoch == _epoch && _ready(actor);
   @override
   TemplateApplicationState build() {
     ref.listen(authSessionProvider.select((s) => (s.phase, s.identity?.id)), (
@@ -354,6 +422,57 @@ class TemplateApplications extends Notifier<TemplateApplicationState> {
     final session = ref.read(authSessionProvider);
     return session.phase == AuthSessionPhase.ready &&
         session.identity?.id == actor;
+  }
+
+  void dismissFeedback(String requestId) {
+    final attempt = state.attempts[requestId];
+    if (attempt == null ||
+        attempt.destinationId == null ||
+        !_ready(attempt.actor)) {
+      return;
+    }
+    final feedback = ref.read(templateFeedbackProvider);
+    if (feedback.opening.contains(requestId) ||
+        feedback.reads.containsKey(requestId)) {
+      return;
+    }
+    ref.read(templateFeedbackProvider.notifier)._acknowledge(requestId);
+  }
+
+  TemplateDestinationHandoff? handoff(String requestId) {
+    final attempt = state.attempts[requestId];
+    final destination = attempt?.destinationId;
+    if (attempt == null || destination == null || !_ready(attempt.actor)) {
+      return null;
+    }
+    final epoch = _epoch;
+    bool current() =>
+        ref.mounted &&
+        epoch == _epoch &&
+        _ready(attempt.actor) &&
+        state.attempts[requestId]?.destinationId == destination;
+    void read(ProposalEditorReadOutcome result) {
+      if (current()) {
+        ref.read(templateFeedbackProvider.notifier)._read(requestId, result);
+      }
+    }
+
+    ref.read(templateFeedbackProvider.notifier)._opening(requestId, true);
+    return TemplateDestinationHandoff(
+      observer: ProposalEditorReadObserver(
+        actor: attempt.actor,
+        proposalId: destination,
+        onRead: read,
+      ),
+      failed: () => read(ProposalEditorReadOutcome.failed),
+      returned: () {
+        if (current()) {
+          ref
+              .read(templateFeedbackProvider.notifier)
+              ._opening(requestId, false);
+        }
+      },
+    );
   }
 
   TemplateAttempt? latest(String actor, String templateId) {
