@@ -260,3 +260,11 @@ UIPOLISH01 uses `core/widgets/compact_skill_preview.dart` for card names only;
 Public detail schedules use `EventSchedule`, including confirmed Idea dates;
 missing dates do not consult private or tentative logistics. List summaries stay
 compact and compare local dates in the saved event timezone.
+
+UIPOLISH02 localizes controlled skill display through the shared slug/ID resolver;
+unknown catalog entries retain their canonical labels. Card names stay compact,
+while details and selection retain complete names/importance. The editor's
+optional `ProposalEditorReadObserver` reports its existing canonical load outcome
+for one actor/destination. Transport and unavailable outcomes remain distinct;
+navigation completion and writes do not acknowledge a read. Ordinary editor and
+Drafts-list loading behavior is unchanged.

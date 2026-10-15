@@ -490,6 +490,20 @@ enum ProposalEditorPhase {
   failure,
 }
 
+enum ProposalEditorReadOutcome { loaded, unavailable, failed }
+
+/// Optional route handoff acknowledgement, bound to one actor and destination.
+/// It observes the existing canonical editor read; navigation alone is no proof.
+class ProposalEditorReadObserver {
+  const ProposalEditorReadObserver({
+    required this.actor,
+    required this.proposalId,
+    required this.onRead,
+  });
+  final String actor, proposalId;
+  final void Function(ProposalEditorReadOutcome) onRead;
+}
+
 class ProposalEditorState {
   const ProposalEditorState({
     this.phase = ProposalEditorPhase.idle,
@@ -499,6 +513,7 @@ class ProposalEditorState {
     this.failure,
     this.coverFailure,
     this.coverPartialSave,
+    this.readOutcome,
   });
 
   final ProposalEditorPhase phase;
@@ -508,6 +523,8 @@ class ProposalEditorState {
   final ProposalFailureKind? failure;
   final CoverPersistenceFailureKind? coverFailure;
   final CoverPartialSaveKind? coverPartialSave;
+  // Only canonical editor loads set this; saving and navigation do not ack reads.
+  final ProposalEditorReadOutcome? readOutcome;
 
   bool get isBusy => switch (phase) {
     ProposalEditorPhase.loading ||

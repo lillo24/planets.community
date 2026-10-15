@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/localization/skill_display.dart';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -366,7 +369,11 @@ class _ContributionOptionGroup extends StatelessWidget {
           for (final option in options)
             FilterChip(
               key: Key('participation-option-$keyPrefix-${option.id}'),
-              label: Text(option.label),
+              label: Text(
+                option.kind == ContributionOptionKind.skill
+                    ? skillDisplayLabel(context, option.id, option.label)
+                    : option.label,
+              ),
               selected: selectedIds.contains(option.id),
               onSelected:
                   enabled &&

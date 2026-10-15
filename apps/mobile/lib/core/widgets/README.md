@@ -102,3 +102,8 @@ Same-day schedules show one date and a time range; different dates have separate
 Start/End endpoints. Missing dates remain undecided. `core/time/event_time.dart`
 owns compact summaries and displays offsets when DST makes endpoint clocks
 ambiguous. Tavoli reuse the surface without changing recurrence or occurrences.
+
+Skill callers resolve known catalog display text through
+`../localization/skill_display.dart`; generic tag widgets continue to receive
+labels and emit the same canonical IDs. Profile and contribution-picker callers
+opt into this display mapping explicitly; free text and resource titles do not.

@@ -1,3 +1,5 @@
+import '../../../core/localization/skill_display.dart';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -215,12 +217,20 @@ class ProposalSkillsControl extends StatelessWidget {
             for (final category in categories)
               TagMultiSelectCategory(
                 id: category.slug,
-                label: category.label,
+                label: skillCategoryDisplayLabel(
+                  context,
+                  category.slug,
+                  category.label,
+                ),
                 options: [
                   for (final skill in category.skills)
                     TagMultiSelectOption(
                       id: skill.id,
-                      label: skill.label,
+                      label: skillDisplayLabel(
+                        context,
+                        skill.slug,
+                        skill.label,
+                      ),
                       keyValue: skill.slug,
                     ),
                 ],
@@ -244,7 +254,7 @@ class ProposalSkillsControl extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(skill.label),
+                  Text(skillDisplayLabel(context, skill.slug, skill.label)),
                   DropdownButton<ProposalSkillImportance>(
                     isExpanded: true,
                     key: Key('proposal-skill-${skill.slug}'),

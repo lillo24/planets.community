@@ -1,3 +1,5 @@
+import '../../../core/localization/skill_display.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -463,12 +465,20 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
                                 for (final category in widget.data.categories)
                                   TagMultiSelectCategory(
                                     id: category.slug,
-                                    label: category.label,
+                                    label: skillCategoryDisplayLabel(
+                                      context,
+                                      category.slug,
+                                      category.label,
+                                    ),
                                     options: [
                                       for (final skill in category.skills)
                                         TagMultiSelectOption(
                                           id: skill.id,
-                                          label: skill.label,
+                                          label: skillDisplayLabel(
+                                            context,
+                                            skill.slug,
+                                            skill.label,
+                                          ),
                                           keyValue: skill.slug,
                                         ),
                                     ],
