@@ -118,6 +118,12 @@ not fake IME geometry. The native scroll helpers exclude text fields' inner
 scroll positions so lazy page actions after a field are actually revealed. A
 missing visible target saves a failure frame and still fails the original check.
 
+The chat composer is capped at half of the resized body and scrolls independently,
+so enlarged multiline input and unknown-delivery recovery cannot overflow above
+the IME or consume the complete history viewport. Flutter integration screenshots
+capture the app surface; the positive inset proves the real keyboard is open,
+while keyboard pixels require a separate full-device capture.
+
 The complete synthetic review journey includes a declined coordination proposal,
 an explicit audience replacement that retires the selected seat and old consent,
 three exact human/Group consent pairs, no conversation before final consent,

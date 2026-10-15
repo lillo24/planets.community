@@ -470,6 +470,62 @@ void main() {
   });
 
   for (final language in ['en', 'it']) {
+    testWidgets(
+      '$language chat keeps keyboard and unknown-send controls bounded',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 711);
+        tester.view.devicePixelRatio = 1;
+        tester.view.viewInsets = const FakeViewPadding(bottom: 380);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetViewInsets);
+        var sends = 0;
+        await pumpContact(
+          tester,
+          (name, args) async {
+            if (name == 'send_group_contact_message') {
+              sends++;
+              throw StateError('Lost send response');
+            }
+            return basic(name, args);
+          },
+          path: '/chat',
+          language: language,
+          scale: 2,
+        );
+        const draft = 'Line one\nLine two\nLine three';
+        await tester.enterText(
+          find.byKey(const Key('contact-message-body')),
+          draft,
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final send = find.byKey(const Key('contact-message-send'));
+        await tester.ensureVisible(send);
+        await tester.pumpAndSettle();
+        expect(send.hitTestable(), findsOneWidget);
+        expect(
+          tester.getSize(find.byType(CustomScrollView)).height,
+          greaterThan(0),
+        );
+        await tester.tap(send);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final l = AppLocalizations.of(tester.element(find.byType(Scaffold)));
+        final recover = find.text(l.contactRecover);
+        await tester.ensureVisible(recover);
+        await tester.pumpAndSettle();
+        expect(recover.hitTestable(), findsOneWidget);
+        expect(sends, 1);
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const Key('contact-message-body')))
+              .controller!
+              .text,
+          draft,
+        );
+      },
+    );
     testWidgets('$language at 320dp and 2x keeps composer actions accessible', (
       tester,
     ) async {
