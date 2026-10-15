@@ -1,3 +1,9 @@
+import '../../features/member_contact/presentation/member_contact_routes.dart';
+import '../../features/member_contact/presentation/member_contact_compose_screen.dart';
+import '../../features/member_contact/presentation/member_contact_request_screen.dart';
+import '../../features/member_contact/presentation/member_contact_chat_screen.dart';
+import '../../features/member_contact/presentation/member_contact_info_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,6 +50,13 @@ import '../../features/group_membership/presentation/group_relationship_screens.
 import '../../features/group_membership/presentation/group_link_screen.dart';
 import '../../features/group_membership/presentation/group_invite_screen.dart';
 import '../../features/group_membership/domain/group_relationships.dart';
+import '../../features/group_contact/presentation/group_contact_routes.dart';
+import '../../features/group_contact/presentation/group_contact_compose_screen.dart';
+import '../../features/group_contact/presentation/group_contact_request_screen.dart';
+import '../../features/group_contact/presentation/group_contact_chat_screen.dart';
+import '../../features/group_contact/presentation/group_contact_info_screen.dart';
+import '../../features/group_coordination/presentation/coordination_routes.dart';
+import '../../features/group_coordination/presentation/coordination_screen.dart';
 import '../../features/groups/presentation/group_detail_screen.dart';
 import '../../features/groups/presentation/group_editor_screen.dart';
 import '../../features/project_chat/presentation/project_chat_info_screen.dart';
@@ -231,8 +244,9 @@ RoutingConfig _routingConfig(
           path == '/groups/mine' ||
           path.startsWith('/groups/mine/') ||
           path == '/groups/create' ||
+          RegExp(r'^/groups/[^/]+/member-contact/[^/]+$').hasMatch(path) ||
           RegExp(
-            r'^/groups/[^/]+/(edit|structural-edit|report|people|requests|memberships|team|authority-invitations|role-history|participant-links|link-history)$',
+            r'^/groups/[^/]+/(edit|structural-edit|report|people|requests|memberships|team|authority-invitations|role-history|participant-links|link-history|contact)$',
           ).hasMatch(path);
       final isProposalManagementRoute =
           path == DraftRoutes.path ||
@@ -420,6 +434,9 @@ RoutingConfig _routingConfig(
             ProjectDelegateRoutes.isInvitePath(returnTo) ||
             ParticipantInvitationRoutes.isInvitePath(returnTo) ||
             isGroupInvitationDestination(returnTo) ||
+            isGroupContactContinuation(returnTo) ||
+            isMemberContactContinuation(returnTo) ||
+            isCoordinationContinuation(returnTo) ||
             (isMessagesPath(returnTo) &&
                 Uri.parse(returnTo).path != '/messages') ||
             isNotificationsPath(returnTo) ||
@@ -529,6 +546,29 @@ RoutingConfig _routingConfig(
             builder: (context, state) =>
                 GroupDetailScreen(id: state.pathParameters['groupId']!),
             routes: [
+              GoRoute(
+                path: 'member-contact/:recipientId',
+                builder: (context, state) =>
+                    isMemberContactContinuation(state.uri.toString())
+                    ? MemberContactComposeScreen(
+                        key: state.pageKey,
+                        groupId: state.pathParameters['groupId']!,
+                        recipientId: state.pathParameters['recipientId']!,
+                      )
+                    : const _UnknownRouteScreen(),
+              ),
+              GoRoute(
+                path: 'contact',
+                builder: (context, state) =>
+                    isGroupContactContinuation(state.uri.toString())
+                    ? GroupContactComposeScreen(
+                        key: state.pageKey,
+                        groupId: state.pathParameters['groupId']!,
+                        projectId: state.uri.queryParameters['project'],
+                        purpose: state.uri.queryParameters['purpose'],
+                      )
+                    : const _UnknownRouteScreen(),
+              ),
               GoRoute(
                 path: 'edit',
                 onExit: draftDeparture?.onExit,
@@ -785,6 +825,72 @@ RoutingConfig _routingConfig(
                           key: state.pageKey,
                           requestId: state.pathParameters['requestId']!,
                         ),
+                  ),
+                  GoRoute(
+                    path: 'requests/member-contact/:requestId',
+                    builder: (context, state) =>
+                        isMemberContactContinuation(state.uri.toString())
+                        ? MemberContactRequestScreen(
+                            key: state.pageKey,
+                            requestId: state.pathParameters['requestId']!,
+                          )
+                        : const _UnknownRouteScreen(),
+                  ),
+                  GoRoute(
+                    path: 'chats/member-contact/:chatId',
+                    builder: (context, state) =>
+                        isMemberContactContinuation(state.uri.toString())
+                        ? MemberContactChatScreen(
+                            key: state.pageKey,
+                            chatId: state.pathParameters['chatId']!,
+                          )
+                        : const _UnknownRouteScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'info',
+                        builder: (context, state) => MemberContactInfoScreen(
+                          key: state.pageKey,
+                          chatId: state.pathParameters['chatId']!,
+                        ),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'requests/group-contact/:requestId',
+                    builder: (context, state) => GroupContactRequestScreen(
+                      key: ValueKey(state.pathParameters['requestId']),
+                      requestId: state.pathParameters['requestId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'requests/group-coordination/:proposalId',
+                    builder: (context, state) => CoordinationScreen(
+                      key: ValueKey(state.pathParameters['proposalId']),
+                      proposalId: state.pathParameters['proposalId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'chats/group-contact/:chatId',
+                    builder: (context, state) => GroupContactChatScreen(
+                      key: ValueKey(state.pathParameters['chatId']),
+                      chatId: state.pathParameters['chatId']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'coordinate',
+                        builder: (context, state) => CoordinationScreen(
+                          key: ValueKey(state.pathParameters['chatId']),
+                          sourceChatId: state.pathParameters['chatId']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'info',
+                        builder: (context, state) => GroupContactInfoScreen(
+                          key: ValueKey(state.pathParameters['chatId']),
+                          chatId: state.pathParameters['chatId']!,
+                        ),
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: 'chats/resource/:chatId',

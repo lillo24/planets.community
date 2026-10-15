@@ -1,3 +1,5 @@
+import '../../member_contact/domain/member_contact_models.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -6,6 +8,8 @@ import '../../participation/domain/participation_models.dart';
 import '../../resource_listings/domain/resource_listing_models.dart';
 import '../../resource_requests/domain/resource_request_models.dart';
 import '../domain/message_models.dart';
+import '../../group_contact/domain/group_contact_models.dart';
+import '../../group_coordination/domain/coordination_models.dart';
 
 abstract interface class MessagesGateway {
   Future<StructuredRequestMessagePage> listItems({
@@ -49,7 +53,7 @@ class SupabaseMessagesGateway implements MessagesGateway {
     MessageCursor? cursor,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_structured_request_message_items',
+      'list_own_structured_request_message_items_v4',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_limit': limit + 1,
@@ -71,19 +75,16 @@ class SupabaseMessagesGateway implements MessagesGateway {
     required StructuredRequestItemKind itemKind,
     required String requestId,
   }) async {
-    final response = await _client.rpc<List<dynamic>>(
-      'get_own_structured_request_message_item',
+    final response = await _client.rpc<Object?>(
+      'get_own_structured_request_message_item_v4',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_item_kind': itemKind.wireValue,
         'p_request_id': requestId,
       },
     );
-    if (response.length != 1) {
-      throw const FormatException('Expected one structured request item.');
-    }
-    final item = _parser.item(response.single);
-    if (item.kind != itemKind) {
+    final item = _parser.item(response);
+    if (item.kind != itemKind || item.requestId != requestId) {
       throw const FormatException('Structured request kind did not match.');
     }
     return item;
@@ -145,6 +146,12 @@ class MessagesPayloadParser {
     return switch (kind) {
       StructuredRequestItemKind.participationRequest => _participationItem(row),
       StructuredRequestItemKind.resourceRequest => _resourceItem(row),
+      StructuredRequestItemKind.memberContactRequest =>
+        MemberContactRequestMessageItem(MemberContactRequest(row)),
+      StructuredRequestItemKind.groupContactRequest =>
+        GroupContactRequestMessageItem(GroupContactRequest.parse(row)),
+      StructuredRequestItemKind.groupCoordinationProposal =>
+        GroupCoordinationMessageItem(CoordinationProposal.parse(row)),
     };
   }
 

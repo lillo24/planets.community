@@ -1,11 +1,18 @@
+import '../../member_contact/domain/member_contact_models.dart';
+
+import 'dart:convert';
+
 import '../../participation/domain/participation_models.dart';
 import '../../project_chat/domain/project_chat_models.dart';
 import '../../resource_chat/domain/resource_chat_models.dart';
+import '../../group_contact/domain/group_contact_models.dart';
 
 enum MessageChatItemKind {
   projectChat('project_chat'),
   resourceChat('resource_chat'),
-  projectRequestChat('project_request_chat');
+  projectRequestChat('project_request_chat'),
+  groupContactChat('group_contact_chat'),
+  memberContactChat('member_contact_chat');
 
   const MessageChatItemKind(this.wireValue);
 
@@ -15,6 +22,8 @@ enum MessageChatItemKind {
     'project_chat' => MessageChatItemKind.projectChat,
     'resource_chat' => MessageChatItemKind.resourceChat,
     'project_request_chat' => MessageChatItemKind.projectRequestChat,
+    'member_contact_chat' => MessageChatItemKind.memberContactChat,
+    'group_contact_chat' => MessageChatItemKind.groupContactChat,
     _ => throw const FormatException('Unsupported unified chat kind.'),
   };
 }
@@ -120,6 +129,30 @@ sealed class MessageChatItem {
         item.acceptedProjectGroupChatId,
         item.pendingCount,
         item.latestRequestActivityStatus,
+      ),
+      MemberContactMessageChatItem item => (
+        item.contact.groupId,
+        item.contact.groupName,
+        item.contact.episodeId,
+        item.contact.endedReason,
+        item.contact.muted,
+      ),
+      GroupContactMessageChatItem item => (
+        item.contact.kind,
+        item.contact.summary,
+        jsonEncode(
+          item.contact.audience
+              .map(
+                (p) => [
+                  p.profileId,
+                  p.groupId,
+                  p.groupName,
+                  p.displayName,
+                  p.active,
+                ],
+              )
+              .toList(),
+        ),
       ),
     },
   );
@@ -239,6 +272,24 @@ final class ProjectRequestMessageChatItem extends MessageChatItem {
   String? get previewBody => lastVisibleMessageBody ?? requestMessage;
 }
 
+final class GroupContactMessageChatItem extends MessageChatItem {
+  GroupContactMessageChatItem(this.contact)
+    : super(
+        kind: MessageChatItemKind.groupContactChat,
+        chatId: contact.id,
+        activityAt: contact.activityAt,
+        displayTitle: contact.title,
+        isReadOnly: contact.readOnly,
+        lastVisibleMessageId: contact.lastId,
+        lastVisibleMessageBody: contact.lastBody,
+        lastVisibleMessageAt: contact.lastAt,
+        lastVisibleSenderProfileId: contact.lastSenderId,
+        lastVisibleSenderDisplayName: contact.lastSenderName,
+        unreadCount: contact.unreadCount,
+      );
+  final GroupContactConversation contact;
+}
+
 class MessageChatCursor {
   const MessageChatCursor({
     required this.activityAt,
@@ -256,4 +307,22 @@ class MessageChatPage {
 
   final List<MessageChatItem> items;
   final bool hasMore;
+}
+
+final class MemberContactMessageChatItem extends MessageChatItem {
+  MemberContactMessageChatItem(this.contact)
+    : super(
+        kind: MessageChatItemKind.memberContactChat,
+        chatId: contact.id,
+        activityAt: contact.activityAt,
+        displayTitle: contact.peerName,
+        isReadOnly: contact.readOnly,
+        unreadCount: contact.unreadCount,
+        lastVisibleMessageId: contact.latest?.id,
+        lastVisibleMessageBody: contact.latest?.body,
+        lastVisibleMessageAt: contact.latest?.createdAt,
+        lastVisibleSenderProfileId: contact.latest?.senderId,
+        lastVisibleSenderDisplayName: contact.latest?.senderName,
+      );
+  final MemberContactConversation contact;
 }

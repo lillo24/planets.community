@@ -134,7 +134,10 @@ function safeSupabaseFailure(action, error) {
     typeof error?.code === "string" && /^[a-z0-9_]+$/iu.test(error.code)
       ? error.code
       : "unknown";
-  return new Error(`Failed to ${action} (code ${code}).`);
+  const status = Number.isInteger(error?.status)
+    ? `, HTTP ${error.status}`
+    : "";
+  return new Error(`Failed to ${action} (code ${code}${status}).`);
 }
 
 async function fetchJson(url, options, action) {

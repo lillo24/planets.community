@@ -1,5 +1,12 @@
 # Supabase database
 
+The provisional D-M member-contact migrations own named personal pair/origin-Group
+consent, without representative or manager oversight. See the
+[review-only contract](../docs/development/member-contact-backend-review.md) for
+migration owners, current RPC versions, verification and the unapproved lifetime
+boundary. `tests/140_member_contact.test.sql` protects that candidate; green tests
+do not approve source merge or hosted rollout.
+
 GRP01 adds private group identity/authority/receipts/suppression actions, narrow
 public/manager/staff RPCs and a genuine target in the existing reporting queue.
 See the [group contract](../docs/development/persistent-groups.md),
@@ -197,3 +204,11 @@ ordinary create overloads remain available. `114` audits raw grants/RLS and RPC
 hardening; `npm run draft:editor:verify:local` verifies the authenticated contract
 and removed-template draft independence. See the
 [draft departure guide](../docs/development/proposal-draft-departure.md).
+
+Batch D adds private purposeful group contacts and exact human/group admissions.
+Its [contract](../docs/development/group-contact-contract.md),
+[backend guide](../docs/development/group-contact-backend.md) and
+[coordination protocol](../docs/development/group-coordination-protocol.md) own
+the provisional approval gate, receipt/lock ordering, versioned projections and
+disposable upgrade/real-Auth checks. Requests v3 adds coordination while retaining
+installed v1/v2 contracts. Coordination progress creates no message unread.

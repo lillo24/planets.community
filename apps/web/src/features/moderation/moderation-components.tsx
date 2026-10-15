@@ -69,6 +69,9 @@ export function ModerationCaseDetailView({
 }) {
   const targetState =
     detail.state === "under_review" ? "completed" : "under_review";
+  const personalContact =
+    detail.groupContact?.kind === "member_contact_request" ||
+    detail.groupContact?.kind === "member_contact_message";
   const transitionLabel =
     detail.state === "received"
       ? "Start review"
@@ -141,6 +144,37 @@ export function ModerationCaseDetailView({
 
       {detail.group ? (
         <GroupReviewView group={detail.group} caseId={detail.caseId} />
+      ) : null}
+      {detail.groupContact ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {personalContact
+                ? "Reported personal contact content"
+                : "Reported group contact content"}
+            </CardTitle>
+            <CardDescription>
+              Exact reported evidence for manual review. This grants no
+              conversation access.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {detail.groupContact.title ? (
+              <p>{detail.groupContact.title}</p>
+            ) : null}
+            <p className="whitespace-pre-wrap break-words">
+              {detail.groupContact.body ?? "No introductory note was included."}
+            </p>
+            <dl className="grid gap-1 text-sm">
+              <dt>Actual human author</dt>
+              <dd className="break-all">{detail.groupContact.humanId}</dd>
+              <dt>{personalContact ? "Origin group" : "Represented group"}</dt>
+              <dd className="break-all">{detail.groupContact.sourceGroupId}</dd>
+              <dt>Created</dt>
+              <dd>{formatDate(detail.groupContact.createdAt)}</dd>
+            </dl>
+          </CardContent>
+        </Card>
       ) : null}
       {detail.template ? (
         <Card>

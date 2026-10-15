@@ -164,7 +164,7 @@ class SupabaseModerationGateway implements ModerationGateway {
     required String expectedProfileId,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_moderation_reports',
+      'list_own_moderation_reports_v4',
       params: contract.listParams(expectedProfileId),
     );
     return List.unmodifiable(response.map(parser.ownReport));

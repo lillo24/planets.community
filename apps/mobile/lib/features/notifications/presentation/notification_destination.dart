@@ -3,6 +3,31 @@ import '../../participation/presentation/participation_routes.dart';
 import '../domain/notification_models.dart';
 
 String? notificationDestinationRoute(AppNotification notification) {
+  if (notification.kind.isContact) {
+    if (notification.category != NotificationCategory.participation ||
+        notification.contactTargetId == null) {
+      return null;
+    }
+    final id = Uri.encodeComponent(notification.contactTargetId!);
+    return switch ((notification.kind, notification.destinationKind)) {
+      (
+        NotificationKind.groupContactRequest,
+        NotificationDestinationKind.groupContactRequest,
+      ) =>
+        '/messages/requests/group-contact/$id',
+      (
+        NotificationKind.groupCoordinationProposal,
+        NotificationDestinationKind.groupCoordinationProposal,
+      ) =>
+        '/messages/requests/group-coordination/$id',
+      (
+        NotificationKind.memberContactRequest,
+        NotificationDestinationKind.memberContactRequest,
+      ) =>
+        '/messages/requests/member-contact/$id',
+      _ => null,
+    };
+  }
   if (notification.category == NotificationCategory.matching) {
     if (notification.kind != NotificationKind.matchingAvailable ||
         notification.destinationKind !=
