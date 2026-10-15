@@ -8,6 +8,7 @@ import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/app/router/draft_departure_coordinator.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/core/theme/app_tokens.dart';
+import 'package:planets_mobile/core/widgets/browse_filter_button.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
@@ -220,6 +221,9 @@ void main() {
             categories: _categories(),
           );
           expect(find.byKey(const Key('template-query')), findsOneWidget);
+          expect(find.byKey(const Key('skill-filter-trigger')), findsNothing);
+          await tester.tap(find.byType(BrowseFilterButton));
+          await tester.pumpAndSettle();
           final queryRect = tester.getRect(
             find.byKey(const Key('template-query')),
           );
@@ -614,7 +618,12 @@ pumpWorkshop(
               onExit: guard.onExit,
               pageBuilder: (_, s) => MaterialPage<void>(
                 key: s.pageKey,
-                child: ProposalEditorScreen(proposalId: s.pathParameters['id']),
+                child: ProposalEditorScreen(
+                  proposalId: s.pathParameters['id'],
+                  readObserver: s.extra is ProposalEditorReadObserver
+                      ? s.extra! as ProposalEditorReadObserver
+                      : null,
+                ),
               ),
             ),
             GoRoute(

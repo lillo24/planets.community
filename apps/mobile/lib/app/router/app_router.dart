@@ -74,6 +74,7 @@ import '../../features/participation/presentation/join_request_screen.dart';
 import '../../features/participation/presentation/participation_routes.dart';
 import '../../features/proposals/presentation/own_proposals_screen.dart';
 import '../../features/proposals/presentation/proposal_editor_screen.dart';
+import '../../features/proposals/domain/proposal_models.dart';
 import '../../features/proposals/presentation/proposal_needs_screen.dart';
 import '../../features/proposals/presentation/proposal_creation_choice.dart';
 import '../../features/proposals/presentation/public_proposals_screen.dart';
@@ -998,6 +999,10 @@ RoutingConfig _routingConfig(
                           child: ProposalEditorScreen(
                             proposalId: state.pathParameters['id'],
                             returnToHub: state.extra == DraftEditorOrigin.hub,
+                            readObserver:
+                                state.extra is ProposalEditorReadObserver
+                                ? state.extra! as ProposalEditorReadObserver
+                                : null,
                           ),
                         ),
                       ),

@@ -584,7 +584,10 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                     ),
                     Text(l10n.proposalSkillsHint),
                     const SizedBox(height: AppSpacing.small),
-                    ProposalSkillRequirements(skills: detail.summary.skills),
+                    ProposalSkillRequirements(
+                      skills: detail.summary.skills,
+                      multiline: true,
+                    ),
                   ],
                   ProjectResourceNeedsSection(
                     key: const Key('tutorial-project-needs'),

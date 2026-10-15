@@ -637,6 +637,7 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
         phase: ProposalEditorPhase.ready,
         expectedCreatorId: expectedCreatorId,
         proposal: proposal,
+        readOutcome: ProposalEditorReadOutcome.loaded,
         categories: List.unmodifiable(
           results[0] as List<ProposalSkillCategory>,
         ),
@@ -653,6 +654,11 @@ class ProposalEditorController extends Notifier<ProposalEditorState> {
           proposal: state.proposal,
           categories: state.categories,
           failure: failure,
+          readOutcome:
+              error is ProposalNotFoundException ||
+                  (error is PostgrestException && error.code == '42501')
+              ? ProposalEditorReadOutcome.unavailable
+              : ProposalEditorReadOutcome.failed,
         );
       }
     }
