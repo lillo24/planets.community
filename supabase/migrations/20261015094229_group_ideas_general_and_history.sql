@@ -15,6 +15,7 @@ update private.group_discussions r set last_activity_at=coalesce((select max(m.c
 create unique index group_discussion_one_general on private.group_discussions(group_id) where kind='general';
 alter table private.group_discussions add constraint group_discussion_general_shape check(kind<>'general' or (visibility='group' and not archived and frozen_at is null));
 alter table private.group_discussion_admissions add column end_sequence bigint,add column end_snapshot jsonb;
+create index group_discussion_actor_history on private.group_discussion_admissions(profile_id,room_id,end_sequence desc);
 -- Old exited episodes did not retain a safe sequence boundary. Conservatively
 -- grant zero history for those historical rows rather than inventing a frontier.
 update private.group_discussion_admissions a set end_sequence=0,end_snapshot=jsonb_build_object('title',r.title,'purpose','','visibility','invitation','group_name',g.name,'version',r.version,'archived',r.archived,'frozen',false,'created_at',r.created_at)
@@ -28,6 +29,7 @@ create table private.group_discussion_views (
 );
 create unique index group_discussion_current_view on private.group_discussion_views(room_id,profile_id,access_kind) where ended_at is null;
 create index group_discussion_actor_views on private.group_discussion_views(profile_id,room_id);
+create index group_discussion_room_views on private.group_discussion_views(room_id,profile_id);
 create table private.group_discussion_preferences (
   room_id uuid not null references private.group_discussions(id),profile_id uuid not null,muted boolean not null default false,
   hidden boolean not null default false,primary key(room_id,profile_id)
@@ -42,7 +44,9 @@ create table private.group_discussion_events (
 );
 create unique index group_discussion_event_once on private.group_discussion_events(room_id,event_kind,object_id,coalesce(target_id,'00000000-0000-0000-0000-000000000000'::uuid));
 create index group_discussion_events_page on private.group_discussion_events(created_at desc,id desc);
+create index group_discussion_events_room_page on private.group_discussion_events(room_id,created_at desc,id desc);
 create table private.group_discussion_notice_reads(profile_id uuid not null,event_id uuid not null references private.group_discussion_events(id),primary key(profile_id,event_id));
+create index group_discussion_notice_reads_event on private.group_discussion_notice_reads(event_id);
 create trigger group_discussion_room_provenance before update on private.group_discussions for each row
 execute function private.protect_group_relationship_provenance('title','archived','version','last_sequence','purpose','visibility','frozen_at','last_activity_at','invitation_link_version');
 create trigger group_discussion_admission_provenance before update on private.group_discussion_admissions for each row
