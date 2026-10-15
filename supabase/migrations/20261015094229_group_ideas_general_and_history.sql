@@ -17,7 +17,7 @@ alter table private.group_discussions add constraint group_discussion_general_sh
 alter table private.group_discussion_admissions add column end_sequence bigint,add column end_snapshot jsonb;
 -- Old exited episodes did not retain a safe sequence boundary. Conservatively
 -- grant zero history for those historical rows rather than inventing a frontier.
-update private.group_discussion_admissions a set end_sequence=0,end_snapshot=jsonb_build_object('title',r.title,'purpose','','group_name',g.name,'version',r.version,'archived',r.archived,'created_at',r.created_at)
+update private.group_discussion_admissions a set end_sequence=0,end_snapshot=jsonb_build_object('title',r.title,'purpose','','visibility','invitation','group_name',g.name,'version',r.version,'archived',r.archived,'frozen',false,'created_at',r.created_at)
 from private.group_discussions r join private.community_groups g on g.id=r.group_id where a.room_id=r.id and a.ended_at is not null;
 alter table private.group_discussion_invitations alter column inviter_admission_id drop not null;
 create table private.group_discussion_views (
@@ -86,7 +86,7 @@ begin if access_id is null then raise sqlstate '42501' using message='The discus
 $$;
 create function private.group_discussion_snapshot(p_room uuid) returns jsonb
 language sql stable security definer set search_path='' as $$
- select jsonb_build_object('title',r.title,'purpose',r.purpose,'visibility',r.visibility,'group_name',g.name,'version',r.version,'archived',r.archived,'created_at',r.created_at)
+ select jsonb_build_object('title',r.title,'purpose',r.purpose,'visibility',r.visibility,'group_name',g.name,'version',r.version,'archived',r.archived,'frozen',r.frozen_at is not null,'created_at',r.created_at)
  from private.group_discussions r join private.community_groups g on g.id=r.group_id where r.id=p_room;
 $$;
 create function private.group_discussion_history_frontier(p_room uuid,p_actor uuid) returns bigint
@@ -162,7 +162,7 @@ begin
   'can_send',current_read and not r.archived and r.frozen_at is null,'can_manage',manager and r.frozen_at is null,
   'can_invite',current_read and not r.archived and r.frozen_at is null and r.kind='idea' and (manager or r.visibility='group' and joined is not null),
   'can_read_links',current_read,'can_publish',manager and r.kind='idea' and not r.archived and r.frozen_at is null and coalesce(private.group_authority_role(r.group_id,p_actor) in ('creator','co_creator'),false),
-  'frozen',case when historical then true else r.frozen_at is not null end,'muted',coalesce(prefs.muted,false),'manually_hidden',coalesce(prefs.hidden,false),
+  'frozen',case when historical then coalesce((snapshot->>'frozen')::boolean,false) else r.frozen_at is not null end,'muted',coalesce(prefs.muted,false),'manually_hidden',coalesce(prefs.hidden,false),
   'automatically_hidden',r.kind='idea' and not historical and r.last_activity_at<=statement_timestamp()-interval '7 days',
   'invitation_link_version',case when historical then 1 else r.invitation_link_version end,
   'unread_count',case when current_read then private.group_discussion_unread_count(p_room,p_actor) else 0 end,
@@ -292,6 +292,11 @@ begin
  if new.publication_state='published' and not new.directory_suppressed and private.group_has_accountable_identity(new.id) then
   insert into private.group_discussions(group_id,creator_id,title,kind,visibility)
    values(new.id,new.original_actor_id,'General','general','group') on conflict(group_id) where kind='general' do nothing;
+  insert into private.group_discussion_views(room_id,profile_id,access_kind,read_sequence,observed_sequence)
+   select r.id,m.profile_id,'general',r.last_sequence,0 from private.group_discussions r
+   join private.community_group_managers m on m.group_id=r.group_id
+   where r.group_id=new.id and r.kind='general' and m.profile_id is not null
+   on conflict(room_id,profile_id,access_kind) where ended_at is null do nothing;
  end if; return new;
 end; $$;
 create trigger community_groups_ensure_general after insert or update of publication_state,directory_suppressed on private.community_groups
@@ -562,6 +567,9 @@ begin
  return jsonb_build_object('total',(base->>'total')::bigint+rooms,'private',(base->>'private')::bigint,'groups',(base->>'groups')::bigint+rooms);
 end; $$;
 
+-- Conversion's later migration replaces this fail-closed recipient seam.
+create function private.group_discussion_project_invite_recipient(p_project uuid,p_actor uuid) returns boolean
+language sql stable security definer set search_path='' as $$select false;$$;
 create function private.group_discussion_notice_available(p_event uuid,p_actor uuid) returns boolean
 language sql stable security definer set search_path='' as $$
  select coalesce((select e.actor_id<>p_actor and private.group_discussion_person_current(r.group_id,p_actor)
@@ -578,7 +586,7 @@ language sql stable security definer set search_path='' as $$
     or exists(select 1 from private.group_discussion_views v where v.id=private.group_discussion_current_access(r.id,p_actor) and v.created_at<=e.created_at))
   when 'conversion_proposed' then private.group_authority_role(r.group_id,p_actor) is not null
   when 'converted' then private.group_discussion_can_read_current(r.id,p_actor)
-  when 'project_invitation' then e.target_id=p_actor and private.group_discussion_can_read_current(r.id,p_actor)
+  when 'project_invitation' then private.group_discussion_project_invite_recipient(e.object_id,p_actor) and private.group_discussion_can_read_current(r.id,p_actor)
   else false end
  from private.group_discussion_events e join private.group_discussions r on r.id=e.room_id where e.id=p_event),false);
 $$;

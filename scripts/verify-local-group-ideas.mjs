@@ -528,6 +528,71 @@ try {
     2,
     "Frozen source preserves original planning history",
   );
+  // A concrete membership episode ending must not cancel an independent role,
+  // and role loss must not cancel a surviving independent Group membership.
+  const beforeOverlap = (await get(carlo, idea)).admission_id;
+  const [overlapOffer] = await rpc(alice, "create_group_authority_invitation", {
+    ...command(alice),
+    p_group_id: group,
+    p_role: "co_organizer",
+  });
+  await rpc(carlo, "accept_group_authority_invitation", {
+    ...command(carlo),
+    p_token: overlapOffer.invite_token,
+  });
+  await rpc(carlo, "leave_group", {
+    ...command(carlo),
+    p_membership_id: memberships.get(carlo.id).relationship_id,
+  });
+  equal(
+    (await get(carlo, idea)).admission_id,
+    beforeOverlap,
+    "Ending membership preserves an independently supported room admission",
+  );
+  const [newMembership] = await rpc(
+    carlo,
+    "accept_group_participant_invitation",
+    {
+      ...command(carlo),
+      p_token: sharing.invite_token,
+    },
+  );
+  const [overlapRole] = await rpc(carlo, "get_own_group_role", {
+    ...expected(carlo),
+    p_group_id: group,
+  });
+  await rpc(alice, "revoke_group_delegate", {
+    ...command(alice),
+    p_delegate_id: overlapRole.delegate_id,
+  });
+  equal(
+    (await get(carlo, idea)).admission_id,
+    beforeOverlap,
+    "Ending a role preserves an independently supported room admission",
+  );
+  await rpc(carlo, "leave_group", {
+    ...command(carlo),
+    p_membership_id: newMembership.relationship_id,
+  });
+  equal(
+    (await get(carlo, idea)).access,
+    "former",
+    "Ending the final Group right closes current room access",
+  );
+  equal(
+    await notices(carlo),
+    [],
+    "Queued source notices reauthorize after Group exit",
+  );
+  await denied(carlo, "list_group_discussion_people", {
+    ...expected(carlo),
+    p_room_id: idea,
+  });
+  equal(
+    (await history(carlo, idea)).items.length > 0,
+    true,
+    "Former planner history remains readable after Group exit",
+  );
   console.log(`Group Ideas real Auth verifier passed: ${checks} assertions.`);
 } finally {
   await sql.end();
