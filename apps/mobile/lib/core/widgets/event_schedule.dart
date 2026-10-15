@@ -7,11 +7,20 @@ import '../time/event_time.dart';
 
 /// Canonical public instants only; absence never borrows tentative logistics.
 class EventSchedule extends StatelessWidget {
-  const EventSchedule({this.startsAt, this.endsAt, this.timeZone, super.key});
+  const EventSchedule({
+    this.startsAt,
+    this.endsAt,
+    this.timeZone,
+    this.showIcon = true,
+    super.key,
+  });
 
   final DateTime? startsAt;
   final DateTime? endsAt;
   final String? timeZone;
+
+  /// False when the enclosing section heading already supplies the calendar.
+  final bool showIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +30,10 @@ class EventSchedule extends StatelessWidget {
     final zone = timeZone;
     final theme = Theme.of(context);
     if (start == null || end == null || zone == null) {
-      return ScheduleSurface(child: Text(l.proposalDateUndecided));
+      return ScheduleSurface(
+        showIcon: showIcon,
+        child: Text(l.proposalDateUndecided),
+      );
     }
     final locale = Localizations.localeOf(context).toLanguageTag();
     final sameDay = eventLocalDate(start, zone) == eventLocalDate(end, zone);
@@ -43,6 +55,7 @@ class EventSchedule extends StatelessWidget {
       ],
     );
     return ScheduleSurface(
+      showIcon: showIcon,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -67,8 +80,9 @@ class EventSchedule extends StatelessWidget {
 }
 
 class ScheduleSurface extends StatelessWidget {
-  const ScheduleSurface({required this.child, super.key});
+  const ScheduleSurface({required this.child, this.showIcon = true, super.key});
   final Widget child;
+  final bool showIcon;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -81,8 +95,10 @@ class ScheduleSurface extends StatelessWidget {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.calendar_today_outlined, size: 20),
-        const SizedBox(width: AppSpacing.medium),
+        if (showIcon) ...[
+          const Icon(Icons.calendar_today_outlined, size: 20),
+          const SizedBox(width: AppSpacing.medium),
+        ],
         Expanded(child: child),
       ],
     ),

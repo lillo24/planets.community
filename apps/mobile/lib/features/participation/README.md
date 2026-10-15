@@ -1,5 +1,10 @@
 # Project participation
 
+Deferred reads scheduled by the lazy public detail section check `context.mounted`
+before using widget `ref`. UIPOLISH03's section-height/scroll matrix reproduced a
+widget leaving the viewport before that callback. Role, protected-meeting and
+participation rules remain unchanged.
+
 This feature owns the Flutter participation experience shared by one-time
 Projects (`proposals`) and recurring Projects / Tavoli
 (`recurring_activities`). The concrete discovery and content models stay in

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/detail_section_header.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../application/project_resource_needs_controllers.dart';
 
@@ -10,11 +11,16 @@ class ProjectResourceNeedsSection extends ConsumerStatefulWidget {
     required this.projectId,
     this.showHeading = true,
     this.showEmpty = false,
+    this.headingAction,
     super.key,
   });
 
   final String projectId;
   final bool showHeading, showEmpty;
+
+  /// Shown with the heading, including an otherwise hidden empty owner section.
+  /// The caller retains ownership of authorization and navigation.
+  final Widget? headingAction;
 
   @override
   ConsumerState<ProjectResourceNeedsSection> createState() =>
@@ -44,7 +50,8 @@ class _ProjectResourceNeedsSectionState
       publicProjectResourceNeedsProvider(widget.projectId),
     );
     if (state.phase == PublicProjectResourceNeedsPhase.ready &&
-        state.items.isEmpty) {
+        state.items.isEmpty &&
+        (!widget.showHeading || widget.headingAction == null)) {
       return widget.showEmpty
           ? Text(l10n.projectResourcesEmptyTitle)
           : const SizedBox.shrink();
@@ -57,11 +64,12 @@ class _ProjectResourceNeedsSectionState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.showHeading)
-            Text(
-              l10n.projectResourcesNeededTitle,
-              style: Theme.of(context).textTheme.titleLarge,
+            DetailSectionHeader(
+              icon: Icons.inventory_2_outlined,
+              title: l10n.detailMaterialsTitle,
+              action: widget.headingAction,
             ),
-          if (widget.showHeading) Text(l10n.projectResourcesHint),
+          if (widget.showHeading) Text(l10n.detailMaterialsHint),
           const SizedBox(height: AppSpacing.small),
           if (state.phase == PublicProjectResourceNeedsPhase.loading &&
               state.items.isEmpty)
@@ -79,27 +87,37 @@ class _ProjectResourceNeedsSectionState
               state.items.isEmpty)
             _ResourceNeedsFailure(onRetry: _load)
           else ...[
-            Wrap(
-              spacing: AppSpacing.small,
-              runSpacing: AppSpacing.small,
-              children: [
-                for (final need in state.items)
-                  Chip(
-                    key: Key('public-resource-need-${need.id}'),
-                    avatar: const Icon(Icons.inventory_2_outlined, size: 18),
-                    label: Text(need.title),
-                  ),
-              ],
-            ),
             for (final need in state.items)
-              if (need.details case final details?)
-                Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.xSmall),
-                  child: Text(
-                    '${need.title}: $details',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+              Padding(
+                key: Key('public-resource-need-${need.id}'),
+                padding: const EdgeInsets.only(bottom: AppSpacing.medium),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.inventory_2_outlined, size: 20),
+                    const SizedBox(width: AppSpacing.small),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            need.title,
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          if (need.details case final details?) ...[
+                            const SizedBox(height: AppSpacing.xSmall),
+                            Text(details),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+            if (widget.showEmpty &&
+                state.items.isEmpty &&
+                state.failure == null)
+              Text(l10n.projectResourcesEmptyTitle),
             if (state.failure != null) ...[
               const SizedBox(height: AppSpacing.small),
               _ResourceNeedsFailure(onRetry: _load),

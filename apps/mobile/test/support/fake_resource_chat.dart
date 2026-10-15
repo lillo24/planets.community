@@ -183,6 +183,8 @@ ResourceChatSummary resourceChatSummaryFixture({
   bool? hasSendEntitlement,
   String? lastMessageId = '00000000-0000-4000-8000-000000000901',
   String listingTitle = 'Garden tools',
+  String ownerDisplayName = 'Casey',
+  String requesterDisplayName = 'Jordan',
 }) {
   final closedAt = lifecycle.isClosed ? DateTime.utc(2026, 9, 20, 12) : null;
   final messageAt = lastMessageId == null
@@ -196,9 +198,9 @@ ResourceChatSummary resourceChatSummaryFixture({
     listingTitle: listingTitle,
     viewerRole: viewerRole,
     ownerProfileId: '00000000-0000-4000-8000-000000000101',
-    ownerDisplayName: 'Casey',
+    ownerDisplayName: ownerDisplayName,
     requesterProfileId: '00000000-0000-4000-8000-000000000102',
-    requesterDisplayName: 'Jordan',
+    requesterDisplayName: requesterDisplayName,
     agreementLifecycle: lifecycle,
     coordinationClosedAt: closedAt,
     hasSendEntitlement: hasSendEntitlement ?? !lifecycle.isClosed,

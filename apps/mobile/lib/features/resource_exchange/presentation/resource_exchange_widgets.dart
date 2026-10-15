@@ -98,78 +98,67 @@ class ResourceExchangeAgreementSection extends ConsumerWidget {
       _ => l10n.resourceExchangeSetTerms,
     };
 
-    return Card(
+    return Container(
       key: const Key('resource-exchange-card'),
-      margin: const EdgeInsets.fromLTRB(
-        AppSpacing.medium,
-        AppSpacing.small,
-        AppSpacing.medium,
-        0,
-      ),
+      width: double.infinity,
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.medium),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.medium,
+          vertical: AppSpacing.small,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l10n.resourceExchangeAgreementTitle,
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: AppSpacing.small),
+                  child: Icon(Icons.handshake_outlined, size: 20),
+                ),
+                const SizedBox(width: AppSpacing.small),
+                Expanded(
+                  child: Semantics(
+                    liveRegion: pending != null && !pendingIsMine,
+                    label: l10n.resourceExchangeAgreementTitle,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.small),
+                      child: Text(
+                        status,
+                        key: const Key('resource-exchange-status'),
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  key: const Key('resource-exchange-more'),
+                  tooltip: l10n.resourceExchangeMoreActions,
+                  onSelected: (action) {
+                    if (action == 'history') {
+                      _openHistory(context, ref);
+                    } else if (action == 'cancel') {
+                      _confirmCancellation(context, ref);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      key: const Key('resource-exchange-history'),
+                      value: 'history',
+                      child: Text(l10n.resourceExchangeHistoryAction),
+                    ),
+                    if (lifecycle.canNegotiate)
+                      PopupMenuItem(
+                        key: const Key('resource-exchange-cancel'),
+                        value: 'cancel',
+                        enabled: !state.isActing,
+                        child: Text(l10n.resourceExchangeCancelCoordination),
+                      ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(height: AppSpacing.xSmall),
-            Text(status, key: const Key('resource-exchange-status')),
-            if (current != null) ...[
-              const SizedBox(height: AppSpacing.xSmall),
-              Text(_compactTermsLabel(l10n, current)),
-            ],
-            if (lifecycle == ResourceExchangeLifecycle.inProgress) ...[
-              const SizedBox(height: AppSpacing.xSmall),
-              Text(l10n.resourceExchangeHandoffLocked),
-            ],
-            if (current != null &&
-                (lifecycle == ResourceExchangeLifecycle.agreed ||
-                    lifecycle == ResourceExchangeLifecycle.inProgress ||
-                    lifecycle == ResourceExchangeLifecycle.completed)) ...[
-              const SizedBox(height: AppSpacing.small),
-              OutlinedButton.icon(
-                key: const Key('resource-exchange-progress-action'),
-                onPressed: state.eventLoadFailure
-                    ? null
-                    : () => _openProgress(context),
-                icon: const Icon(Icons.checklist),
-                label: Text(l10n.resourceExchangeProgressTitle),
-              ),
-            ],
-            if (state.eventLoadFailure) ...[
-              const SizedBox(height: AppSpacing.small),
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  l10n.resourceExchangeTimelineWarning,
-                  key: const Key('resource-exchange-timeline-warning'),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            ] else if (state.failure case final failure?) ...[
-              const SizedBox(height: AppSpacing.small),
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  resourceExchangeFailureMessage(l10n, failure),
-                  key: const Key('resource-exchange-inline-error'),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            ] else if (state.hasRefreshWarning) ...[
-              const SizedBox(height: AppSpacing.small),
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  l10n.resourceExchangeRefreshWarning,
-                  key: const Key('resource-exchange-refresh-warning'),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            ],
             const SizedBox(height: AppSpacing.small),
             Wrap(
               spacing: AppSpacing.small,
@@ -182,22 +171,28 @@ class ResourceExchangeAgreementSection extends ConsumerWidget {
                       : () => _openPrimary(context, ref, snapshot),
                   child: Text(actionLabel),
                 ),
-                OutlinedButton.icon(
-                  key: const Key('resource-exchange-history'),
-                  onPressed: () => _openHistory(context, ref),
-                  icon: const Icon(Icons.history),
-                  label: Text(l10n.resourceExchangeHistoryAction),
-                ),
-                if (lifecycle.canNegotiate)
-                  TextButton(
-                    key: const Key('resource-exchange-cancel'),
-                    onPressed: state.isActing
+                if (current != null &&
+                    (lifecycle == ResourceExchangeLifecycle.agreed ||
+                        lifecycle == ResourceExchangeLifecycle.inProgress ||
+                        lifecycle == ResourceExchangeLifecycle.completed))
+                  TextButton.icon(
+                    key: const Key('resource-exchange-progress-action'),
+                    onPressed: state.eventLoadFailure
                         ? null
-                        : () => _confirmCancellation(context, ref),
-                    child: Text(l10n.resourceExchangeCancelCoordination),
+                        : () => _openProgress(context),
+                    icon: const Icon(Icons.checklist),
+                    label: Text(l10n.resourceExchangeProgressTitle),
                   ),
               ],
             ),
+            if (current != null) ...[
+              const SizedBox(height: AppSpacing.xSmall),
+              Text(_compactTermsLabel(l10n, current)),
+            ],
+            if (lifecycle == ResourceExchangeLifecycle.inProgress) ...[
+              const SizedBox(height: AppSpacing.xSmall),
+              Text(l10n.resourceExchangeHandoffLocked),
+            ],
           ],
         ),
       ),
@@ -381,6 +376,45 @@ class ResourceExchangeAgreementSection extends ConsumerWidget {
     if (confirmed == true) {
       await ref.read(resourceExchangeProvider.notifier).cancelAgreement();
     }
+  }
+}
+
+/// Canonical agreement warnings stay above the chat summary and its actions.
+/// Keep the established timeline/failure/refresh precedence and safe copy.
+class ResourceExchangeFeedback extends ConsumerWidget {
+  const ResourceExchangeFeedback({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(resourceExchangeProvider);
+    if (state.snapshot == null) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context);
+    final (key, message) = state.eventLoadFailure
+        ? (
+            'resource-exchange-timeline-warning',
+            l10n.resourceExchangeTimelineWarning,
+          )
+        : state.failure != null
+        ? (
+            'resource-exchange-inline-error',
+            resourceExchangeFailureMessage(l10n, state.failure!),
+          )
+        : state.hasRefreshWarning
+        ? (
+            'resource-exchange-refresh-warning',
+            l10n.resourceExchangeRefreshWarning,
+          )
+        : (null, null);
+    if (message == null) return const SizedBox.shrink();
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        width: double.infinity,
+        color: Theme.of(context).colorScheme.errorContainer,
+        padding: const EdgeInsets.all(AppSpacing.small),
+        child: Text(message, key: Key(key!)),
+      ),
+    );
   }
 }
 
