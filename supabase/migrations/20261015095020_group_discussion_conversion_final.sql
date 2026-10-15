@@ -4,7 +4,7 @@ create table private.group_discussion_conversions (
   room_id uuid primary key references private.group_discussions(id),
   proposed_by uuid not null,
   title text not null check(title=btrim(title) and char_length(title) between 1 and 120),
-  summary text not null check(summary=btrim(summary) and char_length(summary) between 1 and 280),
+  summary text not null check(summary=btrim(summary) and char_length(summary) between 10 and 240),
   version bigint not null default 1 check(version>0),
   review_status text not null default 'pending' check(review_status in ('pending','endorsed','changes_requested')),
   reviewed_by uuid,
@@ -28,6 +28,7 @@ create table private.group_discussion_project_invitations (
   unique(room_id,recipient_id)
 );
 create index discussion_project_invitation_actor_page on private.group_discussion_project_invitations(recipient_id,created_at desc,id desc);
+create index discussion_conversion_admission_audience on private.group_discussion_admissions(profile_id,room_id,accepted_at);
 create table private.group_discussion_conversion_receipts (
   actor_id uuid not null, request_id uuid not null, intent jsonb not null,
   result jsonb not null, primary key(actor_id,request_id)
@@ -94,7 +95,7 @@ declare actor uuid:=private.require_group_actor(p_expected_profile_id); room pri
   intent jsonb:=jsonb_build_array('propose',p_room_id,p_title,p_summary,p_expected_version); result jsonb;
 begin
   if p_client_request_id is null or p_title is null or p_title<>btrim(p_title) or char_length(p_title) not between 1 and 120
-    or p_summary is null or p_summary<>btrim(p_summary) or char_length(p_summary) not between 1 and 280 then
+    or p_summary is null or p_summary<>btrim(p_summary) or char_length(p_summary) not between 10 and 240 then
     raise sqlstate '22023' using message='A reviewed title and summary are required.'; end if;
   perform pg_advisory_xact_lock(hashtextextended('discussion-conversion:'||actor::text||':'||p_client_request_id::text,0));
   perform 1 from private.community_groups where id=(select group_id from private.group_discussions where id=p_room_id) for update;
@@ -201,7 +202,7 @@ end; $$;
 create function private.freeze_group_discussion_publication() returns trigger
 language plpgsql security definer set search_path='' as $$
 declare conversion private.group_discussion_conversions%rowtype; room private.group_discussions%rowtype;
-  project public.projects%rowtype; recipient record;
+  project public.projects%rowtype;
 begin
   if new.published_at is null or (tg_op='UPDATE' and old.published_at is not null) then return new; end if;
   select * into conversion from private.group_discussion_conversions where project_id=new.id;
@@ -218,34 +219,53 @@ begin
   perform private.require_project_group_representation(conversion.publisher_id,room.group_id);
   -- The marker has its own committed ordinal, preventing a person who exited
   -- immediately before conversion from receiving a later origin association.
-  update private.group_discussions set frozen_at=new.published_at,version=version+1,last_sequence=last_sequence+1 where id=room.id returning * into room;
+  update private.group_discussions set frozen_at=clock_timestamp(),version=version+1,last_sequence=last_sequence+1 where id=room.id returning * into room;
   update private.group_discussion_conversions set published_at=new.published_at,frozen_sequence=room.last_sequence,version=version+1 where room_id=room.id;
-  -- A stable durable audience of current explicit planners, not Group people or
-  -- oversight-only managers. No Project membership, capacity or role is written.
-  for recipient in insert into private.group_discussion_project_invitations(room_id,project_id,recipient_id,publisher_id)
-    select room.id,new.id,a.profile_id,conversion.publisher_id from private.group_discussion_admissions a
-      where a.room_id=room.id and a.id=private.group_discussion_admission(room.id,a.profile_id)
-        and a.profile_id<>conversion.publisher_id
-        and not private.profile_has_current_project_membership(new.id,a.profile_id)
-        and not private.has_active_user_block_between(conversion.publisher_id,a.profile_id)
-      on conflict(room_id,recipient_id) do nothing returning id,recipient_id
-  loop
-    perform private.emit_group_discussion_event(room.id,'project_invitation',conversion.publisher_id,recipient.recipient_id,recipient.id);
-    perform private.group_discussion_signal(recipient.recipient_id);
-  end loop;
+  -- A constant-size durable invitation intent. The frozen room has no later
+  -- ordinary admissions; immutable acceptance and terminal exit instants define
+  -- its original explicit audience. Bounded actor projection below materializes
+  -- invitations without a publication-time Group-sized write or event fanout.
+  perform private.emit_group_discussion_event(room.id,'project_invitation',conversion.publisher_id,null,new.id);
   perform private.emit_group_discussion_event(room.id,'converted',conversion.publisher_id,null,new.id);
   return new;
 end; $$;
 create trigger zzz_proposals_freeze_discussion_publication after insert or update on public.proposals
   for each row execute function private.freeze_group_discussion_publication();
 
+create or replace function private.group_discussion_project_invite_recipient(p_project uuid,p_actor uuid) returns boolean
+language sql stable security definer set search_path='' as $$
+  select exists(select 1 from private.group_discussion_conversions c join private.group_discussions r on r.id=c.room_id
+    where c.project_id=p_project and c.published_at is not null and c.publisher_id<>p_actor
+      and exists(select 1 from auth.users u join public.profiles p on p.id=u.id where u.id=p_actor)
+      and exists(select 1 from private.group_discussion_admissions a where a.room_id=r.id and a.profile_id=p_actor
+        and a.accepted_at<=r.frozen_at and (a.ended_at is null or a.ended_at>r.frozen_at))
+      and private.is_project_publicly_viewable(p_project)
+      and not private.profile_has_current_project_membership(p_project,p_actor)
+      and not private.has_active_user_block_between(c.publisher_id,p_actor)
+      and not exists(select 1 from private.group_discussion_project_invitations i where i.room_id=r.id and i.recipient_id=p_actor and i.status='declined'));
+$$;
+
+-- Each actor read projects at most 50 outstanding intents, in original public
+-- publication order. More pages continue the same durable source intent; an
+-- ignored/declined invite is never duplicated, and Group exit grants no context.
+create function private.project_discussion_invitations_for_actor(p_actor uuid) returns void
+language plpgsql security definer set search_path='' as $$
+begin
+  insert into private.group_discussion_project_invitations(id,room_id,project_id,recipient_id,publisher_id,created_at)
+    select md5(c.room_id::text||':'||p_actor::text)::uuid,c.room_id,c.project_id,p_actor,c.publisher_id,c.published_at from private.group_discussion_conversions c
+    where c.published_at is not null and private.group_discussion_project_invite_recipient(c.project_id,p_actor)
+      and not exists(select 1 from private.group_discussion_project_invitations i where i.room_id=c.room_id and i.recipient_id=p_actor)
+    order by c.published_at desc,md5(c.room_id::text||':'||p_actor::text)::uuid desc limit 50 on conflict(room_id,recipient_id) do nothing;
+end; $$;
+
 -- This public-Project invitation projection deliberately contains no source
 -- room identity/title/URL/roster. Group exit cannot turn it into a private route.
 create function public.list_my_discussion_project_invitations(p_expected_profile_id uuid,p_limit integer default 25,p_before_created_at timestamptz default null,p_before_id uuid default null) returns jsonb
-language plpgsql stable security definer set search_path='' as $$
+language plpgsql security definer set search_path='' as $$
 declare actor uuid:=private.require_group_identity(p_expected_profile_id); result jsonb;
 begin
   perform private.group_discussion_page(p_limit,p_before_created_at,p_before_id);
+  perform private.project_discussion_invitations_for_actor(actor);
   select coalesce(jsonb_agg(to_jsonb(q) order by q.created_at desc,q.invitation_id desc),'[]'::jsonb) into result from (
     select i.id invitation_id,i.project_id,i.status,i.created_at,p.title,p.summary
     from private.group_discussion_project_invitations i join public.proposals p on p.id=i.project_id
@@ -319,7 +339,7 @@ begin
   return destination;
 end; $$;
 
-revoke all on function private.protect_discussion_conversion(),private.freeze_group_discussion_publication() from public,anon,authenticated,service_role;
+revoke all on function private.protect_discussion_conversion(),private.freeze_group_discussion_publication(),private.group_discussion_project_invite_recipient(uuid,uuid),private.project_discussion_invitations_for_actor(uuid) from public,anon,authenticated,service_role;
 revoke all on function public.get_group_discussion_conversion(uuid,uuid),public.request_group_discussion_publication(uuid,uuid,uuid,text,text,bigint),public.review_group_discussion_publication(uuid,uuid,uuid,bigint,boolean),public.create_group_discussion_project_draft(uuid,uuid,uuid,bigint),public.list_my_discussion_project_invitations(uuid,integer,timestamptz,uuid),public.respond_discussion_project_invitation(uuid,uuid,text),public.get_project_discussion_origin(uuid,uuid),public.share_discussion_link_to_project(uuid,uuid,uuid,uuid,uuid,uuid,bigint) from public,anon,authenticated,service_role;
 grant execute on function public.get_group_discussion_conversion(uuid,uuid),public.request_group_discussion_publication(uuid,uuid,uuid,text,text,bigint),public.review_group_discussion_publication(uuid,uuid,uuid,bigint,boolean),public.create_group_discussion_project_draft(uuid,uuid,uuid,bigint),public.list_my_discussion_project_invitations(uuid,integer,timestamptz,uuid),public.respond_discussion_project_invitation(uuid,uuid,text),public.get_project_discussion_origin(uuid,uuid),public.share_discussion_link_to_project(uuid,uuid,uuid,uuid,uuid,uuid,bigint) to authenticated;
 comment on table private.group_discussion_conversions is 'Private stable planning origin. A bound draft belongs solely to its actual publisher; role loss never transfers it. Publication freezes source ordinal transactionally.';

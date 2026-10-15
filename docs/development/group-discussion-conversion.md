@@ -34,10 +34,15 @@ messages/links. Source sends and normal admission then stop through C core's
 `frozen_at` checks. A person who exited immediately before the marker does not
 receive the later association through the retained-history projection.
 
-Successful publication inserts durable, deduplicated Project invitations for
-eligible current explicit planners, excluding the actual publisher, already
-accepted participants and blocked publisher/recipient pairs. Oversight-only
-managers and former-only readers are not enrolled in this audience. These are
+Successful publication records one constant-size invitation event/intent. The
+source freezes under its lock; immutable acceptance and terminal exit times
+identify its exact original explicit planners. Each invitation-list read
+materializes at most 50 outstanding intents for that actor, using deterministic
+source/recipient identities and immutable publication-time ordering. This bounds
+delivery without a Group-sized publication write or event fanout. Eligibility
+excludes the actual publisher, already accepted participants, removed identities
+and blocked publisher/recipient pairs. Oversight-only managers and former-only
+readers are not enrolled in this audience. These are
 invitations to the ordinary Project detail and Join request flow. `opened` means
 only opening the invitation; neither that command nor publication writes a
 Project membership, capacity reservation, delegate role or commitment. A decline
