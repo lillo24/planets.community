@@ -84,10 +84,11 @@ class _InvitationsState extends ConsumerState<DiscussionProjectInvitations> {
           .read(discussionConversionGatewayProvider)
           .respond(widget.actor, item.id, response);
       if (!current || ticket != generation) return;
-      if (project != item.projectId)
+      if (project != item.projectId) {
         throw const FormatException(
           'Mismatched Project invitation destination.',
         );
+      }
       if (response == 'opened') {
         await context.push<Object?>('/proposals/$project');
       } else {
@@ -150,7 +151,7 @@ class _InvitationsState extends ConsumerState<DiscussionProjectInvitations> {
         if (more)
           TextButton(
             onPressed: busy ? null : load,
-            child: Text(l.discussionMore),
+            child: Text(l.discussionLoadMore),
           ),
       ],
     );

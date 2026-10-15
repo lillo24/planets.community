@@ -6,6 +6,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../data/discussion_conversion_gateway.dart';
 import '../domain/discussion_links.dart';
+import '../domain/discussion_models.dart';
 import 'discussion_feedback.dart';
 
 class DiscussionShareLinkButton extends ConsumerStatefulWidget {
@@ -30,24 +31,29 @@ class _ShareLinkState extends ConsumerState<DiscussionShareLinkButton> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.actor != widget.actor ||
         oldWidget.link.id != widget.link.id ||
-        oldWidget.link.admissionId != widget.link.admissionId)
+        oldWidget.link.admissionId != widget.link.admissionId) {
       pending = null;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (ref.watch(authSessionProvider).identity?.id != widget.actor)
+    if (ref.watch(authSessionProvider).identity?.id != widget.actor) {
       return const SizedBox.shrink();
+    }
     final scope = (actor: widget.actor, room: widget.link.roomId),
         l = AppLocalizations.of(context);
     final conversion = ref.watch(discussionConversionProvider(scope));
     return conversion.when(
       loading: () => const SizedBox.shrink(),
-      error: (error, _) => IconButton(
-        icon: const Icon(Icons.refresh),
-        tooltip: l.discussionRetry,
-        onPressed: () => ref.invalidate(discussionConversionProvider(scope)),
-      ),
+      error: (error, _) => discussionFailure(error) == DiscussionFailure.denied
+          ? const SizedBox.shrink()
+          : IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: l.discussionRetry,
+              onPressed: () =>
+                  ref.invalidate(discussionConversionProvider(scope)),
+            ),
       data: (value) => !value.canShareLinks
           ? const SizedBox.shrink()
           : IconButton(
@@ -82,8 +88,9 @@ class _ShareLinkState extends ConsumerState<DiscussionShareLinkButton> {
                         );
                         if (accepted != true ||
                             !current ||
-                            actor != widget.actor)
+                            actor != widget.actor) {
                           return;
+                        }
                         pending = Map.unmodifiable({
                           'p_expected_profile_id': actor,
                           'p_client_request_id': const Uuid().v4(),
@@ -108,13 +115,15 @@ class _ShareLinkState extends ConsumerState<DiscussionShareLinkButton> {
                           );
                         }
                       } catch (e) {
-                        if (current && actor == widget.actor)
+                        if (current && actor == widget.actor) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(discussionErrorText(l, e))),
                           );
+                        }
                       } finally {
-                        if (current && actor == widget.actor)
+                        if (current && actor == widget.actor) {
                           setState(() => busy = false);
+                        }
                       }
                     },
             ),

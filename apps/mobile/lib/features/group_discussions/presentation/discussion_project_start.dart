@@ -38,20 +38,27 @@ class DiscussionProjectStart extends ConsumerWidget {
             final actor = controller.actor;
             if (!await requireGroupPolicy(context, ref, actor) ||
                 !context.mounted ||
-                ref.read(authSessionProvider).identity?.id != actor)
+                ref.read(authSessionProvider).identity?.id != actor) {
               return;
+            }
             final destination = await showDialog<String>(
               context: context,
-              builder: (_) => _ConversionDialog(actor: actor, source: source, controller: controller),
+              builder: (_) => _ConversionDialog(
+                actor: actor,
+                source: source,
+                controller: controller,
+              ),
             );
             if (!context.mounted ||
-                ref.read(authSessionProvider).identity?.id != actor)
+                ref.read(authSessionProvider).identity?.id != actor) {
               return;
+            }
             await controller.refresh();
             if (!context.mounted ||
                 ref.read(authSessionProvider).identity?.id != actor ||
-                destination == null)
+                destination == null) {
               return;
+            }
             await context.push<Object?>(
               destination,
               extra: GroupProjectCreationReturn(
@@ -64,7 +71,11 @@ class DiscussionProjectStart extends ConsumerWidget {
 }
 
 class _ConversionDialog extends ConsumerStatefulWidget {
-  const _ConversionDialog({required this.actor, required this.source, required this.controller});
+  const _ConversionDialog({
+    required this.actor,
+    required this.source,
+    required this.controller,
+  });
   final String actor;
   final DiscussionRoom source;
   final DiscussionChatController controller;
@@ -83,7 +94,8 @@ class _ConversionDialogState extends ConsumerState<_ConversionDialog> {
   ({String name, Map<String, dynamic> params})? pending;
   bool get current =>
       mounted &&
-      !widget.controller.disposed && widget.controller.room?.id == widget.source.id &&
+      !widget.controller.disposed &&
+      widget.controller.room?.id == widget.source.id &&
       ref.read(authSessionProvider).identity?.id == widget.actor &&
       ref.read(authSessionProvider).phase == AuthSessionPhase.ready;
   @override
@@ -94,12 +106,21 @@ class _ConversionDialogState extends ConsumerState<_ConversionDialog> {
     Future.microtask(load);
   }
 
-  Object get scope => (widget.controller.room?.admissionId, widget.controller.room?.canManage, widget.controller.room?.canPublish, widget.controller.room?.version);
+  Object get scope => (
+    widget.controller.room?.admissionId,
+    widget.controller.room?.canManage,
+    widget.controller.room?.canPublish,
+    widget.controller.room?.version,
+  );
   void sourceChanged() {
     if (!mounted || sourceScope == scope) return;
     sourceScope = scope;
     epoch++;
-    setState(() { value = null; error = null; busy = false; });
+    setState(() {
+      value = null;
+      error = null;
+      busy = false;
+    });
     if (current) Future.microtask(load);
   }
 
@@ -161,8 +182,9 @@ class _ConversionDialogState extends ConsumerState<_ConversionDialog> {
       if (!current || ticket != epoch) return;
       pending = null;
       if (captured.name == 'create_group_discussion_project_draft') {
-        if (result is! String)
+        if (result is! String) {
           throw const FormatException('Missing accepted draft.');
+        }
         Navigator.of(context).pop('/proposals/$result/edit');
       } else {
         await load();

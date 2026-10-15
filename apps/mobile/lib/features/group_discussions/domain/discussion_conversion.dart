@@ -69,8 +69,9 @@ class DiscussionProjectInvitation {
     title = groupText(value['title'], 120);
     summary = groupText(value['summary'], 280);
     status = value['status'] as String;
-    if (!{'pending', 'opened'}.contains(status))
+    if (!{'pending', 'opened'}.contains(status)) {
       throw const FormatException('Invalid Project invitation status.');
+    }
     createdAt = groupDate(value['created_at']);
   }
   late final String id, projectId, title, summary, status;

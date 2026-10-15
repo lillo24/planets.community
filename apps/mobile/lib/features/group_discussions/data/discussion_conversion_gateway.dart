@@ -29,8 +29,9 @@ class DiscussionConversionGateway {
       'p_limit': 25,
       ...?cursor,
     });
-    if (result is! List)
+    if (result is! List) {
       throw const FormatException('Invalid Project invitations.');
+    }
     return result.map(DiscussionProjectInvitation.new).toList(growable: false);
   }
 
