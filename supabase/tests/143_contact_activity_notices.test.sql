@@ -1,5 +1,10 @@
 begin;
 select no_plan();
+select ok(to_regprocedure('private.process_notification_outbox_before_contacts(integer)') is null,'canonical worker has no parallel legacy owner');
+select ok(pg_get_functiondef('public.process_notification_outbox_batch(integer)'::regprocedure) like '%private.process_contact_activity_batch%'
+  and pg_get_functiondef('public.process_notification_outbox_batch(integer)'::regprocedure) like '%private.resolve_notification_event(source_event.id)%'
+  and pg_get_functiondef('public.process_notification_outbox_batch(integer)'::regprocedure) like '%limit greatest(0,p_limit-contact_result.processed_count)%',
+  'canonical worker preserves legacy resolution and shares the same bounded budget');
 
 create function pg_temp.person(n integer) returns uuid language sql as $$
  select ('d1430000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid $$;

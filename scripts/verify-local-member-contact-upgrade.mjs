@@ -98,6 +98,8 @@ try {
     );
   const [{ oid }] =
     await sql`select 'private.close_pending_direct_requests_for_user_block(uuid,uuid)'::regprocedure::oid oid`;
+  const [projector] =
+    await sql`select 'public.process_notification_outbox_batch(integer)'::regprocedure::oid oid`;
   command("supabase", ["migration", "up", "--db-url", status.databaseUrl]);
   command("supabase", ["migration", "up", "--db-url", status.databaseUrl]);
   for (const table of tables)
@@ -112,6 +114,13 @@ try {
     after.oid,
     oid,
     "Canonical warmed Block function retains identity.",
+  );
+  const [projectorAfter] =
+    await sql`select 'public.process_notification_outbox_batch(integer)'::regprocedure::oid oid`;
+  assert.equal(
+    projectorAfter.oid,
+    projector.oid,
+    "Canonical warmed notification worker retains identity.",
   );
   const [counts] =
     await sql`select (select count(*) from private.member_contact_pairs)::int pairs,(select count(*) from private.member_contact_requests)::int requests,(select count(*) from private.member_contact_episodes)::int episodes`;

@@ -21,6 +21,13 @@ legacy kinds; a worker must continue until it receives zero. Its total event/pag
 budget is still `p_limit` (1–100). At limits above one, at most half is reserved for
 contacts, leaving room for legacy events. Limit one services contacts first.
 
+`20261015110945_contact_activity_canonical_projector.sql` restores the established
+public projector's original function identity and composes the contact budget
+inside it. The legacy resolver loops, event families, receipt locks, Matching
+conflict semantics and message/activity separation keep their canonical owner.
+No parallel legacy-worker function remains. The populated member upgrade verifier
+checks the warmed worker OID as well as existing data and Block identity.
+
 Contact rows have a unique source-event/recipient identity. Projection retries
 cannot duplicate rows. Projection respects the existing Participation in-app
 preference; it does not enable a new category or provider channel. Coordination
