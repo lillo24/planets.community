@@ -1,7 +1,7 @@
 # PLANETS UXFIX02 — Scambio/Dona Listing Details UI Cleanup
 
 **Plan ID:** `UXFIX02`  
-**Status:** Pending implementation — this file is a Codex handoff prompt, **not evidence that the fix is implemented**.
+**Status:** Implemented in the UXFIX02 change; see the Resource requests README and PR validation. A new app build/release is required for installed versions.
 
 ## Objective
 

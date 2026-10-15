@@ -591,9 +591,36 @@ class _PublicResourceListingDetailScreenState
                     borderRadius: AppRadii.medium,
                   ),
                   const SizedBox(height: AppSpacing.large),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: ResourceListingModeBadge(mode: detail.summary.mode),
+                  Wrap(
+                    key: const Key('resource-detail-badges'),
+                    spacing: AppSpacing.medium,
+                    runSpacing: AppSpacing.small,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      ResourceListingModeBadge(mode: detail.summary.mode),
+                      Semantics(
+                        container: true,
+                        label: l10n.resourceInterestCount(
+                          detail.summary.activeRequestCount,
+                        ),
+                        excludeSemantics: true,
+                        child: Row(
+                          key: const Key('resource-detail-interest-count'),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.people_outline, size: 20),
+                            const SizedBox(width: AppSpacing.small),
+                            Flexible(
+                              child: Text(
+                                l10n.resourceInterestCount(
+                                  detail.summary.activeRequestCount,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: AppSpacing.small),
                   Text(
@@ -659,26 +686,6 @@ class _PublicResourceListingDetailScreenState
                       ],
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.medium),
-                  Semantics(
-                    label: l10n.resourceInterestCount(
-                      detail.summary.activeRequestCount,
-                    ),
-                    child: Row(
-                      key: const Key('resource-detail-interest-count'),
-                      children: [
-                        const Icon(Icons.people_outline, size: 20),
-                        const SizedBox(width: AppSpacing.small),
-                        Expanded(
-                          child: Text(
-                            l10n.resourceInterestCount(
-                              detail.summary.activeRequestCount,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                   if (profileId != null && !isOwner) ...[
                     const SizedBox(height: AppSpacing.large),
                     _ResourceRequestListingActions(
@@ -737,18 +744,6 @@ class _PublicResourceListingDetailScreenState
                       ),
                       icon: const Icon(Icons.front_hand_outlined),
                       label: Text(l10n.resourceSignedOutRequestAction),
-                    ),
-                  ],
-                  if (!isOwner &&
-                      (profileId != null ||
-                          session.phase == AuthSessionPhase.signedOut)) ...[
-                    const SizedBox(height: AppSpacing.small),
-                    Text(
-                      l10n.resourceRequestFlowHelper,
-                      key: const Key('resource-request-flow-helper'),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
                     ),
                   ],
                 ],
@@ -889,34 +884,16 @@ class _ResourceRequestListingActions extends ConsumerWidget {
         label: Text(l10n.resourceRequestAction),
       );
     }
-    final mutation = ref.watch(resourceRequestDetailProvider(active.id));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: ResourceRequestStatusChip(status: active.status),
-        ),
-        const SizedBox(height: AppSpacing.small),
-        if (active.status == ResourceRequestStatus.pending)
-          OutlinedButton.icon(
-            key: const Key('resource-request-inline-withdraw'),
-            onPressed: mutation.isActing
-                ? null
-                : () => ref
-                      .read(resourceRequestDetailProvider(active.id).notifier)
-                      .withdrawFromHistory(
-                        expectedProfileId: expectedProfileId,
-                        request: active,
-                      ),
-            icon: mutation.action == ResourceRequestMutation.withdrawing
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.undo),
-            label: Text(l10n.resourceRequestWithdraw),
+        if (active.status != ResourceRequestStatus.pending) ...[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ResourceRequestStatusChip(status: active.status),
           ),
+          const SizedBox(height: AppSpacing.small),
+        ],
         OutlinedButton.icon(
           key: const Key('resource-request-view'),
           onPressed: () => context.push(resourceRequestMessageRoute(active.id)),

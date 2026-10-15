@@ -6,6 +6,9 @@ import '../../group_projects/data/group_project_gateway.dart';
 import '../../group_projects/presentation/group_project_widgets.dart';
 
 import 'package:flutter/material.dart';
+
+import '../../../core/widgets/compact_skill_preview.dart';
+
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -330,7 +333,15 @@ class _TemplateWorkshopScreenState extends ConsumerState<TemplateWorkshopScreen>
                                                 l.workshopCreatorFallback,
                                           ),
                                   ),
-                                  _TemplateSkills(skills: item.skills),
+                                  if (item.skills.isNotEmpty) ...[
+                                    const SizedBox(height: AppSpacing.small),
+                                    CompactSkillPreview(
+                                      labels: [
+                                        for (final skill in item.skills)
+                                          skill.label,
+                                      ],
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),

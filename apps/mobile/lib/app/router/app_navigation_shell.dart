@@ -17,6 +17,7 @@ import '../../features/settings/application/navigation_preference_controller.dar
 import '../../features/settings/domain/navigation_preference.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'draft_departure_coordinator.dart';
+import '../startup/startup_session_screen.dart';
 
 enum AppBranch { profile, home, browse }
 
@@ -38,6 +39,13 @@ class AppNavigationShell extends ConsumerWidget {
         ? activeMatch.matches.length > 1
         : router.canPop();
     final path = router.routerDelegate.state.uri.path;
+    final phase = ref.watch(authSessionProvider).phase;
+    if (path == '/' &&
+        (phase == AuthSessionPhase.restoring ||
+            phase == AuthSessionPhase.restorationFailed ||
+            phase == AuthSessionPhase.checkingProfile)) {
+      return const StartupSessionScreen();
+    }
     final preference = ref.watch(navigationPreferenceProvider).destination;
     final isMessages = isMessagesPath(path);
     // Cross-branch pushes can keep the originating Navigator's branch index.

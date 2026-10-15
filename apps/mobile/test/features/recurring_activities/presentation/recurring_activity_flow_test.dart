@@ -344,6 +344,10 @@ void main() {
       await tester.tap(find.byKey(const Key('tavolo-card-tavolo-1')));
       await tester.pumpAndSettle();
       expect(find.text('Tavolo details'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.textContaining('0 / 20 participant spots used'),
+        250,
+      );
       expect(
         find.textContaining('0 / 20 participant spots used'),
         findsWidgets,
@@ -366,7 +370,16 @@ void main() {
     'public detail renders sanitized location and event-zone meetings',
     (tester) async {
       final recurring = FakeRecurringActivityGateway()
-        ..publicDetail = publicRecurringDetailFixture();
+        ..publicDetail = publicRecurringDetailFixture(
+          nextOccurrences: [
+            publicRecurringSummaryFixture().nextOccurrence,
+            RecurringActivityOccurrence(
+              startsAt: DateTime.utc(2026, 9, 16, 17),
+              endsAt: DateTime.utc(2026, 9, 16, 18, 30),
+              eventTimezone: 'Europe/Rome',
+            ),
+          ],
+        );
       final photoGateway = FakeProfilePhotoGateway()
         ..projectCreatorPhotos['tavolo-1'] = VisibleProfilePhoto(
           profileId: 'a7100000-0000-4000-8000-000000000001',
@@ -385,6 +398,10 @@ void main() {
         find.byKey(const Key('tavolo-detail-cover-tavolo-1')),
         findsOneWidget,
       );
+      await tester.scrollUntilVisible(find.text('September 9, 2026'), 250);
+      expect(find.text('19:00 – 20:30'), findsWidgets);
+      await tester.scrollUntilVisible(find.text('September 16, 2026'), 250);
+      expect(find.text('September 16, 2026'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.text('Exact location available after joining.'),
         300,
@@ -394,7 +411,6 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('At the long reading-room table'), findsNothing);
-      expect(find.textContaining('Sep 9, 2026 19:00'), findsWidgets);
       await _scrollTo(
         tester,
         find.byKey(const Key('tavoli-organizer-identity')),

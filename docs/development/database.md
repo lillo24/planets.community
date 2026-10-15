@@ -9,6 +9,9 @@ PRs do not authorize main merge or shared activation.
 2026-10-14 hosted contract mismatch, exact pending versions, local rehearsal,
 backup requirements and explicit hosted-write approval gate. Its extra hosted
 automatic-RLS trigger is diagnosed separately from canonical migration history.
+The [hosted deployment record](staging01-hosted-deployment.md) records the owner's
+subsequent no-backup authorization, 96-version parity and recovered public RPCs;
+same-app authenticated acceptance remains an owner/device check.
 
 [GRP01 persistent groups](persistent-groups.md) owns durable group identity,
 personal-manager authority, versioned publication, bounded anonymous reads,

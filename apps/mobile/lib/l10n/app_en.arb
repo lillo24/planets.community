@@ -1,4 +1,7 @@
 {
+  "skillPreviewHidden": "{count} more skills. Open details for the full list.",
+  "@skillPreviewHidden": {"placeholders": {"count": {"type": "int"}}},
+
   "proposalNeedsManageTitle": "Manage skills & resources",
   "proposalResourcesCreatorOnly": "Only the Creator can manage materials, their history and matches. Current public needs appear below.",
   "proposalSkillsSave": "Save skills",

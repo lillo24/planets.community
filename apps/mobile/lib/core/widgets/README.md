@@ -91,3 +91,14 @@ records a separate idle build/layout trace to audit this boundary.
 `pagination_control.dart` renders compact continuation progress, localized explicit Retry, and a deliberate short-content/accessibility fallback. The scroll trigger remains in `user_scroll_pagination.dart`; it never loads from metrics or programmatic movement.
 
 `stable_list_view.dart` owns lazy keyed row reuse and same-account visible-anchor preservation during canonical list reconciliation.
+
+`compact_skill_preview.dart` measures caller-resolved skill labels before the first
+paint. Cards show at most three in one row, reserving the final `...` for hidden
+skills; full names remain accessible and the parent card owns navigation. Detail
+and authoring widgets keep complete names and importance.
+
+`event_schedule.dart` renders canonical public instants in the saved event zone.
+Same-day schedules show one date and a time range; different dates have separate
+Start/End endpoints. Missing dates remain undecided. `core/time/event_time.dart`
+owns compact summaries and displays offsets when DST makes endpoint clocks
+ambiguous. Tavoli reuse the surface without changing recurrence or occurrences.
