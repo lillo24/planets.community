@@ -199,7 +199,9 @@ export async function readModerationCase(
       : Promise.resolve(null),
     detail.targetKind === "group_contact_request" ||
     detail.targetKind === "group_contact_message" ||
-    detail.targetKind === "group_coordination_proposal"
+    detail.targetKind === "group_coordination_proposal" ||
+    detail.targetKind === "member_contact_request" ||
+    detail.targetKind === "member_contact_message"
       ? access.client.rpc("get_moderation_case_group_contact", {
           p_expected_staff_profile_id: access.profileId,
           p_case_id: caseId,
@@ -208,6 +210,13 @@ export async function readModerationCase(
   ]);
   if (contactResult?.error)
     throw new Error("The contact case evidence could not be loaded.");
+  const groupContact = contactResult
+    ? parseGroupContactEvidence(contactResult.data)
+    : null;
+  if (groupContact && groupContact.kind !== detail.targetKind)
+    throw new Error(
+      "The contact case evidence did not match the reported kind.",
+    );
   if (groupResult?.error)
     throw new Error("The group review could not be loaded.");
   if (corroboration?.error) {
@@ -270,9 +279,7 @@ export async function readModerationCase(
     staffRole: access.role,
     detail: {
       ...detail,
-      groupContact: contactResult
-        ? parseGroupContactEvidence(contactResult.data)
-        : null,
+      groupContact,
       group: groupResult ? parseGroupReview(groupResult.data) : null,
       template,
       templateBlueprints,

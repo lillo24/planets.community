@@ -18,7 +18,12 @@ const message = {
   body: "Protected reported message",
   created_at: "2026-10-14T08:00:00Z",
 };
-function client(role: string | null = "moderator", error: unknown = null) {
+function client(
+  role: string | null = "moderator",
+  error: unknown = null,
+  evidence: Record<string, unknown> = message,
+  targetKind = evidence.kind,
+) {
   const rpc = vi.fn(async (name: string) => {
     if (name === "get_own_moderation_staff_access")
       return { data: role ? [{ staff_role: role }] : [], error: null };
@@ -27,7 +32,7 @@ function client(role: string | null = "moderator", error: unknown = null) {
         data: [
           {
             ...moderationDetailRow(),
-            target_kind: message.kind,
+            target_kind: targetKind,
             project_context_id: null,
             resource_request_context_id: null,
           },
@@ -35,7 +40,7 @@ function client(role: string | null = "moderator", error: unknown = null) {
         error: null,
       };
     if (name === "get_moderation_case_group_contact")
-      return { data: message, error };
+      return { data: evidence, error };
     throw new Error("Unexpected evidence RPC");
   });
   return {
@@ -46,6 +51,93 @@ function client(role: string | null = "moderator", error: unknown = null) {
   } satisfies ModerationServerClient;
 }
 describe("case-scoped contact evidence", () => {
+  it.each([null, "A short personal introduction", "🌱".repeat(500)])(
+    "accepts an optional bounded personal introduction",
+    (body) => {
+      expect(
+        parseGroupContactEvidence({
+          ...message,
+          kind: "member_contact_request",
+          title: "Origin group",
+          body,
+        }),
+      ).toMatchObject({ kind: "member_contact_request", body });
+    },
+  );
+  it("keeps personal messages bounded and requires their origin group title", () => {
+    const personal = {
+      ...message,
+      kind: "member_contact_message",
+      title: "Origin group",
+    };
+    expect(parseGroupContactEvidence(personal).body).toBe(message.body);
+    for (const patch of [
+      { body: null },
+      { body: "" },
+      { body: "x".repeat(4001) },
+      { title: null },
+      { target_group_id: id },
+      { purpose: "idea" },
+      { chat_id: id },
+    ])
+      expect(() =>
+        parseGroupContactEvidence({ ...personal, ...patch }),
+      ).toThrow(/malformed/);
+  });
+  it("rejects absent required bodies and invalid personal introductions", () => {
+    for (const kind of [
+      "group_contact_request",
+      "group_contact_message",
+      "group_coordination_proposal",
+    ])
+      expect(() =>
+        parseGroupContactEvidence({ ...message, kind, body: null }),
+      ).toThrow(/malformed/);
+    for (const body of ["", "🌱".repeat(501), undefined, 5])
+      expect(() =>
+        parseGroupContactEvidence({
+          ...message,
+          kind: "member_contact_request",
+          title: "Origin group",
+          body,
+        }),
+      ).toThrow(/malformed/);
+  });
+  it.each(["member_contact_request", "member_contact_message"])(
+    "loads only exact staff evidence for %s",
+    async (kind) => {
+      const evidence = {
+        ...message,
+        kind,
+        title: "Origin group",
+        body: kind === "member_contact_request" ? null : message.body,
+      };
+      const staff = client("moderator", null, evidence);
+      const result = await readModerationCase(id, async () => staff);
+      if (result.status !== "ready") throw new Error("Staff case expected.");
+      expect(result.detail?.groupContact).toMatchObject({
+        kind,
+        body: evidence.body,
+      });
+      expect(staff.rpc.mock.calls.map(([name]) => name)).toEqual([
+        "get_own_moderation_staff_access",
+        "get_moderation_case_detail",
+        "get_moderation_case_group_contact",
+      ]);
+      const denied = client(null, null, evidence);
+      expect((await readModerationCase(id, async () => denied)).status).toBe(
+        "denied",
+      );
+      expect(denied.rpc).toHaveBeenCalledTimes(1);
+    },
+  );
+  it("rejects evidence of a different reported kind", async () => {
+    await expect(
+      readModerationCase(id, async () =>
+        client("moderator", null, message, "member_contact_message"),
+      ),
+    ).rejects.toThrow(/did not match/);
+  });
   it("accepts only the fresh coordination note without source history", () => {
     const fresh = {
       ...message,

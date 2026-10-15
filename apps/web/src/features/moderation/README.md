@@ -7,6 +7,15 @@ human/group identifiers, without another message, audience roster or source-chat
 link. Staff roles never grant ordinary D conversation access. This follows the
 provisional [D contract](../../../../../docs/development/group-contact-contract.md).
 
+The member-contact review candidate extends that same case-bound RPC and parser
+for `member_contact_request` and `member_contact_message`. Personal evidence names
+the origin Group, not a represented Group. An omitted request introduction is
+explicitly shown as absent; message bodies remain required. Erased authors may
+have a null current profile reference, while the evidence retains its immutable
+human identifier. The server rejects a returned evidence kind that differs from
+the case, and neither staff nor Group managers gain conversation access. See the
+[provisional member contract](../../../../../docs/development/member-contact-backend-review.md).
+
 This feature owns the private server-side moderation client used by `/admin`.
 `moderation-server.ts` verifies signed claims and checks the canonical database
 staff role before every read. `moderation-operations.ts` repeats that check for

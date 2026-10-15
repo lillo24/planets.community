@@ -14,6 +14,27 @@ import {
 } from "./moderation-test-fixtures";
 
 describe("moderation model parsing", () => {
+  it.each(["member_contact_request", "member_contact_message"])(
+    "keeps %s reports reviewable after the author's profile is erased",
+    (targetKind) => {
+      const subject = {
+        target_kind: targetKind,
+        subject_profile_id: null,
+        subject_display_name: "Deleted account",
+      };
+      expect(
+        parseModerationQueue([{ ...moderationQueueRow(), ...subject }])[0],
+      ).toMatchObject({ targetKind, subjectProfileId: null });
+      expect(
+        parseModerationCase([{ ...moderationDetailRow(), ...subject }]),
+      ).toMatchObject({ targetKind, subjectProfileId: null });
+      expect(() =>
+        parseModerationQueue([
+          { ...moderationQueueRow(), ...subject, subject_profile_id: "bad" },
+        ]),
+      ).toThrow("malformed");
+    },
+  );
   it("keeps genuine group targets and their accountable human subjects", () => {
     const group = { target_kind: "group", target_summary: "Group" };
     expect(

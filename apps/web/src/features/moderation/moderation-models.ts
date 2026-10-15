@@ -138,7 +138,9 @@ export function parseModerationQueue(data: unknown): ModerationCaseSummary[] {
       targetSummary: bounded(row.target_summary, 200),
       contextSummary: optionalBounded(row.context_summary, 200),
       subjectProfileId:
-        row.target_kind === "proposal_template"
+        row.target_kind === "proposal_template" ||
+        row.target_kind === "member_contact_request" ||
+        row.target_kind === "member_contact_message"
           ? optionalUuid(row.subject_profile_id)
           : uuid(row.subject_profile_id),
       subjectDisplayName: bounded(row.subject_display_name, 120),
@@ -166,7 +168,9 @@ export function parseModerationCase(
     reporterProfileId: uuid(row.reporter_profile_id),
     reporterDisplayName: bounded(row.reporter_display_name, 120),
     subjectProfileId:
-      row.target_kind === "proposal_template"
+      row.target_kind === "proposal_template" ||
+      row.target_kind === "member_contact_request" ||
+      row.target_kind === "member_contact_message"
         ? optionalUuid(row.subject_profile_id)
         : uuid(row.subject_profile_id),
     subjectDisplayName: bounded(row.subject_display_name, 120),
