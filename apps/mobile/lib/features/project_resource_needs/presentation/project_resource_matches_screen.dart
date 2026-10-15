@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/widgets/page_app_bar.dart';
 import '../../locations/presentation/location_attribution.dart';
+import '../../locations/presentation/independent_public_city.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -182,7 +183,15 @@ class _ProjectResourceMatchesScreenState
                               )
                             : Text(l10n.projectResourceMatchesLoadMore),
                       ),
-                    if (items.isNotEmpty) const LocationAttribution(),
+                    if (items.any(
+                      (x) =>
+                          cataloguedPublicCityName(
+                            x.listingSummary.locality,
+                            x.listingSummary.countryCode,
+                          ) ==
+                          null,
+                    ))
+                      const LocationAttribution(),
                   ],
                 ),
               ),

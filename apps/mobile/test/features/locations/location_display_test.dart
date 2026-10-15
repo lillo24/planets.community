@@ -287,7 +287,7 @@ void main() {
       );
     }
     testWidgets(
-      '$language compatibility Project location keeps full label and credits without empty instructions',
+      '$language compatibility Project location uses independent city without empty instructions',
       (t) async {
         for (final instructions in [null, ' ', 'Use the east entrance.']) {
           await t.pumpWidget(
@@ -295,6 +295,7 @@ void main() {
               language,
               ProposalLocation(
                 detail: proposalDetailFixture(
+                  locality: 'Trento',
                   publicLocationLabel:
                       'Trento, Provincia autonoma di Trento, Italia',
                   restricted: false,
@@ -304,18 +305,16 @@ void main() {
             ),
           );
           await t.pumpAndSettle();
-          expect(
-            find.text('Trento, Provincia autonoma di Trento, Italia'),
-            findsOneWidget,
-          );
+          expect(find.text('Trento'), findsOneWidget);
           expect(
             find.byKey(const Key('proposal-location-public')),
             instructions?.trim().isNotEmpty == true
                 ? findsOneWidget
                 : findsNothing,
           );
-          // Stored text has no durable provenance; absence of a map is not proof.
-          expect(find.byType(LocationAttribution), findsOneWidget);
+          // The independent ISTAT name replaces, rather than reclassifies, the
+          // stored provider label in this text-only compatibility view.
+          expect(find.byType(LocationAttribution), findsNothing);
         }
         await t.pumpWidget(
           shell(

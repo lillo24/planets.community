@@ -3,8 +3,10 @@
 Home's question-mark opens `/help` for guests and every account readiness state.
 The routes live in the central app router; direct entry has a safe Home/Help Back.
 
-- `presentation/help_screen.dart` owns the four choices, creator contact and honest
+- `presentation/help_screen.dart` owns the support choices, creator contact and honest
   contextual person-report guidance. It performs no moderation lookups or writes.
+  Its localized Licences action opens Flutter's licence page and registers the
+  independently sourced ISTAT municipality data notice, away from city rows.
 - `presentation/help_routes.dart` owns public route names.
 - `presentation/bug_report_screen.dart` owns a reviewable, memory-only technical
   bug draft. Only entered description/steps/expected outcome appear in email/copy.

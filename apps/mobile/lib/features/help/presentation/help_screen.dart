@@ -5,6 +5,7 @@ import '../../../core/widgets/page_app_bar.dart';
 import '../../../app/startup/tutorial_routes.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../locations/data/municipality_data_license.dart';
 import 'help_routes.dart';
 import 'support_mail_action.dart';
 
@@ -43,6 +44,15 @@ class HelpScreen extends StatelessWidget {
           icon: Icons.flag_outlined,
           title: l10n.helpReportPerson,
           onTap: () => context.push(HelpRoutes.person),
+        ),
+        _HelpOption(
+          key: const Key('help-licenses-action'),
+          icon: Icons.description_outlined,
+          title: MaterialLocalizations.of(context).licensesPageTitle,
+          onTap: () {
+            registerMunicipalityDataLicense();
+            showLicensePage(context: context, applicationName: 'PLANETS');
+          },
         ),
       ],
     );

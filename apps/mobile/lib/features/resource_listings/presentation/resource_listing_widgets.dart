@@ -5,6 +5,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../locations/domain/location_preview.dart';
 import '../../locations/presentation/location_preview_panel.dart';
 import '../../locations/presentation/location_attribution.dart';
+import '../../locations/presentation/independent_public_city.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../cover_media/presentation/cover_image.dart';
@@ -159,17 +160,19 @@ class PublicResourceListingCard extends StatelessWidget {
       listing.publishedAt,
       now: now,
     );
-    // Cards favor structured locality; detail retains the canonical public
-    // label. No geographic parsing or truncation of arbitrary labels is used.
+    // Prefer an independent catalogue name. Unclassified list text keeps its
+    // existing source-credit treatment; arbitrary addresses are not shortened.
     final locality = listing.locality.trim();
-    final location = locality.isNotEmpty
-        ? locality
-        : canonicalResourceListingLocation(
-            publicLocationLabel: listing.publicLocationLabel,
-            locality: listing.locality,
-            administrativeArea: listing.administrativeArea,
-            countryCode: listing.countryCode,
-          );
+    final location =
+        cataloguedPublicCityName(listing.locality, listing.countryCode) ??
+        (locality.isNotEmpty
+            ? locality
+            : canonicalResourceListingLocation(
+                publicLocationLabel: listing.publicLocationLabel,
+                locality: listing.locality,
+                administrativeArea: listing.administrativeArea,
+                countryCode: listing.countryCode,
+              ));
     return Semantics(
       container: true,
       explicitChildNodes: true,
@@ -284,6 +287,7 @@ class ResourceListingLocation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final city = cataloguedPublicCityName(locality, countryCode);
     final location = canonicalResourceListingLocation(
       publicLocationLabel: publicLocationLabel,
       locality: locality,
@@ -307,8 +311,8 @@ class ResourceListingLocation extends StatelessWidget {
             labelKey: const Key('resource-canonical-location'),
           )
         else ...[
-          Text(location, key: const Key('resource-canonical-location')),
-          const LocationAttribution(),
+          Text(city ?? location, key: const Key('resource-canonical-location')),
+          if (city == null) const LocationAttribution(),
         ],
       ],
     );

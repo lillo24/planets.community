@@ -10,6 +10,7 @@ import '../../../core/widgets/user_scroll_pagination.dart';
 import '../../geographic_discovery/domain/map_discovery.dart';
 import '../../geographic_discovery/presentation/map_view_button.dart';
 import '../../locations/presentation/location_attribution.dart';
+import '../../locations/presentation/independent_public_city.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/async_data_presentation.dart';
@@ -378,9 +379,13 @@ class _PublicResourceListingsScreenState
                         .load(reset: false),
                     child: Text(l10n.resourceLoadMore),
                   ),
-                // DTOs omit provider provenance; retained labels may be derived.
+                // Independent catalogue names require no Geoapify footer.
                 if (widget.tutorialPlaceholder == null &&
-                    state.items.isNotEmpty)
+                    state.items.any(
+                      (x) =>
+                          cataloguedPublicCityName(x.locality, x.countryCode) ==
+                          null,
+                    ))
                   const LocationAttribution(),
                 // Let credit links scroll above the floating Create action.
                 const SizedBox(height: 80),
