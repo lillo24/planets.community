@@ -12,6 +12,43 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import '../../../support/fake_proposal.dart';
 
 void main() {
+  testWidgets('confirmed Idea dates use schedule without changing phase', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final summary = proposalSummaryFixture(
+      definitionPhase: ProposalDefinitionPhase.idea,
+      skills: [],
+    );
+    final gateway = FakeProposalGateway()
+      ..publicDetail = ProposalDetail(
+        summary: summary,
+        creatorProfileId: 'creator-1',
+        creatorDisplayName: 'Synthetic organizer',
+        description: null,
+        exactMeetingText: null,
+        exactLocationRestricted: true,
+      );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [proposalGatewayProvider.overrideWithValue(gateway)],
+        child: _app(
+          'en',
+          2,
+          const ProposalDetailScreen(proposalId: 'proposal-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('12:00 – 14:00'), 200);
+    expect(find.text('September 10, 2026'), findsOneWidget);
+    expect(find.text('Europe/Rome'), findsOneWidget);
+    expect(find.byKey(const Key('proposal-status-idea')), findsOneWidget);
+    expect(find.text('Upcoming'), findsNothing);
+    expect(summary.isIdea, isTrue);
+    expect(tester.takeException(), isNull);
+  });
   for (final language in ['en', 'it']) {
     for (final scale in [1.0, 2.0]) {
       testWidgets('$language $scale public Idea card is truthful at 320dp', (

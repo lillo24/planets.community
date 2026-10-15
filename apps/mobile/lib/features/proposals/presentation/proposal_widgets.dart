@@ -3,6 +3,8 @@ import '../../group_projects/presentation/group_project_widgets.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/compact_skill_preview.dart';
+import '../../../core/time/event_time.dart';
 import '../../locations/presentation/location_attribution.dart';
 import '../../locations/presentation/public_location_label.dart';
 
@@ -11,7 +13,6 @@ import 'proposal_card_cover.dart';
 import '../../participation/presentation/project_capacity_label.dart';
 import '../../participation/presentation/project_capacity_presentation.dart';
 import '../domain/proposal_models.dart';
-import '../domain/proposal_time.dart';
 
 class ProposalStatusBadge extends StatelessWidget {
   const ProposalStatusBadge({
@@ -138,14 +139,14 @@ class ProposalCard extends StatelessWidget {
                   ),
                   if (proposal.skills.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.medium),
-                    Text(
-                      AppLocalizations.of(context).proposalSkillsTitle,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    ProposalSkillRequirements(
-                      skills: proposal.skills,
-                      multiline:
-                          MediaQuery.textScalerOf(context).scale(14) > 18,
+                    CompactSkillPreview(
+                      labels: [
+                        for (final importance in ProposalSkillImportance.values)
+                          for (final skill in proposal.skills.where(
+                            (s) => s.importance == importance,
+                          ))
+                            skill.label,
+                      ],
                     ),
                   ],
                 ],
@@ -166,8 +167,7 @@ class ProposalSkillRequirements extends StatelessWidget {
   });
 
   final List<ProposalSkill> skills;
-  // Card-only enlarged-text fallback: Chip inherits a single-line label style.
-  // Keep the same inert labels and ordering while allowing complete wrapping.
+  // Full-information callers can opt into wrapping long labels.
   final bool multiline;
 
   @override
@@ -274,8 +274,6 @@ String proposalScheduleText(BuildContext context, ProposalSummary proposal) {
     return l10n.proposalDateUndecided;
   }
   final locale = Localizations.localeOf(context).toLanguageTag();
-  final schedule =
-      '${formatProposalDateTime(start, zone, locale)} – ${formatProposalDateTime(end, zone, locale)}';
   // CHECK01: only explicitly confirmed canonical schedules reach public reads.
-  return schedule;
+  return formatEventScheduleSummary(start, end, zone, locale);
 }
