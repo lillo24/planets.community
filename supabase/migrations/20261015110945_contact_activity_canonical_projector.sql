@@ -3,8 +3,28 @@
 -- its resolver/locking contract and changed the OID used by cached callers.
 -- Restore that original function identity and add only the contact page budget.
 do $$
-declare definition text; marker text:=E'  for source_event in\n';
+declare definition text; marker text:=E'  for source_event in\n'; current_wrapper text;
+  expected_wrapper text:=$wrapper$
+declare contact_result record; legacy_result record; remaining integer;
 begin
+  if p_limit is null or p_limit not between 1 and 100 then raise sqlstate '22023' using message='Notification projector batch size must be between 1 and 100.'; end if;
+  select * into contact_result from private.process_contact_activity_batch(greatest(1,p_limit/2));
+  remaining:=p_limit-contact_result.processed_count;
+  if remaining>0 then select * into legacy_result from private.process_notification_outbox_before_contacts(remaining);
+  else select 0 processed_count,0 notifications_created,0 notifications_suppressed into legacy_result; end if;
+  return query select contact_result.processed_count+legacy_result.processed_count,
+    contact_result.notifications_created+legacy_result.notifications_created,
+    contact_result.notifications_suppressed+legacy_result.notifications_suppressed;
+end;
+$wrapper$;
+begin
+  select replace(p.prosrc,E'\r\n',E'\n') into current_wrapper from pg_proc p
+    where p.oid='public.process_notification_outbox_batch(integer)'::regprocedure;
+  -- A peer may have revised the public worker after the contact migration.
+  -- Fail before DROP rather than silently removing that peer's composition.
+  if btrim(current_wrapper,E' \t\r\n') is distinct from btrim(expected_wrapper,E' \t\r\n') then
+    raise exception 'Review the changed public notification worker before restoring canonical ownership.';
+  end if;
   definition:=replace(pg_get_functiondef('private.process_notification_outbox_before_contacts(integer)'::regprocedure),E'\r\n',E'\n');
   if (length(definition)-length(replace(definition,E'  inserted_count integer;\n','')))<>length(E'  inserted_count integer;\n')
     or (length(definition)-length(replace(definition,marker,'')))<>length(marker)
