@@ -20,6 +20,7 @@ import '../../project_workspace/presentation/project_workspace_widgets.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../project_organization/presentation/project_organization_sheet.dart';
 import '../application/project_chat_controllers.dart';
+import '../../group_discussions/presentation/discussion_project_origin.dart';
 import '../application/project_needs_controller.dart';
 import '../domain/project_chat_models.dart';
 import 'project_chat_failure_message.dart';
@@ -244,6 +245,11 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
                 )
               : Column(
                   children: [
+                    if (summary != null && _expectedProfileId != null)
+                      DiscussionProjectOrigin(
+                        actor: _expectedProfileId!,
+                        projectId: summary.projectId,
+                      ),
                     if (state.hasConnectionIssue)
                       MaterialBanner(
                         content: Text(l10n.projectChatConnectionIssue),
