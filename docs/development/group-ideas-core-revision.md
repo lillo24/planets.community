@@ -80,6 +80,9 @@ There is no synchronous per-Group recipient fanout. Restricted creation reaches
 current eligible managers, targeted invitation reaches its target, and a shared
 link invents no recipient. Notice reads are distinct from human-message unread.
 These APIs do not claim FCM/APNs delivery or an activated external provider.
+The mobile activity reader validates the canonical `is_read` field. Expanding,
+resuming or receiving an account invalidation replaces its projection; private
+notice context is cleared before reauthorization, even if the network fails.
 
 Own `muted` and `hidden` preferences are independent of unread. Hide is allowed
 only for an unjoined eligible Idea and never hides General. Quiet classification

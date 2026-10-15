@@ -196,7 +196,9 @@ try {
     for (const row of before.get(table)) {
       const [preserved] = await sql.unsafe(
         `select count(*)::int as n from private.${table} t where to_jsonb(t) @> $1::jsonb`,
-        [JSON.stringify(row)],
+        // The inferred jsonb serializer encodes this object. A pre-stringified
+        // value would become a JSON string and falsely fail containment.
+        [row],
       );
       assert.equal(
         preserved.n,

@@ -174,6 +174,16 @@ void main() {
       container.read(discussionChatProvider(room))!.invalidate();
       await harness.waitFor(tester, find.text('Fictional incoming message.'));
       await shot('chat-en');
+      router.go('/notifications');
+      await harness.waitFor(tester, find.text('Group Idea activity'));
+      await tester.tap(find.text('Group Idea activity'));
+      await harness.waitFor(tester, find.text('New Idea message'));
+      await shot('activity-notices-en');
+      router.go(discussionRoute(room));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('discussion-composer')),
+      );
       expect(find.byKey(const Key('discussion-create-project')), findsNothing);
       for (var n = 0; n < 31; n++) {
         await peer.rpc(

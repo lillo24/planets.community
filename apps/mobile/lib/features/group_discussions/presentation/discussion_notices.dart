@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/backend/supabase_backend.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../../groups/domain/group_models.dart';
 import '../application/discussion_controllers.dart';
 import '../domain/discussion_models.dart';
@@ -26,6 +27,7 @@ class DiscussionNotice with DiscussionCursor {
       'actor_id',
       'object_id',
       'created_at',
+      'is_read',
     });
     id = groupUuid(row['notice_id']);
     roomId = groupUuid(row['room_id']);
@@ -48,12 +50,14 @@ class DiscussionNotice with DiscussionCursor {
       throw const FormatException('Unsupported Idea notice.');
     }
     createdAt = groupDate(row['created_at']);
+    isRead = groupBool(row['is_read']);
   }
   @override
   late final String id;
   @override
   late final DateTime createdAt;
   late final String roomId, title, purpose, kind;
+  late final bool isRead;
 }
 
 /// Dedicated activity projection, separate from human unread and consent.
@@ -64,38 +68,77 @@ class DiscussionNotices extends ConsumerStatefulWidget {
   ConsumerState<DiscussionNotices> createState() => _DiscussionNoticesState();
 }
 
-class _DiscussionNoticesState extends ConsumerState<DiscussionNotices> {
+class _DiscussionNoticesState extends ConsumerState<DiscussionNotices>
+    with WidgetsBindingObserver {
   DiscussionPager<DiscussionNotice>? pager;
   String? actor;
   bool expanded = false;
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     pager?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) reauthorize();
+  }
+
+  void reauthorize() {
+    if (!mounted || !expanded || actor == null) return;
+    final session = ref.read(authSessionProvider);
+    if (session.identity?.id != actor ||
+        session.phase != AuthSessionPhase.ready) {
+      return;
+    }
+    // An account hint may revoke restricted-room context. Remove the old
+    // projection before the network read, including when that read fails.
+    setState(() => bind(actor!));
   }
 
   void bind(String id) {
     pager?.dispose();
     actor = id;
-    pager = DiscussionPager<DiscussionNotice>((cursor) async {
-      final data = await ref
-          .read(supabaseClientProvider)
-          .rpc<Object?>(
-            'list_own_group_discussion_notices',
-            params: {'p_expected_profile_id': id, 'p_limit': 25, ...?cursor},
-          );
-      if (data is! List || data.length > 25) {
-        throw const FormatException('Invalid Idea notice page.');
-      }
-      return data.map(DiscussionNotice.new).toList(growable: false);
-    }, () => mounted && ref.read(authSessionProvider).identity?.id == id);
+    pager = DiscussionPager<DiscussionNotice>(
+      (cursor) async {
+        final data = await ref
+            .read(supabaseClientProvider)
+            .rpc<Object?>(
+              'list_own_group_discussion_notices',
+              params: {'p_expected_profile_id': id, 'p_limit': 25, ...?cursor},
+            );
+        if (data is! List || data.length > 25) {
+          throw const FormatException('Invalid Idea notice page.');
+        }
+        return data.map(DiscussionNotice.new).toList(growable: false);
+      },
+      () =>
+          mounted &&
+          ref.read(authSessionProvider).phase == AuthSessionPhase.ready &&
+          ref.read(authSessionProvider).identity?.id == id,
+    );
     unawaited(pager!.load());
   }
 
   @override
   Widget build(BuildContext context) {
-    final id = ref.watch(authSessionProvider).identity?.id,
+    final session = ref.watch(authSessionProvider),
         l = AppLocalizations.of(context);
+    final id = session.phase == AuthSessionPhase.ready
+        ? session.identity?.id
+        : null;
+    ref.listen(discussionSignalsProvider, (_, next) {
+      if (next.asData?.value.connected == true) {
+        Future.microtask(reauthorize);
+      }
+    });
     if (actor != id) {
       pager?.dispose();
       pager = null;
@@ -104,12 +147,13 @@ class _DiscussionNoticesState extends ConsumerState<DiscussionNotices> {
     }
     if (id == null) return const SizedBox.shrink();
     return ExpansionTile(
+      key: ValueKey('discussion-notices/$id'),
       title: Text(l.discussionNotices),
       initiallyExpanded: expanded,
       onExpansionChanged: (value) {
         setState(() {
           expanded = value;
-          if (value && pager == null) bind(id);
+          if (value) bind(id);
         });
       },
       children: [
@@ -136,6 +180,7 @@ class _DiscussionNoticesState extends ConsumerState<DiscussionNotices> {
                       _ => l.discussionConversion,
                     }),
                     onTap: () async {
+                      final selectedPager = pager;
                       try {
                         await ref
                             .read(supabaseClientProvider)
@@ -147,7 +192,8 @@ class _DiscussionNoticesState extends ConsumerState<DiscussionNotices> {
                               },
                             );
                         if (!context.mounted ||
-                            ref.read(authSessionProvider).identity?.id != id) {
+                            ref.read(authSessionProvider).identity?.id != id ||
+                            !identical(pager, selectedPager)) {
                           return;
                         }
                         if (notice.kind == 'invited') {
@@ -162,7 +208,14 @@ class _DiscussionNoticesState extends ConsumerState<DiscussionNotices> {
                               : discussionRoute(notice.roomId),
                         );
                       } catch (failure) {
-                        if (mounted) setState(() => pager!.error = failure);
+                        if (mounted &&
+                            ref.read(authSessionProvider).identity?.id == id &&
+                            identical(pager, selectedPager)) {
+                          setState(() {
+                            selectedPager!.rows = [];
+                            selectedPager.error = failure;
+                          });
+                        }
                       }
                     },
                   ),
