@@ -285,7 +285,7 @@ void main() {
     },
   );
 
-  testWidgets('Scambio card uses locality; opened detail keeps full location', (
+  testWidgets('Scambio card and text-only detail use independent city', (
     tester,
   ) async {
     const fullLocation = 'Community workshop near the northern gate, Trento';
@@ -306,7 +306,11 @@ void main() {
     expect(find.text('Trento'), findsOneWidget);
     expect(find.text(fullLocation), findsNothing);
     await _tap(tester, 'resource-card-$resourceListingId');
-    expect(find.text(fullLocation), findsOneWidget);
+    expect(find.text('Trento'), findsOneWidget);
+    expect(find.text(fullLocation), findsNothing);
+    expect(find.byKey(const Key('location-attribution')), findsNothing);
+    // Only presentation changes; the saved geocoding label is not rewritten.
+    expect(gateway.publicDetail!.summary.publicLocationLabel, fullLocation);
   });
 
   testWidgets('public card and detail render the canonical shared cover', (
