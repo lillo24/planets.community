@@ -1,3 +1,5 @@
+import '../../member_contact/application/member_contact_access_changes.dart';
+
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
@@ -38,6 +40,17 @@ class MessageUnreadController extends Notifier<MessageUnreadState>
         ? session.identity?.id
         : null;
     ref.listen(contactAccessChangesProvider, (_, next) {
+      if (id != null && next.$1 == id && state.profileId == id) {
+        _request++;
+        state = MessageUnreadState(
+          profileId: id,
+          stale: true,
+          disconnected: state.disconnected,
+        );
+        _schedule(id);
+      }
+    });
+    ref.listen(memberContactAccessChangesProvider, (_, next) {
       if (id != null && next.$1 == id && state.profileId == id) {
         _request++;
         state = MessageUnreadState(

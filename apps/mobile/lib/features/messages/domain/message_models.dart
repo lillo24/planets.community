@@ -1,3 +1,4 @@
+import '../../member_contact/domain/member_contact_models.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../resource_listings/domain/resource_listing_models.dart';
 import '../../resource_requests/domain/resource_request_models.dart';
@@ -7,6 +8,7 @@ import '../../group_coordination/domain/coordination_models.dart';
 enum StructuredRequestItemKind {
   participationRequest('participation_request'),
   resourceRequest('resource_request'),
+  memberContactRequest('member_contact_request'),
   groupContactRequest('group_contact_request'),
   groupCoordinationProposal('group_coordination_proposal');
 
@@ -17,6 +19,7 @@ enum StructuredRequestItemKind {
   static StructuredRequestItemKind fromWire(String value) => switch (value) {
     'participation_request' => StructuredRequestItemKind.participationRequest,
     'resource_request' => StructuredRequestItemKind.resourceRequest,
+    'member_contact_request' => StructuredRequestItemKind.memberContactRequest,
     'group_contact_request' => StructuredRequestItemKind.groupContactRequest,
     'group_coordination_proposal' =>
       StructuredRequestItemKind.groupCoordinationProposal,
@@ -146,6 +149,7 @@ sealed class StructuredRequestMessageItem {
         item.contact.publicProjectKind,
         item.contact.publicProjectTitle,
       ),
+      MemberContactRequestMessageItem item => item.contact.refreshValue,
       GroupCoordinationMessageItem item => item.proposal.refreshValue,
     },
   );
@@ -289,4 +293,23 @@ class StructuredRequestMessagePage {
 
   final List<StructuredRequestMessageItem> items;
   final bool hasMore;
+}
+
+final class MemberContactRequestMessageItem
+    extends StructuredRequestMessageItem {
+  MemberContactRequestMessageItem(this.contact)
+    : super(
+        kind: StructuredRequestItemKind.memberContactRequest,
+        requestId: contact.id,
+        viewerRole: contact.canWithdraw
+            ? MessageViewerRole.requester
+            : MessageViewerRole.owner,
+        requesterProfileId: contact.senderId,
+        requesterDisplayName: contact.senderName,
+        requestMessage: contact.note,
+        createdAt: contact.createdAt,
+        resolvedAt: null,
+        activityAt: contact.activityAt,
+      );
+  final MemberContactRequest contact;
 }

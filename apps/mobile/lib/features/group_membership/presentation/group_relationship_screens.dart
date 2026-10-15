@@ -1,3 +1,5 @@
+import '../../member_contact/presentation/member_contact_widgets.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -266,6 +268,13 @@ class _GroupRelationshipsState extends ConsumerState<_GroupRelationships> {
             : callback,
         child: Text(label),
       );
+  void openPerson(GroupPerson row) => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (_) =>
+        MemberContactPersonSheet(groupId: widget.groupId!, person: row),
+  );
   List<Widget> personActions(GroupPerson row, AppLocalizations l) => [
     if (self?.manager == true &&
         row.membershipId != null &&
@@ -510,11 +519,24 @@ class _GroupRelationshipsState extends ConsumerState<_GroupRelationships> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               if (row is GroupPerson) ...[
-                                Text(
-                                  row.name,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium,
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(
+                                    row.name,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium,
+                                  ),
+                                  trailing: row.id == widget.actor
+                                      ? null
+                                      : IconButton(
+                                          tooltip: l.memberContactPersonActions,
+                                          icon: const Icon(Icons.more_horiz),
+                                          onPressed: () => openPerson(row),
+                                        ),
+                                  onTap: row.id == widget.actor
+                                      ? null
+                                      : () => openPerson(row),
                                 ),
                                 Wrap(
                                   spacing: 8,

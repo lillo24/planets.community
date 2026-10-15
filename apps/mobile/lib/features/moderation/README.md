@@ -55,3 +55,9 @@ the same manual form and receipt. Own reports use the additive v2 projection;
 known-content reporting remains available after D authority loss. These targets
 do not activate Project corroboration or Resource counterstatements. Long category
 labels wrap within the form and menu at narrow width and enlarged EN/IT text.
+
+M adds `member_contact_request` and `member_contact_message` targets; messages
+bind `member_contact_chat` context. Own report history uses the additive v4
+projection, preserving Project, Resource, D and coordination report kinds.
+Known received-note/message IDs remain reportable through canonical evidence
+projection after ordinary read access ends. No manager chat access is added.

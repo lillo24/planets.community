@@ -34,6 +34,8 @@ enum ModerationTargetKind {
   resourceListing('resource_listing'),
   resourceRequest('resource_request'),
   resourceChatMessage('resource_chat_message'),
+  memberContactRequest('member_contact_request'),
+  memberContactMessage('member_contact_message'),
   groupContactRequest('group_contact_request'),
   groupContactMessage('group_contact_message'),
   groupCoordinationProposal('group_coordination_proposal');
@@ -51,6 +53,8 @@ enum ModerationTargetKind {
     'resource_listing' => ModerationTargetKind.resourceListing,
     'resource_request' => ModerationTargetKind.resourceRequest,
     'resource_chat_message' => ModerationTargetKind.resourceChatMessage,
+    'member_contact_request' => ModerationTargetKind.memberContactRequest,
+    'member_contact_message' => ModerationTargetKind.memberContactMessage,
     'group_contact_request' => ModerationTargetKind.groupContactRequest,
     'group_contact_message' => ModerationTargetKind.groupContactMessage,
     'group_coordination_proposal' =>
@@ -61,7 +65,8 @@ enum ModerationTargetKind {
 
 enum ModerationContextKind {
   project('project'),
-  resourceRequest('resource_request');
+  resourceRequest('resource_request'),
+  memberContactChat('member_contact_chat');
 
   const ModerationContextKind(this.wireValue);
 

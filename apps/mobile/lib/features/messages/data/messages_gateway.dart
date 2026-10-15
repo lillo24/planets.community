@@ -1,3 +1,5 @@
+import '../../member_contact/domain/member_contact_models.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -51,7 +53,7 @@ class SupabaseMessagesGateway implements MessagesGateway {
     MessageCursor? cursor,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_structured_request_message_items_v3',
+      'list_own_structured_request_message_items_v4',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_limit': limit + 1,
@@ -74,7 +76,7 @@ class SupabaseMessagesGateway implements MessagesGateway {
     required String requestId,
   }) async {
     final response = await _client.rpc<Object?>(
-      'get_own_structured_request_message_item_v3',
+      'get_own_structured_request_message_item_v4',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_item_kind': itemKind.wireValue,
@@ -144,6 +146,8 @@ class MessagesPayloadParser {
     return switch (kind) {
       StructuredRequestItemKind.participationRequest => _participationItem(row),
       StructuredRequestItemKind.resourceRequest => _resourceItem(row),
+      StructuredRequestItemKind.memberContactRequest =>
+        MemberContactRequestMessageItem(MemberContactRequest(row)),
       StructuredRequestItemKind.groupContactRequest =>
         GroupContactRequestMessageItem(GroupContactRequest.parse(row)),
       StructuredRequestItemKind.groupCoordinationProposal =>

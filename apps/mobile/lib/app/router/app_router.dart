@@ -1,3 +1,9 @@
+import '../../features/member_contact/presentation/member_contact_routes.dart';
+import '../../features/member_contact/presentation/member_contact_compose_screen.dart';
+import '../../features/member_contact/presentation/member_contact_request_screen.dart';
+import '../../features/member_contact/presentation/member_contact_chat_screen.dart';
+import '../../features/member_contact/presentation/member_contact_info_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -238,6 +244,7 @@ RoutingConfig _routingConfig(
           path == '/groups/mine' ||
           path.startsWith('/groups/mine/') ||
           path == '/groups/create' ||
+          RegExp(r'^/groups/[^/]+/member-contact/[^/]+$').hasMatch(path) ||
           RegExp(
             r'^/groups/[^/]+/(edit|structural-edit|report|people|requests|memberships|team|authority-invitations|role-history|participant-links|link-history|contact)$',
           ).hasMatch(path);
@@ -428,6 +435,7 @@ RoutingConfig _routingConfig(
             ParticipantInvitationRoutes.isInvitePath(returnTo) ||
             isGroupInvitationDestination(returnTo) ||
             isGroupContactContinuation(returnTo) ||
+            isMemberContactContinuation(returnTo) ||
             isCoordinationContinuation(returnTo) ||
             (isMessagesPath(returnTo) &&
                 Uri.parse(returnTo).path != '/messages') ||
@@ -538,6 +546,17 @@ RoutingConfig _routingConfig(
             builder: (context, state) =>
                 GroupDetailScreen(id: state.pathParameters['groupId']!),
             routes: [
+              GoRoute(
+                path: 'member-contact/:recipientId',
+                builder: (context, state) =>
+                    isMemberContactContinuation(state.uri.toString())
+                    ? MemberContactComposeScreen(
+                        key: state.pageKey,
+                        groupId: state.pathParameters['groupId']!,
+                        recipientId: state.pathParameters['recipientId']!,
+                      )
+                    : const _UnknownRouteScreen(),
+              ),
               GoRoute(
                 path: 'contact',
                 builder: (context, state) =>
@@ -806,6 +825,35 @@ RoutingConfig _routingConfig(
                           key: state.pageKey,
                           requestId: state.pathParameters['requestId']!,
                         ),
+                  ),
+                  GoRoute(
+                    path: 'requests/member-contact/:requestId',
+                    builder: (context, state) =>
+                        isMemberContactContinuation(state.uri.toString())
+                        ? MemberContactRequestScreen(
+                            key: state.pageKey,
+                            requestId: state.pathParameters['requestId']!,
+                          )
+                        : const _UnknownRouteScreen(),
+                  ),
+                  GoRoute(
+                    path: 'chats/member-contact/:chatId',
+                    builder: (context, state) =>
+                        isMemberContactContinuation(state.uri.toString())
+                        ? MemberContactChatScreen(
+                            key: state.pageKey,
+                            chatId: state.pathParameters['chatId']!,
+                          )
+                        : const _UnknownRouteScreen(),
+                    routes: [
+                      GoRoute(
+                        path: 'info',
+                        builder: (context, state) => MemberContactInfoScreen(
+                          key: state.pageKey,
+                          chatId: state.pathParameters['chatId']!,
+                        ),
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: 'requests/group-contact/:requestId',

@@ -1,3 +1,5 @@
+import '../../member_contact/application/member_contact_access_changes.dart';
+
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,6 +84,23 @@ class MessageChatsController extends Notifier<MessageChatsState> {
         expectedProfileId: actor,
         items: state.items
             .where((i) => i.kind != MessageChatItemKind.groupContactChat)
+            .toList(),
+        hasMore: state.hasMore,
+        hasConnectionIssue: state.hasConnectionIssue,
+      );
+      _scheduleCurrentRefresh();
+    });
+    ref.listen(memberContactAccessChangesProvider, (_, next) {
+      final actor = state.expectedProfileId;
+      if (actor == null || next.$1 != actor) return;
+      _revision++;
+      _activeRefresh = null;
+      _activeMore = null;
+      state = MessageChatsState(
+        phase: MessageChatsPhase.ready,
+        expectedProfileId: actor,
+        items: state.items
+            .where((i) => i.kind != MessageChatItemKind.memberContactChat)
             .toList(),
         hasMore: state.hasMore,
         hasConnectionIssue: state.hasConnectionIssue,
@@ -342,7 +361,9 @@ class MessageChatsController extends Notifier<MessageChatsState> {
           profileIds.add(item.counterpartyProfileId);
         case ResourceMessageChatItem item:
           profileIds.add(item.counterpartyProfileId);
-        case ProjectMessageChatItem() || GroupContactMessageChatItem():
+        case ProjectMessageChatItem() ||
+            GroupContactMessageChatItem() ||
+            MemberContactMessageChatItem():
           break;
       }
     }

@@ -1,3 +1,5 @@
+import '../../member_contact/application/member_contact_access_changes.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -64,6 +66,24 @@ class MessagesInboxController extends Notifier<MessagesInboxState> {
               (i) =>
                   i.kind != StructuredRequestItemKind.groupContactRequest &&
                   i.kind != StructuredRequestItemKind.groupCoordinationProposal,
+            )
+            .toList(),
+        hasMore: state.hasMore,
+      );
+      Future<void>.microtask(() => load(actor, refresh: true));
+    });
+    ref.listen(memberContactAccessChangesProvider, (_, next) {
+      final actor = state.expectedProfileId;
+      if (actor == null || next.$1 != actor) return;
+      _revision++;
+      _activeRefresh = null;
+      _activeMore = null;
+      state = MessagesInboxState(
+        phase: MessagesInboxPhase.ready,
+        expectedProfileId: actor,
+        items: state.items
+            .where(
+              (i) => i.kind != StructuredRequestItemKind.memberContactRequest,
             )
             .toList(),
         hasMore: state.hasMore,

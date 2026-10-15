@@ -4,7 +4,7 @@ This feature owns the public mobile Messages frame and authenticated content.
 It keeps canonical structured Project and Resource requests in `Requests` and a
 mixed chronological conversation projection in the `Messages` root. Chats exposes
 independently paged `Private` and `Groups` scopes: Private contains Resource and
-Project participation-request conversations, while Groups contains Project
+Project participation-request conversations and Group-scoped personal member chats, while Groups contains Project
 group chats and provisional D representative conversations. Project and Resource detail transport remain in the adjacent
 `project_chat/`, `project_request_chat/`, and `resource_chat/` features; this
 feature owns their shared entry point. `group_contact/` owns D contact detail,
@@ -29,10 +29,10 @@ durable human-message unread state; activity alerts remain in Notifications.
   and Resource chat variants, complete activity/kind/chat cursor, and composite
   identity.
 - `data/messages_gateway.dart` is the only Supabase boundary. The inbox and
-  exact-item reads use the additive unified Requests v2 RPCs; Project-only selection and
+  exact-item reads use the additive unified Requests v4 RPCs; Project-only selection and
   mutation operations keep their existing 04C3B1/05A boundaries. Each narrow
   response is parsed strictly and cross-domain field mixtures fail closed.
-- `data/message_chats_gateway.dart` reads `list_own_scoped_conversation_items_v6`,
+- `data/message_chats_gateway.dart` reads `list_own_scoped_conversation_items_v7`,
   the canonical scoped unified Chats RPC with pair pending totals. It strictly
   validates branch XOR fields, request-context lifecycle fields,
   human-preview completeness, and the Resource-only canonical opposite-party
@@ -46,14 +46,14 @@ durable human-message unread state; activity alerts remain in Notifications.
 - `domain/message_unread_models.dart` validates complete account/scope counts
   and server-issued newest-feed snapshot tokens.
 - `data/message_unread_gateway.dart` owns expected-identity summary/read RPCs
-  and the legacy plus D own-account invalidation subscriptions. The shared
+  and the legacy, D and M own-account invalidation subscriptions. The shared
   `core/backend/private_broadcast_payload.dart` separates legitimate Realtime
   transport metadata from the strict identifier-only application payload.
 - `application/message_unread_controller.dart` owns canonical count refresh,
   coalescing, foreground/reconnect recovery, stale/error state, and identity
   revisions. It never adjusts totals arithmetically. A D access-change hint clears
   D cached list content and the badge summary immediately, even if reread fails.
-  Requests/management never increment incoming human unread. Summary/ack v2 are
+  Requests/management never increment incoming human unread. Summary/ack v3 are
   additive; old-client totals remain unchanged.
 - `presentation/message_unread_badge.dart` renders zero-hidden counts, visual
   caps and exact localized accessibility labels. Home and the Messages-labelled
@@ -303,3 +303,9 @@ instead of hiding valid chat metadata. Paths remain parent-bound and no arbitrar
 URL is fetched. `refreshValue` includes the cover, so a changed image updates its
 row while unchanged instances and scroll anchors survive refresh. Deploy the
 new migration before activating this client; hosted activation is separate.
+
+M adds strict `member_contact_request` and `member_contact_chat` variants. The
+canonical RPCs union all kinds before ordering/paging; member chats stay Private
+and do not enter the unrelated profile-photo batching grant. The M access hint
+clears only M list bodies plus the shared unread summary before refresh.
+`member_contact/README.md` documents the isolated review policy and client owners.

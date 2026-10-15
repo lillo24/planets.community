@@ -2942,5 +2942,20 @@
         "type": "String"
       }
     }
-  }
+  },
+  "memberContactTitle": "Private conversation",
+  "memberContactRequest": "Conversation request",
+  "memberContactAction": "Request conversation",
+  "memberContactPersonActions": "Person and actions",
+  "memberContactPrivacy": "A personal conversation through your shared Group. Only the two of you can read it. Acceptance is required; Group roles do not give access.",
+  "memberContactOrigin": "Through {group}",
+  "memberContactNote": "Optional introduction",
+  "memberContactNotEligible": "A new request is unavailable. Check your existing Requests and Private conversations, or try again later.",
+  "memberContactAcceptBody": "Accept a private conversation with this person through the displayed Group? This does not join a Project or grant a Group role.",
+  "memberContactInfo": "Conversation settings",
+  "memberContactReadOnly": "This conversation is read-only. Previously available history remains here; a new request and acceptance are needed to resume.",
+  "memberContactExitBody": "End this conversation episode for both people? Previous history remains read-only. Rejoining the Group will not resume messaging automatically.",
+  "memberContactMute": "Mute message notifications",
+  "@memberContactOrigin": {"placeholders":{"group":{"type":"String"}}},
+  "memberContactBlockConsequence": "Blocking stops new conversation requests and messages between you. Existing authorized history is retained; unblocking does not reopen an ended conversation."
 }

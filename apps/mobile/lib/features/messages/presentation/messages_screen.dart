@@ -1,3 +1,6 @@
+import '../../member_contact/presentation/member_contact_widgets.dart';
+import '../../member_contact/presentation/member_contact_routes.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -256,7 +259,8 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                                   item.counterpartyProfileId,
                                 ),
                               ProjectMessageChatItem() ||
-                              GroupContactMessageChatItem() => null,
+                              GroupContactMessageChatItem() ||
+                              MemberContactMessageChatItem() => null,
                             },
                           ),
                         if (state.hasMore)
@@ -336,7 +340,8 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                                   item.counterpartyProfileId,
                                 ),
                               ProjectMessageChatItem() ||
-                              GroupContactMessageChatItem() => null,
+                              GroupContactMessageChatItem() ||
+                              MemberContactMessageChatItem() => null,
                             },
                           ),
                         );
@@ -357,6 +362,9 @@ class _ChatCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (item case MemberContactMessageChatItem contact) {
+      return MemberContactChatCard(contact);
+    }
     if (item case GroupContactMessageChatItem contact) {
       return GroupContactChatCard(contact);
     }
@@ -368,9 +376,12 @@ class _ChatCard extends ConsumerWidget {
       ResourceMessageChatItem i => i.counterpartyDisplayName,
       ProjectRequestMessageChatItem i => i.counterpartyDisplayName,
       GroupContactMessageChatItem i => i.displayTitle,
+      MemberContactMessageChatItem i => i.displayTitle,
     };
     final counterpartyId = switch (item) {
-      ProjectMessageChatItem() || GroupContactMessageChatItem() => null,
+      ProjectMessageChatItem() ||
+      GroupContactMessageChatItem() ||
+      MemberContactMessageChatItem() => null,
       ResourceMessageChatItem i => i.counterpartyProfileId,
       ProjectRequestMessageChatItem i => i.counterpartyProfileId,
     };
@@ -410,6 +421,11 @@ class _ChatCard extends ConsumerWidget {
         'project-request-chat-item-${i.chatId}',
         'project-request-chat-link-${i.requestId}',
         projectRequestChatRoute(i.requestId),
+      ),
+      MemberContactMessageChatItem i => (
+        'member-contact-chat-${i.chatId}',
+        'member-contact-link-${i.chatId}',
+        memberContactChatRoute(i.chatId),
       ),
       GroupContactMessageChatItem i => (
         'group-contact-chat-${i.chatId}',
@@ -671,6 +687,9 @@ class _StructuredRequestCard extends StatelessWidget {
       item: item,
     ),
     ResourceRequestMessageItem item => _ResourceRequestCard(item: item),
+    MemberContactRequestMessageItem item => MemberContactRequestCard(
+      item.contact,
+    ),
     GroupContactRequestMessageItem item => GroupContactRequestCard(
       item.contact,
     ),

@@ -1,3 +1,6 @@
+import '../../member_contact/data/member_contact_gateway.dart';
+import '../../member_contact/application/member_contact_access_changes.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -27,14 +30,18 @@ abstract interface class MessageUnreadGateway {
 }
 
 class SupabaseMessageUnreadGateway implements MessageUnreadGateway {
-  const SupabaseMessageUnreadGateway(this.client, {this.contactAccessChanged});
+  const SupabaseMessageUnreadGateway(
+    this.client, {
+    this.contactAccessChanged,
+    this.memberAccessChanged,
+  });
   final SupabaseClient client;
-  final void Function(String)? contactAccessChanged;
+  final void Function(String)? contactAccessChanged, memberAccessChanged;
   @override
   Future<MessageUnreadSummary> summary(String profileId) async =>
       MessageUnreadSummary.parse(
         await client.rpc<Object?>(
-          'get_own_message_unread_summary_v2',
+          'get_own_message_unread_summary_v3',
           params: {'p_expected_profile_id': profileId},
         ),
       );
@@ -46,7 +53,7 @@ class SupabaseMessageUnreadGateway implements MessageUnreadGateway {
     String boundary,
   ) async => MessageUnreadSummary.parse(
     await client.rpc<Object?>(
-      'acknowledge_own_message_read_v2',
+      'acknowledge_own_message_read_v3',
       params: {
         'p_expected_profile_id': profileId,
         'p_kind': kind,
@@ -61,8 +68,11 @@ class SupabaseMessageUnreadGateway implements MessageUnreadGateway {
     void Function() invalidate,
     void Function(bool) connection,
   ) {
-    var legacyConnected = false, contactConnected = false;
-    void statusChanged() => connection(legacyConnected && contactConnected);
+    var legacyConnected = false,
+        contactConnected = false,
+        memberConnected = false;
+    void statusChanged() =>
+        connection(legacyConnected && contactConnected && memberConnected);
     final contact =
         GroupContactGateway(
           (name, args) => client.rpc<Object?>(name, params: args),
@@ -71,6 +81,14 @@ class SupabaseMessageUnreadGateway implements MessageUnreadGateway {
           contactConnected = connected;
           statusChanged();
         }, accessChanged: () => contactAccessChanged?.call(profileId));
+    final member =
+        MemberContactGateway(
+          (name, args) => client.rpc<Object?>(name, params: args),
+          signalClient: client,
+        ).subscribe(profileId, invalidate, (connected) {
+          memberConnected = connected;
+          statusChanged();
+        }, accessChanged: () => memberAccessChanged?.call(profileId));
     final channel = client.channel(
       'message-unread:profile:$profileId',
       opts: const RealtimeChannelConfig(private: true),
@@ -100,25 +118,28 @@ class SupabaseMessageUnreadGateway implements MessageUnreadGateway {
           legacyConnected = status == RealtimeSubscribeStatus.subscribed;
           statusChanged();
         });
-    return _UnreadSubscription(client, channel, contact);
+    return _UnreadSubscription(client, channel, contact, member);
   }
 }
 
 class _UnreadSubscription implements MessageUnreadSubscription {
-  _UnreadSubscription(this.client, this.channel, this.contact);
+  _UnreadSubscription(this.client, this.channel, this.contact, this.member);
   final SupabaseClient client;
   final RealtimeChannel channel;
-  final ContactSignalSubscription? contact;
+  final ContactSignalSubscription? contact, member;
   @override
   Future<void> close() async {
     await client.removeChannel(channel);
     await contact?.close();
+    await member?.close();
   }
 }
 
 final messageUnreadGatewayProvider = Provider<MessageUnreadGateway>(
   (ref) => SupabaseMessageUnreadGateway(
     ref.watch(supabaseClientProvider),
+    memberAccessChanged: (actor) =>
+        ref.read(memberContactAccessChangesProvider.notifier).changed(actor),
     contactAccessChanged: (actor) =>
         ref.read(contactAccessChangesProvider.notifier).changed(actor),
   ),
