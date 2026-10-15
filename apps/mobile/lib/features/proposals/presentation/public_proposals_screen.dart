@@ -38,7 +38,6 @@ import '../../project_resource_needs/presentation/project_resource_need_routes.d
 import '../../project_resource_needs/presentation/project_resource_needs_section.dart';
 import '../application/proposal_controllers.dart';
 import '../domain/proposal_models.dart';
-import '../domain/proposal_time.dart';
 import 'proposal_widgets.dart';
 import 'skill_filter.dart';
 import '../../template_workshop/presentation/template_workshop_screens.dart';
@@ -559,17 +558,7 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: AppSpacing.small),
-                  if (detail.summary.isIdea)
-                    Text(proposalScheduleText(context, detail.summary))
-                  else ...[
-                    Text(
-                      '${l10n.proposalStartLabel}: ${formatProposalDateTime(detail.summary.startsAt!, detail.summary.eventTimezone!, Localizations.localeOf(context).toLanguageTag())}',
-                    ),
-                    Text(
-                      '${l10n.proposalEndLabel}: ${formatProposalDateTime(detail.summary.endsAt!, detail.summary.eventTimezone!, Localizations.localeOf(context).toLanguageTag())}',
-                    ),
-                    Text(detail.summary.eventTimezone!),
-                  ],
+                  ProposalSchedulePanel(proposal: detail.summary),
                   if (detail.summary.skills.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.large),
                     Text(
