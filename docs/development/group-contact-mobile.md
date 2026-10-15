@@ -62,7 +62,7 @@ additive metadata endpoint, not a replacement authorization decision for reads.
 
 Use an owned emulator and an explicitly disposable local Supabase project. Never
 reset a shared project or install over the Play app on a physical phone. Fixtures
-are genuine OTP sessions for three synthetic `@planets.invalid` accounts, two
+are genuine OTP sessions for four synthetic `@planets.invalid` accounts, three
 public groups, a Co-organizer grant and a separate public Project. The Co-organizer
 has no photo; existing Project join retains its own photo requirement.
 
@@ -70,14 +70,43 @@ From the repository root, with its `node_modules/.bin` on PATH and the correct
 local container engine/loopback Mailpit configured:
 
 ```powershell
+$env:CONTAINER_CONNECTION='planets-d-qa-root'
+$env:DOCKER_HOST='npipe:////./pipe/podman-planets-d-qa'
+$env:MAILPIT_URL='http://127.0.0.1:55324'
 $env:PLANETS_DISPOSABLE_QA='1'
-node apps/mobile/integration_test/prepare_group_contact_smoke.mjs "$env:TEMP/planets-d02-defines.json"
+node apps/mobile/integration_test/prepare_group_contact_smoke.mjs "$env:TEMP/planets-d-r04-native-defines.json"
 adb -s emulator-5580 reverse tcp:55321 tcp:55321
 adb -s emulator-5580 shell wm size 720x1600
 adb -s emulator-5580 shell wm density 360
 cd apps/mobile
-flutter drive -d emulator-5580 --driver=test_driver/group_contact_screenshots.dart --target=integration_test/group_contact_smoke_test.dart --dart-define-from-file="$env:TEMP/planets-d02-defines.json"
+flutter drive -d emulator-5580 --no-dds --no-pub --driver=test_driver/group_contact_screenshots.dart --target=integration_test/group_contact_smoke_test.dart --dart-define-from-file="$env:TEMP/planets-d-r04-native-defines.json"
 ```
+
+The preparer resolves Supabase from its **working directory**; that directory's
+uncommitted config must identify the D project and ports. `PLANETS_DISPOSABLE_QA`
+alone does not isolate a database. Set D's Mailpit explicitly: the shared helper's
+default is port 54324. On Windows, both task-local Podman variables above select
+the owned engine without changing the machine's default connection. Start the
+database and finish cold image downloads before the emulator on a memory-limited
+host. The documented viewport is asserted as 320dp by the test.
+
+The complete synthetic review journey includes a declined coordination proposal,
+three exact human/Group consent pairs, no conversation before final consent,
+recovery after a deliberately lost final reply, and a fresh conversation whose
+new representative cannot read the source. It checks actual unread changes,
+role revocation/regrant without old admission revival, the exact protected report
+target and persisted report, blocking, safe former-member leave, close with
+permitted history, and a separate pending Project request without membership.
+The fixtures and postconditions use the real backend; only initial UI identity
+and the two lost responses are injected. Account switches dispose the preceding
+scope/client. Lazy-scroll lookups use the current route; screenshots wait for
+loaded content, and the driver retains failure response data too.
+
+EN narrow and IT 2x composer, audience and denied frames must be inspected after
+the **entire** driver exits successfully. An intermediate checkpoint or static
+analysis pass does not qualify the native journey. Do not hot restart an active
+integration driver; `--no-dds` follows the repository's Windows native harness
+configuration. The candidate privacy contract remains review-only.
 
 The private compile-time file lives outside the checkout and must be removed after
 QA. No tokens appear in test logs or committed evidence. Default local ports are

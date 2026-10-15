@@ -1,5 +1,16 @@
 # Local native integration checks
 
+## Representative contact and coordination
+
+`group_contact_smoke_test.dart` owns the real-backend synthetic representative
+request, bilateral, three-Group consent, revocation/regrant and safety journey.
+`contact_local_identity.dart` pairs injected UI identity with verified local OTP
+tokens; `prepare_group_contact_smoke.mjs` creates its disposable fixtures.
+The screenshot driver is `test_driver/group_contact_screenshots.dart`.
+See [contact native QA](../../../docs/development/group-contact-mobile.md) for
+isolated engine/ports, actual 320dp configuration, injection boundaries and
+completion requirements. Its unresolved privacy choices remain review-only.
+
 ## Navigation profile probe
 
 `navigation_profile_test.dart` runs guest Welcome/intro/Home, three rounds of
