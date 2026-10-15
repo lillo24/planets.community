@@ -33,7 +33,7 @@ class ReadOnlyBasemap extends StatefulWidget {
   final Widget Function(Widget canvas)? imageBuilder;
   final Widget? fallback;
 
-  /// Loading is not failure: never expose the eventual text action mid-decode.
+  /// The caller owns the compact text-only presentation while no pixels exist.
   final Widget? pending;
   final Future<ui.Image> Function(Uint8List bytes) decode;
   @override
@@ -158,12 +158,9 @@ class ReadOnlyBasemapState extends State<ReadOnlyBasemap> {
     builder: (context, constraints) {
       _layout(constraints.maxWidth.clamp(1, 768));
       if (_failed) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [Text(widget.failureLabel), ?widget.fallback],
-        );
+        return widget.fallback ?? Text(widget.failureLabel);
       }
-      if (_revoked) return const SizedBox.shrink();
+      if (_revoked) return widget.fallback ?? const SizedBox.shrink();
       if (!_ready) return widget.pending ?? const SizedBox.shrink();
       final canvas = Semantics(
         image: true,

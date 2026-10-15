@@ -9,6 +9,7 @@ import '../../../core/widgets/compact_skill_preview.dart';
 import '../../../core/time/event_time.dart';
 import '../../locations/presentation/location_attribution.dart';
 import '../../locations/presentation/public_location_label.dart';
+import '../../locations/presentation/independent_public_city.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import 'proposal_card_cover.dart';
@@ -82,6 +83,7 @@ class ProposalCard extends StatelessWidget {
     final location = shortPublicLocationLabel(
       proposal.locality,
       proposal.publicLocationLabel,
+      countryCode: proposal.countryCode,
     );
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -223,6 +225,10 @@ class ProposalLocation extends StatelessWidget {
     final instructions = detail.exactLocationRestricted
         ? l10n.proposalExactLocationRestricted
         : detail.exactMeetingText?.trim();
+    final city = cataloguedPublicCityName(
+      detail.summary.locality,
+      detail.summary.countryCode,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -231,7 +237,11 @@ class ProposalLocation extends StatelessWidget {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: AppSpacing.small),
-        Text(detail.summary.publicLocationLabel ?? l10n.proposalPlaceUndecided),
+        Text(
+          city ??
+              detail.summary.publicLocationLabel ??
+              l10n.proposalPlaceUndecided,
+        ),
         if (instructions != null && instructions.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.small),
           Text(
@@ -243,7 +253,9 @@ class ProposalLocation extends StatelessWidget {
             ),
           ),
         ],
-        const LocationAttribution(),
+        if (city == null &&
+            detail.summary.publicLocationLabel?.isNotEmpty == true)
+          const LocationAttribution(),
       ],
     );
   }

@@ -48,11 +48,13 @@ RPCs are documented in the [MAP01 contract](../../../../../docs/development/map0
 Short-lived receipt objects must not enter draft snapshots. The transient
 controller is wired through a **disabled production factory**. Actor/form
 generations, readiness, entitlement denials and expiry revoke transient work.
-MAPFIX01 credits follow displayed content. Verified provider labels/maps retain
-credits even on image failure. Explicit Project manual-city confirmation attests
+MAPFIX01 preserves stored text provenance. Provider results in editors and
+successfully rendered maps retain their credits. MAPUI03 replaces detail's
+text-only provider projection with independent manual/ISTAT city text, without
+changing stored provenance or provider geometry. Explicit manual-city confirmation attests
 only the matching saved public text, through a revision-bound canonical RPC and
 reread; reopening then suppresses credits. Unknown legacy/template text and the
-older Tavolo/resource manual save paths retain conservative credits. No geometry
+older Tavolo/resource manual save paths remain unclassified. No geometry
 absence is treated as evidence of manual authorship. The additive provenance
 migration is required for durable classification; older servers remain readable
 and manual content saves still work with unknown provenance. Nothing is backfilled.
@@ -74,13 +76,26 @@ read-only precision and Maps URLs; location_preview_gateway owns RPCs, the
 disabled static factory and launcher. public_preview_batch owns bounded
 public-only read/image caches. location_preview_panel owns laziness, generations,
 leases, uncached native decoding and one freshly reauthorized Maps action.
-MAP-UX01 removes preview panels from feed cards. Detail panels show authorized
-text immediately, no image space when disabled, a modest pending label with a
-48dp minimum that grows for localized accessibility text during tile transport/native
-decode, a 144dp decoded map, and one fallback on settled rendering failure.
-Pending imagery never mounts a text Maps action. A decoded map is itself the action; only
-unavailable imagery uses a compact text action with a valid canonical destination.
-Centered small detail credits follow the image with independent 48dp links.
+MAP-UX01 removes preview panels from feed cards. MAPUI03 detail panels show
+authorized text with a trailing 48dp icon-only Maps action while imagery is
+disabled, pending or failed, without reserved map space or technical status copy.
+That action searches only the freshly authorized public city/country; city-only
+Projects still opt out when no selected place exists. A decoded map is itself
+the action and keeps its canonical point/area destination. The compositor's
+imageBuilder composes text, the 144dp map and one credit group together, avoiding
+parent state callbacks or a frame where enabled transport implies visible pixels.
+Centered small detail credits follow actual imagery with independent 48dp links.
+`presentation/independent_public_city.dart` prefers canonically attested manual
+city text, otherwise exactly resolves a public Italian locality through the
+pinned ISTAT name catalogue. `data/italian_municipality_names.g.dart` owns only
+independent official name/alias data; `data/municipality_data_license.dart` owns
+the app's accessible CC BY notice. No coordinates, private label or formatted
+provider address enter this fallback. An unmatched detail shows localized
+unavailability with no Maps action, rather than uncredited provider content.
+Related public cards prefer the same catalogue names. List/compatibility footers
+remain only when unclassified raw geocoding text is actually retained; all-
+catalogue city lists have no Geoapify footer. Editor results retain their credits.
+See [MAPUI03](../../../../../docs/development/mapui03-location-ui.md).
 Denial still revokes protected state.
 Verified locality maps keep approximate-area semantics for screen readers without
 a visible area/no-pin banner. Empty optional arrival instructions render nothing;
@@ -96,7 +111,8 @@ remains a compatibility widget; real detail now uses the shared panel.
 See [MAP03](../../../../../docs/development/map03-location-previews.md).
 
 `presentation/public_location_label.dart` owns compact Project/Tavolo card and
-area-detail text: prefer canonical public structured locality (including async
+area-detail text: prefer an independent catalogue name when country/key match,
+then canonical public structured locality (including async
 preview locality), then a narrowly recognized Italian province/region suffix,
 then the unchanged ambiguous/manual public label or localized undecided state.
 It never consumes protected exact-place fields. Authorized exact labels and Maps

@@ -29,6 +29,7 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import '../../../test_support/map_discovery_fixture.dart';
 import '../../support/fake_location_preview.dart';
 import '../../support/fake_participation.dart';
+import '../../support/rendered_evidence.dart';
 
 LocationPreview projection(
   PreviewItem item, {
@@ -47,6 +48,7 @@ LocationPreview projection(
     11.1217,
   ),
   imageKey: 'a' * 64,
+  legacy: const LegacyPreviewArea('Trento', 'IT'),
 );
 Widget shell(
   ProviderContainer c,
@@ -70,7 +72,7 @@ Widget shell(
       ),
       child: child!,
     ),
-    home: Scaffold(body: SafeArea(child: body)),
+    home: RenderedEvidence.wrap(Scaffold(body: SafeArea(child: body))),
   ),
 );
 Widget panel(PreviewItem item, {Object? version}) => LocationPreviewPanel(
@@ -182,8 +184,11 @@ class _MutableMeeting extends ParticipantMeetingDetailsController {
 }
 
 void main() {
+  setUpAll(RenderedEvidence.loadFonts);
   for (final language in ['en', 'it']) {
-    testWidgets('$language pending map label fits narrow 2x text', (t) async {
+    testWidgets('$language pending map uses compact text at narrow 2x scale', (
+      t,
+    ) async {
       t.view.physicalSize = const Size(320, 800);
       t.view.devicePixelRatio = 1;
       addTearDown(t.view.resetPhysicalSize);
@@ -209,9 +214,9 @@ void main() {
         ),
       );
       await t.pumpAndSettle();
-      final pending = find.byKey(const Key('location-map-pending-A'));
+      final pending = find.byKey(const Key('location-preview-A'));
       final text = find.descendant(
-        of: pending,
+        of: find.text('Trento'),
         matching: find.byType(RichText),
       );
       final paragraph = t.renderObject<RenderParagraph>(text);
@@ -224,7 +229,9 @@ void main() {
       final size = t.getSize(pending);
       await t.pump(const Duration(milliseconds: 500));
       expect(t.getSize(pending), size);
-      expect(find.byKey(const Key('location-open-maps-A')), findsNothing);
+      expect(find.byKey(const Key('location-open-maps-A')), findsOneWidget);
+      expect(find.byKey(const Key('location-map-action-A')), findsNothing);
+      expect(find.byType(LocationAttribution), findsNothing);
       expect(t.takeException(), isNull);
       await t.pumpWidget(const SizedBox());
       c.read(sharedBasemapTilesProvider).clear();
@@ -269,8 +276,12 @@ void main() {
   );
   for (final language in ['en', 'it']) {
     testWidgets(
-      '$language slow public Trento preview has no transient Maps action or long label',
+      '$language slow public Trento preview keeps compact fallback until decoded',
       (t) async {
+        t.view.physicalSize = const Size(320, 800);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.resetPhysicalSize);
+        addTearDown(t.view.resetDevicePixelRatio);
         final tiles = DelayedTiles();
         final pending = Completer<LocationPreview?>();
         const item = PreviewItem('one_time', 'A');
@@ -322,11 +333,8 @@ void main() {
         for (var n = 0; n < 6; n++) {
           await t.pump(const Duration(milliseconds: 100));
           expect(find.text('Trento'), findsOneWidget);
-          expect(
-            find.byKey(const Key('location-map-pending-A')),
-            findsOneWidget,
-          );
-          expect(find.byKey(const Key('location-open-maps-A')), findsNothing);
+          expect(find.byKey(const Key('location-map-pending-A')), findsNothing);
+          expect(find.byKey(const Key('location-open-maps-A')), findsOneWidget);
           expect(find.byKey(const Key('location-map-action-A')), findsNothing);
           expect(t.getSize(find.byType(LocationPreviewPanel)), size);
         }
@@ -337,6 +345,7 @@ void main() {
         expect(find.byKey(const Key('location-map-action-A')), findsOneWidget);
         expect(find.text('Trento'), findsOneWidget);
         expect(find.byType(LocationAttribution), findsOneWidget);
+        await RenderedEvidence.capture(t, '$language-synthetic-rendered');
         expect(t.takeException(), isNull);
         await t.pumpWidget(const SizedBox());
         c.read(sharedBasemapTilesProvider).clear();
@@ -649,10 +658,7 @@ void main() {
           find.byKey(const Key('location-map-action-A')),
           changed ? findsOneWidget : findsNothing,
         );
-        expect(
-          find.text('Map preview unavailable'),
-          changed ? findsNothing : findsOneWidget,
-        );
+        expect(find.text('Map preview unavailable'), findsNothing);
         await t.pumpWidget(const SizedBox());
         c.read(sharedBasemapTilesProvider).clear();
       },
@@ -736,6 +742,9 @@ void main() {
       expect(images.every((image) => image.debugDisposed), true);
       await settle(t);
       expect(find.byKey(const Key('public-detail-overlay')), findsNothing);
+      expect(find.text('Trento'), findsOneWidget);
+      expect(find.byKey(const Key('location-open-maps-A')), findsOneWidget);
+      expect(find.byKey(const Key('location-map-action-A')), findsNothing);
       expect(store.count, 0);
       expect(store.enabled, false);
       expect(static.calls, 0);
@@ -899,6 +908,7 @@ void main() {
         expect(find.byKey(const Key('location-open-maps-A')), findsOneWidget);
         expect(find.byKey(const Key('location-map-action-A')), findsNothing);
         expect(find.byKey(const Key('public-detail-overlay')), findsNothing);
+        expect(find.byType(LocationAttribution), findsNothing);
         if (mode != 'tile-failure') {
           expect(tiles.tileCalls, isEmpty);
           expect(find.byType(ReadOnlyBasemap), findsNothing);
@@ -1018,7 +1028,9 @@ void main() {
           ),
         );
         await settle(t);
-        expect(find.text('SECRET venue'), findsOneWidget);
+        // Pending imagery exposes only the independent PUBLIC city.
+        expect(find.text('SECRET venue'), findsNothing);
+        expect(find.text('Trento'), findsOneWidget);
         expect(tiles.pending, isNotEmpty);
         entitled = false;
         if (reason == 'lease') {
@@ -1322,7 +1334,7 @@ void main() {
       final calls = tiles.tileCalls.length;
       expect(calls, greaterThan(0));
       expect(find.byKey(const Key('location-map-action-A')), findsNothing);
-      expect(find.byKey(const Key('location-open-maps-A')), findsNothing);
+      expect(find.byKey(const Key('location-open-maps-A')), findsOneWidget);
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tiles.finish();
       await settle(t);

@@ -19,6 +19,7 @@ import '../../../app/router/browse_activity_switcher.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../locations/domain/location_preview.dart';
 import '../../locations/presentation/location_attribution.dart';
+import '../../locations/presentation/independent_public_city.dart';
 import '../../../core/widgets/async_data_presentation.dart';
 import '../../../core/widgets/browse_filter_button.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -350,10 +351,19 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                         .load(reset: false),
                     child: Text(l10n.proposalLoadMore),
                   ),
-                // DTOs omit provider provenance; nonempty labels may be derived.
+                // Only remaining unclassified text needs service credits;
+                // catalogue-resolved city names come from independent ISTAT data.
                 if (widget.tutorialPlaceholder == null &&
-                    (state.items.isNotEmpty ||
-                        state.visibleRequestedItems.isNotEmpty))
+                    ([
+                      ...state.items,
+                      ...state.visibleRequestedItems.map((x) => x.proposal),
+                    ].any(
+                      (x) =>
+                          cataloguedPublicCityName(x.locality, x.countryCode) ==
+                              null &&
+                          (x.publicLocationLabel?.isNotEmpty == true ||
+                              x.locality?.isNotEmpty == true),
+                    )))
                   const LocationAttribution(),
                 // Let credit links scroll above the floating Create action.
                 const SizedBox(height: 80),
