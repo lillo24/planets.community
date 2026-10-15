@@ -26,7 +26,9 @@ async function call(person, name, params = {}) {
   const result = await person.client.rpc(name, {
     ...(params.p_expected_reporter_profile_id ||
     params.p_expected_staff_profile_id ||
-    params.p_expected_blocker_profile_id
+    params.p_expected_blocker_profile_id ||
+    params.p_expected_creator_profile_id ||
+    params.p_expected_requester_profile_id
       ? {}
       : actor(person)),
     ...params,
@@ -160,6 +162,105 @@ async function afterGroupWait(groupId, rpcName, launch, transition) {
     await holder;
   }
   return pending;
+}
+async function blockAfterLegacyProjectWait(blocker, blocked, groupIds) {
+  // These records use ordinary real-Auth commands. Only the held lock and the
+  // independent NOWAIT observation use SQL; no synthetic Project state is injected.
+  const projectId = await call(blocked, "create_proposal_draft", {
+    p_expected_creator_profile_id: blocked.id,
+    p_title: `Fictional M Block order ${run}`,
+    p_summary: "Synthetic Project for observed Block lock ordering.",
+    p_description:
+      "A pending participation request must close before Group locks.",
+    p_starts_at: "2098-01-02T10:00:00.000Z",
+    p_ends_at: "2098-01-02T14:00:00.000Z",
+    p_event_timezone: "Europe/Rome",
+    p_country_code: "IT",
+    p_locality: "Trento",
+    p_administrative_area: "Povo",
+    p_public_location_label: "Trento · Povo",
+    p_exact_meeting_text: "Fictional private meeting location",
+    p_exact_location_visibility: "participants",
+    p_skill_ids: [],
+    p_skill_importances: [],
+    p_people_capacity: 20,
+  });
+  await call(blocked, "publish_proposal", {
+    p_expected_creator_profile_id: blocked.id,
+    p_proposal_id: projectId,
+  });
+  const requestId = await call(blocker, "request_to_join_project", {
+    p_expected_requester_profile_id: blocker.id,
+    p_project_id: projectId,
+    p_request_message: "A fictional pending request for the Block race.",
+    p_skill_ids: [],
+    p_resource_need_ids: [],
+  });
+  let readySignal, release, holderPid;
+  const ready = new Promise((resolve) => {
+    readySignal = resolve;
+  });
+  const proceed = new Promise((resolve) => {
+    release = resolve;
+  });
+  const holder = sql.begin(async (tx) => {
+    [{ pid: holderPid }] = await tx`select pg_backend_pid() pid`;
+    await tx`select id from public.proposals where id=${projectId}::uuid for update`;
+    readySignal();
+    await proceed;
+  });
+  // Surface lock-holder setup failures instead of waiting forever for readiness.
+  await Promise.race([ready, holder]);
+  const pending = Promise.resolve(
+    blocker.client.rpc("block_user", {
+      p_expected_blocker_profile_id: blocker.id,
+      p_blocked_profile_id: blocked.id,
+    }),
+  );
+  let result;
+  try {
+    let observed = false;
+    for (let attempt = 0; attempt < 120; attempt++) {
+      const [state] = await sql`select exists(select 1 from pg_stat_activity a
+        where a.wait_event_type='Lock' and a.query ilike '%block_user%'
+          and ${holderPid}::integer=any(pg_blocking_pids(a.pid))) waiting`;
+      if (state.waiting) {
+        observed = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    equal(
+      observed,
+      true,
+      "real Block independently observed waiting on its legacy Project row",
+    );
+    await sql.begin(async (tx) => {
+      const groups = await tx`select id from private.community_groups
+        where id=any(${groupIds}::uuid[]) order by id for update nowait`;
+      equal(
+        groups.length,
+        groupIds.length,
+        "member origin Groups remain acquirable while Block waits for legacy Project closure",
+      );
+    });
+  } finally {
+    release();
+    await holder;
+    result = await pending;
+  }
+  equal(
+    result.error?.code ?? null,
+    null,
+    "Block completes after the legacy row is released",
+  );
+  const [closed] =
+    await sql`select status from public.project_join_requests where id=${requestId}::uuid`;
+  equal(
+    closed.status,
+    "withdrawn",
+    "Block preserves legacy pending Project convergence",
+  );
 }
 try {
   const owner = await user("owner");
@@ -561,10 +662,7 @@ try {
     seen.length,
     "stable ordinal tie breaker prevents duplicate history",
   );
-  await call(b, "block_user", {
-    p_expected_blocker_profile_id: b.id,
-    p_blocked_profile_id: a.id,
-  });
+  await blockAfterLegacyProjectWait(b, a, [g1, g2]);
   await denied(a, "send_member_contact_message", {
     p_action_id: randomUUID(),
     p_chat_id: reentry.chat_id,

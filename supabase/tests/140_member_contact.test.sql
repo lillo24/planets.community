@@ -1,6 +1,35 @@
 -- Synthetic review candidate. This is not founder approval of personal lifetime policy.
 begin;
 select no_plan();
+-- Canonical Block keeps Project/Resource closure before the ONE complete sorted
+-- Group reservation, and member cleanup runs only after predecessor convergence.
+create temp table block_order as select
+  pg_get_functiondef('private.close_pending_direct_requests_for_user_block(uuid,uuid)'::regprocedure) outer_body,
+  pg_get_functiondef('private.member_contact_previous_block_convergence(uuid,uuid)'::regprocedure) predecessor_body;
+select ok(strpos(outer_body,'private.community_groups')=0
+  and strpos(outer_body,'perform private.member_contact_previous_block_convergence(')>0
+  and strpos(outer_body,'perform private.member_contact_previous_block_convergence(')<strpos(outer_body,'for pair in select'),
+  'member Block delegates before pair cleanup and acquires no premature Group lock') from block_order;
+select ok(strpos(predecessor_body,'perform private.close_pending_project_resource_requests_for_user_block(')>0
+  and strpos(predecessor_body,'perform private.close_pending_project_resource_requests_for_user_block(')<strpos(predecessor_body,'select array_agg(distinct g order by g)'),
+  'legacy Project/Resource closure precedes complete Group reservation') from block_order;
+select ok(strpos(predecessor_body,'private.group_join_requests')>0
+  and strpos(predecessor_body,'private.group_join_requests')<strpos(predecessor_body,') affected;')
+  and strpos(predecessor_body,'private.group_contact_requests')>0
+  and strpos(predecessor_body,'private.group_contact_requests')<strpos(predecessor_body,') affected;')
+  and strpos(predecessor_body,'union all select s.group_id from private.group_coordination_proposals')>0
+  and strpos(predecessor_body,'union all select s.group_id from private.group_coordination_proposals')<strpos(predecessor_body,') affected;')
+  and strpos(predecessor_body,'union all select p.group_id from private.member_contact_pairs')>0
+  and strpos(predecessor_body,'union all select p.group_id from private.member_contact_pairs')<strpos(predecessor_body,') affected;')
+  and strpos(predecessor_body,') affected;')<strpos(predecessor_body,'order by g.id for update')
+  and strpos(predecessor_body,'order by g.id for update')<strpos(predecessor_body,'perform private.group_contact_legacy_block_convergence('),
+  'legacy, representative, coordination and member Groups share the existing sorted reservation') from block_order;
+select is((length(predecessor_body)-length(replace(predecessor_body,'select array_agg(distinct g order by g)','')))/length('select array_agg(distinct g order by g)'),
+  1,'one complete affected Group union remains the reservation owner') from block_order;
+select ok(not has_function_privilege(r,f,'execute'),r||' cannot invoke private Block hook '||f)
+from unnest(array['anon','authenticated','service_role']) r
+cross join unnest(array['private.close_pending_direct_requests_for_user_block(uuid,uuid)',
+  'private.member_contact_previous_block_convergence(uuid,uuid)']) f;
 insert into auth.users(id,email) select ('e0500000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'member-tap-'||n||'@planets.invalid' from generate_series(1,7) n;
 insert into public.profiles(id,display_name) select id,'Fictional member '||right(id::text,1) from auth.users where email like 'member-tap-%';
 insert into private.community_groups(id,name,description,group_kind,volunteering_focus,publication_state,original_actor_id)

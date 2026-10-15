@@ -68,8 +68,15 @@ waits. Membership/delegate termination shares the canonical Group serialization;
 identity deletion hooks take no new Group lock. The last qualifying relationship
 loss seals the episode at the pair's committed ordinal and clears old read tokens.
 The stored termination prevents a leave/rejoin between reads from reviving access.
-The Block wrapper reserves all existing legacy/D/member affected Groups in one
-sorted set before invoking previous hooks; it does not replace their behavior.
+Forward correction `20261015114510_member_contact_block_lock_order.sql` preserves
+the canonical Block OID and its captured predecessor. Project/Resource closure
+runs first; then the predecessor reserves legacy Group-join, representative,
+coordination and member-origin Groups in its existing single sorted union. Member
+pair cleanup delegates before acquiring its own pair rows. The initial member
+wrapper incorrectly prelocked only part of that Group set before legacy closure;
+the forward correction removes that prelock without rewriting applied history.
+Unexpected wrapper bodies or changed lock markers fail migration explicitly,
+and both function identities and ACLs are checked for preservation.
 
 History uses transactional per-pair ordinals plus UUID, including equal timestamps
 and multiple episodes. Message projection, preview, activity, unread and report
@@ -170,6 +177,11 @@ mute versus unread, exact report evidence and legacy readers.
 `npm run member:contact:verify:local` uses synthetic real OTP/PostgREST identities,
 canonical Group admission, independently observed lock waits for acceptance/send
 versus context loss, lost-response recovery, scoped evidence and paged history.
+Its Block regression holds a real pending Project's concrete row, observes the
+real-Auth Block waiting on that exact backend, and independently acquires both
+member-origin Groups with `NOWAIT`. This fails the earlier premature Group lock
+ordering. Structural pgTAP assertions separately check that coordination and
+member Groups enter the same predecessor union, plus private helper privileges.
 Its equal-timestamp message fixture is explicitly injected with SQL; it does not
 claim those fixture writes occurred through the mobile client.
 
