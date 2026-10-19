@@ -32,6 +32,18 @@ Map<String, dynamic> revised({
   'unread_count': 0,
 };
 void main() {
+  test('legacy five-field history envelope remains compatible', () {
+    final legacy = historyRow([2, 1])..remove('access_id');
+    final page = DiscussionHistory(
+      legacy,
+      newest: true,
+      expectedActor: actor,
+      expectedRoom: roomId,
+    );
+    expect(page.admissionId, admission);
+    expect(page.messages.map((message) => message.sequence), [2, 1]);
+  });
+
   test('v2 history validates the canonical effective access envelope', () {
     final page = DiscussionHistory(
       {

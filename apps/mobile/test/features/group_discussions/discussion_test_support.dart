@@ -52,6 +52,8 @@ Map<String, dynamic> historyRow(
   'profile_id': actor,
   'room_id': roomId,
   'admission_id': episode,
+  // The active v2 RPC includes both aliases for its effective history grant.
+  'access_id': episode,
 };
 DiscussionHistory discussionHistoryFixture(
   List<int> numbers, {
