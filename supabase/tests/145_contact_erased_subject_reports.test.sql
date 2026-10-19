@@ -107,7 +107,7 @@ select is(public.get_own_group_coordination_proposal(pg_temp.fixture_id(1), pg_t
 reset role;
 
 -- Erase only this dedicated synthetic identity, after checking its exact email.
-select is((select email from auth.users where id = pg_temp.fixture_id(2)), 'contact-erasure-2@planets.invalid'::text,
+select is((select email::text from auth.users where id = pg_temp.fixture_id(2)), 'contact-erasure-2@planets.invalid'::text,
   'the erasure target is this transaction synthetic fixture');
 delete from public.profiles where id = pg_temp.fixture_id(2)
   and exists(select 1 from auth.users where id = pg_temp.fixture_id(2) and email = 'contact-erasure-2@planets.invalid');
