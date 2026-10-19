@@ -305,42 +305,64 @@ class _GroupContactChatScreenState extends ConsumerState<GroupContactChatScreen>
         child: LayoutBuilder(
           builder: (context, constraints) => Column(
             children: [
-              if (loading) const LinearProgressIndicator(),
-              if (c == null && !loading)
-                Padding(
-                  padding: const EdgeInsets.all(16),
+              // Access can disappear while the IME is still open. Keep status,
+              // recovery and retained report controls within that short body.
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: constraints.maxHeight / 4,
+                ),
+                child: SingleChildScrollView(
+                  primary: false,
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(denied ? l.contactUnavailable : l.contactFailure),
-                      TextButton(onPressed: load, child: Text(l.retryAction)),
-                      if (knownReport case final String message)
-                        TextButton(
-                          onPressed: () => report(message),
-                          child: Text(l.contactKnownReport),
+                      if (loading) const LinearProgressIndicator(),
+                      if (c == null && !loading)
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Text(
+                                denied
+                                    ? l.contactUnavailable
+                                    : l.contactFailure,
+                              ),
+                              TextButton(
+                                onPressed: load,
+                                child: Text(l.retryAction),
+                              ),
+                              if (knownReport case final String message)
+                                TextButton(
+                                  onPressed: () => report(message),
+                                  child: Text(l.contactKnownReport),
+                                ),
+                            ],
+                          ),
+                        ),
+                      if (c != null && c.readOnly)
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(l.contactReadOnly),
+                        ),
+                      if (attempt != null &&
+                          (c == null || c.readOnly || attempt!.receipt != null))
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            children: [
+                              Text(l.contactDeliveryPending),
+                              TextButton(
+                                key: const Key('contact-recover-send'),
+                                onPressed: sending ? null : recover,
+                                child: Text(l.contactRecover),
+                              ),
+                            ],
+                          ),
                         ),
                     ],
                   ),
                 ),
-              if (c != null && c.readOnly)
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(l.contactReadOnly),
-                ),
-              if (attempt != null &&
-                  (c == null || c.readOnly || attempt!.receipt != null))
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    children: [
-                      Text(l.contactDeliveryPending),
-                      TextButton(
-                        key: const Key('contact-recover-send'),
-                        onPressed: sending ? null : recover,
-                        child: Text(l.contactRecover),
-                      ),
-                    ],
-                  ),
-                ),
+              ),
               Expanded(
                 child: MessageReadViewport(
                   profileId: actor,
@@ -409,6 +431,7 @@ class _GroupContactChatScreenState extends ConsumerState<GroupContactChatScreen>
                   ),
                   child: SingleChildScrollView(
                     key: const Key('contact-message-composer'),
+                    primary: false,
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Column(

@@ -17,6 +17,8 @@ import 'package:planets_mobile/features/group_contact/presentation/group_contact
 import 'package:planets_mobile/features/group_contact/presentation/group_contact_request_screen.dart';
 import 'package:planets_mobile/features/messages/data/message_unread_gateway.dart';
 import 'package:planets_mobile/features/messages/application/message_chats_refresh.dart';
+import 'package:planets_mobile/features/moderation/domain/moderation_models.dart';
+import 'package:planets_mobile/features/moderation/presentation/moderation_routes.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../support/fake_blocking.dart';
@@ -71,6 +73,15 @@ Future<(ProviderContainer, GoRouter, Gateway)> pumpContact(
       GoRoute(
         path: '/messages',
         builder: (_, _) => const Scaffold(body: Text('Messages')),
+      ),
+      GoRoute(
+        path: ModerationRoutes.newReport,
+        builder: (_, state) {
+          final target = state.extra! as ModerationReportTarget;
+          return Scaffold(
+            body: Text('Known report: ${target.kind.name} ${target.id}'),
+          );
+        },
       ),
     ],
   );
@@ -470,6 +481,86 @@ void main() {
   });
 
   for (final language in ['en', 'it']) {
+    for (final failure in ['denied', 'offline']) {
+      testWidgets(
+        '$language $failure access loss keeps keyboard status and known report reachable',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 711);
+          tester.view.devicePixelRatio = 1;
+          tester.view.viewInsets = const FakeViewPadding(bottom: 380);
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          addTearDown(tester.view.resetViewInsets);
+          final reread = Completer<Object?>();
+          final calls = <String>[];
+          var lostAccess = false;
+          final (container, _, unread) = await pumpContact(
+            tester,
+            (name, args) async {
+              calls.add(name);
+              if (lostAccess) return reread.future;
+              return basic(name, args);
+            },
+            path: '/chat',
+            language: language,
+            scale: 2,
+          );
+          await tester.enterText(
+            find.byKey(const Key('contact-message-body')),
+            'Unsent private draft while the keyboard is open',
+          );
+          await tester.pumpAndSettle();
+          final l = AppLocalizations.of(tester.element(find.byType(Scaffold)));
+          expect(tester.takeException(), isNull);
+          lostAccess = true;
+          final readsBeforeLoss = unread.reads;
+          container.read(contactAccessChangesProvider.notifier).changed(actor);
+          await tester.pump();
+          expect(find.text('Private fictional human message'), findsNothing);
+          expect(find.byKey(const Key('contact-message-body')), findsNothing);
+          expect(find.byKey(const Key('contact-message-send')), findsNothing);
+          reread.completeError(
+            failure == 'denied'
+                ? const PostgrestException(
+                    message: 'Unavailable',
+                    code: '42501',
+                  )
+                : StateError('Offline'),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          final failedReadCalls = List<String>.of(calls);
+          final knownReport = find.text(l.contactKnownReport);
+          // At 2x the wrapped label is taller than the remaining status slot;
+          // scroll its tap target into the slot rather than only its first line.
+          await Scrollable.ensureVisible(
+            tester.element(knownReport),
+            alignment: 0.5,
+          );
+          await tester.pumpAndSettle();
+          expect(knownReport.hitTestable(), findsOneWidget);
+          expect(tester.getBottomRight(knownReport).dy, lessThanOrEqualTo(331));
+          await tester.tap(knownReport);
+          await tester.pumpAndSettle();
+          expect(
+            find.text('Known report: groupContactMessage $messageId'),
+            findsOneWidget,
+          );
+          await tester.pump(const Duration(seconds: 1));
+          expect(
+            calls,
+            failedReadCalls,
+            reason: 'Known reporting must not reread protected content.',
+          );
+          expect(
+            unread.reads,
+            readsBeforeLoss,
+            reason: 'Cleared or covered history cannot ACK.',
+          );
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
     testWidgets(
       '$language chat keeps keyboard and unknown-send controls bounded',
       (tester) async {
