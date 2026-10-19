@@ -1,3 +1,10 @@
+import 'package:planets_mobile/features/settings/application/activities_split_preference_controller.dart';
+import 'package:planets_mobile/features/settings/data/activities_split_preference_store.dart';
+import 'package:planets_mobile/features/settings/domain/activities_split_preference.dart';
+import 'package:planets_mobile/features/auth/application/auth_command_controller.dart';
+import 'package:planets_mobile/features/activities_sandbox/presentation/activity_example_widgets.dart';
+
+import '../../support/rendered_evidence.dart';
 import '../../support/fake_policy.dart';
 import '../../support/fake_group_discussions.dart';
 
@@ -57,6 +64,352 @@ import '../../support/fake_message_chats.dart';
 import '../../../test_support/map_discovery_fixture.dart';
 
 void main() {
+  setUpAll(() => RenderedEvidence.loadFonts());
+  testWidgets(
+    'ACTSPLIT01 route-backed Projects and Activities choices stay native',
+    (tester) async {
+      final app = await _pump(tester, signedIn: false, split: true);
+      final router = app.read(appRouterProvider);
+      router.go('/proposals');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Activities'));
+      await tester.pumpAndSettle();
+      expect(_path(app), '/activities');
+      await _tap(tester, 'activities-native-tavoli');
+      expect(_path(app), '/tavoli');
+      await _tap(tester, 'tavoli-activities-landing');
+      expect(_path(app), '/activities');
+      router.go('/activities/examples/missing');
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('This example does not exist'),
+        findsOneWidget,
+      );
+      await app
+          .read(activitiesSplitPreferenceProvider.notifier)
+          .select(ActivitiesSplitMode.off);
+      await tester.pumpAndSettle();
+      expect(_path(app), '/proposals');
+      expect(
+        find.byType(ActivityExampleCard, skipOffstage: false),
+        findsNothing,
+      );
+    },
+  );
+  testWidgets(
+    'ACTSPLIT01 restore and save errors retain choice and offer retry',
+    (tester) async {
+      final store = FakeActivitiesSplitPreferenceStore()
+        ..writeError = StateError('private platform error');
+      final app = await _pump(
+        tester,
+        signedIn: false,
+        splitRestoreFailed: true,
+        splitStore: store,
+      );
+      app.read(appRouterProvider).go('/settings');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'settings-activities-split');
+      expect(app.read(activitiesSplitPreferenceProvider).enabled, isFalse);
+      expect(find.byKey(const Key('activities-split-error')), findsOneWidget);
+      expect(find.textContaining('private platform error'), findsNothing);
+      store.writeError = null;
+      await _tap(tester, 'activities-split-retry');
+      expect(app.read(activitiesSplitPreferenceProvider).enabled, isTrue);
+      expect(
+        app.read(activitiesSplitPreferenceProvider).restoreFailed,
+        isFalse,
+      );
+      expect(find.byKey(const Key('activities-split-error')), findsNothing);
+      store.writeError = StateError('private platform error');
+      await _tap(tester, 'settings-activities-split');
+      expect(app.read(activitiesSplitPreferenceProvider).enabled, isTrue);
+      store.writeError = null;
+      await _tap(tester, 'activities-split-retry');
+      expect(app.read(activitiesSplitPreferenceProvider).enabled, isFalse);
+      expect(store.writes, ['on', 'on', 'off', 'off']);
+      expect(
+        app.read(navigationPreferenceProvider).destination,
+        BottomTabDestination.browse,
+      );
+    },
+  );
+
+  for (final destination in BottomTabDestination.values) {
+    testWidgets(
+      'ACTSPLIT01 public layouts and retained Browse with $destination',
+      (tester) async {
+        final app = await _pump(
+          tester,
+          signedIn: false,
+          destination: destination,
+        );
+        final router = app.read(appRouterProvider);
+        expect(find.text('Projects and Cultural Tables'), findsOneWidget);
+        expect(find.byKey(const Key('browse-activities-button')), findsNothing);
+        router.go('/settings');
+        await tester.pumpAndSettle();
+        await _tap(tester, 'settings-activities-split');
+        await RenderedEvidence.capture(tester, 'sandbox-on-$destination');
+        expect(app.read(activitiesSplitPreferenceProvider).enabled, isTrue);
+        expect(identical(router, app.read(appRouterProvider)), isTrue);
+        router.go('/');
+        await tester.pumpAndSettle();
+        expect(find.text('Projects'), findsOneWidget);
+        expect(
+          find.byKey(const Key('browse-activities-button')),
+          findsOneWidget,
+        );
+        await RenderedEvidence.capture(tester, 'home-on-$destination');
+        await _tap(tester, 'browse-activities-button');
+        expect(_path(app), '/activities');
+        expect(find.byKey(const Key('nav-browse')), findsOneWidget);
+        expect(find.text('Example activities · Trento'), findsOneWidget);
+        await RenderedEvidence.capture(tester, 'activities-all-$destination');
+        await _tap(tester, 'activities-category-sports');
+        expect(find.byKey(const Key('activities-native-tavoli')), findsNothing);
+        await tester.enterText(
+          find.byKey(const Key('activities-example-search')),
+          'climbing',
+        );
+        await tester.pumpAndSettle();
+        await RenderedEvidence.capture(
+          tester,
+          'activities-sports-$destination',
+        );
+        await _activityTap(tester, 'example-climbing');
+        expect(_path(app), '/activities/examples/example-climbing');
+        expect(find.textContaining('not a real listing'), findsOneWidget);
+        await RenderedEvidence.capture(tester, 'example-detail-$destination');
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(_path(app), '/activities');
+        expect(
+          tester
+              .widget<TextField>(
+                find.byKey(const Key('activities-example-search')),
+              )
+              .controller!
+              .text,
+          'climbing',
+        );
+        await _tap(tester, 'nav-home');
+        final preferredKey = destination == BottomTabDestination.browse
+            ? 'nav-browse'
+            : 'nav-messages';
+        expect(find.byKey(Key(preferredKey)), findsOneWidget);
+        if (destination == BottomTabDestination.browse) {
+          await _tap(tester, 'nav-browse');
+          expect(_path(app), '/activities');
+          expect(
+            tester
+                .widget<TextField>(
+                  find.byKey(const Key('activities-example-search')),
+                )
+                .controller!
+                .text,
+            'climbing',
+          );
+        }
+        router.go('/settings');
+        await tester.pumpAndSettle();
+        await _tap(tester, 'settings-activities-split');
+        await RenderedEvidence.capture(tester, 'sandbox-off-$destination');
+        router.go('/');
+        await tester.pumpAndSettle();
+        expect(find.text('Projects and Cultural Tables'), findsOneWidget);
+        expect(find.byKey(const Key('browse-activities-button')), findsNothing);
+        expect(app.read(navigationPreferenceProvider).destination, destination);
+        await RenderedEvidence.capture(tester, 'restored-off-$destination');
+      },
+    );
+  }
+
+  for (final path in ['/activities', '/activities/examples/example-climbing']) {
+    testWidgets('ACTSPLIT01 OFF safely gates $path and refreshes same router', (
+      tester,
+    ) async {
+      final app = await _pump(tester, signedIn: false);
+      final router = app.read(appRouterProvider);
+      router.go(path);
+      await tester.pumpAndSettle();
+      expect(_path(app), '/proposals');
+      expect(find.byType(ActivityExampleCard), findsNothing);
+      await app
+          .read(activitiesSplitPreferenceProvider.notifier)
+          .select(ActivitiesSplitMode.on);
+      router.go(path);
+      await tester.pumpAndSettle();
+      expect(_path(app), path);
+      await app
+          .read(activitiesSplitPreferenceProvider.notifier)
+          .select(ActivitiesSplitMode.off);
+      await tester.pumpAndSettle();
+      expect(_path(app), '/proposals');
+      expect(identical(router, app.read(appRouterProvider)), isTrue);
+      expect(find.byKey(const Key('activity-example-detail')), findsNothing);
+    });
+  }
+
+  testWidgets(
+    'ACTSPLIT01 samples issue no native reads or participation writes',
+    (tester) async {
+      final projects = FakeProposalGateway();
+      final tavoli = FakeRecurringActivityGateway();
+      final participation = FakeParticipationGateway();
+      final app = await _pump(
+        tester,
+        signedIn: false,
+        split: true,
+        proposals: projects,
+        recurringActivities: tavoli,
+        participation: participation,
+      );
+      app.read(appRouterProvider).go('/activities');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'activities-category-sports');
+      await _activityTap(tester, 'example-acrobatics');
+      expect(find.text('Course'), findsOneWidget);
+      expect(find.text('Schedule to confirm'), findsOneWidget);
+      expect(find.textContaining('today'), findsNothing);
+      expect(find.byType(FilledButton), findsNothing);
+      expect(projects.calls, isEmpty);
+      expect(tavoli.calls, isEmpty);
+      expect(participation.calls, isEmpty);
+      await _tap(tester, 'page-close');
+      expect(_path(app), '/activities');
+      tester
+          .state<ScrollableState>(find.byType(Scrollable).hitTestable().first)
+          .position
+          .jumpTo(0);
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('activities-example-search')),
+        'no such example',
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('activities-examples-empty')),
+        findsOneWidget,
+      );
+      await _activityTap(tester, 'activities-reset-examples');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('activities-native-tavoli')), findsOneWidget);
+      await _tap(tester, 'activities-category-culture');
+      expect(find.byKey(const Key('activities-native-tavoli')), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('example-printmaking')),
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      expect(find.text('Printmaking afternoon'), findsOneWidget);
+      expect(find.text('First steps on the climbing wall'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'ACTSPLIT01 native Tavoli stays live, bounded, scoped and guarded',
+    (tester) async {
+      final tavoli = FakeRecurringActivityGateway()
+        ..publicItems = [publicRecurringSummaryFixture()]
+        ..publicDetail = publicRecurringDetailFixture();
+      final app = await _pump(
+        tester,
+        signedIn: false,
+        split: true,
+        recurringActivities: tavoli,
+      );
+      final router = app.read(appRouterProvider);
+      router.go('/activities');
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('activities-example-search')),
+        'no matching example',
+      );
+      await tester.pumpAndSettle();
+      // Example search never removes the independent native entry.
+      await _tap(tester, 'activities-native-tavoli');
+      expect(_path(app), '/tavoli');
+      expect(tavoli.calls.where((call) => call == 'list-public'), hasLength(1));
+      expect(find.byKey(const Key('map-open-tavoli')), findsOneWidget);
+      expect(find.byKey(const Key('tavoli-create-action')), findsOneWidget);
+      expect(find.byType(ActivityExampleCard), findsNothing);
+      await RenderedEvidence.capture(tester, 'native-tavoli-on');
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(_path(app), '/activities');
+      expect(
+        find.byKey(const Key('activities-examples-empty')),
+        findsOneWidget,
+      );
+      router.go('/tavoli/create');
+      await tester.pumpAndSettle();
+      expect(_path(app), '/auth');
+      expect(router.state.uri.queryParameters['returnTo'], '/tavoli/create');
+      router.go('/proposals/create');
+      await tester.pumpAndSettle();
+      expect(_path(app), '/auth');
+      expect(router.state.uri.queryParameters['returnTo'], '/proposals/create');
+      router.go('/tavoli/table-1');
+      await tester.pumpAndSettle();
+      expect(_path(app), '/tavoli/table-1');
+    },
+  );
+
+  testWidgets('ACTSPLIT01 native failures cannot become example results', (
+    tester,
+  ) async {
+    final tavoli = FakeRecurringActivityGateway()
+      ..error = StateError('native offline');
+    final app = await _pump(
+      tester,
+      signedIn: false,
+      split: true,
+      recurringActivities: tavoli,
+    );
+    app.read(appRouterProvider).go('/activities');
+    await tester.pumpAndSettle();
+    expect(find.text('Example activities · Trento'), findsOneWidget);
+    await _tap(tester, 'activities-native-tavoli');
+    expect(find.byType(ErrorState), findsOneWidget);
+    expect(find.byType(ActivityExampleCard), findsNothing);
+  });
+
+  testWidgets(
+    'ACTSPLIT01 changing mode preserves a protected form and sign-out preference',
+    (tester) async {
+      final app = await _pump(tester, split: true);
+      final router = app.read(appRouterProvider);
+      router.go('/proposals/create/scratch');
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('proposal-title')),
+        'Retained draft',
+      );
+      await app
+          .read(activitiesSplitPreferenceProvider.notifier)
+          .select(ActivitiesSplitMode.off);
+      await tester.pumpAndSettle();
+      expect(identical(router, app.read(appRouterProvider)), isTrue);
+      expect(_path(app), '/proposals/create/scratch');
+      expect(find.text('Retained draft'), findsOneWidget);
+      await app
+          .read(activitiesSplitPreferenceProvider.notifier)
+          .select(ActivitiesSplitMode.on);
+      // Leave through the existing guard before signing out.
+      await tester.enterText(find.byKey(const Key('proposal-title')), '');
+      router.go('/settings');
+      await tester.pumpAndSettle();
+      await app.read(authCommandProvider.notifier).signOut();
+      await tester.pumpAndSettle();
+      expect(app.read(activitiesSplitPreferenceProvider).enabled, isTrue);
+      expect(
+        app.read(navigationPreferenceProvider).destination,
+        BottomTabDestination.browse,
+      );
+    },
+  );
+
   testWidgets(
     'Map family replacement keeps Browse selected and Back opens its List',
     (tester) async {
@@ -1554,6 +1907,9 @@ void main() {
 
 Future<ProviderContainer> _pump(
   WidgetTester tester, {
+  bool split = false,
+  bool splitRestoreFailed = false,
+  FakeActivitiesSplitPreferenceStore? splitStore,
   bool signedIn = true,
   bool complete = true,
   FakeAuthGateway? auth,
@@ -1582,6 +1938,15 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        initialActivitiesSplitPreferenceProvider.overrideWithValue(
+          ActivitiesSplitPreferenceState(
+            restoreFailed: splitRestoreFailed,
+            mode: split ? ActivitiesSplitMode.on : ActivitiesSplitMode.off,
+          ),
+        ),
+        activitiesSplitPreferenceStoreProvider.overrideWithValue(
+          splitStore ?? FakeActivitiesSplitPreferenceStore(),
+        ),
         preacceptedPolicyFixture,
         geographicDiscoveryGatewayProvider.overrideWithValue(
           FixtureGeographicGateway(),
@@ -1669,7 +2034,7 @@ Future<ProviderContainer> _pump(
           FakeCounterstatementGateway(),
         ),
       ],
-      child: const PlanetsApp(),
+      child: RenderedEvidence.wrap(const PlanetsApp()),
     ),
   );
   await tester.pumpAndSettle();
@@ -1690,3 +2055,15 @@ Future<void> _tap(WidgetTester tester, String key) async {
 
 String _text(WidgetTester tester, String key) =>
     tester.widget<TextFormField>(find.byKey(Key(key))).controller!.text;
+
+String _path(ProviderContainer app) =>
+    app.read(appRouterProvider).routerDelegate.state.uri.path;
+
+Future<void> _activityTap(WidgetTester tester, String key) async {
+  await tester.scrollUntilVisible(
+    find.byKey(Key(key)),
+    200,
+    scrollable: find.byType(Scrollable).hitTestable().first,
+  );
+  await _tap(tester, key);
+}

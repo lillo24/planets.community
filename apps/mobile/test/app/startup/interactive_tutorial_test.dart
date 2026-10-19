@@ -1,3 +1,7 @@
+import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
+import 'package:planets_mobile/features/settings/application/activities_split_preference_controller.dart';
+import 'package:planets_mobile/features/settings/domain/activities_split_preference.dart';
+
 import '../../support/fake_policy.dart';
 
 import 'package:planets_mobile/features/settings/data/language_preference_store.dart';
@@ -58,6 +62,50 @@ import '../../support/fake_profile_photo.dart';
 import '../../support/fake_project_resource_needs.dart';
 
 void main() {
+  testWidgets('ACTSPLIT01 replay keeps baseline targets and saved split mode', (
+    tester,
+  ) async {
+    final store = FakeStartupStore();
+    final app = await _pump(
+      tester,
+      split: true,
+      store: store,
+      registry: const TutorialRegistry(
+        steps: [
+          TutorialStep.home,
+          TutorialStep.projectCard,
+          TutorialStep.farewell,
+        ],
+      ),
+    );
+    await tap(tester, 'welcome-explore');
+    await ready(tester);
+    expect(find.text('Projects and Cultural Tables'), findsOneWidget);
+    expect(find.byKey(const Key('browse-activities-button')), findsNothing);
+    expectFocus(tester, 'browse-proposals-button');
+    await tap(tester, 'tutorial-next');
+    await ready(tester);
+    expect(
+      tester
+          .widget<PublicProposalsScreen>(find.byType(PublicProposalsScreen))
+          .activitiesSplitPreview,
+      isFalse,
+    );
+    expect(find.text('Activities'), findsNothing);
+    expect(app.read(activitiesSplitPreferenceProvider).enabled, isTrue);
+    await tap(tester, 'tutorial-next');
+    await tap(tester, 'tutorial-next');
+    final completedWrites = store.writes;
+    // Replaying from Help uses the real typed replay capability.
+    app.read(appRouterProvider).go('/help');
+    await frames(tester, 10);
+    await tap(tester, 'help-tutorial-action');
+    await ready(tester);
+    expect(find.text('Projects and Cultural Tables'), findsOneWidget);
+    expect(store.writes, completedWrites);
+    expect(app.read(activitiesSplitPreferenceProvider).enabled, isTrue);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'same-page step preserves an unfinished page fade and example semantics',
     (tester) async {
@@ -1576,6 +1624,7 @@ Future<ProviderContainer> _pump(
   FakeMessageChatsGateway? chats,
   FakeProjectChatGateway? projectChats,
   BottomTabDestination destination = BottomTabDestination.messages,
+  bool split = false,
   bool settle = true,
   FakeCoverMediaGateway? covers,
 }) async {
@@ -1584,6 +1633,11 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        initialActivitiesSplitPreferenceProvider.overrideWithValue(
+          ActivitiesSplitPreferenceState(
+            mode: split ? ActivitiesSplitMode.on : ActivitiesSplitMode.off,
+          ),
+        ),
         preacceptedPolicyFixture,
         coverMediaGatewayProvider.overrideWithValue(
           covers ?? FakeCoverMediaGateway(),
