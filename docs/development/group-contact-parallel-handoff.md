@@ -9,9 +9,9 @@ old D privacy model.
 
 - Cumulative source: [D #254](https://github.com/lillo24/planets.community/pull/254),
   `codex/d-integration`; preserves all D00–D03 ancestry.
-- Runtime checkpoint: `abbc370f`;
-  final qualification and native follow-up are recorded below.
-- Included main: `5c3d50b48c16b0f6fc4879b11c8621a8086f78e8`.
+- Runtime integration base: `c56629b0`; post-ACTSPLIT01 qualification and the
+  remaining native follow-up are recorded below.
+- Included main: `32f37791b11f759adfe4b61c2cdd1b600fdf84f2`.
 - Peer inspected: [C #257](https://github.com/lillo24/planets.community/pull/257),
   `7183efe0a678a86c1526f265b7f522b54b75eda9`; unmerged, not imported.
 - Main reconciliation preserves startup signed-out handling, compact card skills,
@@ -21,6 +21,8 @@ old D privacy model.
   independent city attribution and D's explicit contact/Project-join entries.
   UIPOLISH03 is also included; both localization sets and native guides survive,
   and the Project detail retains D's contact entry beside the current sections.
+  ACTSPLIT01 is included as a device-local, default-off discovery experiment;
+  canonical Group/contact routes and permissions remain independent of examples.
 - Historical D validation qualifies `db17cd2`, not this revised source. Current
   results below distinguish full CI, focused checks and actual native journeys.
 
@@ -392,6 +394,53 @@ Native completion, passing current-head source CI and all unresolved decision ro
 remain gates. The cumulative PR's current-head checks and qualification comments
 record final CI results without a results-only source push.
 No policy answer is inferred from the instruction to continue.
+
+## 19 October ACTSPLIT01 main reconciliation
+
+Main `32f37791` was merged at `c56629b0`. Only the two appended ARB sections
+conflicted. All keys and values from both D and main were compared after the
+resolution and preserved exactly, including 29 new keys per language. Router,
+Proposal and Tavoli changes merged without conflicts. The local preference
+refreshes the existing router and gates only `/activities` routes; it does not
+grant contact authority, replace native domain records or submit an action.
+
+Before this reconciliation, published `defa69fe` passed every job in
+[Validation 572](https://github.com/lillo24/planets.community/actions/runs/39233252766):
+112 migrations, 148 SQL files / 5,508 assertions, populated preservation of
+121/130/133 table snapshots, and genuine contact 62 / coordination 218 / member
+248 Auth checks. Mobile passed 3,582 tests with two existing skips, formatting
+and analysis; Web passed 98 tooling and 398 application tests with two existing
+skips, and Site passed 41 client / 19 waitlist tests, with all standard checks.
+The first Database attempt applied all migrations then failed because runner
+port 54324 was already in use; only that failed job was retried, without changing
+source or assertions. These results qualify `defa69fe`, not the changed Mobile
+source after ACTSPLIT01.
+
+Database, scripts, Web, Site, dependency manifests and validation configuration
+are unchanged from that green source. The real `PlanetsApp`/router regression in
+`navigation_shell_test.dart` selects a represented Group through the actual UI,
+enters a title/note, and changes the preference OFF/ON/OFF. It proves the same
+router, route, compose State/controllers, source and input survive, with no
+submission/recovery and an empty attempt registry. Unknown RPCs fail explicitly,
+including those caught by a screen boundary; native Group parent reads use exact
+test envelopes rather than a competing route/controller.
+
+The regression passed separately, then one combined run of app/bootstrap,
+settings, activities, geographic discovery, D/coordination/member and Messages
+passed all 609 tests. Localization generation, formatting and full Flutter
+analysis passed (no issues). Agent `1f699b42` and cumulative `5404efc8` have
+identical tracked Mobile source. Sanitized focused/analyzer logs and a source
+manifest are retained at
+`C:/Users/utente/.planets/qa/d-contact-2026-10-19-actsplit-5404efc8`.
+The SDK slot was explicitly returned to C after all test/analyzer processes exited;
+no D build, backend or emulator was started during this integration window.
+
+Post-integration source CI is required and recorded on the cumulative PR.
+Corrected-source native completion and actual audience/history/lifetime decisions
+remain gates; this main integration does not resolve either. Earlier APK builds
+precede ACTSPLIT01 and their fixtures have expired, so future native QA requires
+fresh fixtures and current-source builds after launch review and resource handoff.
+C is still unmerged and unimported.
 
 ## Later final-main review
 
