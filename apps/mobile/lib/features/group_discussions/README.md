@@ -41,7 +41,9 @@ folders still fetch no room history, people or links.
   blocks Close while a share is pending or its reply is uncertain; Retry reuses
   that request, and only a definitive failure can be cancelled. Account/readiness
   changes and canonical source denial clear it. A malformed receipt remains
-  uncertain. Nothing is persisted or shared automatically.
+  uncertain. A confirmed receipt resolves recovery even if pending feedback
+  replaces its lazy button row; feedback still requires the current account,
+  source and route. Nothing is persisted or shared automatically.
 - `presentation/discussion_links_screen.dart`, `discussion_link_editor.dart` and
   `discussion_link_open.dart` own explicit collection entry, individual versioned
   edits and destination confirmation before the fresh authorized launch.
@@ -51,10 +53,12 @@ folders still fetch no room history, people or links.
   and confirmation action. Canonical sharing validates both domains again.
 - `presentation/discussion_link_widgets.dart` provides the pure named-link
   heading and a narrow large-text preview without importing native transport.
-- `application/discussion_project_handoff.dart` and
-  `presentation/discussion_project_start.dart` check current source entry before
-  opening the ordinary Group-attributed Project chooser. Its private navigation
-  result returns to the retained room without granting Project access.
+- `data/discussion_conversion_gateway.dart` and `domain/discussion_conversion.dart`
+  own the separately scoped proposal, publisher draft, public invitation and
+  origin projections. `presentation/discussion_project_start.dart` owns reviewed
+  request/endorsement and actual-publisher private draft creation, followed by the
+  ordinary Project editor/publication. Returning preserves source authorization
+  and grants no Project participation.
 
 The backend is authoritative. See the revised permissions contract and
 reproduction notes in `docs/development/group-discussions.md`. Controllers do not

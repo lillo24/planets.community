@@ -291,4 +291,69 @@ void main() {
       expect(commands.attempts, isEmpty);
     },
   );
+  testWidgets(
+    'confirmed sharing resolves after pending feedback rebuilds its lazy row',
+    (tester) async {
+      final gateway = links.Links(),
+          rooms = Gateway(),
+          held = Completer<Object?>();
+      final container = ProviderContainer(
+        overrides: [
+          authSessionProvider.overrideWith(Session.new),
+          discussionGatewayProvider.overrideWithValue(rooms),
+          discussionLinksGatewayProvider.overrideWithValue(gateway),
+          preacceptedPolicyFixture,
+          discussionConversionGatewayProvider.overrideWithValue(
+            DiscussionConversionGateway((name, params) async {
+              if (name == 'get_group_discussion_conversion') {
+                return _published(params);
+              }
+              expect(name, 'share_discussion_link_to_project');
+              return held.future;
+            }),
+          ),
+        ],
+      );
+      addTearDown(() async {
+        container.dispose();
+        await rooms.hints.close();
+      });
+      container.read(policyAcceptanceProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: links.app(const DiscussionLinksScreen(roomId: roomId)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final share = find.byKey(ValueKey('discussion-share-${id(9)}'));
+      await tester.scrollUntilVisible(share, 150);
+      await Scrollable.ensureVisible(tester.element(share), alignment: .5);
+      await tester.pumpAndSettle();
+      final originalRow = tester.element(
+        find.byType(DiscussionShareLinkButton),
+      );
+      await tester.tap(share);
+      await tester.pumpAndSettle();
+      final confirm = find.byKey(const Key('discussion-share-confirm'));
+      await Scrollable.ensureVisible(tester.element(confirm), alignment: .5);
+      await tester.pumpAndSettle();
+      await tester.tap(confirm);
+      await tester.pump(const Duration(milliseconds: 100));
+      final commands = container.read(discussionShareCommandsProvider);
+      expect(commands.attempts.values.single.busy, isTrue);
+      // The actual collection inserts pending feedback before its unkeyed row.
+      // The confirmed operation must not depend on that old row's context.
+      expect(originalRow.mounted, isFalse);
+      held.complete(id(30));
+      await tester.pumpAndSettle();
+      expect(commands.attempts, isEmpty);
+      expect(
+        tester.widget<PopScope>(find.byType(PopScope).last).canPop,
+        isTrue,
+      );
+      expect(find.text('Link shared with Project'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

@@ -55,7 +55,8 @@ class DiscussionShareLinkButton extends ConsumerWidget {
                   : () async {
                       final route = ModalRoute.of(context),
                           router = GoRouter.maybeOf(context),
-                          origin = router?.routeInformationProvider.value.uri;
+                          origin = router?.routeInformationProvider.value.uri,
+                          messenger = ScaffoldMessenger.of(context);
                       bool current() =>
                           context.mounted &&
                           c.current(link.admissionId, epoch) &&
@@ -148,16 +149,22 @@ class DiscussionShareLinkButton extends ConsumerWidget {
                         'p_link_id': link.id,
                         'p_expected_version': link.version,
                       });
-                      if (!context.mounted || !current()) {
-                        return;
-                      }
                       if (result != null) {
+                        // Pending feedback can rebuild/dispose this lazy row.
+                        // A confirmed receipt resolves the retained attempt
+                        // independently of that row's BuildContext lifetime.
                         commands.forget(slot);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l.discussionShareProjectLinkDone),
-                          ),
-                        );
+                        if (messenger.mounted &&
+                            c.current(link.admissionId, epoch) &&
+                            router?.routeInformationProvider.value.uri ==
+                                origin &&
+                            (route?.isActive ?? true)) {
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(l.discussionShareProjectLinkDone),
+                            ),
+                          );
+                        }
                       }
                     },
             ),
