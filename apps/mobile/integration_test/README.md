@@ -1,6 +1,5 @@
 # Local native integration checks
 
-<<<<<<< HEAD
 ## Representative contact and coordination
 
 `group_contact_smoke_test.dart` owns the real-backend synthetic representative
@@ -11,7 +10,7 @@ The screenshot driver is `test_driver/group_contact_screenshots.dart`.
 See [contact native QA](../../../docs/development/group-contact-mobile.md) for
 isolated engine/ports, actual 320dp configuration, injection boundaries and
 completion requirements. Its unresolved privacy choices remain review-only.
-=======
+
 ## UIPOLISH03 presentation capture
 
 `uipolish03_smoke_test.dart` runs synthetic Project/Groups/Resource-chat scenes.
@@ -23,7 +22,6 @@ ordinary Flutter SurfaceView. Native IME/landscape are verified at 1x; those
 Widget tests cover both 2x constraints. App assertions remain strict.
 See `docs/development/uipolish03-details-groups-chat.md` for both-terminal commands,
 the exported-main baseline, logical landscape limits and validation results.
->>>>>>> origin/main
 
 ## Navigation profile probe
 

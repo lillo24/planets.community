@@ -1,11 +1,10 @@
 {
-<<<<<<< HEAD
   "notificationGroupContactRequest": "New contact request for your Group",
   "notificationGroupCoordinationProposal": "Invitation to coordinate with other Groups",
   "notificationMemberContactRequest": "New conversation request",
   "contactMute": "Mute conversation notifications",
   "contactUnmute": "Unmute conversation notifications",
-=======
+
   "detailSkillsTitle": "Skills",
   "detailSkillsHint": "What people can contribute.",
   "detailMaterialsTitle": "Materials & tools",
@@ -18,7 +17,6 @@
   "groupsEmptyGuidance": "Create a group or open My groups.",
   "groupsOwnEmptyGuidance": "Create a group to start coordinating together.",
   "resourceExchangeMoreActions": "Agreement actions",
->>>>>>> origin/main
   "skillDisplayMuralPainting": "Mural painting",
   "skillDisplayDrawingIllustration": "Drawing & illustration",
   "skillDisplayPhotography": "Photography",

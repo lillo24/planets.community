@@ -1,11 +1,10 @@
 {
-<<<<<<< HEAD
   "notificationGroupContactRequest": "Nuova richiesta di contatto per il gruppo",
   "notificationGroupCoordinationProposal": "Invito a coordinare più gruppi",
   "notificationMemberContactRequest": "Nuova richiesta di conversazione",
   "contactMute": "Silenzia le notifiche della conversazione",
   "contactUnmute": "Riattiva le notifiche della conversazione",
-=======
+
   "detailSkillsTitle": "Competenze",
   "detailSkillsHint": "Quello che le persone sanno fare.",
   "detailMaterialsTitle": "Materiali e strumenti",
@@ -18,7 +17,6 @@
   "groupsEmptyGuidance": "Crea un gruppo o apri I miei gruppi.",
   "groupsOwnEmptyGuidance": "Crea un gruppo per organizzarti con altre persone.",
   "resourceExchangeMoreActions": "Azioni dell’accordo",
->>>>>>> origin/main
   "skillDisplayMuralPainting": "Pittura murale",
   "skillDisplayDrawingIllustration": "Disegno e illustrazione",
   "skillDisplayPhotography": "Fotografia",
