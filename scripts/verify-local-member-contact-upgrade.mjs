@@ -100,6 +100,11 @@ try {
     await sql`select 'private.close_pending_direct_requests_for_user_block(uuid,uuid)'::regprocedure::oid oid`;
   const [projector] =
     await sql`select 'public.process_notification_outbox_batch(integer)'::regprocedure::oid oid`;
+  const staffReaders = () => sql`select p.oid,p.proacl::text acl,
+      pg_get_function_result(p.oid) result_shape from pg_proc p
+    where p.oid in('public.list_moderation_cases(uuid,text,integer,timestamptz,uuid)'::regprocedure,
+      'public.get_moderation_case_detail(uuid,uuid)'::regprocedure) order by p.oid`;
+  const staffBefore = await staffReaders();
   command("supabase", ["migration", "up", "--db-url", status.databaseUrl]);
   command("supabase", ["migration", "up", "--db-url", status.databaseUrl]);
   for (const table of tables)
@@ -121,6 +126,11 @@ try {
     projectorAfter.oid,
     projector.oid,
     "Canonical warmed notification worker retains identity.",
+  );
+  assert.deepEqual(
+    await staffReaders(),
+    staffBefore,
+    "Canonical warmed staff readers retain identity, grants and return contracts.",
   );
   const [counts] =
     await sql`select (select count(*) from private.member_contact_pairs)::int pairs,(select count(*) from private.member_contact_requests)::int requests,(select count(*) from private.member_contact_episodes)::int episodes`;

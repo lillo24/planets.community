@@ -224,8 +224,10 @@ checks only until the integration owner runs it after the native DB slot returns
 `npm run member:contact:upgrade:verify:local` resets the explicitly disposable
 loopback stack to the pre-member migration, populates legacy/D records, hashes
 all prior columns/rows, applies the additive migrations twice and proves no new
-personal consent is invented. It uses the installed platform CLI binary with a
-bounded process timeout. Set `PLANETS_DISPOSABLE_QA=1` locally; never run it against
+personal consent is invented. The same populated upgrade compares canonical staff
+reader OIDs, grants and return contracts before/after the erased-subject projection
+correction. It uses the installed platform CLI binary with a bounded process
+timeout. Set `PLANETS_DISPOSABLE_QA=1` locally; never run it against
 the native verifier's active project or a shared stack. CI/check:db include both
 gates without adding an unrelated hosted validation area.
 
