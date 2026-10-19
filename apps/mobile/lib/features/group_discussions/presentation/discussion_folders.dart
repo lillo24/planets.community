@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../../group_membership/presentation/group_membership_widgets.dart';
 import '../application/discussion_controllers.dart';
 import '../data/discussion_gateway.dart';
@@ -258,6 +259,8 @@ class _DiscussionRoomListState extends ConsumerState<DiscussionRoomList> {
                   subtitle: Text(
                     r.isFormer
                         ? l.discussionFormerHistory
+                        : r.frozen
+                        ? '${l.discussionConversionPublished} · ${l.discussionReadOnly}'
                         : r.manuallyHidden
                         ? l.discussionHidden
                         : r.automaticallyHidden
@@ -377,6 +380,20 @@ class DiscussionRequests extends ConsumerStatefulWidget {
 class _DiscussionRequestsState extends ConsumerState<DiscussionRequests> {
   DiscussionPager<DiscussionInvitation>? bound;
   bool projectInvitationsOpen = false;
+
+  // Realtime may remove the invitation tile before its successful reply arrives.
+  // The persistent Requests owner, rather than that disposed tile, opens the room.
+  void accepted(String actor, DiscussionReceipt result) {
+    if (!mounted ||
+        ref.read(authSessionProvider).phase != AuthSessionPhase.ready ||
+        ref.read(authSessionProvider).identity?.id != actor) {
+      return;
+    }
+    ref.read(discussionInvitationsProvider)?.invalidate();
+    ref.read(discussionGroupsProvider)?.invalidate();
+    context.push(discussionRoute(result.roomId));
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = ref.watch(discussionInvitationsProvider),
@@ -410,7 +427,11 @@ class _DiscussionRequestsState extends ConsumerState<DiscussionRequests> {
             ],
           ),
           for (final invitation in p.rows)
-            DiscussionInvitationTile(invitation, key: ValueKey(invitation.id)),
+            DiscussionInvitationTile(
+              invitation,
+              onAccepted: accepted,
+              key: ValueKey(invitation.id),
+            ),
           if (p.busy) const LinearProgressIndicator(),
           if (p.error != null)
             DiscussionError(p.error!, retry: () => unawaited(p.refresh())),
@@ -436,8 +457,13 @@ class _DiscussionRequestsState extends ConsumerState<DiscussionRequests> {
 }
 
 class DiscussionInvitationTile extends ConsumerWidget {
-  const DiscussionInvitationTile(this.invitation, {super.key});
+  const DiscussionInvitationTile(
+    this.invitation, {
+    required this.onAccepted,
+    super.key,
+  });
   final DiscussionInvitation invitation;
+  final void Function(String actor, DiscussionReceipt receipt) onAccepted;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context),
@@ -477,15 +503,9 @@ class DiscussionInvitationTile extends ConsumerWidget {
               'p_response': 'accepted',
             },
           );
-          if (!context.mounted ||
-              ref.read(authSessionProvider).identity?.id != actor) {
-            return;
-          }
           if (result != null) {
             commands.forget(slot);
-            ref.read(discussionInvitationsProvider)?.invalidate();
-            ref.read(discussionGroupsProvider)?.invalidate();
-            context.push(discussionRoute(result.roomId));
+            onAccepted(actor, result);
           }
         }
 

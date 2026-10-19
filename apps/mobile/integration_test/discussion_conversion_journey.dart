@@ -14,9 +14,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'groups_smoke_test.dart' as harness show waitFor, waitUntil, reveal;
 
-/// Native request/review/editor/publication and linked-history screens. Planner
-/// and newcomer decisions below use their genuine prepared Auth clients through
-/// canonical Join/approval RPCs; they are not direct database memberships.
+/// Native request/review/editor/publication, planner Join and linked history.
+/// The public newcomer's request and both organizer approvals use genuine Auth
+/// clients through canonical RPCs, never direct database memberships.
 Future<void> runDiscussionConversionJourney(
   WidgetTester tester, {
   required ProviderContainer publisher,
@@ -177,7 +177,10 @@ Future<void> runDiscussionConversionJourney(
   await invitations(plannerContainer);
   await shot('conversion-invitation-open-en');
   await tap(find.text('View Project and request to join'));
+  await harness.waitFor(tester, find.text(publicRow['title'] as String));
+  await harness.reveal(tester, find.byKey(Key('participation-title-$project')));
   await harness.waitFor(tester, find.text('Request to join'));
+  await harness.reveal(tester, find.text('Request to join'));
   expect((await source(planner, plannerId))['project_chat_id'], isNull);
   final opened = await planner.rpc<List<dynamic>>(
     'list_my_discussion_project_invitations',
@@ -190,19 +193,49 @@ Future<void> runDiscussionConversionJourney(
     'opened',
   );
   await shot('conversion-open-does-not-enroll-en');
+  await tap(find.byKey(Key('participation-join-$project')));
+  await harness.waitFor(
+    tester,
+    find.byKey(const Key('participation-message-field')),
+  );
+  await tester.enterText(
+    find.byKey(const Key('participation-message-field')),
+    'Fictional deliberate Project participation request.',
+  );
+  FocusManager.instance.primaryFocus?.unfocus();
+  await harness.reveal(
+    tester,
+    find.byKey(const Key('participation-send-request')),
+  );
+  await tap(find.byKey(const Key('participation-send-request')));
+  await harness.waitFor(tester, find.text(publicRow['title'] as String));
+  await harness.reveal(tester, find.byKey(Key('participation-title-$project')));
+  await harness.waitFor(tester, find.text('Request pending'));
+  await shot('conversion-planner-request-pending-en');
+  final plannerRequests = await planner.rpc<List<dynamic>>(
+    'list_own_project_join_requests',
+    params: {'p_expected_requester_profile_id': plannerId},
+  );
+  final plannerRequest =
+      plannerRequests.cast<Map>().singleWhere(
+            (r) => r['project_id'] == project && r['status'] == 'pending',
+          )['request_id']
+          as String;
   for (final (client, actor) in [
     (planner, plannerId),
     (newcomer, newcomerId),
   ]) {
-    final request = await client.rpc<String>(
-      'request_to_join_project',
-      params: {
-        'p_expected_requester_profile_id': actor,
-        'p_project_id': project,
-        'p_request_message':
-            'Fictional deliberate Project participation request.',
-      },
-    );
+    final request = actor == plannerId
+        ? plannerRequest
+        : await client.rpc<String>(
+            'request_to_join_project',
+            params: {
+              'p_expected_requester_profile_id': actor,
+              'p_project_id': project,
+              'p_request_message':
+                  'Fictional deliberate Project participation request.',
+            },
+          );
     await authorClient.rpc(
       'accept_project_join_request',
       params: {
@@ -313,6 +346,14 @@ Future<void> runDiscussionConversionJourney(
   expect(find.text('Open Project conversation'), findsNothing);
   await shot('conversion-declined-source-en');
   await tap(find.text('Close'));
+  await show(memberContainer, '/groups/$groupId');
+  await harness.reveal(tester, find.byKey(const Key('group-discussions')));
+  await tap(find.byKey(const Key('group-discussions')));
+  await harness.waitFor(
+    tester,
+    find.text('Published as Project · Read-only planning history'),
+  );
+  await shot('conversion-retained-source-row-en');
   // Restore the caller's original native surface for subsequent main-journey QA.
   await show(memberContainer, '/groups/$groupId');
 }

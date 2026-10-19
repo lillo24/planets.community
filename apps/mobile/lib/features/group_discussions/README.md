@@ -63,13 +63,18 @@ oversight, full earlier history and independent Project participation.
 The Group folder loads General/Ideas and entitled Project conversations on
 expansion. Project authorization is filtered before the bounded query limit.
 Project-only folders never load Group Ideas. Canonical outside cards use a
-bounded authorized mapping to avoid duplicate conversations.
+bounded authorized mapping to avoid duplicate conversations. Converted folder
+rows explicitly label retained read-only planning, keeping them distinct from
+independently entitled live Project conversations.
 
 - `discussion_room_actions.dart` owns deliberate Join and independent mute/hide.
   The server classifies quiet Ideas after about seven days. Hiding changes no
   unread or subscription; Show hidden includes the ordinary list.
 - `discussion_notices.dart` exposes authorized Group activity in Notifications.
   Structured invitation acceptance belongs to Requests. A tap never accepts.
+- `discussion_folders.dart` keeps invitation-result navigation on the persistent
+  Requests owner, so a realtime removal of the accepted invitation cannot drop
+  the successful chat continuation; account changes still cancel it.
 - `discussion_invitation_link.dart` owns revocable 30-day room capabilities.
   Only exact HTTPS planets.community native paths are accepted. Tokens stay in
   memory and are copied only by deliberate action.

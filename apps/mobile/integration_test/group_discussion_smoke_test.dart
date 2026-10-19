@@ -89,6 +89,7 @@ void main() {
         ],
       );
       addTearDown(() async {
+        await binding.takeScreenshot('c02-last-frame');
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();
         container.dispose();
