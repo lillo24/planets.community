@@ -192,7 +192,15 @@ void main() {
         },
       );
       container.read(discussionChatProvider(room))!.invalidate();
-      await harness.waitFor(tester, find.text('Fictional incoming message.'));
+      // A bounded, keyboard-reduced history may not build the incoming row
+      // until scrolling. First require the real refresh, then reveal its row.
+      await harness.waitUntil(
+        tester,
+        () => container
+            .read(discussionChatProvider(room))!
+            .messages
+            .any((message) => message.body == 'Fictional incoming message.'),
+      );
       // Widget presence is not viewport visibility while the IME reduces the
       // history height. Read the incoming card before capturing the native view.
       FocusManager.instance.primaryFocus?.unfocus();
