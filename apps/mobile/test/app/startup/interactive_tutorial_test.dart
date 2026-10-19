@@ -473,13 +473,12 @@ void main() {
             coverObjectPath: 'public/$i.webp',
           ),
       ]
-      ..publicDetail = proposalDetailFixture(id: 'project-1');
+      ..publicDetail = proposalDetailFixture(id: 'project-3');
     final app = await _pump(tester, proposals: projects, covers: covers);
-    await tap(tester, 'welcome-explore');
+    await tester.tap(find.byKey(const Key('welcome-explore')));
+    await frames(tester, 2);
     expect(projects.calls.where((c) => c == 'list-public'), hasLength(1));
-    expect(projects.calls.where((c) => c.startsWith('public-detail')), [
-      'public-detail:project-1',
-    ]);
+    expect(projects.calls.where((c) => c.startsWith('public-detail')), isEmpty);
     expect(covers.calls, [
       for (var i = 1; i <= 3; i++) 'download:public/$i.webp',
     ]);
@@ -493,6 +492,13 @@ void main() {
       ),
     );
     await frames(tester, 4);
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await frames(tester, 20);
+    expect(projects.calls.where((c) => c.startsWith('public-detail')), [
+      'public-detail:project-3',
+    ]);
     expect(
       app.read(publicCoverBytesProvider('public/1.webp')).hasValue,
       isTrue,
@@ -620,6 +626,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.byKey(const Key('tutorial-next')));
       await tester.pump();
+      await frames(tester, 6);
       expect(find.byKey(const Key('tutorial-copy-home')), findsOneWidget);
       await ready(tester);
       await tester.pump(const Duration(seconds: 16));
@@ -806,7 +813,7 @@ void main() {
           .position;
       expect(position.pixels, 0);
       expect(scrim(tester).targets, isEmpty);
-      await frames(tester, 8);
+      await frames(tester, 12);
       expect(position.pixels, greaterThan(0));
       expect(position.pixels, lessThan(position.maxScrollExtent));
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
@@ -1568,7 +1575,11 @@ Future<void> frames(WidgetTester tester, int count) async {
 
 Future<void> tap(WidgetTester tester, String key) async {
   await tester.tap(find.byKey(Key(key)).hitTestable());
-  await frames(tester, 6);
+  // A demonstrated press plus one directional page transition takes 520ms.
+  await tester.pump();
+  for (var frame = 0; frame < 40; frame++) {
+    await tester.pump(const Duration(milliseconds: 16));
+  }
 }
 
 Future<void> ready(WidgetTester tester) async {
@@ -1708,6 +1719,8 @@ Future<ProviderContainer> pumpTutorialSmoke(
   FakeResourceListingGateway? resources,
   FakeCoverMediaGateway? covers,
   LanguagePreference language = LanguagePreference.english,
+  TutorialRegistry registry = productionTutorial,
+  FakeAuthGateway? auth,
 }) => _pump(
   tester,
   store: store,
@@ -1715,6 +1728,8 @@ Future<ProviderContainer> pumpTutorialSmoke(
   resources: resources,
   covers: covers,
   language: language,
+  registry: registry,
+  auth: auth,
 );
 
 ProposalDetail longTutorialDetail(int paragraphs, {String? coverObjectPath}) {

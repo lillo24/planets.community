@@ -1,0 +1,560 @@
+{
+  "frames": [
+    {
+      "name": "light-caption-intro",
+      "observedMs": 14956,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": null
+    },
+    {
+      "name": "light-intro-home-out",
+      "observedMs": 18068,
+      "pageOpacity": 0.23760112553834922,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": null
+    },
+    {
+      "name": "light-intro-home-in",
+      "observedMs": 20481,
+      "pageOpacity": 0.10712278205901385,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": null
+    },
+    {
+      "name": "light-intro-home-arrival",
+      "observedMs": 23185,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": null
+    },
+    {
+      "name": "light-home-list-press",
+      "observedMs": 29516,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": null
+    },
+    {
+      "name": "light-home-list-out",
+      "observedMs": 33623,
+      "pageOpacity": 0.2084452936053276,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": null
+    },
+    {
+      "name": "light-home-list-arrival",
+      "observedMs": 39852,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": 0.0
+    },
+    {
+      "name": "light-list-scroll-0",
+      "observedMs": 42223,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": 84.05441924370825
+    },
+    {
+      "name": "light-list-scroll-1",
+      "observedMs": 44114,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": 113.1103173494339
+    },
+    {
+      "name": "light-list-scroll-2",
+      "observedMs": 46495,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": 144.08073062896727
+    },
+    {
+      "name": "light-list-focus",
+      "observedMs": 70660,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "light-card-detail-press",
+      "observedMs": 73408,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "light-card-detail-out",
+      "observedMs": 76846,
+      "pageOpacity": 0.801804647743702,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "light-card-detail-arrival",
+      "observedMs": 80827,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": null
+    },
+    {
+      "name": "light-detail-focus",
+      "observedMs": 102253,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": null
+    },
+    {
+      "name": "light-detail-create-out",
+      "observedMs": 103773,
+      "pageOpacity": 0.748126220703125,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": null
+    },
+    {
+      "name": "light-detail-create-in",
+      "observedMs": 106254,
+      "pageOpacity": 0.9232263170555234,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "light-detail-create-arrival",
+      "observedMs": 108534,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "light-caption-create",
+      "observedMs": 117707,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "light-same-page-2",
+      "observedMs": 120599,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "light-same-page-7",
+      "observedMs": 123270,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "light-same-page-ready",
+      "observedMs": 126431,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "dark-caption-intro",
+      "observedMs": 3704,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": null
+    },
+    {
+      "name": "dark-intro-home-out",
+      "observedMs": 4728,
+      "pageOpacity": 0.9020448282361031,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": null
+    },
+    {
+      "name": "dark-intro-home-in",
+      "observedMs": 6618,
+      "pageOpacity": 0.07090873688459397,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": null
+    },
+    {
+      "name": "dark-intro-home-arrival",
+      "observedMs": 8269,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": null
+    },
+    {
+      "name": "dark-home-list-press",
+      "observedMs": 13486,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": null
+    },
+    {
+      "name": "dark-home-list-out",
+      "observedMs": 15988,
+      "pageOpacity": 0.9259086775779723,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": null
+    },
+    {
+      "name": "dark-home-list-in",
+      "observedMs": 17980,
+      "pageOpacity": 0.0724927419796586,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": 0.0
+    },
+    {
+      "name": "dark-home-list-arrival",
+      "observedMs": 19577,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": 0.0
+    },
+    {
+      "name": "dark-list-scroll-0",
+      "observedMs": 20985,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": 28.56088002026081
+    },
+    {
+      "name": "dark-list-scroll-1",
+      "observedMs": 21504,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": 37.45500065289438
+    },
+    {
+      "name": "dark-list-scroll-2",
+      "observedMs": 21998,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": 43.749818467497825
+    },
+    {
+      "name": "dark-list-focus",
+      "observedMs": 42334,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "dark-card-detail-press",
+      "observedMs": 43728,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "dark-card-detail-out",
+      "observedMs": 46902,
+      "pageOpacity": 0.7093951879069209,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "dark-card-detail-in",
+      "observedMs": 49174,
+      "pageOpacity": 0.08568249199539424,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": null
+    },
+    {
+      "name": "dark-card-detail-arrival",
+      "observedMs": 51160,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": null
+    },
+    {
+      "name": "dark-detail-focus",
+      "observedMs": 69685,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": null
+    },
+    {
+      "name": "dark-detail-create-out",
+      "observedMs": 70502,
+      "pageOpacity": 0.9322152137756348,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": null
+    },
+    {
+      "name": "dark-detail-create-in",
+      "observedMs": 72353,
+      "pageOpacity": 0.12841274708509445,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "dark-detail-create-arrival",
+      "observedMs": 74165,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.0,
+      "holes": 0,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "dark-caption-create",
+      "observedMs": 78823,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "dark-same-page-2",
+      "observedMs": 80012,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "dark-same-page-7",
+      "observedMs": 81398,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    },
+    {
+      "name": "dark-same-page-ready",
+      "observedMs": 84019,
+      "pageOpacity": 1.0,
+      "maskAlpha": 0.62,
+      "holes": 1,
+      "listOffset": 1165.06
+    }
+  ],
+  "images": [
+    {
+      "name": "light-caption-intro",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-caption-intro.png"
+    },
+    {
+      "name": "light-intro-home-out",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-intro-home-out.png"
+    },
+    {
+      "name": "light-intro-home-in",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-intro-home-in.png"
+    },
+    {
+      "name": "light-intro-home-arrival",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-intro-home-arrival.png"
+    },
+    {
+      "name": "light-home-list-press",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-home-list-press.png"
+    },
+    {
+      "name": "light-home-list-out",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-home-list-out.png"
+    },
+    {
+      "name": "light-home-list-arrival",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-home-list-arrival.png"
+    },
+    {
+      "name": "light-list-scroll-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-list-scroll-0.png"
+    },
+    {
+      "name": "light-list-scroll-1",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-list-scroll-1.png"
+    },
+    {
+      "name": "light-list-scroll-2",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-list-scroll-2.png"
+    },
+    {
+      "name": "light-list-focus",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-list-focus.png"
+    },
+    {
+      "name": "light-card-detail-press",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-card-detail-press.png"
+    },
+    {
+      "name": "light-card-detail-out",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-card-detail-out.png"
+    },
+    {
+      "name": "light-card-detail-arrival",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-card-detail-arrival.png"
+    },
+    {
+      "name": "light-detail-focus",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-detail-focus.png"
+    },
+    {
+      "name": "light-detail-create-out",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-detail-create-out.png"
+    },
+    {
+      "name": "light-detail-create-in",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-detail-create-in.png"
+    },
+    {
+      "name": "light-detail-create-arrival",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-detail-create-arrival.png"
+    },
+    {
+      "name": "light-caption-create",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-caption-create.png"
+    },
+    {
+      "name": "light-same-page-2",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-same-page-2.png"
+    },
+    {
+      "name": "light-same-page-7",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-same-page-7.png"
+    },
+    {
+      "name": "light-same-page-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-light-same-page-ready.png"
+    },
+    {
+      "name": "dark-caption-intro",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-caption-intro.png"
+    },
+    {
+      "name": "dark-intro-home-out",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-intro-home-out.png"
+    },
+    {
+      "name": "dark-intro-home-in",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-intro-home-in.png"
+    },
+    {
+      "name": "dark-intro-home-arrival",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-intro-home-arrival.png"
+    },
+    {
+      "name": "dark-home-list-press",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-home-list-press.png"
+    },
+    {
+      "name": "dark-home-list-out",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-home-list-out.png"
+    },
+    {
+      "name": "dark-home-list-in",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-home-list-in.png"
+    },
+    {
+      "name": "dark-home-list-arrival",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-home-list-arrival.png"
+    },
+    {
+      "name": "dark-list-scroll-0",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-list-scroll-0.png"
+    },
+    {
+      "name": "dark-list-scroll-1",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-list-scroll-1.png"
+    },
+    {
+      "name": "dark-list-scroll-2",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-list-scroll-2.png"
+    },
+    {
+      "name": "dark-list-focus",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-list-focus.png"
+    },
+    {
+      "name": "dark-card-detail-press",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-card-detail-press.png"
+    },
+    {
+      "name": "dark-card-detail-out",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-card-detail-out.png"
+    },
+    {
+      "name": "dark-card-detail-in",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-card-detail-in.png"
+    },
+    {
+      "name": "dark-card-detail-arrival",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-card-detail-arrival.png"
+    },
+    {
+      "name": "dark-detail-focus",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-detail-focus.png"
+    },
+    {
+      "name": "dark-detail-create-out",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-detail-create-out.png"
+    },
+    {
+      "name": "dark-detail-create-in",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-detail-create-in.png"
+    },
+    {
+      "name": "dark-detail-create-arrival",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-detail-create-arrival.png"
+    },
+    {
+      "name": "dark-caption-create",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-caption-create.png"
+    },
+    {
+      "name": "dark-same-page-2",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-same-page-2.png"
+    },
+    {
+      "name": "dark-same-page-7",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-same-page-7.png"
+    },
+    {
+      "name": "dark-same-page-ready",
+      "path": "/data/user/0/community.planets.app/code_cache/tut07-dark-same-page-ready.png"
+    }
+  ],
+  "animationTimeDilation": 8,
+  "screenshotTimeDilation": 100
+}
