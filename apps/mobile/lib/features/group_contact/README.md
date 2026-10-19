@@ -19,6 +19,9 @@ are independent.
 - `presentation/group_contact_widgets.dart` owns the context sheet and neutral
   Groups cards. It reads the person's own role and eligible groups, never a
   private People roster or a profile photo batch.
+- `presentation/contact_button_style.dart` shares the 12px rounded rectangle
+  FilledButton shape across representative, member and coordination actions,
+  keeping enlarged multiline labels backed without changing the global theme.
 - `presentation/group_contact_compose_screen.dart` owns explicit source/purpose
   selection and private input; setup/sign-in continuation never sends.
 - `presentation/group_contact_request_screen.dart` owns recipient triage and own

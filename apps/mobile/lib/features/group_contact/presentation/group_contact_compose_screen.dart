@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'contact_button_style.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -383,6 +386,7 @@ class _GroupContactComposeScreenState
               if (failure != null)
                 Semantics(liveRegion: true, child: Text(failure!)),
               FilledButton(
+                style: contactFilledButtonStyle,
                 key: const Key('contact-submit'),
                 onPressed: busy || source == null || attempt?.receipt != null
                     ? null

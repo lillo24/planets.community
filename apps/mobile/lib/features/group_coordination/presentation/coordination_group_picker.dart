@@ -1,6 +1,9 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+
+import '../../group_contact/presentation/contact_button_style.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
@@ -141,6 +144,7 @@ class _CoordinationGroupPickerState
                     child: Text(l.groupCancel),
                   ),
                   FilledButton(
+                    style: contactFilledButtonStyle,
                     key: const Key('coordination-use-groups'),
                     onPressed: selected.isEmpty
                         ? null

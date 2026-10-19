@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'contact_button_style.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -150,6 +153,7 @@ class _GroupContactInfoScreenState
               child: Text(l.groupCancel),
             ),
             FilledButton(
+              style: contactFilledButtonStyle,
               key: const Key('contact-confirm-exit'),
               onPressed: () => Navigator.pop(context, true),
               child: Text(leave ? l.contactLeave : l.contactClose),
@@ -296,6 +300,7 @@ class _GroupContactInfoScreenState
             if (failed && attempt?.ambiguous != true) Text(l.contactFailure),
             if (attempt?.ambiguous == true)
               FilledButton(
+                style: contactFilledButtonStyle,
                 onPressed: busy
                     ? null
                     : () => exit(attempt!.operation == 'leave'),

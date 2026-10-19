@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../group_contact/presentation/contact_button_style.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/page_app_bar.dart';
@@ -95,6 +98,7 @@ class _InfoState extends ConsumerState<MemberContactInfoScreen> {
               child: Text(l.groupCancel),
             ),
             FilledButton(
+              style: contactFilledButtonStyle,
               onPressed: () => Navigator.pop(context, true),
               child: Text(
                 operation == 'leave' ? l.contactLeave : l.contactClose,
@@ -223,6 +227,7 @@ class _InfoState extends ConsumerState<MemberContactInfoScreen> {
               ),
             if (attempt?.ambiguous == true) ...[
               FilledButton(
+                style: contactFilledButtonStyle,
                 onPressed: busy ? null : () => command(attempt!.operation),
                 child: Text(l.retryAction),
               ),

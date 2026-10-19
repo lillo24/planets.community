@@ -36,6 +36,14 @@ Completed operations whose original screen was disposed can also recover their
 receipt. No private note/action token is persisted or logged. Closing a composer
 does not withdraw a submitted request. A withdrawal is a separate command.
 
+Representative, member-contact and coordination FilledButtons share the local
+`contactFilledButtonStyle`: `AppRadii.medium` (12px) rounded rectangles. The
+Material stadium default can curve behind enlarged multiline labels in narrow
+dialogs; the local shape keeps every line on the filled background. Labels,
+text scaling, padding, callbacks and the global app theme remain unchanged.
+Actual member submit/accept screens are compared in EN/IT at 320dp and 2x text;
+widget captures supplement the native frames and do not qualify a native run.
+
 ## Access invalidation
 
 The D02 additive migration augments authorized public references with current

@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'contact_button_style.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -439,6 +442,7 @@ class _GroupContactChatScreenState extends ConsumerState<GroupContactChatScreen>
                           Align(
                             alignment: Alignment.centerRight,
                             child: FilledButton.icon(
+                              style: contactFilledButtonStyle,
                               key: const Key('contact-message-send'),
                               onPressed: sending ? null : send,
                               icon: const Icon(Icons.send_outlined),

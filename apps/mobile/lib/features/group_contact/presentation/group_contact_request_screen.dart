@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'contact_button_style.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -141,6 +144,7 @@ class _GroupContactRequestScreenState
               child: Text(l.groupCancel),
             ),
             FilledButton(
+              style: contactFilledButtonStyle,
               key: const Key('contact-confirm-accept'),
               onPressed: () => Navigator.pop(context, true),
               child: Text(l.contactAccept),
@@ -244,6 +248,7 @@ class _GroupContactRequestScreenState
                 ),
               if (attempt?.ambiguous == true)
                 FilledButton(
+                  style: contactFilledButtonStyle,
                   key: const Key('contact-request-retry'),
                   onPressed: busy ? null : () => decide(attempt!.operation),
                   child: Text(l.retryAction),
@@ -255,6 +260,7 @@ class _GroupContactRequestScreenState
                   children: [
                     if (r.canReview)
                       FilledButton(
+                        style: contactFilledButtonStyle,
                         key: const Key('contact-accept'),
                         onPressed: busy ? null : () => decide('accept'),
                         child: Text(l.contactAccept),
@@ -275,6 +281,7 @@ class _GroupContactRequestScreenState
                 ),
               if (r.chatId case final String chat)
                 FilledButton(
+                  style: contactFilledButtonStyle,
                   onPressed: () => context.push(groupContactChatRoute(chat)),
                   child: Text(l.contactOpen),
                 ),

@@ -1,6 +1,9 @@
 import '../application/member_contact_drafts.dart';
 
 import 'package:flutter/material.dart';
+
+import '../../group_contact/presentation/contact_button_style.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -219,6 +222,7 @@ class _ComposeState extends ConsumerState<MemberContactComposeScreen> {
                 ),
               ),
             FilledButton(
+              style: contactFilledButtonStyle,
               key: const Key('member-contact-submit'),
               onPressed:
                   busy || (c?.canRequest != true && attempt?.ambiguous != true)

@@ -1,6 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
+import '../../group_contact/presentation/contact_button_style.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -173,6 +176,7 @@ class _CoordinationScreenState extends ConsumerState<CoordinationScreen>
                     child: Text(l.groupCancel),
                   ),
                   FilledButton(
+                    style: contactFilledButtonStyle,
                     key: const Key('coordination-confirm-dialog'),
                     onPressed: () => Navigator.pop(context, true),
                     child: Text(l.coordinationAgree),
@@ -387,6 +391,7 @@ class _CoordinationScreenState extends ConsumerState<CoordinationScreen>
                 onChanged: (_) => setState(() {}),
               ),
               FilledButton(
+                style: contactFilledButtonStyle,
                 key: const Key('coordination-propose'),
                 onPressed:
                     frozen ||
@@ -436,6 +441,7 @@ class _CoordinationScreenState extends ConsumerState<CoordinationScreen>
                   ),
                 if (p.canConfirm)
                   FilledButton(
+                    style: contactFilledButtonStyle,
                     key: const Key('coordination-confirm'),
                     onPressed: busy ? null : () => command('confirm'),
                     child: Text(l.coordinationConfirm),
@@ -461,6 +467,7 @@ class _CoordinationScreenState extends ConsumerState<CoordinationScreen>
               ],
               if (p.chatId case final String chat)
                 FilledButton(
+                  style: contactFilledButtonStyle,
                   key: const Key('coordination-open'),
                   onPressed: () => context.push(groupContactChatRoute(chat)),
                   child: Text(l.contactOpen),
@@ -485,6 +492,7 @@ class _CoordinationScreenState extends ConsumerState<CoordinationScreen>
               ),
             if (attempt?.ambiguous == true)
               FilledButton(
+                style: contactFilledButtonStyle,
                 key: const Key('coordination-retry'),
                 onPressed: busy ? null : () => command(attempt!.operation),
                 child: Text(l.retryAction),
