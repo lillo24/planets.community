@@ -2,22 +2,26 @@
 -- erased and deliberately derive a null live subject. OST01's generic non-template
 -- branch accidentally rejected those reports. Keep its template/legacy branches
 -- unchanged; only the five contact kinds can use retained target provenance.
-alter table private.moderation_cases
-  drop constraint moderation_cases_template_provenance_valid;
-alter table private.moderation_cases
-  add constraint moderation_cases_template_provenance_valid check (
-    (target_kind = 'proposal_template' and template_report_content_version is not null
-      and template_report_content_version ~ '^tw01:[0-9a-f]{64}$'
-      and ((template_source_proposal_id is null and subject_profile_id is null)
-        or (template_source_proposal_id is not null and subject_profile_id is not null)))
-    or (target_kind <> 'proposal_template' and subject_profile_id is not null
-      and template_source_proposal_id is null and template_report_content_version is null)
+-- Compose the effective check so an incorporated peer's independent branches
+-- survive too. Never reconstruct it from an older migration's source text.
+do $$
+declare previous_expression text;
+begin
+  select pg_get_expr(c.conbin, c.conrelid) into strict previous_expression
+  from pg_constraint c where c.conrelid = 'private.moderation_cases'::regclass
+    and c.conname = 'moderation_cases_template_provenance_valid'
+    and c.contype = 'c' and c.convalidated;
+  execute 'alter table private.moderation_cases drop constraint moderation_cases_template_provenance_valid';
+  execute format($check$alter table private.moderation_cases
+    add constraint moderation_cases_template_provenance_valid check ((%s)
     or (target_kind in (
         'group_contact_request', 'group_contact_message', 'group_coordination_proposal',
         'member_contact_request', 'member_contact_message'
       ) and subject_profile_id is null
-      and template_source_proposal_id is null and template_report_content_version is null)
-  );
+      and template_source_proposal_id is null and template_report_content_version is null))$check$,
+    previous_expression);
+end;
+$$;
 
 -- Existing typed-target/context CHECKs, immutable provenance triggers, report
 -- authorization and restrictive subject/account FKs remain unchanged. This does
