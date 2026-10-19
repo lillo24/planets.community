@@ -7,6 +7,7 @@ import 'package:planets_mobile/core/backend/supabase_backend.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/group_discussions/application/discussion_controllers.dart';
 import 'package:planets_mobile/features/group_discussions/presentation/discussion_routes.dart';
+import 'package:planets_mobile/features/group_membership/presentation/group_participation_section.dart';
 import 'package:planets_mobile/features/messages/presentation/messages_routes.dart';
 import 'package:planets_mobile/features/messages/presentation/messages_navigation.dart';
 import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
@@ -93,7 +94,12 @@ Future<void> runDiscussionConversionJourney(
   await tap(find.byKey(const Key('discussion-create-project')));
   await harness.waitFor(tester, find.text('Request publication'));
   await tester.enterText(
-    find.byType(TextField).last,
+    find
+        .descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(TextField),
+        )
+        .last,
     'A public garden Project with dates and location still to define.',
   );
   await tap(find.text('Request publication'));
@@ -383,8 +389,10 @@ Future<void> runDiscussionConversionJourney(
     ),
   );
   await show(memberContainer, '/groups/$groupId');
+  await harness.waitFor(tester, find.byType(ListView));
+  await harness.reveal(tester, find.byType(GroupParticipationSection));
   await harness.waitFor(tester, find.byKey(const Key('group-discussions')));
-  await harness.reveal(tester, find.byKey(const Key('group-discussions')));
+  await tester.ensureVisible(find.byKey(const Key('group-discussions')));
   await tap(find.byKey(const Key('group-discussions')));
   await harness.waitUntil(tester, () {
     final rooms = memberContainer.read(discussionRoomsProvider(groupId));

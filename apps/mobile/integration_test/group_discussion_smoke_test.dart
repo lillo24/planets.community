@@ -221,12 +221,16 @@ void main() {
       await harness.waitUntil(
         tester,
         () =>
+            find
+                .byKey(const Key('discussion-create-project'))
+                .evaluate()
+                .isNotEmpty &&
             tester
-                .widget<IconButton>(
-                  find.byKey(const Key('discussion-create-project')),
-                )
-                .onPressed !=
-            null,
+                    .widget<IconButton>(
+                      find.byKey(const Key('discussion-create-project')),
+                    )
+                    .onPressed !=
+                null,
       );
       await tester.tap(find.byKey(const Key('discussion-create-project')));
       await harness.waitFor(tester, find.byType(AlertDialog));
@@ -374,9 +378,9 @@ void main() {
       router.go(discussionRoute(room));
       await harness.waitFor(
         tester,
-        find
-            .text('La tua cronologia consentita fino all’uscita · sola lettura')
-            .first,
+        find.text(
+          'La tua cronologia consentita fino all’uscita · sola lettura',
+        ),
       );
       expect(find.byKey(const Key('discussion-composer')), findsNothing);
       await shot('former-history-it');
@@ -628,8 +632,8 @@ void main() {
       });
       expect(container.read(discussionRoomsProvider(group))!.error, isNull);
       await harness.reveal(tester, find.text('Visible unjoined Idea'));
-      await harness.reveal(tester, find.text('Hide Idea').first);
-      await tester.tap(find.text('Hide Idea').first);
+      await harness.reveal(tester, find.text('Hide Idea'));
+      await tester.tap(find.text('Hide Idea'));
       await harness.waitUntil(
         tester,
         () => find.text('Visible unjoined Idea').evaluate().isEmpty,
