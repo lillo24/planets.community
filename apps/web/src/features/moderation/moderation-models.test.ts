@@ -14,7 +14,13 @@ import {
 } from "./moderation-test-fixtures";
 
 describe("moderation model parsing", () => {
-  it.each(["member_contact_request", "member_contact_message"])(
+  it.each([
+    "group_contact_request",
+    "group_contact_message",
+    "group_coordination_proposal",
+    "member_contact_request",
+    "member_contact_message",
+  ])(
     "keeps %s reports reviewable after the author's profile is erased",
     (targetKind) => {
       const subject = {
@@ -24,10 +30,18 @@ describe("moderation model parsing", () => {
       };
       expect(
         parseModerationQueue([{ ...moderationQueueRow(), ...subject }])[0],
-      ).toMatchObject({ targetKind, subjectProfileId: null });
+      ).toMatchObject({
+        targetKind,
+        subjectProfileId: null,
+        subjectDisplayName: "Deleted account",
+      });
       expect(
         parseModerationCase([{ ...moderationDetailRow(), ...subject }]),
-      ).toMatchObject({ targetKind, subjectProfileId: null });
+      ).toMatchObject({
+        targetKind,
+        subjectProfileId: null,
+        subjectDisplayName: "Deleted account",
+      });
       expect(() =>
         parseModerationQueue([
           { ...moderationQueueRow(), ...subject, subject_profile_id: "bad" },

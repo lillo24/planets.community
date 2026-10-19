@@ -16,6 +16,13 @@ human identifier. The server rejects a returned evidence kind that differs from
 the case, and neither staff nor Group managers gain conversation access. See the
 [provisional member contract](../../../../../docs/development/member-contact-backend-review.md).
 
+The five representative, coordination and member contact target kinds permit an
+erased subject's null current profile reference in the strict queue/detail model.
+Canonical staff projections label that subject `Deleted account`; only an actual
+official template uses the organization label. Legacy human target kinds still
+require their installed subject identity. Exact reported contact provenance and
+case authorization remain required.
+
 This feature owns the private server-side moderation client used by `/admin`.
 `moderation-server.ts` verifies signed claims and checks the canonical database
 staff role before every read. `moderation-operations.ts` repeats that check for
