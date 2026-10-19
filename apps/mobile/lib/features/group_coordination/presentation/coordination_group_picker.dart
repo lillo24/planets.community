@@ -66,8 +66,12 @@ class _CoordinationGroupPickerState
         height: min(MediaQuery.sizeOf(context).height * .85, 650),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          // At large text sizes the header and actions can fill the dialog.
+          // Share its bounded viewport with the results instead of shrinking
+          // the selectable list to zero between fixed-height content.
+          child: ListView(
+            primary: false,
+            padding: EdgeInsets.zero,
             children: [
               Text(
                 l.coordinationChooseGroups,
@@ -96,44 +100,35 @@ class _CoordinationGroupPickerState
                 },
               ),
               if (selected.isNotEmpty) Text(selected.values.join(' · ')),
-              Expanded(
-                child: ListView(
-                  children: [
-                    for (final g in pager.rows.where(
-                      (g) => !widget.excluded.contains(g.id),
-                    ))
-                      CheckboxListTile(
-                        key: Key('coordination-group-${g.id}'),
-                        title: Text(g.content.name),
-                        value: selected.containsKey(g.id),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        onChanged: (yes) {
-                          if (yes == true && selected.length >= 3) return;
-                          setState(() {
-                            if (yes == true) {
-                              selected[g.id] = g.content.name;
-                            } else {
-                              selected.remove(g.id);
-                            }
-                          });
-                        },
-                      ),
-                    if (pager.busy)
-                      const Center(child: CircularProgressIndicator())
-                    else if (pager.error != null) ...[
-                      Text(l.contactFailure),
-                      TextButton(
-                        onPressed: pager.load,
-                        child: Text(l.retryAction),
-                      ),
-                    ] else if (pager.more)
-                      TextButton(
-                        onPressed: pager.load,
-                        child: Text(l.coordinationMoreGroups),
-                      ),
-                  ],
+              for (final g in pager.rows.where(
+                (g) => !widget.excluded.contains(g.id),
+              ))
+                CheckboxListTile(
+                  key: Key('coordination-group-${g.id}'),
+                  title: Text(g.content.name),
+                  value: selected.containsKey(g.id),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  onChanged: (yes) {
+                    if (yes == true && selected.length >= 3) return;
+                    setState(() {
+                      if (yes == true) {
+                        selected[g.id] = g.content.name;
+                      } else {
+                        selected.remove(g.id);
+                      }
+                    });
+                  },
                 ),
-              ),
+              if (pager.busy)
+                const Center(child: CircularProgressIndicator())
+              else if (pager.error != null) ...[
+                Text(l.contactFailure),
+                TextButton(onPressed: pager.load, child: Text(l.retryAction)),
+              ] else if (pager.more)
+                TextButton(
+                  onPressed: pager.load,
+                  child: Text(l.coordinationMoreGroups),
+                ),
               Wrap(
                 spacing: 12,
                 runSpacing: 8,
