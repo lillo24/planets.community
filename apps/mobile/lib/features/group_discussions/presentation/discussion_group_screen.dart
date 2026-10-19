@@ -273,6 +273,11 @@ class _DiscussionGroupScreenState extends ConsumerState<DiscussionGroupScreen>
                           DropdownButtonFormField<String>(
                             key: ValueKey('policy-${settings!.version}'),
                             initialValue: settings!.policy,
+                            // Keep full policy labels readable when they wrap,
+                            // both in the selected field and the open menu.
+                            isExpanded: true,
+                            isDense: false,
+                            itemHeight: null,
                             decoration: InputDecoration(
                               labelText: l.discussionWhoCreates,
                             ),
@@ -346,6 +351,11 @@ class _DiscussionGroupScreenState extends ConsumerState<DiscussionGroupScreen>
                       ),
                       DropdownButtonFormField<String>(
                         initialValue: visibility,
+                        // Audience disclosure must grow with accessibility text
+                        // instead of clipping the Group-manager qualification.
+                        isExpanded: true,
+                        isDense: false,
+                        itemHeight: null,
                         decoration: InputDecoration(
                           labelText: l.discussionAudience,
                         ),
