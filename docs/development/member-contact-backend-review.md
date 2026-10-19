@@ -167,6 +167,20 @@ adds member kinds while old versions filter them. Staff case evidence through
 it grants no surrounding history or Group People access. Optional note evidence
 can have a null body. No automatic moderation consequence is added.
 
+The forward migration `20261019073011_contact_report_erased_subject_provenance.sql`
+allows a null live subject only for the five exact D/M contact report kinds after
+prior account erasure. The official/community template provenance branches,
+legacy live-subject requirement, typed target/context constraints and restrictive
+subject/account foreign keys remain intact. This repairs known-content reporting;
+it neither authorizes account deletion nor changes retention policy.
+The canonical staff queue/detail label these erased contact subjects
+`Deleted account`; `Planets Community Official` remains specific to official templates.
+The guarded replacement preserves both readers' signatures, identities and grants.
+`supabase/tests/145_contact_erased_subject_reports.test.sql` exercises known-content
+reads, scoped synthetic erasure, all five report kinds and exact staff evidence,
+queue/detail subject labels, plus rejected unseen content and malformed
+legacy/template/contact case shapes.
+
 ## Verification and integration gate
 
 `supabase/tests/140_member_contact.test.sql` covers protected grants, ordinary
