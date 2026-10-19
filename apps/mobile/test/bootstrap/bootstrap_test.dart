@@ -1,3 +1,5 @@
+import 'package:planets_mobile/features/settings/application/activities_split_preference_controller.dart';
+import 'package:planets_mobile/features/settings/domain/activities_split_preference.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,6 +41,12 @@ void main() {
             destination: BottomTabDestination.browse,
           );
         },
+        activitiesSplitPreferenceLoader: () async {
+          events.add('activities-split');
+          return const ActivitiesSplitPreferenceState(
+            mode: ActivitiesSplitMode.on,
+          );
+        },
         backendInitializer: (receivedConfig) async {
           expect(identical(receivedConfig, config), isTrue);
           events.add('backend');
@@ -58,6 +66,7 @@ void main() {
         'config',
         'language',
         'navigation',
+        'activities-split',
         'backend',
         'monitoring',
         'application',
@@ -90,6 +99,8 @@ void main() {
         container.read(navigationPreferenceProvider).destination,
         BottomTabDestination.browse,
       );
+      expect(container.read(activitiesSplitPreferenceProvider).enabled, isTrue);
+      expect(find.byKey(const Key('browse-activities-button')), findsOneWidget);
       expect(find.byKey(const Key('nav-browse')), findsOneWidget);
       expect(find.byKey(const Key('nav-messages')), findsNothing);
     },
@@ -104,6 +115,8 @@ void main() {
         configLoader: _testConfig,
         languagePreferenceLoader: () async =>
             throw StateError('platform detail'),
+        activitiesSplitPreferenceLoader: () async =>
+            throw StateError('split platform detail'),
         navigationPreferenceLoader: () async =>
             throw StateError('navigation platform detail'),
         backendInitializer: (_) async {},
@@ -135,6 +148,14 @@ void main() {
       );
       expect(
         container.read(navigationPreferenceProvider).restoreFailed,
+        isTrue,
+      );
+      expect(
+        container.read(activitiesSplitPreferenceProvider).enabled,
+        isFalse,
+      );
+      expect(
+        container.read(activitiesSplitPreferenceProvider).restoreFailed,
         isTrue,
       );
     },

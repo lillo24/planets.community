@@ -541,11 +541,17 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
                       MapDiscoveryFamily.tavoli => BrowseActivityType.tavoli,
                       _ => null,
                     },
-                    onChanged: (type) => _family(
-                      type == BrowseActivityType.proposals
-                          ? MapDiscoveryFamily.projects
-                          : MapDiscoveryFamily.tavoli,
-                    ),
+                    onChanged: (type) {
+                      if (type == BrowseActivityType.activities) {
+                        context.go('/activities');
+                      } else {
+                        _family(
+                          type == BrowseActivityType.proposals
+                              ? MapDiscoveryFamily.projects
+                              : MapDiscoveryFamily.tavoli,
+                        );
+                      }
+                    },
                   ),
                   const SizedBox(height: 12),
                 ],
