@@ -22,6 +22,13 @@ import 'package:planets_mobile/core/widgets/loading_state.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/group_contact/application/contact_attempt.dart';
+import 'package:planets_mobile/features/group_contact/data/group_contact_gateway.dart';
+import 'package:planets_mobile/features/group_contact/presentation/group_contact_compose_screen.dart';
+import 'package:planets_mobile/features/group_contact/presentation/group_contact_routes.dart';
+import 'package:planets_mobile/features/group_projects/data/group_project_gateway.dart';
+import 'package:planets_mobile/features/group_projects/domain/group_project_models.dart';
+import 'package:planets_mobile/features/groups/data/group_gateway.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
 import 'package:planets_mobile/features/geographic_discovery/data/geographic_discovery_gateway.dart';
 import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
@@ -59,6 +66,13 @@ import '../../support/fake_settings.dart';
 import '../../support/fake_messages.dart';
 import '../../support/fake_message_chats.dart';
 import '../../../test_support/map_discovery_fixture.dart';
+import '../../features/group_contact/contact_fixtures.dart' as contact;
+import '../../features/groups/group_contract_test.dart'
+    as public_group
+    show row;
+import '../../features/groups/group_membership_test.dart'
+    as membership
+    show selfRow;
 
 void main() {
   setUpAll(() => RenderedEvidence.loadFonts());
@@ -404,6 +418,164 @@ void main() {
         app.read(navigationPreferenceProvider).destination,
         BottomTabDestination.browse,
       );
+    },
+  );
+
+  testWidgets(
+    'ACTSPLIT01 toggles preserve the real D compose route without a write',
+    (tester) async {
+      final calls = <String>[];
+      final unexpected = <String>[];
+      final splitStore = FakeActivitiesSplitPreferenceStore(value: 'on');
+      final replies = <String, Object?>{
+        'get_own_group_contact_sender': {
+          'profile_id': contact.actor,
+          'display_name': 'Fictional Alice',
+        },
+        'get_public_group': [
+          {...public_group.row(state: 'published'), 'group_id': contact.target},
+        ],
+        'get_own_group_role': [contact.ownRole()],
+        'list_my_contact_groups': [contact.groupRow(contact.source, 'Garden')],
+        // The real /groups/:id/contact stack also builds its parent routes.
+        'list_public_groups': [],
+        'get_own_group_membership_context': [membership.selfRow()],
+        'list_public_group_projects': [],
+      };
+      final expectedArgs = <String, Map<String, dynamic>>{
+        'get_own_group_contact_sender': {
+          'p_expected_profile_id': contact.actor,
+        },
+        'get_public_group': {'p_group_id': contact.target},
+        'get_own_group_role': {
+          'p_expected_profile_id': contact.actor,
+          'p_group_id': contact.target,
+        },
+        'list_my_contact_groups': {
+          'p_expected_profile_id': contact.actor,
+          'p_limit': 21,
+          'p_cursor_created_at': null,
+          'p_cursor_id': null,
+        },
+        'list_public_groups': {
+          'p_search': '',
+          'p_group_kind': null,
+          'p_volunteering_focus': null,
+          'p_locality': null,
+          'p_limit': 25,
+          'p_before_created_at': null,
+          'p_before_id': null,
+        },
+        'get_own_group_membership_context': {
+          'p_expected_profile_id': contact.actor,
+          'p_group_id': contact.target,
+        },
+        'list_public_group_projects': {
+          'p_group_id': contact.target,
+          'p_limit': 20,
+          'p_cursor_published_at': null,
+          'p_cursor_id': null,
+        },
+      };
+      final app = await _pump(
+        tester,
+        split: true,
+        splitStore: splitStore,
+        auth: FakeAuthGateway(
+          snapshot: const AuthSnapshot(
+            identity: AuthIdentity(id: contact.actor),
+          ),
+        ),
+        profile: FakeProfileGateway(
+          data: profileFixture(id: contact.actor, complete: true),
+        ),
+        contactRpc: (name, args) async {
+          calls.add(name);
+          if (!replies.containsKey(name)) {
+            // Record as well as fail: a screen's error boundary must not hide
+            // an unexpected mutation or recovery from the final assertion.
+            unexpected.add(name);
+            fail('Unexpected contact navigation RPC: $name');
+          }
+          expect(args, expectedArgs[name], reason: name);
+          return replies[name];
+        },
+      );
+      final router = app.read(appRouterProvider);
+      final path = groupContactComposeRoute(contact.target);
+      router.go(path);
+      await tester.pumpAndSettle();
+      final compose = find.byType(GroupContactComposeScreen);
+      expect(compose, findsOneWidget);
+      final state = tester.state(compose);
+      final source = find.descendant(
+        of: compose,
+        matching: find.widgetWithText(RadioListTile<String>, 'Garden'),
+      );
+      expect(
+        tester
+            .widget<RadioGroup<String>>(find.byType(RadioGroup<String>))
+            .groupValue,
+        isNull,
+      );
+      await tester.ensureVisible(source);
+      await tester.tap(source);
+      await tester.pumpAndSettle();
+      final title = find.byKey(const Key('contact-title'));
+      final note = find.byKey(const Key('contact-note'));
+      await tester.ensureVisible(title);
+      await tester.enterText(title, 'Unsent represented idea');
+      await tester.ensureVisible(note);
+      await tester.enterText(
+        note,
+        'Private note retained while split mode changes.',
+      );
+      final titleController = tester.widget<TextField>(title).controller!;
+      final noteController = tester.widget<TextField>(note).controller!;
+      for (final mode in [
+        ActivitiesSplitMode.off,
+        ActivitiesSplitMode.on,
+        ActivitiesSplitMode.off,
+      ]) {
+        expect(
+          await app
+              .read(activitiesSplitPreferenceProvider.notifier)
+              .select(mode),
+          isTrue,
+        );
+        await tester.pumpAndSettle();
+        expect(app.read(appRouterProvider), same(router));
+        expect(router.routerDelegate.state.uri.toString(), path);
+        expect(tester.state(compose), same(state));
+        expect(
+          tester.widget<TextField>(title).controller,
+          same(titleController),
+        );
+        expect(tester.widget<TextField>(note).controller, same(noteController));
+        expect(titleController.text, 'Unsent represented idea');
+        expect(
+          noteController.text,
+          'Private note retained while split mode changes.',
+        );
+        expect(
+          tester
+              .widget<RadioGroup<String>>(find.byType(RadioGroup<String>))
+              .groupValue,
+          contact.source,
+        );
+        expect(app.read(contactAttemptsProvider), isEmpty);
+        expect(unexpected, isEmpty);
+        expect(
+          calls.where(
+            (name) =>
+                name == 'submit_group_contact_request' ||
+                name == 'recover_group_contact_action',
+          ),
+          isEmpty,
+        );
+      }
+      expect(splitStore.writes, ['off', 'on', 'off']);
+      expect(tester.takeException(), isNull);
     },
   );
 
@@ -1923,6 +2095,7 @@ Future<ProviderContainer> _pump(
   FakeNavigationPreferenceStore? navigationStore,
   DateTime? proposalNow,
   FakeProfilePhotoGateway? profilePhoto,
+  ContactRpc? contactRpc,
 }) async {
   final gateway =
       auth ??
@@ -1935,6 +2108,15 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        if (contactRpc != null) ...[
+          groupContactGatewayProvider.overrideWithValue(
+            GroupContactGateway(contactRpc),
+          ),
+          groupGatewayProvider.overrideWithValue(GroupGateway(contactRpc)),
+          groupProjectGatewayProvider.overrideWithValue(
+            _ContactRouteGroupProjects(contactRpc),
+          ),
+        ],
         initialActivitiesSplitPreferenceProvider.overrideWithValue(
           ActivitiesSplitPreferenceState(
             restoreFailed: splitRestoreFailed,
@@ -2036,6 +2218,26 @@ Future<ProviderContainer> _pump(
     await tester.pumpAndSettle();
   }
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
+}
+
+/// Only the public feed on the real compose route's parent Group page is needed.
+/// Keep it behind the same strict RPC spy as the compose and parent Group reads.
+class _ContactRouteGroupProjects extends GroupProjectGateway {
+  _ContactRouteGroupProjects(this.call)
+    : super(() => throw StateError('Unexpected group-project network access.'));
+  final ContactRpc call;
+  @override
+  Future<List<GroupProject>> feed(String group, {GroupProject? after}) async {
+    final rows = await call('list_public_group_projects', {
+      'p_group_id': group,
+      'p_limit': 20,
+      'p_cursor_published_at': after?.publishedAt.toUtc().toIso8601String(),
+      'p_cursor_id': after?.id,
+    });
+    return (rows as List)
+        .map((row) => GroupProject.parse((row as Map).cast<String, dynamic>()))
+        .toList(growable: false);
+  }
 }
 
 Future<void> _tap(WidgetTester tester, String key) async {
