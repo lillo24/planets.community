@@ -10,6 +10,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/widgets/page_app_bar.dart';
+import '../../features/activities_sandbox/presentation/activities_screen.dart';
+import '../../features/activities_sandbox/presentation/activity_example_detail_screen.dart';
+import '../../features/settings/application/activities_split_preference_controller.dart';
 import '../../features/geographic_discovery/domain/map_discovery.dart';
 import '../../features/geographic_discovery/presentation/map_discovery_screen.dart';
 import '../../features/auth/application/auth_command_controller.dart';
@@ -119,6 +122,7 @@ GoRouter createAppRouter({
   DraftDepartureCoordinator? draftDeparture,
   StartupFlow? startupFlow,
   bool Function()? readPolicyAccepted,
+  bool Function()? readActivitiesSplit,
 }) {
   final configuration = _NativeRoutingConfig(
     _routingConfig(
@@ -128,6 +132,7 @@ GoRouter createAppRouter({
       null,
       startupFlow,
       readPolicyAccepted,
+      readActivitiesSplit,
     ),
     draftDeparture,
   );
@@ -148,6 +153,7 @@ RoutingConfig _routingConfig(
   VoidCallback? cancelExternalAuth,
   StartupFlow? startupFlow,
   bool Function()? readPolicyAccepted,
+  bool Function()? readActivitiesSplit,
 ]) {
   final sessionReader =
       readAuthSession ?? () => const AuthSessionState.signedOut();
@@ -207,6 +213,10 @@ RoutingConfig _routingConfig(
       final session = sessionReader();
       final pending = pendingReader();
       final path = state.uri.path;
+      if ((path == '/activities' || path.startsWith('/activities/')) &&
+          !(readActivitiesSplit?.call() ?? false)) {
+        return '/proposals';
+      }
       if (startupFlow != null) {
         // Only the ordinary root is gated. Explicit links/continuations own
         // their journey, including during Auth restoration.
@@ -1122,6 +1132,21 @@ RoutingConfig _routingConfig(
                 ],
               ),
               GoRoute(
+                path: '/activities',
+                pageBuilder: (context, state) => NoTransitionPage<void>(
+                  key: state.pageKey,
+                  child: const ActivitiesScreen(),
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'examples/:exampleId',
+                    builder: (context, state) => ActivityExampleDetailScreen(
+                      exampleId: state.pathParameters['exampleId']!,
+                    ),
+                  ),
+                ],
+              ),
+              GoRoute(
                 path: '/tavoli',
                 pageBuilder: (context, state) => NoTransitionPage<void>(
                   key: state.pageKey,
@@ -1299,6 +1324,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ref.read(authSessionProvider).identity?.id,
           ref.read(policyVersionProvider),
         ),
+    () => ref.read(activitiesSplitPreferenceProvider).enabled,
   );
   final routes = _NativeRoutingConfig(
     configuration(),
@@ -1336,6 +1362,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       router.refresh();
     }
   });
+  // Refresh the gate in place: changing this local experiment must not replace
+  // branch keys, the Router, protected forms, or retained domain state.
+  ref.listen(activitiesSplitPreferenceProvider, (_, _) => router.refresh());
   ref.listen(pendingEmailOtpProvider, (_, _) => router.refresh());
   ref.listen(authCommandProvider, (previous, next) {
     if (next.didSignOut &&
@@ -1350,7 +1379,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(router.dispose);
   ref.onDispose(routes.dispose);
   return router;
-}, dependencies: [startupFlowProvider]);
+}, dependencies: [startupFlowProvider, activitiesSplitPreferenceProvider]);
 
 /// External deliveries compose native validation with draft departure. Ordinary
 /// routes retain the draft hook while an editor owns it; startup without an

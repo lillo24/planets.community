@@ -48,7 +48,13 @@ import 'skill_filter.dart';
 import '../../template_workshop/presentation/template_workshop_screens.dart';
 
 class PublicProposalsScreen extends ConsumerStatefulWidget {
-  const PublicProposalsScreen({this.tutorialPlaceholder, super.key});
+  const PublicProposalsScreen({
+    this.tutorialPlaceholder,
+    this.activitiesSplitPreview,
+    super.key,
+  });
+
+  final bool? activitiesSplitPreview;
 
   /// Labelled, read-only illustration used only by the tutorial after its
   /// bounded public read fails. It is never inserted into public state.
@@ -149,7 +155,8 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(AppSpacing.medium),
               children: [
-                const BrowseActivitySwitcher(
+                BrowseActivitySwitcher(
+                  splitMode: widget.activitiesSplitPreview,
                   selected: BrowseActivityType.proposals,
                 ),
                 // Groups navigation lives in the page toolbar.

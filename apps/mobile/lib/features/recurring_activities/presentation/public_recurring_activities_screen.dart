@@ -1,3 +1,4 @@
+import '../../settings/application/activities_split_preference_controller.dart';
 import '../../group_projects/presentation/group_project_widgets.dart';
 import '../../group_contact/presentation/group_contact_widgets.dart';
 import '../../participation/presentation/participation_routes.dart';
@@ -127,9 +128,21 @@ class _PublicRecurringActivitiesScreenState
                 const BrowseActivitySwitcher(
                   selected: BrowseActivityType.tavoli,
                 ),
+                if (ref.watch(activitiesSplitPreferenceProvider).enabled)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      key: const Key('tavoli-activities-landing'),
+                      onPressed: () => context.go('/activities'),
+                      icon: const Icon(Icons.apps_outlined),
+                      label: Text(l10n.activitiesBackToLanding),
+                    ),
+                  ),
                 // Match the Project gap below the complete Browse block.
                 const SizedBox(height: AppSpacing.medium),
                 MapViewButton(origin: MapDiscoveryOrigin.tavoli),
+                if (ref.watch(activitiesSplitPreferenceProvider).enabled)
+                  Text(l10n.activitiesTavoliMapScope),
                 const SizedBox(height: AppSpacing.medium),
                 Align(
                   alignment: Alignment.centerRight,

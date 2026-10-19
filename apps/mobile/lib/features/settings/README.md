@@ -24,7 +24,7 @@ preference surfaces. It does not own notification or profile data.
 - `presentation/navigation_selection_screen.dart` provides the public nested
   `/settings/navigation` selector and reports save failures for retry.
 
-Bootstrap restores both preferences before `runApp` to avoid displaying a
+Bootstrap restores language, navigation and Activities Split Mode before `runApp` to avoid displaying a
 transient wrong choice. Language read failures fall back to System default.
 Navigation defaults to Messages for missing or unknown values. A navigation
 read failure uses Messages while exposing a localized recovery message in
@@ -37,7 +37,8 @@ Settings ends with the Auth feature's shared destructive Sign out action for
 every authenticated phase, including incomplete profiles. It remains public,
 and signed-out users see no Sign out action.
 
-Sandbox contains only the persistent bottom-right tab setting. Its label
+Sandbox contains the persistent bottom-right tab setting and the opt-in
+Activities Split Mode switch. Its label
 explicitly describes its effect on real navigation; storage key, values,
 default and `/settings/navigation` remain compatible. The separate Messages
 preview and redundant real-Messages shortcut have been removed. Shared tutorial
@@ -59,3 +60,15 @@ Profile-ready owners see Public Profile Visibility in Account, separately from
 the Privacy Policy. The nested protected screen is owned by `profile`; guest
 and incomplete sessions redirect to Settings without loading visibility. This
 adds no policy-consent gating to Settings or its legal links.
+
+ACTSPLIT01 adds the independent `domain/activities_split_preference.dart`,
+`data/activities_split_preference_store.dart` and
+`application/activities_split_preference_controller.dart` for
+`planets.sandbox.activitiesSplit` (`on`/`off`, default off).
+`presentation/activities_split_setting.dart` renders the public Sandbox switch
+and localized recoverable read/save errors. Only successful writes publish a
+new mode; overlapping writes are rejected. Bootstrap restores it before first
+presentation. It survives restart/sign-out without syncing accounts. The existing
+`planets.navigation.bottomRight` key and values remain independent and unchanged.
+See [Activities sandbox](../activities_sandbox/README.md) for navigation,
+fixture boundaries and rollback. Turning the mode off restores normal discovery.

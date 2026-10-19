@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:go_router/go_router.dart';
+
+import '../features/settings/application/activities_split_preference_controller.dart';
 
 import '../core/widgets/page_app_bar.dart';
 import '../core/theme/app_tokens.dart';
@@ -9,11 +12,17 @@ import '../features/help/presentation/help_routes.dart';
 import '../features/notifications/presentation/home_notification_button.dart';
 import '../l10n/generated/app_localizations.dart';
 
-class FoundationScreen extends StatelessWidget {
-  const FoundationScreen({super.key});
+class FoundationScreen extends ConsumerWidget {
+  const FoundationScreen({this.activitiesSplitPreview, super.key});
+
+  /// The tutorial renders its baseline surface without writing local preferences.
+  final bool? activitiesSplitPreview;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final split =
+        activitiesSplitPreview ??
+        ref.watch(activitiesSplitPreferenceProvider).enabled;
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
@@ -131,11 +140,25 @@ class FoundationScreen extends StatelessWidget {
                               _HomePillarCard(
                                 key: const Key('browse-proposals-button'),
                                 icon: Icons.explore_outlined,
-                                title: l10n.homeProjectsTitle,
-                                message: l10n.homeProjectsMessage,
+                                title: split
+                                    ? l10n.browseProposalsChoice
+                                    : l10n.homeProjectsTitle,
+                                message: split
+                                    ? l10n.activitiesProjectsMessage
+                                    : l10n.homeProjectsMessage,
                                 onTap: () => context.go('/proposals'),
                               ),
                               const SizedBox(height: AppSpacing.small),
+                              if (split) ...[
+                                _HomePillarCard(
+                                  key: const Key('browse-activities-button'),
+                                  icon: Icons.directions_run,
+                                  title: l10n.activitiesTitle,
+                                  message: l10n.activitiesHomeMessage,
+                                  onTap: () => context.go('/activities'),
+                                ),
+                                const SizedBox(height: AppSpacing.small),
+                              ],
                               _HomePillarCard(
                                 key: const Key('browse-resources-button'),
                                 icon: Icons.inventory_2_outlined,

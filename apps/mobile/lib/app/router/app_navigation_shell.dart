@@ -52,7 +52,12 @@ class AppNavigationShell extends ConsumerWidget {
     // The active URI identifies the screen actually visible above that stack.
     final routeRoot = Uri(path: path).pathSegments.firstOrNull;
     final isBrowse = switch (routeRoot) {
-      'proposals' || 'tavoli' || 'resources' || 'drafts' || 'groups' => true,
+      'proposals' ||
+      'tavoli' ||
+      'activities' ||
+      'resources' ||
+      'drafts' ||
+      'groups' => true,
       'discover' when path.startsWith('/discover/map/') => true,
       _ => false,
     };
@@ -73,6 +78,7 @@ class AppNavigationShell extends ConsumerWidget {
             path == '/profile') ||
         (navigationShell.currentIndex == AppBranch.browse.index &&
             (path == '/proposals' ||
+                path == '/activities' ||
                 path == '/tavoli' ||
                 path == '/resources' ||
                 path == '/drafts'));
