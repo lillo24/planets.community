@@ -17,6 +17,7 @@ import '../data/discussion_gateway.dart';
 import '../domain/discussion_models.dart';
 import 'discussion_feedback.dart';
 import 'discussion_routes.dart';
+import 'discussion_general_hint.dart';
 import 'discussion_project_start.dart';
 import 'discussion_widgets.dart';
 import 'discussion_room_actions.dart';
@@ -207,227 +208,290 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
                         retry: () => unawaited(c.refresh()),
                       ),
               )
-            : MessageReadViewport(
-                profileId: c!.actor,
-                kind: 'group_discussion',
-                chatId: room.id,
-                boundary: c.token,
-                scrollController: scroll,
-                child: Column(
-                  children: [
-                    if (c.busy) const LinearProgressIndicator(),
-                    if (room.isGeneral)
-                      ListTile(
-                        leading: const Icon(Icons.folder_shared_outlined),
-                        title: Text(l.discussionGroupWorkspace),
-                        subtitle: Text(l.discussionExternalHint),
-                        onTap: room.canReadLinks
-                            ? () => context.push(discussionLinksRoute(room.id))
-                            : null,
-                      ),
-                    if (!room.isGeneral)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            ExpansionTile(
-                              tilePadding: EdgeInsets.zero,
-                              title: Text(
-                                room.isFormer
-                                    ? l.discussionFormerHistory
-                                    : room.visibility == 'group'
-                                    ? l.discussionGroupVisible
-                                    : l.discussionInviteOnly,
+            : LayoutBuilder(
+                builder: (context, bodyConstraints) => MessageReadViewport(
+                  profileId: c!.actor,
+                  kind: 'group_discussion',
+                  chatId: room.id,
+                  boundary: c.token,
+                  scrollController: scroll,
+                  child: Column(
+                    children: [
+                      if (c.busy) const LinearProgressIndicator(),
+                      if (room.isGeneral)
+                        // The full external-access disclosure remains scrollable
+                        // when large text would otherwise consume the body.
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: bodyConstraints.maxHeight * .4,
+                          ),
+                          child: SingleChildScrollView(
+                            key: const Key('discussion-workspace-hint-scroll'),
+                            child: DiscussionGeneralHint(
+                              actor: c.actor,
+                              onOpen: room.canReadLinks
+                                  ? () => context.push(
+                                      discussionLinksRoute(room.id),
+                                    )
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      if (!room.isGeneral)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              ExpansionTile(
+                                tilePadding: EdgeInsets.zero,
+                                title: Text(
+                                  room.isFormer
+                                      ? l.discussionFormerHistory
+                                      : room.visibility == 'group'
+                                      ? l.discussionGroupVisible
+                                      : l.discussionInviteOnly,
+                                ),
+                                children: [
+                                  if (room.purpose.isNotEmpty)
+                                    Text(room.purpose),
+                                  if (!room.isFormer)
+                                    Text(l.discussionManagerDisclosure),
+                                  DiscussionRoomActions(
+                                    room: room,
+                                    onChanged: c.refresh,
+                                  ),
+                                ],
                               ),
-                              children: [
-                                if (room.purpose.isNotEmpty) Text(room.purpose),
-                                if (!room.isFormer)
-                                  Text(l.discussionManagerDisclosure),
+                              if (!room.canReadHistory)
                                 DiscussionRoomActions(
                                   room: room,
                                   onChanged: c.refresh,
                                 ),
-                              ],
+                            ],
+                          ),
+                        ),
+                      if (c.error != null)
+                        DiscussionError(
+                          c.error!,
+                          retry: () => unawaited(c.refresh()),
+                        ),
+                      for (final entry in commands.attempts.entries.where(
+                        (e) =>
+                            e.value.action == DiscussionAction.update &&
+                            e.value.intent['p_room_id'] == room.id &&
+                            e.value.error != null &&
+                            !room.canManage,
+                      ))
+                        Column(
+                          children: [
+                            Text(l.discussionUncertain),
+                            Text(entry.value.intent['p_title'] as String),
+                            Text(
+                              entry.value.intent['p_archived'] == true
+                                  ? l.discussionArchive
+                                  : l.discussionRestore,
                             ),
-                            if (!room.canReadHistory)
-                              DiscussionRoomActions(
-                                room: room,
-                                onChanged: c.refresh,
+                            DiscussionError(entry.value.error!),
+                            TextButton(
+                              onPressed: entry.value.busy
+                                  ? null
+                                  : () async {
+                                      final result = await commands.run(
+                                        entry.key,
+                                        c.actor,
+                                        entry.value.action,
+                                        entry.value.intent,
+                                      );
+                                      if (mounted &&
+                                          ref
+                                                  .read(authSessionProvider)
+                                                  .identity
+                                                  ?.id ==
+                                              c.actor &&
+                                          result != null) {
+                                        commands.forget(entry.key);
+                                        await c.refresh();
+                                      }
+                                    },
+                              child: Text(l.discussionRetry),
+                            ),
+                            if (!entry.value.busy && !entry.value.uncertain)
+                              TextButton(
+                                onPressed: () => commands.forget(entry.key),
+                                child: Text(l.discussionCancel),
                               ),
                           ],
                         ),
-                      ),
-                    if (c.error != null)
-                      DiscussionError(
-                        c.error!,
-                        retry: () => unawaited(c.refresh()),
-                      ),
-                    for (final entry in commands.attempts.entries.where(
-                      (e) =>
-                          e.value.action == DiscussionAction.update &&
-                          e.value.intent['p_room_id'] == room.id &&
-                          e.value.error != null &&
-                          !room.canManage,
-                    ))
-                      Column(
-                        children: [
-                          Text(l.discussionUncertain),
-                          Text(entry.value.intent['p_title'] as String),
-                          Text(
-                            entry.value.intent['p_archived'] == true
-                                ? l.discussionArchive
-                                : l.discussionRestore,
+                      if (c.latestAvailable)
+                        TextButton(
+                          onPressed: () => unawaited(
+                            c.refresh(latest: true).then((_) => newest(c)),
                           ),
-                          DiscussionError(entry.value.error!),
-                          TextButton(
-                            onPressed: entry.value.busy
-                                ? null
-                                : () async {
-                                    final result = await commands.run(
-                                      entry.key,
-                                      c.actor,
-                                      entry.value.action,
-                                      entry.value.intent,
-                                    );
-                                    if (mounted &&
-                                        ref
-                                                .read(authSessionProvider)
-                                                .identity
-                                                ?.id ==
-                                            c.actor &&
-                                        result != null) {
-                                      commands.forget(entry.key);
-                                      await c.refresh();
-                                    }
-                                  },
-                            child: Text(l.discussionRetry),
-                          ),
-                          if (!entry.value.busy && !entry.value.uncertain)
-                            TextButton(
-                              onPressed: () => commands.forget(entry.key),
-                              child: Text(l.discussionCancel),
-                            ),
-                        ],
-                      ),
-                    if (c.latestAvailable)
-                      TextButton(
-                        onPressed: () => unawaited(
-                          c.refresh(latest: true).then((_) => newest(c)),
+                          child: Text(l.discussionLatest),
                         ),
-                        child: Text(l.discussionLatest),
-                      ),
-                    Expanded(
-                      child: ListView(
-                        controller: scroll,
-                        padding: const EdgeInsets.all(12),
-                        children: [
-                          if (c.more && c.messages.isNotEmpty)
-                            TextButton(
-                              key: const Key('discussion-older'),
-                              onPressed: c.busy ? null : () => older(c),
-                              child: Text(l.discussionOlder),
-                            ),
-                          if (c.messages.isEmpty && !c.busy && c.error == null)
-                            Text(
-                              room.canReadHistory
-                                  ? l.discussionNoMessages
-                                  : l.discussionJoinPreview,
-                            ),
-                          for (final m in c.messages)
-                            DiscussionBubble(
-                              key: ValueKey(m.id),
-                              body: m.body,
-                              sender:
-                                  m.senderName ??
-                                  l.discussionAccountUnavailable,
-                              own: m.senderId == c.actor,
-                              onReport: m.senderId == c.actor
-                                  ? null
-                                  : () => Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        builder: (_) => ReportFormScreen(
-                                          target: ModerationReportTarget(
-                                            kind: ModerationTargetKind
-                                                .groupDiscussionMessage,
-                                            id: m.id,
-                                            label: l.discussionReportLabel,
-                                          ),
-                                          onClose: () =>
-                                              Navigator.of(context).pop(),
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, remaining) => Column(
+                            children: [
+                              Expanded(
+                                child: ListView(
+                                  controller: scroll,
+                                  padding: const EdgeInsets.all(12),
+                                  children: [
+                                    if (c.more && c.messages.isNotEmpty)
+                                      TextButton(
+                                        key: const Key('discussion-older'),
+                                        onPressed: c.busy
+                                            ? null
+                                            : () => older(c),
+                                        child: Text(l.discussionOlder),
+                                      ),
+                                    if (c.messages.isEmpty &&
+                                        !c.busy &&
+                                        c.error == null)
+                                      Text(
+                                        room.canReadHistory
+                                            ? l.discussionNoMessages
+                                            : l.discussionJoinPreview,
+                                      ),
+                                    for (final m in c.messages)
+                                      DiscussionBubble(
+                                        key: ValueKey(m.id),
+                                        body: m.body,
+                                        sender:
+                                            m.senderName ??
+                                            l.discussionAccountUnavailable,
+                                        own: m.senderId == c.actor,
+                                        onReport: m.senderId == c.actor
+                                            ? null
+                                            : () => Navigator.of(context).push(
+                                                MaterialPageRoute<void>(
+                                                  builder: (_) => ReportFormScreen(
+                                                    target: ModerationReportTarget(
+                                                      kind: ModerationTargetKind
+                                                          .groupDiscussionMessage,
+                                                      id: m.id,
+                                                      label: l
+                                                          .discussionReportLabel,
+                                                    ),
+                                                    onClose: () =>
+                                                        Navigator.of(context)
+                                                            .pop(),
+                                                  ),
+                                                ),
+                                              ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              // Bound delivery feedback and the editor against
+                              // space left by the actual Idea/General header.
+                              // Long errors scroll without displacing controls
+                              // or taking all of the transcript's visible space.
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxHeight: remaining.maxHeight * .6,
+                                ),
+                                child: SingleChildScrollView(
+                                  key: const Key('discussion-composer-scroll'),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 4,
+                                        ),
+                                        child: Text(
+                                          !room.canSend
+                                              ? (room.isFormer
+                                                    ? l.discussionFormerHistory
+                                                    : l.discussionReadOnly)
+                                              : l.discussionHistory,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
                                         ),
                                       ),
-                                    ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      child: Text(
-                        !room.canSend
-                            ? (room.isFormer
-                                  ? l.discussionFormerHistory
-                                  : l.discussionReadOnly)
-                            : l.discussionHistory,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                    if (room.canSend)
-                      SafeArea(
-                        top: false,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (attempt?.error != null)
-                                DiscussionError(attempt!.error!),
-                              if (attempt?.uncertain == true)
-                                Text(l.discussionUncertain),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      key: const Key('discussion-composer'),
-                                      controller: message,
-                                      minLines: 1,
-                                      maxLines: 4,
-                                      readOnly: attempt != null,
-                                      decoration: InputDecoration(
-                                        labelText: l.discussionMessage,
-                                      ),
-                                    ),
+                                      if (room.canSend)
+                                        SafeArea(
+                                          top: false,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                if (attempt?.error != null)
+                                                  DiscussionError(
+                                                    attempt!.error!,
+                                                  ),
+                                                if (attempt?.uncertain == true)
+                                                  Text(l.discussionUncertain),
+                                                Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.end,
+                                                  children: [
+                                                    Expanded(
+                                                      child: TextField(
+                                                        key: const Key(
+                                                          'discussion-composer',
+                                                        ),
+                                                        controller: message,
+                                                        minLines: 1,
+                                                        maxLines: 4,
+                                                        readOnly:
+                                                            attempt != null,
+                                                        decoration: InputDecoration(
+                                                          labelText: l
+                                                              .discussionMessage,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    IconButton(
+                                                      key: const Key(
+                                                        'discussion-send',
+                                                      ),
+                                                      tooltip:
+                                                          attempt?.uncertain ==
+                                                              true
+                                                          ? l.discussionRetry
+                                                          : l.discussionSend,
+                                                      onPressed:
+                                                          attempt?.busy == true
+                                                          ? null
+                                                          : () => send(c),
+                                                      icon: const Icon(
+                                                        Icons.send_outlined,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                if (attempt != null &&
+                                                    !attempt.busy &&
+                                                    !attempt.uncertain &&
+                                                    attempt.receipt == null)
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        commands.forget(slot),
+                                                    child: Text(
+                                                      l.discussionCancel,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                                  IconButton(
-                                    key: const Key('discussion-send'),
-                                    tooltip: attempt?.uncertain == true
-                                        ? l.discussionRetry
-                                        : l.discussionSend,
-                                    onPressed: attempt?.busy == true
-                                        ? null
-                                        : () => send(c),
-                                    icon: const Icon(Icons.send_outlined),
-                                  ),
-                                ],
-                              ),
-                              if (attempt != null &&
-                                  !attempt.busy &&
-                                  !attempt.uncertain &&
-                                  attempt.receipt == null)
-                                TextButton(
-                                  onPressed: () => commands.forget(slot),
-                                  child: Text(l.discussionCancel),
                                 ),
+                              ),
                             ],
                           ),
                         ),
                       ),
-                  ],
+                    ],
+                  ),
                 ),
               );
         return PopScope(
@@ -435,8 +499,12 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
           child: Scaffold(
             appBar: pageAppBar(
               context,
+              preserveTitleSize: true,
               title: Text(
-                room?.title ?? l.discussionTitle,
+                room?.isGeneral == true
+                    ? l.discussionGeneral
+                    : room?.title ?? l.discussionTitle,
+                key: const Key('discussion-room-title'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

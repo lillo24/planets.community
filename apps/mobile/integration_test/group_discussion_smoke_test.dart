@@ -18,6 +18,7 @@ import 'package:planets_mobile/features/group_discussions/application/discussion
 import 'package:planets_mobile/features/group_discussions/data/discussion_gateway.dart';
 import 'package:planets_mobile/features/group_discussions/domain/discussion_models.dart';
 import 'package:planets_mobile/features/group_discussions/presentation/discussion_routes.dart';
+import 'package:planets_mobile/features/group_discussions/presentation/discussion_general_hint.dart';
 import 'package:planets_mobile/features/messages/presentation/messages_navigation.dart';
 import 'package:planets_mobile/features/messages/domain/message_chat_models.dart';
 import 'package:planets_mobile/features/policies/data/policy_acceptance_store.dart';
@@ -502,7 +503,36 @@ void main() {
       await shot('settings-en');
       publisherRouter.go(discussionRoute(settings.generalRoomId!));
       await harness.waitFor(tester, find.text('General'));
+      final generalHintDismiss = find.byKey(
+        const Key('discussion-general-hint-dismiss'),
+      );
+      await harness.waitFor(tester, generalHintDismiss);
+      await tester.ensureVisible(generalHintDismiss);
       await shot('general-en');
+      await tester.tap(generalHintDismiss);
+      await harness.waitUntil(
+        tester,
+        () => generalHintDismiss.evaluate().isEmpty,
+      );
+      publisherRouter.go('/messages');
+      await tester.pump(const Duration(milliseconds: 300));
+      publisherRouter.go(discussionRoute(settings.generalRoomId!));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('discussion-general-workspace')),
+      );
+      await harness.waitUntil(
+        tester,
+        () =>
+            find
+                .descendant(
+                  of: find.byType(DiscussionGeneralHint),
+                  matching: find.byType(LinearProgressIndicator),
+                )
+                .evaluate()
+                .isEmpty &&
+            generalHintDismiss.evaluate().isEmpty,
+      );
       publisherRouter.go(discussionLinksRoute(settings.generalRoomId!));
       await harness.waitFor(
         tester,

@@ -94,3 +94,19 @@ provider fetches or automatic joining.
 D integration hook: Group People may link to an Idea's People picker through
 `discussionPeopleRoute(roomId)` and reuse canonical invitation/acceptance.
 No personal-chat button appears until D owns that action.
+
+`discussion_general_hint.dart` keeps General's workspace entry permanent and
+shows a dismissible contextual introduction. `discussion_hint_store.dart` saves
+one boolean per account on this installation under
+`planets.discussions.generalWorkspaceHint.<profile-id>`; missing means visible.
+It stores no Group/room/link data, has no backend or cross-device sync, and
+does not change consent or external permissions. Dismissal takes effect only
+after a successful local write. Restore/save errors remain visible with retry;
+late results are ignored after account changes.
+
+Discussion headers opt into `pageAppBar(preserveTitleSize: true)`: narrow
+windows put actions below a bounded, normally sized title; unrelated headers
+retain their defaults. General is localized by its reserved kind. General's
+intro can scroll within 40% of the body, and delivery feedback/editor within
+60% of the remaining content area. Both use independent scrollers; the history
+controller, positive transcript viewport and read-ACK boundary remain intact.

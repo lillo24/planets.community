@@ -2238,5 +2238,8 @@
   "discussionProjectInvitationDecline": "Rifiuta invito",
   "discussionShareProjectLink": "Condividi il link selezionato con il Progetto",
   "discussionShareProjectLinkHelp": "Questo aggiunge solo questo link allo spazio del Progetto, visibile ai partecipanti e gestori autorizzati. Non concede accesso al servizio esterno.",
-  "discussionShareProjectLinkDone": "Link condiviso con il Progetto"
+  "discussionShareProjectLinkDone": "Link condiviso con il Progetto",
+  "discussionGeneralHintDismiss": "Ho capito",
+  "discussionGeneralHintLoadFailed": "Non è stato possibile ripristinare questa preferenza del suggerimento. Riprova.",
+  "discussionGeneralHintSaveFailed": "Non è stato possibile salvare questa preferenza del suggerimento. Riprova."
 }

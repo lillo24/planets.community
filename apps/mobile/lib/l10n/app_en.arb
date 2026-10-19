@@ -2976,5 +2976,8 @@
   "discussionProjectInvitationDecline": "Decline invitation",
   "discussionShareProjectLink": "Share selected link with Project",
   "discussionShareProjectLinkHelp": "This adds only this link to the Project workspace, visible to its entitled participants and managers. It does not grant access in the external service.",
-  "discussionShareProjectLinkDone": "Link shared with Project"
+  "discussionShareProjectLinkDone": "Link shared with Project",
+  "discussionGeneralHintDismiss": "Got it",
+  "discussionGeneralHintLoadFailed": "This hint preference could not be restored. Try again.",
+  "discussionGeneralHintSaveFailed": "This hint preference could not be saved. Try again."
 }
