@@ -1,55 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
-import '../../auth/domain/auth_models.dart';
+import '../../group_membership/presentation/group_membership_widgets.dart';
+import '../application/discussion_links_controller.dart';
+import '../application/discussion_share_controller.dart';
 import '../data/discussion_conversion_gateway.dart';
 import '../domain/discussion_links.dart';
 import '../domain/discussion_models.dart';
-import 'discussion_feedback.dart';
 
-class DiscussionShareLinkButton extends ConsumerStatefulWidget {
+class DiscussionShareLinkButton extends ConsumerWidget {
   const DiscussionShareLinkButton({
-    required this.actor,
+    required this.controller,
     required this.link,
+    required this.locked,
     super.key,
   });
-  final String actor;
+  final DiscussionLinksController controller;
   final DiscussionLink link;
-  @override
-  ConsumerState<DiscussionShareLinkButton> createState() => _ShareLinkState();
-}
-
-class _ShareLinkState extends ConsumerState<DiscussionShareLinkButton> {
-  bool busy = false;
-  Map<String, dynamic>? pending;
-  int generation = 0;
-  bool get current =>
-      mounted &&
-      ref.read(authSessionProvider).identity?.id == widget.actor &&
-      ref.read(authSessionProvider).phase == AuthSessionPhase.ready;
-  @override
-  void didUpdateWidget(covariant DiscussionShareLinkButton oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.actor != widget.actor ||
-        oldWidget.link.id != widget.link.id ||
-        oldWidget.link.admissionId != widget.link.admissionId) {
-      pending = null;
-      generation++;
-      busy = false;
-    }
-  }
+  final bool locked;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = controller,
+        actor = c.actor,
+        epoch = c.epoch,
+        scope = (actor: c.actor, room: c.room),
+        l = AppLocalizations.of(context);
     ref.watch(authSessionProvider);
-    if (!current) {
+    if (!c.current(link.admissionId, epoch)) {
       return const SizedBox.shrink();
     }
-    final scope = (actor: widget.actor, room: widget.link.roomId),
-        l = AppLocalizations.of(context);
     final conversion = ref.watch(discussionConversionProvider(scope));
     return conversion.when(
       loading: () => const SizedBox.shrink(),
@@ -64,83 +47,117 @@ class _ShareLinkState extends ConsumerState<DiscussionShareLinkButton> {
       data: (value) => !value.canShareLinks
           ? const SizedBox.shrink()
           : IconButton(
+              key: ValueKey('discussion-share-${link.id}'),
               icon: const Icon(Icons.drive_file_move_outline),
               tooltip: l.discussionShareProjectLink,
-              onPressed: busy
+              onPressed: locked
                   ? null
                   : () async {
-                      final link = widget.link, actor = widget.actor;
-                      if (pending == null) {
-                        final accepted = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text(l.discussionShareProjectLink),
-                            content: Text(
-                              '${link.name}\n${link.url.value}\n\n${l.discussionShareProjectLinkHelp}',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: Text(
-                                  MaterialLocalizations.of(context)
-                                      .cancelButtonLabel,
-                                ),
-                              ),
-                              FilledButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: Text(l.discussionShareProjectLink),
-                              ),
-                            ],
+                      final route = ModalRoute.of(context),
+                          router = GoRouter.maybeOf(context),
+                          origin = router?.routeInformationProvider.value.uri;
+                      bool current() =>
+                          context.mounted &&
+                          c.current(link.admissionId, epoch) &&
+                          ref.read(authSessionProvider).identity?.id == actor &&
+                          router?.routeInformationProvider.value.uri ==
+                              origin &&
+                          (route?.isActive ?? true) &&
+                          c.pager.rows.any(
+                            (fresh) =>
+                                fresh.id == link.id &&
+                                fresh.version == link.version &&
+                                fresh.name == link.name &&
+                                fresh.url.value == link.url.value,
+                          );
+                      if (!current()) {
+                        return;
+                      }
+                      final accepted = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => Consumer(
+                          builder: (context, dialogRef, _) {
+                            dialogRef.watch(authSessionProvider);
+                            final destination = dialogRef.watch(
+                              discussionConversionProvider(scope),
+                            );
+                            return ListenableBuilder(
+                              listenable: c,
+                              builder: (context, _) {
+                                final valid =
+                                    current() &&
+                                    destination.asData?.value.canShareLinks ==
+                                        true &&
+                                    destination.asData?.value.projectId ==
+                                        value.projectId;
+                                return AlertDialog(
+                                  scrollable: true,
+                                  title: Text(l.discussionShareProjectLink),
+                                  content: Text(
+                                    valid
+                                        ? '${link.name}\n${link.url.value}\n\n${l.discussionShareProjectLinkHelp}'
+                                        : l.discussionUnavailable,
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(dialogContext, false),
+                                      child: Text(
+                                        MaterialLocalizations.of(context)
+                                            .cancelButtonLabel,
+                                      ),
+                                    ),
+                                    if (valid)
+                                      FilledButton(
+                                        key: const Key(
+                                          'discussion-share-confirm',
+                                        ),
+                                        onPressed: () =>
+                                            Navigator.pop(dialogContext, true),
+                                        child: Text(
+                                          l.discussionShareProjectLink,
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      );
+                      if (accepted != true ||
+                          !context.mounted ||
+                          !current() ||
+                          route?.isCurrent == false) {
+                        return;
+                      }
+                      if (!await requireGroupPolicy(context, ref, actor) ||
+                          !context.mounted ||
+                          !current()) {
+                        return;
+                      }
+                      final commands = ref.read(
+                            discussionShareCommandsProvider,
+                          ),
+                          slot =
+                              'share/${c.room}/${link.id}/${link.admissionId}';
+                      final result = await commands.run(slot, actor, {
+                        'p_room_id': c.room,
+                        'p_project_id': value.projectId,
+                        'p_expected_access_id': link.admissionId,
+                        'p_link_id': link.id,
+                        'p_expected_version': link.version,
+                      });
+                      if (!context.mounted || !current()) {
+                        return;
+                      }
+                      if (result != null) {
+                        commands.forget(slot);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(l.discussionShareProjectLinkDone),
                           ),
                         );
-                        if (accepted != true ||
-                            !context.mounted ||
-                            !current ||
-                            actor != widget.actor) {
-                          return;
-                        }
-                        pending = Map.unmodifiable({
-                          'p_expected_profile_id': actor,
-                          'p_client_request_id': const Uuid().v4(),
-                          'p_room_id': link.roomId,
-                          'p_project_id': value.projectId,
-                          'p_expected_access_id': link.admissionId,
-                          'p_link_id': link.id,
-                          'p_expected_version': link.version,
-                        });
-                      }
-                      setState(() => busy = true);
-                      final ticket = generation;
-                      try {
-                        await ref
-                            .read(discussionConversionGatewayProvider)
-                            .rpc('share_discussion_link_to_project', pending!);
-                        if (context.mounted &&
-                            current &&
-                            ticket == generation &&
-                            actor == widget.actor) {
-                          pending = null;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(l.discussionShareProjectLinkDone),
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        if (context.mounted &&
-                            current &&
-                            ticket == generation &&
-                            actor == widget.actor) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(discussionErrorText(l, e))),
-                          );
-                        }
-                      } finally {
-                        if (current &&
-                            ticket == generation &&
-                            actor == widget.actor) {
-                          setState(() => busy = false);
-                        }
                       }
                     },
             ),

@@ -6,13 +6,16 @@ import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/backend/supabase_backend.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/group_discussions/application/discussion_controllers.dart';
+import 'package:planets_mobile/features/group_discussions/application/discussion_share_controller.dart';
 import 'package:planets_mobile/features/group_discussions/presentation/discussion_routes.dart';
 import 'package:planets_mobile/features/group_membership/presentation/group_participation_section.dart';
 import 'package:planets_mobile/features/messages/presentation/messages_routes.dart';
 import 'package:planets_mobile/features/messages/presentation/messages_navigation.dart';
+import 'package:planets_mobile/features/project_workspace/data/project_workspace_gateway.dart';
 import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
 import 'package:planets_mobile/features/settings/domain/language_preference.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import 'groups_smoke_test.dart' as harness show waitFor, waitUntil, reveal;
 
@@ -38,6 +41,21 @@ Future<void> runDiscussionConversionJourney(
   final member = memberContainer.read(authSessionProvider).identity!.id;
   final authorClient = publisher.read(supabaseClientProvider);
   final memberClient = memberContainer.read(supabaseClientProvider);
+  final originalRoom = await authorClient.rpc<Map>(
+    'get_group_discussion_v2',
+    params: {'p_expected_profile_id': author, 'p_room_id': roomId},
+  );
+  final selectedLink = await authorClient.rpc<Map>(
+    'add_group_discussion_link_v2',
+    params: {
+      'p_expected_profile_id': author,
+      'p_client_request_id': const Uuid().v4(),
+      'p_room_id': roomId,
+      'p_expected_admission_id': originalRoom['access_id'],
+      'p_name': 'Deliberately selected planning document',
+      'p_url': 'https://example.invalid/selected-planning',
+    },
+  );
   Future<void> show(ProviderContainer container, String route) async {
     await container
         .read(languagePreferenceProvider.notifier)
@@ -172,6 +190,34 @@ Future<void> runDiscussionConversionJourney(
       of: find.byType(AlertDialog),
       matching: find.widgetWithText(TextButton, 'Close'),
     ),
+  );
+
+  // Sharing is a separate reviewed UI action after publication, never an
+  // automatic widening of the Group source collection's audience.
+  await show(publisher, discussionLinksRoute(roomId));
+  final share = find.byKey(
+    ValueKey('discussion-share-${selectedLink['object_id']}'),
+  );
+  await tap(share);
+  await harness.waitFor(
+    tester,
+    find.textContaining('https://example.invalid/selected-planning'),
+  );
+  await tap(find.byKey(const Key('discussion-share-confirm')));
+  await harness.waitUntil(
+    tester,
+    () =>
+        publisher.read(discussionShareCommandsProvider).attempts.isEmpty &&
+        find.byType(AlertDialog).evaluate().isEmpty,
+  );
+  final projectLinks = await publisher
+      .read(projectWorkspaceGatewayProvider)
+      .listLinks(expectedProfileId: author, projectId: project);
+  expect(
+    projectLinks.items.where(
+      (item) => item.name == 'Deliberately selected planning document',
+    ),
+    hasLength(1),
   );
 
   Future<void> invitations(ProviderContainer scope) async {

@@ -10,6 +10,7 @@ import '../../groups/presentation/group_widgets.dart';
 import '../../project_workspace/domain/project_workspace_models.dart';
 import '../application/discussion_controllers.dart';
 import '../application/discussion_links_controller.dart';
+import '../application/discussion_share_controller.dart';
 import '../data/discussion_gateway.dart';
 import '../domain/discussion_links.dart';
 import 'discussion_feedback.dart';
@@ -109,6 +110,38 @@ class _DiscussionLinksScreenState extends ConsumerState<DiscussionLinksScreen>
     }
   }
 
+  Future<void> retryShare(
+    DiscussionLinksController c,
+    String slot,
+    DiscussionShareAttempt attempt,
+  ) async {
+    final admission = c.admission, epoch = c.epoch;
+    if (admission == null ||
+        attempt.intent['p_expected_access_id'] != admission) {
+      return;
+    }
+    if (!await requireGroupPolicy(context, ref, c.actor) ||
+        !mounted ||
+        !c.current(admission, epoch)) {
+      return;
+    }
+    final commands = ref.read(discussionShareCommandsProvider);
+    final result = await commands.run(slot, c.actor, attempt.intent);
+    if (!mounted || !c.current(admission, epoch)) {
+      return;
+    }
+    if (result != null) {
+      commands.forget(slot);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).discussionShareProjectLinkDone,
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> remove(DiscussionLinksController c, DiscussionLink link) async {
     if (!c.canManage) return;
     final commands = ref.read(discussionCommandsProvider),
@@ -150,13 +183,14 @@ class _DiscussionLinksScreenState extends ConsumerState<DiscussionLinksScreen>
   Widget build(BuildContext context) {
     final c = ref.watch(discussionLinksProvider(widget.roomId)),
         commands = ref.watch(discussionCommandsProvider),
+        shares = ref.watch(discussionShareCommandsProvider),
         l = AppLocalizations.of(context);
     if (c != null && bound != c) {
       bound = c;
       Future.microtask(c.pager.load);
     }
     return ListenableBuilder(
-      listenable: Listenable.merge([commands, ?c]),
+      listenable: Listenable.merge([commands, shares, ?c]),
       builder: (context, _) {
         final pending = commands.attempts.entries
             .where(
@@ -165,7 +199,12 @@ class _DiscussionLinksScreenState extends ConsumerState<DiscussionLinksScreen>
                   e.value.intent['p_room_id'] == widget.roomId,
             )
             .toList();
-        final locked = pending.any((e) => e.value.busy || e.value.uncertain),
+        final sharePending = shares.attempts.entries
+            .where((e) => e.value.intent['p_room_id'] == widget.roomId)
+            .toList();
+        final locked =
+                pending.any((e) => e.value.busy || e.value.uncertain) ||
+                sharePending.isNotEmpty,
             p = c?.pager;
         return PopScope(
           canPop: !locked,
@@ -229,6 +268,26 @@ class _DiscussionLinksScreenState extends ConsumerState<DiscussionLinksScreen>
                         child: Text(l.discussionCancel),
                       ),
                   ],
+                  for (final entry in sharePending) ...[
+                    if (entry.value.busy) const LinearProgressIndicator(),
+                    if (entry.value.uncertain) Text(l.discussionUncertain),
+                    if (entry.value.error != null)
+                      DiscussionError(entry.value.error!),
+                    if (entry.value.error != null && c != null && !c.scopeEnded)
+                      TextButton(
+                        key: ValueKey('discussion-share-retry-${entry.key}'),
+                        onPressed: entry.value.busy
+                            ? null
+                            : () => retryShare(c, entry.key, entry.value),
+                        child: Text(l.discussionRetry),
+                      ),
+                    if (!entry.value.busy && !entry.value.uncertain)
+                      TextButton(
+                        key: ValueKey('discussion-share-cancel-${entry.key}'),
+                        onPressed: () => shares.forget(entry.key),
+                        child: Text(l.discussionCancel),
+                      ),
+                  ],
                   for (final link in p?.rows ?? <DiscussionLink>[])
                     Card(
                       child: Padding(
@@ -249,8 +308,9 @@ class _DiscussionLinksScreenState extends ConsumerState<DiscussionLinksScreen>
                             ),
                             if (c != null)
                               DiscussionShareLinkButton(
-                                actor: c.actor,
+                                controller: c,
                                 link: link,
+                                locked: locked,
                               ),
                             if (c?.canManage == true)
                               Wrap(

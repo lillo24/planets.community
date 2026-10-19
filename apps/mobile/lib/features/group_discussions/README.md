@@ -36,9 +36,19 @@ folders still fetch no room history, people or links.
 - `domain/discussion_links.dart`, `data/discussion_links_gateway.dart` and
   `application/discussion_links_controller.dart` own strict episode-bound link
   pages, exact rereads and the private loaded window.
+- `application/discussion_share_controller.dart` retains one reviewed selected-link
+  share UUID and immutable intent in memory across route remounts. The Links screen
+  blocks Close while a share is pending or its reply is uncertain; Retry reuses
+  that request, and only a definitive failure can be cancelled. Account/readiness
+  changes and canonical source denial clear it. A malformed receipt remains
+  uncertain. Nothing is persisted or shared automatically.
 - `presentation/discussion_links_screen.dart`, `discussion_link_editor.dart` and
   `discussion_link_open.dart` own explicit collection entry, individual versioned
   edits and destination confirmation before the fresh authorized launch.
+- `presentation/discussion_share_link.dart` confirms the wider Project audience
+  and rechecks the current account, source episode/link version and destination
+  rights while the dialog is open. Losing any scope removes the private link text
+  and confirmation action. Canonical sharing validates both domains again.
 - `presentation/discussion_link_widgets.dart` provides the pure named-link
   heading and a narrow large-text preview without importing native transport.
 - `application/discussion_project_handoff.dart` and
@@ -107,6 +117,14 @@ late results are ignored after account changes.
 Discussion headers opt into `pageAppBar(preserveTitleSize: true)`: narrow
 windows put actions below a bounded, normally sized title; unrelated headers
 retain their defaults. General is localized by its reserved kind. General's
-intro can scroll within 40% of the body, and delivery feedback/editor within
+intro and expanded Idea purpose/disclosure/actions scroll within 40% of the body,
+and delivery feedback/editor within
 60% of the remaining content area. Both use independent scrollers; the history
 controller, positive transcript viewport and read-ACK boundary remain intact.
+
+General supports mute without Hide, Leave or Idea conversion. Idea creator
+provenance uses the canonical creator identity in discovery/context; an authorized
+People row adds the readable name and a distinct Idea creator label alongside its
+Group role. No profile-name lookup or extra authority is inferred from that ID.
+An already resolved room without roster rights renders unavailable rather than
+loading indefinitely and clears any previously loaded roster.

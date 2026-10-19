@@ -7,6 +7,7 @@ import '../data/discussion_links_gateway.dart';
 import '../domain/discussion_links.dart';
 import '../domain/discussion_models.dart';
 import 'discussion_controllers.dart';
+import 'discussion_share_controller.dart';
 
 /// The collection owns its scope without fetching a transcript or Project data.
 class DiscussionLinksController extends ChangeNotifier {
@@ -84,7 +85,10 @@ final discussionLinksProvider = Provider.autoDispose
             ref.read(authSessionProvider).identity?.id == actor,
       );
       void clearDenied() {
-        if (c.scopeEnded) ref.read(discussionCommandsProvider).clearRoom(room);
+        if (c.scopeEnded) {
+          ref.read(discussionCommandsProvider).clearRoom(room);
+          ref.read(discussionShareCommandsProvider).clearRoom(room);
+        }
       }
 
       c.addListener(clearDenied);
