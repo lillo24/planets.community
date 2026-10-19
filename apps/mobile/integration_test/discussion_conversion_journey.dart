@@ -5,6 +5,7 @@ import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/backend/supabase_backend.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
+import 'package:planets_mobile/features/group_discussions/application/discussion_controllers.dart';
 import 'package:planets_mobile/features/group_discussions/presentation/discussion_routes.dart';
 import 'package:planets_mobile/features/messages/presentation/messages_routes.dart';
 import 'package:planets_mobile/features/messages/presentation/messages_navigation.dart';
@@ -233,8 +234,8 @@ Future<void> runDiscussionConversionJourney(
     'Fictional deliberate Project participation request.',
   );
   FocusManager.instance.primaryFocus?.unfocus();
-  await harness.reveal(
-    tester,
+  // JoinRequestScreen uses a SingleChildScrollView, not the Group ListView.
+  await tester.ensureVisible(
     find.byKey(const Key('participation-send-request')),
   );
   await tap(find.byKey(const Key('participation-send-request')));
@@ -382,15 +383,22 @@ Future<void> runDiscussionConversionJourney(
     ),
   );
   await show(memberContainer, '/groups/$groupId');
+  await harness.waitFor(tester, find.byKey(const Key('group-discussions')));
   await harness.reveal(tester, find.byKey(const Key('group-discussions')));
   await tap(find.byKey(const Key('group-discussions')));
-  await harness.waitFor(
-    tester,
+  await harness.waitUntil(tester, () {
+    final rooms = memberContainer.read(discussionRoomsProvider(groupId));
+    return rooms != null &&
+        (rooms.loaded || rooms.error != null) &&
+        !rooms.busy;
+  });
+  final retained = memberContainer.read(discussionRoomsProvider(groupId))!;
+  expect(retained.error, isNull);
+  expect(retained.rows.singleWhere((row) => row.id == roomId).frozen, isTrue);
+  await harness.reveal(tester, find.byKey(ValueKey('discussion-$roomId')));
+  expect(
     find.text('Published as Project · Read-only planning history'),
-  );
-  await harness.reveal(
-    tester,
-    find.text('Published as Project · Read-only planning history'),
+    findsOneWidget,
   );
   await shot('conversion-retained-source-row-en');
   // Restore the caller's original native surface for subsequent main-journey QA.

@@ -120,6 +120,7 @@ void main() {
         await binding.endOfFrame;
         expect(tester.takeException(), isNull);
         await binding.takeScreenshot('c02-$name');
+        debugPrint('C native checkpoint: $name');
       }
 
       await harness.waitFor(tester, find.text('Accept invitation'));
@@ -319,10 +320,24 @@ void main() {
       await harness.reveal(tester, find.byKey(const Key('group-discussions')));
       await shot('group-entry-it');
       await tester.tap(find.byKey(const Key('group-discussions')));
-      await harness.waitFor(tester, find.text('Parco'));
+      await harness.waitUntil(tester, () {
+        final rooms = container.read(discussionRoomsProvider(group));
+        return rooms != null &&
+            (rooms.loaded || rooms.error != null) &&
+            !rooms.busy;
+      });
+      final loadedRooms = container.read(discussionRoomsProvider(group))!;
+      expect(loadedRooms.error, isNull);
+      expect(loadedRooms.rows.any((value) => value.id == room), isTrue);
+      await harness.reveal(tester, find.byKey(ValueKey('discussion-$room')));
       await shot('group-rooms-it');
       router.go('/messages');
       await tester.pump(const Duration(milliseconds: 500));
+      await harness.waitFor(
+        tester,
+        find.byKey(const Key('messages-return-chats')),
+      );
+      await tester.tap(find.byKey(const Key('messages-return-chats')));
       await harness.waitFor(tester, find.text('Trento Green · C native'));
       await shot('folder-it');
       final context = await gateway.room(member, room);
@@ -468,16 +483,14 @@ void main() {
       await harness.waitFor(tester, find.text('Group Idea settings'));
       await tester.tap(find.text('Group Idea settings'));
       await tester.pump(const Duration(milliseconds: 300));
+      final previousSettings = await SupabaseDiscussionGateway(peer)
+          .settings(creator, group);
       await tester.tap(find.byType(DropdownButtonFormField<String>).first);
       await tester.pump(const Duration(milliseconds: 300));
       await tester.tap(find.text('All current Group members').last);
-      await harness.waitUntil(
+      await harness.waitFor(
         tester,
-        () => !publisher
-            .read(discussionCommandsProvider)
-            .attempts
-            .values
-            .any((a) => a.busy),
+        find.byKey(ValueKey('policy-${previousSettings.version + 1}')),
       );
       final settings = await SupabaseDiscussionGateway(peer)
           .settings(creator, group);
@@ -506,7 +519,16 @@ void main() {
         'https://example.invalid/group-wide',
       );
       await tester.tap(find.byKey(const Key('discussion-link-save')));
-      await harness.waitFor(tester, find.text('Group-wide shared workspace'));
+      final groupWorkspaceCard = find.ancestor(
+        of: find.text('Group-wide shared workspace'),
+        matching: find.byType(Card),
+      );
+      await harness.waitUntil(
+        tester,
+        () =>
+            find.byType(AlertDialog).evaluate().isEmpty &&
+            groupWorkspaceCard.evaluate().length == 1,
+      );
       await shot('general-workspace-manager-en');
 
       await container
@@ -598,7 +620,14 @@ void main() {
       );
       await shot('member-idea-muted-en');
       router.go(discussionGroupRoute(group));
-      await harness.waitFor(tester, find.text('Visible unjoined Idea'));
+      await harness.waitUntil(tester, () {
+        final rooms = container.read(discussionRoomsProvider(group));
+        return rooms != null &&
+            (rooms.loaded || rooms.error != null) &&
+            !rooms.busy;
+      });
+      expect(container.read(discussionRoomsProvider(group))!.error, isNull);
+      await harness.reveal(tester, find.text('Visible unjoined Idea'));
       await harness.reveal(tester, find.text('Hide Idea').first);
       await tester.tap(find.text('Hide Idea').first);
       await harness.waitUntil(
