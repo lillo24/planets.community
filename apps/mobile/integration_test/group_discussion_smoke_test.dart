@@ -191,6 +191,11 @@ void main() {
       );
       container.read(discussionChatProvider(room))!.invalidate();
       await harness.waitFor(tester, find.text('Fictional incoming message.'));
+      // Widget presence is not viewport visibility while the IME reduces the
+      // history height. Read the incoming card before capturing the native view.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+      await harness.reveal(tester, find.text('Fictional incoming message.'));
       await shot('chat-en');
       router.go('/notifications');
       await harness.waitFor(tester, find.text('Group Idea activity'));
@@ -202,7 +207,42 @@ void main() {
         tester,
         find.byKey(const Key('discussion-composer')),
       );
-      expect(find.byKey(const Key('discussion-create-project')), findsNothing);
+      // R05 exposes conversion status to planners. This ordinary invitee is
+      // neither the Idea Creator nor a manager and receives no proposal/review/
+      // publication action; the old C04 shortcut-absence assertion is obsolete.
+      final conversion = await client.rpc<Map>(
+        'get_group_discussion_conversion',
+        params: {'p_expected_profile_id': member, 'p_room_id': room},
+      );
+      expect(conversion['can_propose'], false);
+      expect(conversion['can_review'], false);
+      expect(conversion['can_publish'], false);
+      await harness.waitUntil(
+        tester,
+        () =>
+            tester
+                .widget<IconButton>(
+                  find.byKey(const Key('discussion-create-project')),
+                )
+                .onPressed !=
+            null,
+      );
+      await tester.tap(find.byKey(const Key('discussion-create-project')));
+      await harness.waitFor(tester, find.byType(AlertDialog));
+      await harness.waitUntil(
+        tester,
+        () => find.byType(LinearProgressIndicator).evaluate().isEmpty,
+      );
+      expect(find.text('Request publication'), findsNothing);
+      expect(find.text('Endorse proposal'), findsNothing);
+      expect(find.text('Create my private Project draft'), findsNothing);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.widgetWithText(TextButton, 'Close'),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
       for (var n = 0; n < 31; n++) {
         await peer.rpc(
           'send_group_discussion_message',
@@ -242,6 +282,10 @@ void main() {
         isTrue,
       );
       await tester.pump(const Duration(milliseconds: 500));
+      await harness.reveal(
+        tester,
+        find.text('Private message before your admission.'),
+      );
       await shot('chat-it');
       router.push(discussionLinksRoute(room));
       await harness.waitFor(tester, find.text('Ancora nessun link condiviso.'));

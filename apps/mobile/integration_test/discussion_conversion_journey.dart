@@ -52,7 +52,27 @@ Future<void> runDiscussionConversionJourney(
   }
 
   Future<void> tap(Finder finder) async {
-    await harness.waitFor(tester, finder);
+    await harness.waitUntil(tester, () {
+      if (finder.evaluate().isEmpty) return false;
+      final direct = finder.evaluate().first.widget;
+      final buttons = [
+        direct,
+        ...find
+            .ancestor(
+              of: finder,
+              matching: find.byWidgetPredicate(
+                (widget) => widget is ButtonStyleButton || widget is IconButton,
+              ),
+            )
+            .evaluate()
+            .map((element) => element.widget),
+      ];
+      return buttons.every((widget) {
+        if (widget is ButtonStyleButton) return widget.onPressed != null;
+        if (widget is IconButton) return widget.onPressed != null;
+        return true;
+      });
+    });
     await tester.ensureVisible(finder);
     await tester.tap(finder);
     await tester.pump(const Duration(milliseconds: 300));
@@ -83,7 +103,12 @@ Future<void> runDiscussionConversionJourney(
   expect((await source(memberClient, member))['state'], 'proposed');
   expect((await source(memberClient, member))['can_publish'], false);
   await shot('conversion-request-en');
-  await tap(find.text('Close'));
+  await tap(
+    find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.widgetWithText(TextButton, 'Close'),
+    ),
+  );
 
   await show(publisher, discussionRoute(roomId));
   await tap(find.byKey(const Key('discussion-create-project')));
@@ -135,7 +160,12 @@ Future<void> runDiscussionConversionJourney(
       .read(languagePreferenceProvider.notifier)
       .select(LanguagePreference.english);
   await tester.pump(const Duration(milliseconds: 300));
-  await tap(find.text('Close'));
+  await tap(
+    find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.widgetWithText(TextButton, 'Close'),
+    ),
+  );
 
   Future<void> invitations(ProviderContainer scope) async {
     scope.read(messagesNavigationProvider.notifier).selectTab(1);
@@ -345,11 +375,20 @@ Future<void> runDiscussionConversionJourney(
   await harness.waitFor(tester, find.text('Published as Project'));
   expect(find.text('Open Project conversation'), findsNothing);
   await shot('conversion-declined-source-en');
-  await tap(find.text('Close'));
+  await tap(
+    find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.widgetWithText(TextButton, 'Close'),
+    ),
+  );
   await show(memberContainer, '/groups/$groupId');
   await harness.reveal(tester, find.byKey(const Key('group-discussions')));
   await tap(find.byKey(const Key('group-discussions')));
   await harness.waitFor(
+    tester,
+    find.text('Published as Project · Read-only planning history'),
+  );
+  await harness.reveal(
     tester,
     find.text('Published as Project · Read-only planning history'),
   );

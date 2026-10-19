@@ -985,6 +985,7 @@
   },
   "notificationsLoading": "Loading notifications…",
   "notificationsEmptyTitle": "No notifications yet",
+  "notificationsOtherEmptyTitle": "No other notifications yet",
   "notificationsEmptyMessage": "Participation, chat, Resource, and saved-search match alerts will appear here when there is something new.",
   "notificationsMarkAllRead": "Mark all as read",
   "notificationsSettingsTooltip": "Notification settings",

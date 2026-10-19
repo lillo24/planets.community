@@ -171,7 +171,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                         children: [
                           const DiscussionNotices(),
                           EmptyState(
-                            title: l10n.notificationsEmptyTitle,
+                            // Group Idea activity above has its own reader.
+                            title: l10n.notificationsOtherEmptyTitle,
                             message: l10n.notificationsEmptyMessage,
                             icon: Icons.notifications_none,
                           ),

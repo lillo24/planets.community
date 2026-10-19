@@ -506,6 +506,7 @@
   "notificationsUnreadSemantics": "{count, plural, =1{Notifiche, 1 non letta} other{Notifiche, {count} non lette}}",
   "notificationsLoading": "Caricamento delle notifiche…",
   "notificationsEmptyTitle": "Nessuna notifica",
+  "notificationsOtherEmptyTitle": "Nessun'altra notifica",
   "notificationsEmptyMessage": "Gli avvisi di partecipazione appariranno qui quando ci saranno novità.",
   "notificationsMarkAllRead": "Segna tutte come lette",
   "notificationsSettingsTooltip": "Impostazioni delle notifiche",

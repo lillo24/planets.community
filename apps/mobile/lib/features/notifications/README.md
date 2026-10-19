@@ -139,6 +139,11 @@ remain 06C2B. Native QA remains deferred to the consolidated Plan 12 pass.
 
 ## Automatic pagination (AUTO02)
 
+Group Idea activity has an independent private reader and own read state above
+the canonical notification feed. An empty canonical feed says "No other
+notifications yet", so existing Idea activity is not labelled empty. Its
+mark-all action still belongs only to the canonical feed.
+
 The inbox retains 20-entry initial and continuation pages. One deliberate drag
 within one viewport of the bottom loads one page; rebuilds, restoration and
 programmatic movement do not. Failures retain rows/cursor and require explicit
