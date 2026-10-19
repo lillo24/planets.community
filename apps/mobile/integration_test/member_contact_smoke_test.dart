@@ -25,6 +25,7 @@ import 'package:uuid/uuid.dart';
 import 'contact_local_identity.dart';
 import 'groups_smoke_test.dart' as harness show waitUntil;
 import 'member_contact_read_frontier.dart';
+import 'member_contact_visibility.dart';
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -161,55 +162,15 @@ void main() {
     });
     AppLocalizations strings() =>
         AppLocalizations.of(tester.element(find.byType(Scaffold).last));
-    Future<void> reveal(Finder finder) async {
-      // Build below-fold lazy rows through the route's scroll view. EditableText
-      // owns another Scrollable that cannot reveal an action after the field.
-      final deadline = DateTime.now().add(const Duration(seconds: 45));
-      ScrollPosition? searched;
-      while (DateTime.now().isBefore(deadline)) {
-        if (finder.evaluate().isNotEmpty) {
-          await tester.ensureVisible(finder.first);
-          await tester.pump(const Duration(milliseconds: 200));
-          if (finder.hitTestable().evaluate().isNotEmpty) return;
-        }
-        final elements = find
-            .byType(Scrollable)
-            .evaluate()
-            .where(
-              (element) =>
-                  ModalRoute.of(element)?.isCurrent != false &&
-                  element.findAncestorWidgetOfExactType<EditableText>() == null,
-            );
-        if (elements.isNotEmpty) {
-          final position =
-              ((elements.last as StatefulElement).state as ScrollableState)
-                  .position;
-          if (position.hasContentDimensions) {
-            if (searched != position) {
-              searched = position;
-              position.jumpTo(position.minScrollExtent);
-            } else {
-              position.jumpTo(
-                (position.pixels + 180).clamp(
-                  position.minScrollExtent,
-                  position.maxScrollExtent,
-                ),
-              );
-            }
-          }
-        }
-        await tester.pump(const Duration(milliseconds: 200));
-      }
-      debugPrint('M native missing visible content: $finder');
-      await binding
-          .takeScreenshot('m02-missing-visible-content')
-          .timeout(const Duration(seconds: 30));
-      expect(
-        finder.hitTestable(),
-        findsWidgets,
-        reason: 'Real native content must load and become visible.',
-      );
-    }
+    Future<void> reveal(Finder finder) => revealMemberContactContent(
+      tester,
+      finder,
+      onFailure: () async {
+        await binding
+            .takeScreenshot('m02-missing-visible-content')
+            .timeout(const Duration(seconds: 30));
+      },
+    );
 
     Future<void> tapFinder(Finder finder) async {
       await reveal(finder);

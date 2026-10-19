@@ -64,6 +64,12 @@ Keyboard frames additionally require a real positive bottom view inset. Enable
 the owned emulator's software keyboard as above; no keyboard geometry is faked.
 Visibility waits scroll the page rather than a text field's inner viewport, and
 save a failure frame if the required action never becomes visible.
+`member_contact_visibility.dart` reveals already-built content in its nearest
+owning scrollable with center alignment. This keeps a tall read-only notice's
+hit-test point reachable in the bounded notice area without moving chat history.
+The existing bounded page search is reserved for lazy rows that are not built
+yet. EN/IT 320dp/2x production-screen regressions scroll through overlapping
+portions of the entire notice and preserve the history position and pending ACK.
 
 A visible message body is not proof that its read frontier was rendered: a tall
 incoming card also has a timestamp and Report action below the body. After
