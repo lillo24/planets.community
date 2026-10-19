@@ -40,11 +40,12 @@ class _Invitations extends Gateway {
 }
 
 void main() {
-  for (final switchAccount in [false, true]) {
+  for (final interruption in ['none', 'account', 'navigation']) {
     testWidgets(
-      'removed pending invitation opens accepted room only for the same account: switch=$switchAccount',
+      'accepted invitation survives Requests replacement with $interruption interruption',
       (tester) async {
         final reply = Completer<DiscussionReceipt>();
+        final replacingRequests = ValueNotifier(false);
         final gateway = _Invitations()..write = (_, _) => reply.future;
         final container = ProviderContainer(
           overrides: [
@@ -60,9 +61,20 @@ void main() {
           routes: [
             GoRoute(
               path: '/',
-              builder: (_, _) => const Scaffold(
-                body: SingleChildScrollView(child: DiscussionRequests()),
+              builder: (_, _) => Scaffold(
+                body: ValueListenableBuilder<bool>(
+                  valueListenable: replacingRequests,
+                  builder: (_, replacing, _) => replacing
+                      ? const Text('Refreshing base inbox')
+                      : const SingleChildScrollView(
+                          child: DiscussionRequests(),
+                        ),
+                ),
               ),
+            ),
+            GoRoute(
+              path: '/elsewhere',
+              builder: (_, _) => const Scaffold(body: Text('Elsewhere')),
             ),
             GoRoute(
               path: discussionRoute(roomId),
@@ -73,6 +85,7 @@ void main() {
         addTearDown(() async {
           await tester.pumpWidget(const SizedBox.shrink());
           router.dispose();
+          replacingRequests.dispose();
           container.dispose();
           await gateway.hints.close();
         });
@@ -98,17 +111,25 @@ void main() {
         await tester.pump();
         expect(find.byType(DiscussionInvitationTile), findsNothing);
         expect(reply.isCompleted, isFalse);
-        if (switchAccount) {
+        replacingRequests.value = true;
+        await tester.pump();
+        expect(find.byType(DiscussionRequests), findsNothing);
+        replacingRequests.value = false;
+        await tester.pumpAndSettle();
+        if (interruption == 'account') {
           (container.read(authSessionProvider.notifier) as Session).change(
             id(7),
           );
           await tester.pump();
+        } else if (interruption == 'navigation') {
+          router.go('/elsewhere');
+          await tester.pumpAndSettle();
         }
         reply.complete(receipt());
         await tester.pumpAndSettle();
         expect(
           find.text('Opened room'),
-          switchAccount ? findsNothing : findsOneWidget,
+          interruption == 'none' ? findsOneWidget : findsNothing,
         );
         expect(tester.takeException(), isNull);
       },

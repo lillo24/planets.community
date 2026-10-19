@@ -120,6 +120,11 @@ token. Private link helpers use `require_group_discussion_access` and
 `group_discussion_can_manage`; `group_discussion_history_frontier` also serves
 conversion origin reads and exact historical reports.
 
+History v2 keeps the five legacy envelope fields and adds `access_id`; its
+`admission_id` and `access_id` both identify that effective history scope. Clients
+must validate their equality rather than treating the former as actual ordinary
+participation. Legacy history readers retain their original five-field envelope.
+
 All lists use bounded stable cursors (default 25, maximum 50; messages default
 30). General sorts before Ideas. A cursor identifying General transitions into
 all Idea rows; an Idea cursor uses descending creation time/UUID. `p_hidden=true`

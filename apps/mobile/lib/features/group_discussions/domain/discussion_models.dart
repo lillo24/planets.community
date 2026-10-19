@@ -335,12 +335,14 @@ class DiscussionHistory {
     required String expectedRoom,
     bool allowReadOnlySnapshot = false,
   }) {
+    final revised = value is Map && value.containsKey('access_id');
     final r = discussionObject(value, {
       'items',
       'snapshot_token',
       'profile_id',
       'room_id',
       'admission_id',
+      if (revised) 'access_id',
     });
     if (groupUuid(r['profile_id']) != expectedActor ||
         groupUuid(r['room_id']) != expectedRoom) {
@@ -348,6 +350,11 @@ class DiscussionHistory {
     }
     final data = r['items'];
     admissionId = groupUuid(r['admission_id']);
+    // V2 names the effective grant independently of actual room participation.
+    // Both envelope aliases must identify the same authorized history scope.
+    if (revised && groupUuid(r['access_id']) != admissionId) {
+      throw const FormatException('Mismatched discussion history access.');
+    }
     if (data is! List || data.length > 30) {
       throw const FormatException('Invalid discussion message page.');
     }

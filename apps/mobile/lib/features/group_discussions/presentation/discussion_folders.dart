@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
-import '../../auth/domain/auth_models.dart';
 import '../../group_membership/presentation/group_membership_widgets.dart';
 import '../application/discussion_controllers.dart';
 import '../data/discussion_gateway.dart';
@@ -84,6 +83,24 @@ class _DiscussionFoldersState extends ConsumerState<DiscussionFolders>
   }
 }
 
+// Inbox refreshes can dispose both the invitation tile and Requests subtree.
+// A live actor-bound command may finish on the same route without those widgets;
+// explicit navigation away, account changes and disposed commands cancel it.
+void _openAcceptedDiscussion(
+  GoRouter router,
+  Uri origin,
+  DiscussionCommands commands,
+  String actor,
+  DiscussionReceipt receipt,
+) {
+  if (commands.disposed ||
+      !commands.authorized(actor) ||
+      router.routeInformationProvider.value.uri != origin) {
+    return;
+  }
+  router.push(discussionRoute(receipt.roomId));
+}
+
 // Acceptance may commit and remove the pending invitation before its reply
 // arrives. Recover that own frozen command without retaining a private title.
 class _InvitationRecovery extends ConsumerWidget {
@@ -100,21 +117,27 @@ class _InvitationRecovery extends ConsumerWidget {
           ref.read(authSessionProvider).identity?.id != attempt.actor) {
         return;
       }
+      final router = GoRouter.of(context);
+      final origin = router.routeInformationProvider.value.uri;
+      final invitations = ref.read(discussionInvitationsProvider);
+      final groups = ref.read(discussionGroupsProvider);
       final receipt = await commands.run(
         slot,
         attempt.actor,
         attempt.action,
         attempt.intent,
       );
-      if (!context.mounted ||
-          ref.read(authSessionProvider).identity?.id != attempt.actor) {
-        return;
-      }
       if (receipt != null) {
         commands.forget(slot);
-        ref.read(discussionInvitationsProvider)?.invalidate();
-        ref.read(discussionGroupsProvider)?.invalidate();
-        context.push(discussionRoute(receipt.roomId));
+        invitations?.invalidate();
+        groups?.invalidate();
+        _openAcceptedDiscussion(
+          router,
+          origin,
+          commands,
+          attempt.actor,
+          receipt,
+        );
       }
     }
 
@@ -381,19 +404,6 @@ class _DiscussionRequestsState extends ConsumerState<DiscussionRequests> {
   DiscussionPager<DiscussionInvitation>? bound;
   bool projectInvitationsOpen = false;
 
-  // Realtime may remove the invitation tile before its successful reply arrives.
-  // The persistent Requests owner, rather than that disposed tile, opens the room.
-  void accepted(String actor, DiscussionReceipt result) {
-    if (!mounted ||
-        ref.read(authSessionProvider).phase != AuthSessionPhase.ready ||
-        ref.read(authSessionProvider).identity?.id != actor) {
-      return;
-    }
-    ref.read(discussionInvitationsProvider)?.invalidate();
-    ref.read(discussionGroupsProvider)?.invalidate();
-    context.push(discussionRoute(result.roomId));
-  }
-
   @override
   Widget build(BuildContext context) {
     final p = ref.watch(discussionInvitationsProvider),
@@ -427,11 +437,7 @@ class _DiscussionRequestsState extends ConsumerState<DiscussionRequests> {
             ],
           ),
           for (final invitation in p.rows)
-            DiscussionInvitationTile(
-              invitation,
-              onAccepted: accepted,
-              key: ValueKey(invitation.id),
-            ),
+            DiscussionInvitationTile(invitation, key: ValueKey(invitation.id)),
           if (p.busy) const LinearProgressIndicator(),
           if (p.error != null)
             DiscussionError(p.error!, retry: () => unawaited(p.refresh())),
@@ -457,13 +463,8 @@ class _DiscussionRequestsState extends ConsumerState<DiscussionRequests> {
 }
 
 class DiscussionInvitationTile extends ConsumerWidget {
-  const DiscussionInvitationTile(
-    this.invitation, {
-    required this.onAccepted,
-    super.key,
-  });
+  const DiscussionInvitationTile(this.invitation, {super.key});
   final DiscussionInvitation invitation;
-  final void Function(String actor, DiscussionReceipt receipt) onAccepted;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context),
@@ -493,6 +494,10 @@ class DiscussionInvitationTile extends ConsumerWidget {
               ref.read(authSessionProvider).identity?.id != actor) {
             return;
           }
+          final router = GoRouter.of(context);
+          final origin = router.routeInformationProvider.value.uri;
+          final invitations = ref.read(discussionInvitationsProvider);
+          final groups = ref.read(discussionGroupsProvider);
           final result = await commands.run(
             slot,
             actor,
@@ -505,7 +510,9 @@ class DiscussionInvitationTile extends ConsumerWidget {
           );
           if (result != null) {
             commands.forget(slot);
-            onAccepted(actor, result);
+            invitations?.invalidate();
+            groups?.invalidate();
+            _openAcceptedDiscussion(router, origin, commands, actor, result);
           }
         }
 

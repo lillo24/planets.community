@@ -32,6 +32,46 @@ Map<String, dynamic> revised({
   'unread_count': 0,
 };
 void main() {
+  test('v2 history validates the canonical effective access envelope', () {
+    final page = DiscussionHistory(
+      {
+        ...historyRow([2, 1]),
+        'access_id': admission,
+      },
+      newest: true,
+      expectedActor: actor,
+      expectedRoom: roomId,
+    );
+    expect(page.admissionId, admission);
+    expect(page.messages.map((message) => message.sequence), [2, 1]);
+    expect(page.token, isNotNull);
+    for (final malformed in [
+      {
+        ...historyRow([2, 1]),
+        'access_id': id(9),
+      },
+      {
+        ...historyRow([2, 1]),
+        'access_id': null,
+      },
+      {
+        ...historyRow([2, 1]),
+        'access_id': admission,
+        'extra': true,
+      },
+    ]) {
+      expect(
+        () => DiscussionHistory(
+          malformed,
+          newest: true,
+          expectedActor: actor,
+          expectedRoom: roomId,
+        ),
+        throwsFormatException,
+      );
+    }
+  });
+
   test('discovery never fetches a transcript; deliberate admission opens full history', () async {
     final gateway = Gateway()
       ..context = DiscussionRoom(revised(access: 'discoverable'));

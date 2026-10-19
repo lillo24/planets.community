@@ -89,7 +89,6 @@ void main() {
         ],
       );
       addTearDown(() async {
-        await binding.takeScreenshot('c02-last-frame');
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();
         container.dispose();
@@ -130,10 +129,28 @@ void main() {
       await harness.waitFor(tester, find.byType(AlertDialog));
       await tester.pump(const Duration(milliseconds: 300));
       await tester.tap(find.widgetWithText(FilledButton, 'Confirm'));
-      await harness.waitFor(
-        tester,
-        find.byKey(const Key('discussion-composer')),
-      );
+      try {
+        await harness.waitFor(
+          tester,
+          find.byKey(const Key('discussion-composer')),
+        );
+      } on TestFailure {
+        final commands = container.read(discussionCommandsProvider);
+        final attempts = commands.attempts.values
+            .map(
+              (a) =>
+                  '${a.action.name}:busy=${a.busy},cancelled=${a.cancelled},'
+                  'receipt=${a.receipt != null},error=${a.error.runtimeType}',
+            )
+            .toList();
+        debugPrint(
+          'C acceptance failure: route=${router.routerDelegate.state.uri.path}, '
+          'phase=${container.read(authSessionProvider).phase.name}, '
+          'attempts=$attempts',
+        );
+        await binding.takeScreenshot('c02-acceptance-failure');
+        rethrow;
+      }
       expect(
         find.text('Private message before your admission.'),
         findsOneWidget,

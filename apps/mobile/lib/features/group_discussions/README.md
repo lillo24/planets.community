@@ -72,9 +72,12 @@ independently entitled live Project conversations.
   unread or subscription; Show hidden includes the ordinary list.
 - `discussion_notices.dart` exposes authorized Group activity in Notifications.
   Structured invitation acceptance belongs to Requests. A tap never accepts.
-- `discussion_folders.dart` keeps invitation-result navigation on the persistent
-  Requests owner, so a realtime removal of the accepted invitation cannot drop
-  the successful chat continuation; account changes still cancel it.
+- `discussion_folders.dart` captures the router and originating route before
+  invitation acceptance/recovery. Realtime may replace the entire Requests
+  subtree before the reply; the live actor-bound command still opens its room.
+  Account changes, disposed commands and navigation away cancel that continuation.
+- `discussion_models.dart` validates legacy history envelopes and the v2
+  effective `access_id` alias; v2 aliases must agree before any history is used.
 - `discussion_invitation_link.dart` owns revocable 30-day room capabilities.
   Only exact HTTPS planets.community native paths are accepted. Tokens stay in
   memory and are copied only by deliberate action.
