@@ -186,12 +186,27 @@ class _GroupContactChatScreenState extends ConsumerState<GroupContactChatScreen>
         items = merged;
         hasMore = page.hasMore;
         loadingOlder = false;
+        final incoming = items.where((m) => m.senderId != id);
+        if (incoming.isNotEmpty) knownReport = incoming.last.id;
       });
-    } catch (_) {
+    } catch (error) {
       if (current(id, generation) && read == revision) {
+        final accessDenied = contactAccessDenied(error);
         setState(() {
           loadingOlder = false;
-          olderFailed = true;
+          olderFailed = !accessDenied;
+          if (accessDenied) {
+            // A forbidden page is an access verdict even if its Realtime hint
+            // was missed. Keep only the known report ID and frozen intent.
+            revision++;
+            loading = false;
+            failed = true;
+            denied = true;
+            conversation = null;
+            items = [];
+            boundary = null;
+            hasMore = false;
+          }
         });
       }
     }

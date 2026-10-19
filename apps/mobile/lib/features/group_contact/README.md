@@ -28,7 +28,11 @@ are independent.
   withdrawal; a manager's resolved outcome never grants another person's chat.
 - `presentation/group_contact_chat_screen.dart` composes `ConversationHistoryList`
   and `MessageReadViewport`. Only rendered, foreground newest history acknowledges
-  a boundary. Older history, context/info and request views do not.
+  a boundary. Older history, context/info and request views do not. Forbidden
+  older-page reads clear the body, composer and ACK frontier immediately;
+  transient failures preserve the page and retry cursor. Known incoming report
+  IDs include successfully loaded older pages and survive access loss without
+  reloading protected content.
 - `presentation/group_contact_info_screen.dart` owns permitted audience, blocking
   and confirmed close/leave. Known-message reports and safe own exit remain
   distinct from body access.

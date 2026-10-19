@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart' hide group;
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/blocking/data/blocking_gateway.dart';
@@ -20,6 +21,8 @@ import 'package:planets_mobile/features/member_contact/presentation/member_conta
 import 'package:planets_mobile/features/messages/application/message_chats_refresh.dart';
 import 'package:planets_mobile/features/messages/data/message_unread_gateway.dart';
 import 'package:planets_mobile/features/messages/presentation/message_read_viewport.dart';
+import 'package:planets_mobile/features/moderation/domain/moderation_models.dart';
+import 'package:planets_mobile/features/moderation/presentation/moderation_routes.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../support/fake_blocking.dart';
@@ -72,6 +75,15 @@ Future<(ProviderContainer, GoRouter)> pumpMember(
       GoRoute(
         path: '/info',
         builder: (_, _) => const MemberContactInfoScreen(chatId: chatId),
+      ),
+      GoRoute(
+        path: ModerationRoutes.newReport,
+        builder: (_, state) {
+          final target = state.extra! as ModerationReportTarget;
+          return Scaffold(
+            body: Text('Known report: ${target.kind.name} ${target.id}'),
+          );
+        },
       ),
       GoRoute(
         path: '/person',
@@ -136,6 +148,139 @@ Future<void> reveal(WidgetTester tester, Finder finder) => tester
     .scrollUntilVisible(finder, 200, scrollable: find.byType(Scrollable).first);
 
 void main() {
+  for (final failure in ['denied', 'offline']) {
+    testWidgets(
+      'older page $failure preserves the correct access and report state',
+      (tester) async {
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(
+              accessibleNavigation: true,
+              disableAnimations: true,
+            );
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+        final olderReply = Completer<Object?>();
+        final olderCalls = <Map<String, dynamic>>[];
+        final calls = <String>[];
+        var revoked = false;
+        const olderId = '00000000-0000-4000-8000-000000000799';
+        final (container, router) = await pumpMember(tester, (
+          name,
+          args,
+        ) async {
+          calls.add(name);
+          if (revoked) {
+            throw const PostgrestException(
+              message: 'Unavailable',
+              code: '42501',
+            );
+          }
+          if (name == 'get_own_member_contact_feed') {
+            if (args['p_before_ordinal'] != null) {
+              olderCalls.add(Map.of(args));
+              if (olderCalls.length == 1) return olderReply.future;
+              return {
+                'items': [
+                  {...messageRow(), 'id': olderId},
+                ],
+                'read_boundary': null,
+              };
+            }
+            return {
+              'items': [
+                for (var n = 21; n >= 1; n--)
+                  {
+                    ...messageRow(ordinal: n),
+                    'id': n == 21
+                        ? messageId
+                        : '00000000-0000-4000-8000-${(700 + n).toString().padLeft(12, '0')}',
+                    'sender_profile_id': failure == 'offline' ? actor : peer,
+                    'body': 'Loaded private message $n',
+                  },
+              ],
+              'read_boundary': boundary,
+            };
+          }
+          return basic(name, args);
+        }, path: '/chat');
+        final unread = container.read(messageUnreadGatewayProvider) as Gateway;
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('contact-message-body')),
+          'Unsent private draft',
+        );
+        final readsBeforeFailure = unread.reads;
+        await tester.tap(find.byKey(const Key('contact-history-more')));
+        await tester.pump();
+        expect(olderCalls, hasLength(1));
+        expect(olderCalls.single['p_before_ordinal'], 2);
+        olderReply.completeError(
+          failure == 'denied'
+              ? const PostgrestException(message: 'Unavailable', code: '42501')
+              : StateError('Offline'),
+        );
+        await tester.pumpAndSettle();
+        if (failure == 'offline') {
+          expect(find.text('Loaded private message 21'), findsOneWidget);
+          expect(
+            tester
+                .widget<TextField>(
+                  find.byKey(const Key('contact-message-body')),
+                )
+                .controller!
+                .text,
+            'Unsent private draft',
+          );
+          expect(
+            tester
+                .widget<MessageReadViewport>(find.byType(MessageReadViewport))
+                .boundary,
+            boundary,
+          );
+          await tester.tap(find.byKey(const Key('contact-history-more')));
+          await tester.pumpAndSettle();
+          expect(olderCalls, hasLength(2));
+          expect(olderCalls[1], olderCalls[0]);
+          expect(find.byKey(const Key('contact-history-more')), findsNothing);
+          // The newest page was entirely our own messages. Only the successful
+          // older page supplied this received report target before later denial.
+          revoked = true;
+          container.read(messageChatsRefreshProvider.notifier).notifyChanged();
+          await tester.pumpAndSettle();
+        }
+        // No access hint accompanies the forbidden older read: its own result
+        // must clear the cached body, composer and rendered ACK frontier.
+        expect(find.text('Loaded private message 21'), findsNothing);
+        expect(find.byKey(const Key('contact-message-body')), findsNothing);
+        expect(find.byKey(const Key('contact-message-send')), findsNothing);
+        final viewport = tester.widget<MessageReadViewport>(
+          find.byType(MessageReadViewport),
+        );
+        expect(viewport.chatId, isNull);
+        expect(viewport.boundary, isNull);
+        final l = AppLocalizations.of(tester.element(find.byType(Scaffold)));
+        final known = find.text(l.contactKnownReport);
+        await Scrollable.ensureVisible(tester.element(known), alignment: 0.5);
+        await tester.pumpAndSettle();
+        expect(known.hitTestable(), findsOneWidget);
+        final callsBeforeReport = List<String>.of(calls);
+        await tester.tap(known);
+        await tester.pumpAndSettle();
+        final target =
+            router.routerDelegate.state.extra! as ModerationReportTarget;
+        expect(target.kind, ModerationTargetKind.memberContactMessage);
+        expect(target.id, failure == 'offline' ? olderId : messageId);
+        expect(target.contextKind, ModerationContextKind.memberContactChat);
+        expect(target.contextId, chatId);
+        await tester.pump(const Duration(seconds: 1));
+        expect(calls, callsBeforeReport);
+        expect(unread.reads, readsBeforeFailure);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   testWidgets('opening composer and editing an unsent note never submits', (
     tester,
   ) async {

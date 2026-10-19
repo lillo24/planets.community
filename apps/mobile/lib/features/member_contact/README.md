@@ -27,6 +27,10 @@ and retained-history rule; this is not an activation flag or release approval.
   Accept/Decline/Withdraw, paged human history, reporting, Block, mute and exit.
   They use the shared history list/foreground read viewport without copying its
   authorization. Opening, login and profile completion never submit or accept.
+  Forbidden older-page reads clear the body, composer and ACK frontier immediately;
+  transient failures preserve the page and retry cursor. Known incoming report
+  IDs include successfully loaded older pages and survive access loss without
+  reloading protected content.
 - `presentation/member_contact_routes.dart` validates exact UUID-only local
   continuations. Routes contain no names, note text, photos or auto-action flags.
 
