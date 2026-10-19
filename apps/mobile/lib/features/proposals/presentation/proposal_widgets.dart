@@ -167,16 +167,59 @@ class ProposalSkillRequirements extends StatelessWidget {
   const ProposalSkillRequirements({
     required this.skills,
     this.multiline = false,
+    this.groupByImportance = false,
     super.key,
   });
 
   final List<ProposalSkill> skills;
   // Full-information callers can opt into wrapping long labels.
   final bool multiline;
+  final bool groupByImportance;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    if (groupByImportance) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final importance in ProposalSkillImportance.values)
+            if (skills.any((s) => s.importance == importance))
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.medium),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      importance == ProposalSkillImportance.required
+                          ? l10n.proposalSkillRequired
+                          : l10n.proposalSkillUseful,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.xSmall),
+                    Wrap(
+                      spacing: AppSpacing.small,
+                      runSpacing: AppSpacing.small,
+                      children: [
+                        for (final skill in skills.where(
+                          (s) => s.importance == importance,
+                        ))
+                          _SkillLabel(
+                            label: skillDisplayLabel(
+                              context,
+                              skill.slug,
+                              skill.label,
+                            ),
+                            multiline: true,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+        ],
+      );
+    }
     return Wrap(
       spacing: AppSpacing.small,
       runSpacing: AppSpacing.xSmall,

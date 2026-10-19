@@ -1,5 +1,10 @@
 # Proposals feature
 
+UIPOLISH03 detail sections reuse the shared schedule and localized skill labels,
+group full skill labels by importance, and retain tutorial anchors and all source
+text. The authoring explanations are unchanged. See
+`docs/development/uipolish03-details-groups-chat.md` for scope and QA.
+
 `presentation/proposal_card_cover.dart` owns the card's 3:2 cover and real
 Idea/Requested composition selected in [Batch A02](../../../../../docs/development/batch-a-card-selection.md).
 Idea uses a 30-degree upper-right ribbon; Requested moves to the upper left on

@@ -1,5 +1,12 @@
 # Resource exchange
 
+UIPOLISH03 presentation keeps one canonical primary agreement action and moves
+History/cancellation to a labelled menu with the same eligibility/confirmation.
+Progress remains a visible secondary action. `ResourceExchangeFeedback` owns the
+existing warning precedence and safe copy, composed above the chat summary so
+warnings are never inside the menu. State, negotiation and milestone rules stay
+in the existing controller/domain. See the UIPOLISH03 development record.
+
 This feature owns the authenticated mobile negotiation surface for one
 Scambio-Dona agreement. PostgreSQL remains canonical; the client reads and
 mutates the agreement only through the versioned Resource-exchange RPCs.

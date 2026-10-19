@@ -1,5 +1,12 @@
 # Resource chat
 
+UIPOLISH03 gives summary and composer independently scrollable maximum shares
+of available height, preserving the separate message scroll/read controller.
+Scaffold owns IME resizing; composer padding must not add keyboard height again.
+Canonical exchange/chat warnings precede the summary; a new warning resets only
+that summary scroll. Name and role are separate, with full-name accessibility.
+See `docs/development/uipolish03-details-groups-chat.md` for native/layout QA.
+
 MSG02 history uses `get_own_message_feed_page` to obtain an own newest snapshot
 boundary. The shared Messages viewport acknowledges only successfully rendered,
 foreground, unobscured latest content. Older pages and previews never read chat;
