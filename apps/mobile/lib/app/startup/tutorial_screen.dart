@@ -669,7 +669,9 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
       body: Center(child: PlanetsHero()),
     ),
     TutorialStep.farewell => const Scaffold(body: PlanetsHero.farewell()),
-    TutorialStep.home || TutorialStep.homeResources => const FoundationScreen(),
+    TutorialStep.home || TutorialStep.homeResources => const FoundationScreen(
+      activitiesSplitPreview: false,
+    ),
     TutorialStep.projectCard => _projectBrowse(),
     TutorialStep.projectCreate ||
     TutorialStep.projectDrafts => _projectBrowse(),
@@ -753,6 +755,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen>
   }
 
   Widget _projectBrowse() => PublicProposalsScreen(
+    activitiesSplitPreview: false,
     tutorialPlaceholder: _projectFallback ? const TutorialExampleCard() : null,
   );
 

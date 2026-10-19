@@ -4,6 +4,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/planets_app.dart';
+import '../features/settings/application/activities_split_preference_controller.dart';
+import '../features/settings/data/activities_split_preference_store.dart';
+import '../features/settings/domain/activities_split_preference.dart';
 import '../app/startup/startup_flow.dart';
 import '../core/backend/supabase_backend.dart';
 import '../core/config/app_config.dart';
@@ -36,6 +39,11 @@ Future<LanguagePreference> loadLanguagePreference() =>
 Future<NavigationPreferenceState> loadNavigationPreference() =>
     restoreNavigationPreference(SharedPreferencesNavigationPreferenceStore());
 
+Future<ActivitiesSplitPreferenceState> loadActivitiesSplitPreference() =>
+    restoreActivitiesSplitPreference(
+      SharedPreferencesActivitiesSplitPreferenceStore(),
+    );
+
 Future<void> bootstrapApplication({
   AppConfigLoader configLoader = AppConfig.fromCompileTime,
   BackendInitializer backendInitializer = initializeSupabase,
@@ -44,6 +52,9 @@ Future<void> bootstrapApplication({
   LanguagePreferenceLoader languagePreferenceLoader = loadLanguagePreference,
   NavigationPreferenceLoader navigationPreferenceLoader =
       loadNavigationPreference,
+  Future<ActivitiesSplitPreferenceState> Function()
+      activitiesSplitPreferenceLoader =
+      loadActivitiesSplitPreference,
   StartupPreferenceLoader startupPreferenceLoader = loadStartupPreference,
 }) async {
   final config = configLoader();
@@ -59,6 +70,14 @@ Future<void> bootstrapApplication({
   } catch (_) {
     navigationPreference = const NavigationPreferenceState(restoreFailed: true);
   }
+  ActivitiesSplitPreferenceState activitiesSplitPreference;
+  try {
+    activitiesSplitPreference = await activitiesSplitPreferenceLoader();
+  } catch (_) {
+    activitiesSplitPreference = const ActivitiesSplitPreferenceState(
+      restoreFailed: true,
+    );
+  }
   await backendInitializer(config);
   StartupPreference startupPreference;
   try {
@@ -72,6 +91,9 @@ Future<void> bootstrapApplication({
       ProviderScope(
         overrides: [
           appConfigProvider.overrideWithValue(config),
+          initialActivitiesSplitPreferenceProvider.overrideWithValue(
+            activitiesSplitPreference,
+          ),
           initialStartupPreferenceProvider.overrideWithValue(startupPreference),
           initialLanguagePreferenceProvider.overrideWithValue(
             languagePreference,

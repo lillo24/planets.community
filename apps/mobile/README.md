@@ -78,3 +78,14 @@ npm run check:mobile
 ```
 
 The local config command requires the local Supabase stack. See the repository [getting-started guide](../../docs/development/getting-started.md#mobile-configuration) for environment keys, Android emulator setup, and the provisional application identifiers.
+
+### Activities Split Mode sandbox
+
+Settings > Sandbox > Activities Split Mode is a saved, off-by-default device
+experiment. It separates Projects/Activities on Home and in Browse without
+adding a bottom slot or changing the Messages/Browse shortcut. Activities combines
+a separate live Tavoli entry with explicitly fictional read-only Trento examples.
+Search/discipline filters apply only to examples. Turning it off restores normal
+navigation; existing native detail/editor links remain valid. See the
+[feature map](lib/features/activities_sandbox/README.md) and
+[experiment record](../../docs/development/actsplit01-activities-sandbox.md).
