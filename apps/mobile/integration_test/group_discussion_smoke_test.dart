@@ -533,6 +533,32 @@ void main() {
                 .isEmpty &&
             generalHintDismiss.evaluate().isEmpty,
       );
+      final generalMute = find.byKey(const Key('discussion-mute'));
+      await harness.waitFor(tester, generalMute);
+      await tester.ensureVisible(generalMute);
+      await tester.tap(generalMute);
+      await harness.waitUntil(
+        tester,
+        () =>
+            publisher
+                .read(discussionChatProvider(settings.generalRoomId!))
+                ?.room
+                ?.muted ==
+            true,
+      );
+      expect(find.byKey(const Key('discussion-hide')), findsNothing);
+      await harness.waitFor(tester, find.text('Enable message alerts'));
+      await tester.ensureVisible(generalMute);
+      await tester.tap(generalMute);
+      await harness.waitUntil(
+        tester,
+        () =>
+            publisher
+                .read(discussionChatProvider(settings.generalRoomId!))
+                ?.room
+                ?.muted ==
+            false,
+      );
       publisherRouter.go(discussionLinksRoute(settings.generalRoomId!));
       await harness.waitFor(
         tester,
@@ -645,6 +671,7 @@ void main() {
       );
       await tester.tap(find.text('Invitation-only + Group managers'));
       await harness.waitFor(tester, find.byKey(const Key('discussion-mute')));
+      await tester.ensureVisible(find.byKey(const Key('discussion-mute')));
       await tester.tap(find.byKey(const Key('discussion-mute')));
       await harness.waitUntil(
         tester,

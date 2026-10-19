@@ -92,30 +92,36 @@ void main() {
                   ? (language == 'en' ? 'General' : 'Generale')
                   : _titles[language]!;
               if (!general) expect(title.length, 120);
+              final purposePrefix = List.filled(
+                30,
+                language == 'en'
+                    ? 'We plan a welcoming neighbourhood garden together.'
+                    : 'Progettiamo insieme un giardino di quartiere accogliente.',
+              ).join(' ').substring(0, 499).trimRight().padRight(499, '.');
+              final purpose = '$purposePrefix.';
+              final roomData = {
+                ...roomRow(),
+                'title': general ? 'General' : title,
+                'room_kind': general ? 'general' : 'idea',
+                'visibility': 'group',
+                'purpose': general ? '' : purpose,
+                'creator_id': actor,
+                'access_id': admission,
+                'admission_id': general ? null : admission,
+                'access': general ? 'general' : 'joined',
+                'can_join': false,
+                'can_send': true,
+                'can_invite': false,
+                'can_read_links': true,
+                'muted': false,
+                'manually_hidden': false,
+                'automatically_hidden': false,
+                'frozen': false,
+                'invitation_link_version': 0,
+                'can_publish': !general,
+              };
               final gateway = Gateway()
-                ..context = DiscussionRoom({
-                  ...roomRow(),
-                  'title': general ? 'General' : title,
-                  if (general) ...{
-                    'room_kind': 'general',
-                    'visibility': 'group',
-                    'purpose': '',
-                    'creator_id': actor,
-                    'access_id': admission,
-                    'admission_id': null,
-                    'access': 'general',
-                    'can_join': false,
-                    'can_send': true,
-                    'can_invite': false,
-                    'can_read_links': true,
-                    'muted': false,
-                    'manually_hidden': false,
-                    'automatically_hidden': false,
-                    'frozen': false,
-                    'invitation_link_version': 0,
-                    'can_publish': false,
-                  },
-                })
+                ..context = DiscussionRoom(roomData)
                 ..latest = discussionHistoryFixture([]);
               final container = ProviderContainer(
                 overrides: [
@@ -192,9 +198,7 @@ void main() {
               );
               _expectReadableTitle(tester, title, scale, ellipsized: !general);
               if (general && scale > 1) {
-                final hint = find.byKey(
-                  const Key('discussion-workspace-hint-scroll'),
-                );
+                final hint = find.byKey(const Key('discussion-context-scroll'));
                 final hintScroll = tester.state<ScrollableState>(
                   find.descendant(of: hint, matching: find.byType(Scrollable)),
                 );
@@ -207,6 +211,52 @@ void main() {
                   closeTo(hintScroll.position.maxScrollExtent, .01),
                 );
               }
+              if (!general) {
+                expect(purpose.length, 500);
+                await tester.tap(
+                  find.byKey(const Key('discussion-context-toggle')),
+                );
+                await tester.pumpAndSettle();
+                expect(find.text(purpose), findsOneWidget);
+                expect(
+                  find.text(l.discussionManagerDisclosure),
+                  findsOneWidget,
+                );
+              }
+              Map<String, dynamic>? preferenceIntent;
+              gateway.write = (_, intent) async {
+                preferenceIntent = Map.of(intent);
+                roomData['muted'] = intent['p_muted'] as bool;
+                gateway.context = DiscussionRoom(roomData);
+                return receipt();
+              };
+              final mute = find.byKey(const Key('discussion-mute'));
+              await tester.ensureVisible(mute);
+              await tester.pumpAndSettle();
+              expect(mute.hitTestable(), findsOneWidget);
+              await tester.tap(mute);
+              await tester.pumpAndSettle();
+              expect(preferenceIntent, {
+                'p_room_id': roomId,
+                'p_muted': true,
+                'p_hidden': false,
+              });
+              expect(
+                container.read(discussionChatProvider(roomId))!.room!.muted,
+                isTrue,
+              );
+              expect(find.text(l.discussionUnmute), findsOneWidget);
+              expect(find.byKey(const Key('discussion-hide')), findsNothing);
+              expect(
+                tester.getSize(find.byType(ListView)).height,
+                greaterThan(0),
+              );
+              expect(
+                tester.takeException(),
+                isNull,
+                reason: 'expanded context and mute',
+              );
+              gateway.keys.clear();
               expect(
                 tester
                     .getBottomRight(

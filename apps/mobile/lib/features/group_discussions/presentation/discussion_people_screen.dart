@@ -46,6 +46,7 @@ class _DiscussionPeopleScreenState
       controller == c &&
       !c.disposed &&
       c.room?.admissionId == episode &&
+      c.room?.canReadPeople == true &&
       ref.read(authSessionProvider).identity?.id == c.actor;
   void bind(DiscussionChatController c) {
     final r = c.room;
@@ -182,9 +183,10 @@ class _DiscussionPeopleScreenState
       builder: (context, _) {
         final room = c?.room?.canReadPeople == true ? c?.room : null;
         if (room == null &&
-            c?.error != null &&
-            discussionFailure(c!.error!) == DiscussionFailure.denied &&
-            people != null) {
+            (c?.room != null ||
+                c?.error != null &&
+                    discussionFailure(c!.error!) == DiscussionFailure.denied) &&
+            (people != null || invitations != null || candidates != null)) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
               setState(() {
@@ -254,6 +256,11 @@ class _DiscussionPeopleScreenState
                       DiscussionError(
                         c!.error!,
                         retry: () => unawaited(c.refresh()),
+                      )
+                    else if (c?.room != null)
+                      Text(
+                        l.discussionUnavailable,
+                        key: const Key('discussion-people-unavailable'),
                       )
                     else
                       const CircularProgressIndicator(),
@@ -401,13 +408,27 @@ class _DiscussionPeopleScreenState
                     for (final p in people?.rows ?? <DiscussionPerson>[])
                       ListTile(
                         title: Text(p.name ?? l.discussionAccountUnavailable),
-                        subtitle: Text(
-                          groupRoleLabel(
-                            l,
-                            p.role == null
-                                ? null
-                                : GroupAuthority.parse(p.role),
-                          ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Room provenance is distinct from Group authority.
+                            if (!room.isGeneral &&
+                                p.profileId == room.creatorId)
+                              Text(
+                                l.discussionIdeaCreator,
+                                key: ValueKey(
+                                  'discussion-creator-${p.profileId}',
+                                ),
+                              ),
+                            Text(
+                              groupRoleLabel(
+                                l,
+                                p.role == null
+                                    ? null
+                                    : GroupAuthority.parse(p.role),
+                              ),
+                            ),
+                          ],
                         ),
                         trailing:
                             room.canManage &&

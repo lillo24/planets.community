@@ -218,118 +218,153 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
                   child: Column(
                     children: [
                       if (c.busy) const LinearProgressIndicator(),
-                      if (room.isGeneral)
-                        // The full external-access disclosure remains scrollable
-                        // when large text would otherwise consume the body.
-                        ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxHeight: bodyConstraints.maxHeight * .4,
-                          ),
-                          child: SingleChildScrollView(
-                            key: const Key('discussion-workspace-hint-scroll'),
-                            child: DiscussionGeneralHint(
-                              actor: c.actor,
-                              onOpen: room.canReadLinks
-                                  ? () => context.push(
-                                      discussionLinksRoute(room.id),
-                                    )
-                                  : null,
-                            ),
-                          ),
+                      // Context, disclosure and action feedback share a bounded
+                      // scroller, independent of the transcript and its ACK.
+                      // Expanded 500-character purposes must leave history and
+                      // the composer reachable, just like General's long hint.
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: bodyConstraints.maxHeight * .4,
                         ),
-                      if (!room.isGeneral)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: SingleChildScrollView(
+                          key: const Key('discussion-context-scroll'),
+                          primary: false,
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              ExpansionTile(
-                                tilePadding: EdgeInsets.zero,
-                                title: Text(
-                                  room.isFormer
-                                      ? l.discussionFormerHistory
-                                      : room.visibility == 'group'
-                                      ? l.discussionGroupVisible
-                                      : l.discussionInviteOnly,
+                              if (room.isGeneral) ...[
+                                DiscussionGeneralHint(
+                                  actor: c.actor,
+                                  onOpen: room.canReadLinks
+                                      ? () => context.push(
+                                          discussionLinksRoute(room.id),
+                                        )
+                                      : null,
                                 ),
-                                children: [
-                                  if (room.purpose.isNotEmpty)
-                                    Text(room.purpose),
-                                  if (!room.isFormer)
-                                    Text(l.discussionManagerDisclosure),
-                                  DiscussionRoomActions(
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  child: DiscussionRoomActions(
                                     room: room,
                                     onChanged: c.refresh,
                                   ),
-                                ],
-                              ),
-                              if (!room.canReadHistory)
-                                DiscussionRoomActions(
-                                  room: room,
-                                  onChanged: c.refresh,
+                                ),
+                              ],
+                              if (!room.isGeneral)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      ExpansionTile(
+                                        key: const Key(
+                                          'discussion-context-toggle',
+                                        ),
+                                        tilePadding: EdgeInsets.zero,
+                                        title: Text(
+                                          room.isFormer
+                                              ? l.discussionFormerHistory
+                                              : room.visibility == 'group'
+                                              ? l.discussionGroupVisible
+                                              : l.discussionInviteOnly,
+                                        ),
+                                        children: [
+                                          if (room.purpose.isNotEmpty)
+                                            Text(room.purpose),
+                                          if (!room.isFormer)
+                                            Text(l.discussionManagerDisclosure),
+                                          if (room.canReadHistory)
+                                            DiscussionRoomActions(
+                                              room: room,
+                                              onChanged: c.refresh,
+                                            ),
+                                        ],
+                                      ),
+                                      if (!room.canReadHistory)
+                                        DiscussionRoomActions(
+                                          room: room,
+                                          onChanged: c.refresh,
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              if (c.error != null)
+                                DiscussionError(
+                                  c.error!,
+                                  retry: () => unawaited(c.refresh()),
+                                ),
+                              for (final entry
+                                  in commands.attempts.entries.where(
+                                    (e) =>
+                                        e.value.action ==
+                                            DiscussionAction.update &&
+                                        e.value.intent['p_room_id'] ==
+                                            room.id &&
+                                        e.value.error != null &&
+                                        !room.canManage,
+                                  ))
+                                Column(
+                                  children: [
+                                    Text(l.discussionUncertain),
+                                    Text(
+                                      entry.value.intent['p_title'] as String,
+                                    ),
+                                    Text(
+                                      entry.value.intent['p_archived'] == true
+                                          ? l.discussionArchive
+                                          : l.discussionRestore,
+                                    ),
+                                    DiscussionError(entry.value.error!),
+                                    TextButton(
+                                      onPressed: entry.value.busy
+                                          ? null
+                                          : () async {
+                                              final result = await commands.run(
+                                                entry.key,
+                                                c.actor,
+                                                entry.value.action,
+                                                entry.value.intent,
+                                              );
+                                              if (mounted &&
+                                                  ref
+                                                          .read(
+                                                            authSessionProvider,
+                                                          )
+                                                          .identity
+                                                          ?.id ==
+                                                      c.actor &&
+                                                  result != null) {
+                                                commands.forget(entry.key);
+                                                await c.refresh();
+                                              }
+                                            },
+                                      child: Text(l.discussionRetry),
+                                    ),
+                                    if (!entry.value.busy &&
+                                        !entry.value.uncertain)
+                                      TextButton(
+                                        onPressed: () =>
+                                            commands.forget(entry.key),
+                                        child: Text(l.discussionCancel),
+                                      ),
+                                  ],
+                                ),
+                              if (c.latestAvailable)
+                                TextButton(
+                                  onPressed: () => unawaited(
+                                    c
+                                        .refresh(latest: true)
+                                        .then((_) => newest(c)),
+                                  ),
+                                  child: Text(l.discussionLatest),
                                 ),
                             ],
                           ),
                         ),
-                      if (c.error != null)
-                        DiscussionError(
-                          c.error!,
-                          retry: () => unawaited(c.refresh()),
-                        ),
-                      for (final entry in commands.attempts.entries.where(
-                        (e) =>
-                            e.value.action == DiscussionAction.update &&
-                            e.value.intent['p_room_id'] == room.id &&
-                            e.value.error != null &&
-                            !room.canManage,
-                      ))
-                        Column(
-                          children: [
-                            Text(l.discussionUncertain),
-                            Text(entry.value.intent['p_title'] as String),
-                            Text(
-                              entry.value.intent['p_archived'] == true
-                                  ? l.discussionArchive
-                                  : l.discussionRestore,
-                            ),
-                            DiscussionError(entry.value.error!),
-                            TextButton(
-                              onPressed: entry.value.busy
-                                  ? null
-                                  : () async {
-                                      final result = await commands.run(
-                                        entry.key,
-                                        c.actor,
-                                        entry.value.action,
-                                        entry.value.intent,
-                                      );
-                                      if (mounted &&
-                                          ref
-                                                  .read(authSessionProvider)
-                                                  .identity
-                                                  ?.id ==
-                                              c.actor &&
-                                          result != null) {
-                                        commands.forget(entry.key);
-                                        await c.refresh();
-                                      }
-                                    },
-                              child: Text(l.discussionRetry),
-                            ),
-                            if (!entry.value.busy && !entry.value.uncertain)
-                              TextButton(
-                                onPressed: () => commands.forget(entry.key),
-                                child: Text(l.discussionCancel),
-                              ),
-                          ],
-                        ),
-                      if (c.latestAvailable)
-                        TextButton(
-                          onPressed: () => unawaited(
-                            c.refresh(latest: true).then((_) => newest(c)),
-                          ),
-                          child: Text(l.discussionLatest),
-                        ),
+                      ),
                       Expanded(
                         child: LayoutBuilder(
                           builder: (context, remaining) => Column(
@@ -395,6 +430,7 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
                                 ),
                                 child: SingleChildScrollView(
                                   key: const Key('discussion-composer-scroll'),
+                                  primary: false,
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [

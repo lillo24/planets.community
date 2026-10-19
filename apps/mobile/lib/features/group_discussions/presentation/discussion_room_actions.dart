@@ -68,6 +68,15 @@ class DiscussionRoomActions extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Discovery exposes the canonical creator ID, not a display-name
+            // projection. Show that identity without fetching a profile/roster
+            // or implying Group authority; authorized People supplies names.
+            if (!room.isGeneral && room.creatorId != null)
+              Text(
+                '${l.discussionIdeaCreator}: ${room.creatorId}',
+                key: const Key('discussion-creator-context'),
+                softWrap: true,
+              ),
             if (attempt?.error != null) DiscussionError(attempt!.error!),
             if (attempt?.uncertain == true) Text(l.discussionUncertain),
             Wrap(
@@ -90,7 +99,7 @@ class DiscussionRoomActions extends ConsumerWidget {
                       icon: const Icon(Icons.add_comment_outlined),
                       label: Text(l.discussionJoin),
                     ),
-                  if (!room.isFormer && !room.isGeneral)
+                  if (!room.isFormer)
                     TextButton.icon(
                       key: const Key('discussion-mute'),
                       onPressed: () => unawaited(
