@@ -7,6 +7,15 @@ request, bilateral, three-Group consent, revocation/regrant and safety journey.
 `contact_local_identity.dart` pairs injected UI identity with verified local OTP
 tokens; `prepare_group_contact_smoke.mjs` creates its disposable fixtures.
 The screenshot driver is `test_driver/group_contact_screenshots.dart`.
+`contact_native_actions.dart` reveals each D action and rechecks its current
+visibility and enablement after every awaited frame, then performs the actual
+gesture without another readiness pump. This keeps an access refresh from
+invalidating a lazy recovery row between the check and tap. Missing/disabled
+actions still fail with a sanitized route, auth phase and widget-state summary.
+The final consent journey requires one confirmation and explicit recovery with
+that original action UUID, then the canonical exact audience and fresh empty room.
+The EN/IT coordination widget regression delays an actual screen refresh through
+the former readiness gap; it does not bypass the production button callback.
 See [contact native QA](../../../docs/development/group-contact-mobile.md) for
 isolated engine/ports, actual 320dp configuration, injection boundaries and
 completion requirements. Its unresolved privacy choices remain review-only.

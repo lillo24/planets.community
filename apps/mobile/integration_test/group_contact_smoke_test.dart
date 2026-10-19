@@ -28,6 +28,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import 'contact_local_identity.dart';
+import 'contact_native_actions.dart';
 import 'groups_smoke_test.dart' as harness show waitUntil;
 
 void main() {
@@ -82,6 +83,9 @@ void main() {
     var identityEpoch = 0;
     var lost = false;
     var lostCoordination = false;
+    final finalConfirmationActions = <String>[];
+    final finalRecoveryActions = <String>[];
+    Map<String, dynamic>? finalRecoveryReceipt;
     final originalError = FlutterError.onError;
     FlutterErrorDetails? lastError;
     FlutterError.onError = (details) {
@@ -122,7 +126,19 @@ void main() {
           ),
           groupContactGatewayProvider.overrideWithValue(
             GroupContactGateway((name, args) async {
+              // Only this actor's final consent/recovery is instrumented. Keep
+              // synthetic action UUIDs in memory; never log tokens or payloads.
+              if (loseCoordination) {
+                if (name == 'confirm_group_coordination_audience') {
+                  finalConfirmationActions.add(args['p_action_id'] as String);
+                } else if (name == 'recover_group_contact_action') {
+                  finalRecoveryActions.add(args['p_action_id'] as String);
+                }
+              }
               final result = await client.rpc<Object?>(name, params: args);
+              if (loseCoordination && name == 'recover_group_contact_action') {
+                finalRecoveryReceipt = result as Map<String, dynamic>?;
+              }
               if (loseSubmit &&
                   name == 'submit_group_contact_request' &&
                   !lost) {
@@ -224,54 +240,10 @@ void main() {
       );
     }
 
-    Future<void> tap(String key) async {
-      final finder = find.byKey(Key(key));
-      if (key.startsWith('contact-confirm-') ||
-          key == 'coordination-confirm-dialog' ||
-          key.startsWith('blocking-confirm-')) {
-        await reveal(finder);
-      }
-      // Route/auth/access refreshes can replace a lazy ListView while waiting.
-      // Re-find its scrollable after each frame rather than retaining a finder
-      // for a disposed previous route. Missing widgets still fail explicitly.
-      final deadline = DateTime.now().add(const Duration(seconds: 45));
-      ScrollPosition? searched;
-      while (finder.hitTestable().evaluate().isEmpty &&
-          DateTime.now().isBefore(deadline)) {
-        await tester.pump(const Duration(milliseconds: 200));
-        if (finder.evaluate().isNotEmpty) {
-          await tester.ensureVisible(finder);
-        } else {
-          final scrolls = find.descendant(
-            of: find.byType(ListView),
-            matching: find.byType(Scrollable),
-          );
-          final elements = scrolls.evaluate().where(
-            (element) =>
-                ModalRoute.of(element)?.isCurrent != false &&
-                element.findAncestorWidgetOfExactType<EditableText>() == null,
-          );
-          if (elements.isNotEmpty) {
-            final state =
-                (elements.last as StatefulElement).state as ScrollableState;
-            final position = state.position;
-            if (position.hasContentDimensions) {
-              if (searched != position) {
-                searched = position;
-                position.jumpTo(position.minScrollExtent);
-              } else {
-                position.jumpTo(
-                  (position.pixels + 180).clamp(
-                    position.minScrollExtent,
-                    position.maxScrollExtent,
-                  ),
-                );
-              }
-            }
-          }
-        }
-      }
-      if (finder.hitTestable().evaluate().isEmpty) {
+    Future<void> tap(String key) => tapContactNativeAction(
+      tester,
+      key,
+      onFailure: (diagnostics) async {
         final scope = currentScope!;
         final path = scope
             .read(appRouterProvider)
@@ -281,29 +253,14 @@ void main() {
             .path
             .replaceAll(RegExp(r'[0-9a-fA-F-]{36}'), ':id');
         debugPrint(
-          'D native missing $key: path=$path phase=${scope.read(authSessionProvider).phase.name}',
+          'D native action failure: path=$path '
+          'phase=${scope.read(authSessionProvider).phase.name}; $diagnostics',
         );
         await binding
             .takeScreenshot('d03-missing-$key')
             .timeout(const Duration(seconds: 30));
-      }
-      expect(
-        finder.hitTestable(),
-        findsOneWidget,
-        reason: 'Native action $key must become visible.',
-      );
-      await harness.waitUntil(
-        tester,
-        () =>
-            finder.hitTestable().evaluate().isNotEmpty &&
-            (finder.evaluate().single.widget is! ButtonStyleButton ||
-                (finder.evaluate().single.widget as ButtonStyleButton)
-                        .onPressed !=
-                    null),
-      );
-      await tester.tap(finder);
-      await tester.pump(const Duration(milliseconds: 300));
-    }
+      },
+    );
 
     Future<void> tapFinder(Finder finder) async {
       await reveal(finder);
@@ -664,10 +621,21 @@ void main() {
     }
     await shot('coordination-exact-audience-en');
     await tap('coordination-confirm-dialog');
+    await harness.waitUntil(tester, () => lostCoordination);
+    expect(finalConfirmationActions, hasLength(1));
+    final originalFinalAction = finalConfirmationActions.single;
+    expect(finalRecoveryActions, isEmpty);
     await tap('coordination-recover');
+    await harness.waitUntil(tester, () => finalRecoveryReceipt != null);
+    expect(finalConfirmationActions, [originalFinalAction]);
+    expect(finalRecoveryActions, [originalFinalAction]);
+    expect(finalRecoveryReceipt!['coordination_id'], proposalId);
+    expect(finalRecoveryReceipt!['outcome'], 'active');
+    expect(finalRecoveryReceipt!['replayed'], isTrue);
     await tap('coordination-open');
     await reveal(find.byKey(const Key('contact-message-body')));
     final freshChat = finalRouter.routerDelegate.state.uri.pathSegments.last;
+    expect(finalRecoveryReceipt!['chat_id'], freshChat);
     final activated = await coordination(dave, proposalId);
     expect(activated['status'], 'active');
     expect(activated['chat_id'], freshChat);
