@@ -65,6 +65,18 @@ the owned emulator's software keyboard as above; no keyboard geometry is faked.
 Visibility waits scroll the page rather than a text field's inner viewport, and
 save a failure frame if the required action never becomes visible.
 
+A visible message body is not proof that its read frontier was rendered: a tall
+incoming card also has a timestamp and Report action below the body. After
+revealing the body, `member_contact_read_frontier.dart` drags the actual history
+through the card end. It checks the current actor and non-null server boundary,
+foreground route, resumed lifecycle, enabled ticker and settled history extent
+before the unchanged canonical unread-zero assertion. It never calls ACK or
+moves the scroll controller directly. Bounded retries allow lazy dimensions to
+settle; a failure logs eligibility/scroll metrics without opaque tokens and saves
+a diagnostic frame. The 320dp/2x widget regression confirms that body visibility
+alone does not ACK and that scrolling through the end acknowledges the exact
+boundary. This simulated regression does not replace the real backend run.
+
 The member chat uses the actual resized SafeArea body constraints: contextual
 notices scroll within one quarter of its height, and the anchored composer scrolls
 within at most half. This reserves visible history even with the keyboard, long

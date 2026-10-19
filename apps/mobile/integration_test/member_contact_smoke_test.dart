@@ -24,6 +24,7 @@ import 'package:uuid/uuid.dart';
 
 import 'contact_local_identity.dart';
 import 'groups_smoke_test.dart' as harness show waitUntil;
+import 'member_contact_read_frontier.dart';
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -531,6 +532,16 @@ void main() {
       ),
     );
     await reveal(find.text('Synthetic close reply from Fictional Bob.'));
+    await readMemberContactFrontier(
+      tester,
+      actor: alice,
+      chatId: primary.chat,
+      onFailure: (_) async {
+        await binding
+            .takeScreenshot('m02-missing-rendered-frontier')
+            .timeout(const Duration(seconds: 30));
+      },
+    );
     await untilRpc(
       () async =>
           (await conversation(
