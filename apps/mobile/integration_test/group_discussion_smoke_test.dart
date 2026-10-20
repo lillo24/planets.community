@@ -132,7 +132,8 @@ void main() {
       );
       expect(find.text('Private message before your admission.'), findsNothing);
       await shot('invitation-en');
-      await harness.reveal(tester, find.text('Accept invitation'));
+      await tester.ensureVisible(find.text('Accept invitation'));
+      await tester.pump(const Duration(milliseconds: 300));
       await tester.tap(find.text('Accept invitation'));
       await harness.waitFor(tester, find.byType(AlertDialog));
       await tester.pump(const Duration(milliseconds: 300));
