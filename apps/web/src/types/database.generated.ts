@@ -3552,6 +3552,16 @@ export type Database = {
         }
         Returns: string
       }
+      finish_basemap_tile_v2: {
+        Args: {
+          p_image_base64?: string
+          p_token: string
+          p_x: number
+          p_y: number
+          p_z: number
+        }
+        Returns: Json
+      }
       finish_location_preview_v1: {
         Args: { p_image_base64?: string; p_image_key: string; p_token: string }
         Returns: undefined
@@ -7118,6 +7128,16 @@ export type Database = {
           p_skill_ids?: string[]
         }
         Returns: string
+      }
+      reserve_basemap_tile_v2: {
+        Args: {
+          p_actor: string
+          p_cache_only: boolean
+          p_x: number
+          p_y: number
+          p_z: number
+        }
+        Returns: Json
       }
       reserve_location_preview_v1: {
         Args: { p_actor: string; p_cacheable: boolean; p_image_key: string }

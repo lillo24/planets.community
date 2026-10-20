@@ -1789,6 +1789,7 @@
   "mapFixtureTiles": "Tessere sintetiche di prova — nessuna cartografia reale o richiesta al fornitore.",
   "mapBasemapDisabled": "Sfondo non disponibile",
   "mapBasemapFailed": "Caricamento sfondo non riuscito",
+  "mapReducedDetail": "Mappa a dettaglio ridotto",
   "mapZoomIn": "Ingrandisci",
   "mapZoomOut": "Riduci",
   "mapSearchArea": "Cerca in questa zona",

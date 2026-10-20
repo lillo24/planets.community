@@ -2526,6 +2526,7 @@
   "mapFixtureTiles": "Synthetic tile fixture — no real basemap or provider traffic.",
   "mapBasemapDisabled": "Basemap unavailable",
   "mapBasemapFailed": "Basemap failed to load",
+  "mapReducedDetail": "Reduced-detail map",
   "mapZoomIn": "Zoom in",
   "mapZoomOut": "Zoom out",
   "mapSearchArea": "Search this area",

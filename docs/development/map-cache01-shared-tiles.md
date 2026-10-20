@@ -1,5 +1,13 @@
 # MAP-CACHE01: shared basemap bytes and detail previews
 
+MAP-COST01 adds an opt-in public discovery v2 cache/source-frame path and a
+server-shared fixed Trento baseline. Its separate seven-day server maximum,
+12-tile/3-MiB bounds, 60-second public client reuse, ancestor cropping, failure
+semantics and deployment gates are documented in
+[MAP-COST01](map-cost01-trento-baseline.md). The rules below continue to own the
+legacy client path and all protected-detail scopes; protected bytes are never
+promoted into that new public tier.
+
 Discovery's existing `GatewayTileProvider` and the single Project/Tavolo/Resource
 `LocationPreviewPanel` now use `sharedBasemapTilesProvider`. The detail panel
 composes the same 256px XYZ tiles in `ReadOnlyBasemap`, draws the symbol locally,

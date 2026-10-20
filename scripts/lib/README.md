@@ -3,6 +3,9 @@
 This folder owns reusable Node.js helpers and their unit tests for repository
 tooling.
 
+- `contact-native-evidence.test.mjs` exercises the actual CI evidence collector
+  using tiny fictional temporary files: both driver manifests, secret redaction,
+  unique checkpoint names and rejection of duplicate image-byte payloads.
 - `local-supabase-status.mjs` reads and validates project-scoped Supabase CLI
   status without exposing credentials.
 - `local-authenticated-user.mjs` completes local Mailpit OTP authentication and

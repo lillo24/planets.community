@@ -1,5 +1,13 @@
 # MAP05 provider boundary
 
+MAP-COST01's optional `basemap_tile_v2` operation is coordinated with the additive
+baseline migration and new client flag. `basemap.mjs` owns its reserve/fetch/finish
+sequence and bounded source metadata; cache-only never reaches upstream, even
+when a reservation response is defective. The entrypoint maps a v2 authorization
+denial to an explicit refusal. Existing binary tiles/centers and JWT verification
+are unchanged. The private fixed baseline starts disabled/unapproved. See
+[the exact rollout and rollback contract](../../../docs/development/map-cost01-trento-baseline.md).
+
 `handler.mjs` owns a strict authenticated search/resolve/tile API with injectable
 Auth, service-only quota/cache RPCs and upstream transport. It does not reuse
 MAP01 editor sessions or mutate listing locations. Guests are always denied;

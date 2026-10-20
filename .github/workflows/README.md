@@ -10,7 +10,9 @@ built before booting the emulator, then both complete screenshot drivers must ex
 zero. The 50-minute cap bounds this occasional integration cost. No hosted backend,
 signing or store secrets are used. Artifacts retain only fictional UI PNGs, compact
 metadata and scrubbed diagnostics for seven days; private defines/APKs/raw logs
-are excluded. Review the artifact head and actual images before claiming native
+are excluded. Checkpoint names must be unique: the collector requires a one-to-one
+PNG/name/byte-count match so a repeated name cannot silently overwrite evidence.
+Review the artifact head and actual images before claiming native
 qualification. The workflow does not replace any existing required check.
 
 The C/D integration adds `contact:discussions:upgrade:verify:local` before the

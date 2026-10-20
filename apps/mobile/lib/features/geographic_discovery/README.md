@@ -2,6 +2,16 @@
 
 This feature owns the typed public map-search contract and reusable List/Map UI.
 
+MAP-COST01 adds an explicitly selected public-only path:
+`domain/basemap_fallback.dart` owns fixed Trento/source-frame identities;
+`data/budget_basemap_gateway.dart` validates v2 source/expiry/reset responses;
+`application/budget_basemap_tiles.dart` owns bounded raw reuse, foreground fill
+and budget-only degradation; `presentation/budget_tile_provider.dart` crops the
+true source before camera scaling. The screen selects it only with
+`LOCATION_BASEMAP_BUDGET_ENABLED=true`. Legacy/protected detail ownership is
+unchanged. PNG bounds now live with domain identity and remain exported by the
+old shared store. See [bounds, activation and evidence](../../../../../docs/development/map-cost01-trento-baseline.md).
+
 - domain/geographic_discovery.dart: radius/bounds, family-scoped filters, strict public marker/page/cursor parsing and sanitized failure kinds.
 - data/geographic_discovery_gateway.dart: one bounded search_public_geography_v1 RPC, eight-second transport deadline and explicit input/complexity/transport/schema failures.
 - application/geographic_discovery_controller.dart: Riverpod route/session ownership, active-context gating, generation invalidation and serialized keyset pages.

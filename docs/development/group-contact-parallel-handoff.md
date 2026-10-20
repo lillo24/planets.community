@@ -11,9 +11,10 @@ old D privacy model.
   `codex/d-integration`; preserves all D00–D03 ancestry.
 - Published D predecessor: `9ea6ca3f`; post-ACTSPLIT01 qualification and the
   remaining native follow-up are recorded below.
-- Main integration target: `89292af4b084dc2bbd9748797227531b13abe8cc`, the actual
-  C merge. Combined qualification is in progress as recorded below. Its preceding
-  `9fc89268` map-plan documents do not authorize executing those plans here.
+- Main integration target: `93414af566d51c7cf01176c2b7229420e34eed31`, including
+  the actual C merge `89292af4` and subsequently merged MAP-LIVE02/MAP-COST01.
+  Combined qualification is in progress. Integrating merged main does not
+  authorize deploying those map features or changing their default-off flags.
 - Peer inspected: [C #257](https://github.com/lillo24/planets.community/pull/257),
   `99407174f6d183716e32464963aa40121a0431d3`; merged by `89292af4` on 20 October.
 - Main reconciliation preserves startup signed-out handling, compact card skills,
@@ -612,6 +613,42 @@ seconds). Its initial analysis findings were confined to the new integration:
 explicit mounted guards, braces and one redundant null assertion were corrected.
 The ten selector tests passed before those lint-only/control-flow guard edits;
 the complete published-head Mobile job remains required.
+
+## Latest-main and remote Android follow-up, 20 October
+
+C01 completed read-only final source/contract review on `df86cc67`, with no
+remaining concrete defect. Validation 582 passed Web (401 tests, two skipped,
+build) and Site. Mobile passed 3,761 tests but failed two old M-only People
+fixtures because the new independent C action had no test providers. Explicit
+empty C destinations, a mutation-rejecting C gateway and a connected signal now
+keep those fixtures scoped; all 19 M screen tests pass locally. No production
+fallback or assertion was weakened.
+
+The D02 upgrade gate also found its exact whole-table-count assumption rejected
+C's documented General backfill. It now hashes every original discussion ID and
+column, requires only canonical empty General additions and verifies exactly one
+per available Group. Other original tables retain exact whole-table equality.
+That correction still needs the complete runtime gate.
+
+The authorized remote Android run
+[39460416787](https://github.com/lillo24/planets.community/actions/runs/39460416787)
+ran both full drivers successfully on `df86cc67`: D 29 checkpoints and M 44,
+including the real C invitation and absence of personal request/admission.
+The job failed its separate evidence collector: two D coordination composer
+checkpoints shared a filename, so 28 D PNGs remained and the earlier byte count
+did not match. All 44 M frames match. The original failed manifest is retained;
+all 72 stored PNG hashes and 720×1600 dimensions were verified. Selected EN/IT
+frames were visually inspected; confirmation content is scrollable at 2x text.
+The source now gives the two D scenes distinct names, requires a one-to-one
+frame/metadata match and captures the remaining Idea disclosure after actual
+scroll gestures in both languages. A fresh complete job remains required.
+
+Subsequent main `93414af5` adds map code and a migration, requiring another
+combined run. The owned D database incrementally applied all 122 migrations and
+regenerated 434 public RPC names using the current canonical nullability helper.
+Its machine is stopped and temporary source copies restored. Full Flutter
+analysis after this merge passed with no issues (10.7 seconds). These checks
+do not replace both populated histories, fresh replay, full CI or policy 3.
 
 ## Later final-main review
 

@@ -23,6 +23,10 @@
   Set `PLANETS_DISPOSABLE_QA=1` outside CI; `MAILPIT_URL` follows the selected
   local stack. Both commands use the checkout's pinned CLI and fail on unavailable
   runtime state. See the provisional D contract and execution evidence.
+- `lib/verify-basemap-budget.mjs` extends the existing disposable local location
+  verifier with genuine Auth/service REST, a bounded Trento cost comparison,
+  cache-only/ceiling/ancestor checks and aggregate request counters. Its provider
+  is synthetic; it never consumes Geoapify credits or creates hosted users.
 
 - `verify-local-group-ideas.mjs` checks the revised General/Idea roles, full
   history, exact exit cutoffs and independent participation/oversight rights.

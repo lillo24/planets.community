@@ -7,7 +7,7 @@ import 'staging_distribution.dart';
 Future<void> main(List<String> arguments) async {
   try {
     final buildArguments = mapLiveBuildArguments(arguments);
-    final debug = arguments.length == 1 && arguments[0] == 'debug-apk';
+    final debug = buildArguments.contains('--debug');
     if (!File('pubspec.yaml').existsSync()) {
       throw const FormatException('Run this command from apps/mobile.');
     }
@@ -52,7 +52,11 @@ Future<void> main(List<String> arguments) async {
           'mode': debug ? 'debug' : 'release',
           'target': debug ? 'apk' : arguments[0],
           if (!debug) 'version_code': int.parse(arguments[1]),
-          'defines': mapLiveDefines,
+          'defines': {
+            ...mapLiveDefines,
+            if (arguments.last == '--budget-basemap')
+              'LOCATION_BASEMAP_BUDGET_ENABLED': 'true',
+          },
         }),
       );
       stdout.writeln('Non-secret build evidence: ${manifest.path}');
@@ -70,26 +74,32 @@ Future<void> main(List<String> arguments) async {
 }
 
 List<String> mapLiveBuildArguments(List<String> arguments) {
-  final debug = arguments.length == 1 && arguments[0] == 'debug-apk';
+  final budget = arguments.isNotEmpty && arguments.last == '--budget-basemap';
+  final target = budget
+      ? arguments.sublist(0, arguments.length - 1)
+      : arguments;
+  final debug = target.length == 1 && target[0] == 'debug-apk';
   if (!debug &&
-      (arguments.length != 2 ||
-          !{'apk', 'appbundle'}.contains(arguments[0]) ||
-          !RegExp(r'^[1-9][0-9]*$').hasMatch(arguments[1]) ||
-          (int.tryParse(arguments[1]) ?? 2100000001) > 2100000000)) {
+      (target.length != 2 ||
+          !{'apk', 'appbundle'}.contains(target[0]) ||
+          !RegExp(r'^[1-9][0-9]*$').hasMatch(target[1]) ||
+          (int.tryParse(target[1]) ?? 2100000001) > 2100000000)) {
     throw const FormatException(
       'Usage: dart run tool/build_map_live_staging.dart apk|appbundle '
-      'UNUSED_PLAY_VERSION_CODE (check Play history first), or debug-apk.',
+      'UNUSED_PLAY_VERSION_CODE (check Play history first), or debug-apk; '
+      'append --budget-basemap only after the v2 server rollout is verified.',
     );
   }
   return [
     'build',
-    debug ? 'apk' : arguments[0],
+    debug ? 'apk' : target[0],
     debug ? '--debug' : '--release',
-    if (!debug) '--build-number=${arguments[1]}',
+    if (!debug) '--build-number=${target[1]}',
     '--dart-define-from-file=config/staging.json',
     ...mapLiveDefines.entries.map(
       (entry) => '--dart-define=${entry.key}=${entry.value}',
     ),
+    if (budget) '--dart-define=LOCATION_BASEMAP_BUDGET_ENABLED=true',
   ];
 }
 

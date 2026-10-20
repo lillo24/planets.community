@@ -105,14 +105,19 @@ for (const [lane, feature] of [
       throw new Error("Duplicate screenshot byte payload is forbidden.");
     if (!Array.isArray(metadata.stored_screenshots))
       throw new Error("Missing native screenshot metadata.");
-    responses[lane] = metadata.stored_screenshots.every((frame) =>
-      files.some(
-        (file) =>
-          file.lane === lane &&
-          file.file === `${feature}/${frame.screenshotName}.png` &&
-          file.bytes === frame.byteCount,
-      ),
-    );
+    const frames = metadata.stored_screenshots;
+    responses[lane] =
+      frames.length === files.filter((file) => file.lane === lane).length &&
+      new Set(frames.map((frame) => frame.screenshotName)).size ===
+        frames.length &&
+      frames.every((frame) =>
+        files.some(
+          (file) =>
+            file.lane === lane &&
+            file.file === `${feature}/${frame.screenshotName}.png` &&
+            file.bytes === frame.byteCount,
+        ),
+      );
     await writeFile(
       resolve(output, `${lane}-response.json`),
       scrub(JSON.stringify(metadata, null, 2)),

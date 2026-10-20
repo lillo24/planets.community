@@ -249,7 +249,11 @@ void main() {
 
     // Confirmation builders deliberately capture the copy shown when opened.
     // Reopen after changing language so the IT evidence is an actual IT dialog.
-    Future<void> dialogPair(String name, Future<void> Function() open) async {
+    Future<void> dialogPair(
+      String name,
+      Future<void> Function() open, {
+      Future<void> Function(String locale)? disclosure,
+    }) async {
       Future<void> cancel() => tapFinder(
         find.descendant(
           of: find.byType(AlertDialog),
@@ -257,10 +261,12 @@ void main() {
         ),
       );
       await shot('$name-en');
+      await disclosure?.call('en');
       await cancel();
       await language(LanguagePreference.italian);
       await open();
       await shot('$name-it');
+      await disclosure?.call('it');
       await cancel();
       await language(LanguagePreference.english);
       await open();
@@ -353,7 +359,30 @@ void main() {
         Future<void> openIdeaConfirmation() =>
             tap('person-invite-idea-$inviteIdea');
         await openIdeaConfirmation();
-        await dialogPair('idea-invite-confirmation', openIdeaConfirmation);
+        await dialogPair(
+          'idea-invite-confirmation',
+          openIdeaConfirmation,
+          disclosure: (locale) async {
+            // At 320dp/2x the disclosure scrolls independently of its buttons.
+            // Inspect both the opening context and the remaining audience/help.
+            final content = find.descendant(
+              of: find.byType(AlertDialog),
+              matching: find.byType(Scrollable),
+            );
+            expect(content, findsOneWidget);
+            final scroll = tester.state<ScrollableState>(content);
+            for (
+              var attempt = 0;
+              attempt < 8 && scroll.position.extentAfter > 1;
+              attempt++
+            ) {
+              await tester.drag(content, const Offset(0, -260));
+              await tester.pump(const Duration(milliseconds: 400));
+            }
+            expect(scroll.position.extentAfter, lessThanOrEqualTo(1));
+            await shot('idea-invite-disclosure-$locale');
+          },
+        );
         expect(submits, beforeIdea);
         await confirmDialog();
         await untilRpc(() async {

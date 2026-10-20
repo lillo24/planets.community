@@ -5,6 +5,12 @@ review-only until the founder decision recorded by the parent implementation is
 resolved. Source compilation and intermediate screenshots do not constitute a
 completed native run or approval of that policy.
 
+The combined journey also invites the named person to an independently joined C
+Idea using C's canonical command, checks that invitation alone grants neither
+admission nor personal contact, and captures the target/purpose/audience in EN/IT.
+At 320dp/2x the confirmation body scrolls independently of its buttons; additional
+frames use actual scroll gestures to show the remaining audience/help disclosure.
+
 `apps/mobile/integration_test/prepare_member_contact_smoke.mjs` creates three real
 local OTP identities: a Group owner and two ordinary participants, Alice and Bob.
 They have no photos or delegated authority. All three origins are published

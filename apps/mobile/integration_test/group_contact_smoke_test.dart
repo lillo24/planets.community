@@ -464,7 +464,10 @@ void main() {
       findsNothing,
     );
     await shot('other-manager-metadata-en');
-    Future<String> createCoordination(String subject) async {
+    Future<String> createCoordination(
+      String subject, {
+      required String frameName,
+    }) async {
       final coordinator = await asPerson(alice, aliceToken);
       final coordinatorRouter = coordinator.read(appRouterProvider);
       coordinatorRouter.go(groupContactInfoRoute(chat));
@@ -491,7 +494,7 @@ void main() {
         'Only this fresh synthetic invitation is shared with the new audience.',
       );
       await hideKeyboard();
-      await shot('coordination-fresh-composer-en');
+      await shot(frameName);
       await tap('coordination-propose');
       await tap('coordination-confirm-dialog');
       await harness.waitUntil(
@@ -518,6 +521,7 @@ void main() {
 
     final declinedCoordination = await createCoordination(
       'Synthetic coordination decline',
+      frameName: 'coordination-decline-composer-en',
     );
     final coordinationDecliner = await asPerson(dave, daveToken);
     coordinationDecliner
@@ -536,6 +540,7 @@ void main() {
     await shot('coordination-declined-no-chat-en');
     final proposalId = await createCoordination(
       'Fresh fictional three-group coordination',
+      frameName: 'coordination-fresh-composer-en',
     );
     final invitee = await asPerson(dave, daveToken);
     final inviteeRouter = invitee.read(appRouterProvider);
