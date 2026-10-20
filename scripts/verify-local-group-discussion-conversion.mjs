@@ -720,6 +720,119 @@ try {
     ...expected(diana),
     ...key(),
   });
+
+  // End each domain independently after conversion. Removing Project membership
+  // must not erase frozen planning, nor expose later Project activity.
+  const [plannerMembership] =
+    await sql`select id from public.project_memberships
+    where project_id=${project}::uuid and participant_profile_id=${planner.id}::uuid
+      and left_at is null and removed_at is null`;
+  assert.ok(
+    plannerMembership,
+    "The explicit planner has current Project membership",
+  );
+  await rpc(publisher, "remove_project_member", {
+    p_expected_creator_profile_id: publisher.id,
+    p_membership_id: plannerMembership.id,
+  });
+  const afterProjectRemoval = await rpc(
+    planner,
+    "get_group_discussion_message_page_v2",
+    { ...expected(planner), p_room_id: room, p_limit: 2 },
+  );
+  equal(
+    afterProjectRemoval.items,
+    planningPage.items,
+    "Project removal preserves the independently authorized frozen source page",
+  );
+  equal(
+    (
+      await rpc(planner, "get_project_discussion_origin", {
+        ...expected(planner),
+        p_project_id: project,
+      })
+    ).room_id,
+    room,
+    "Retained Project history may still link independently authorized planning",
+  );
+  await denied(planner, "send_project_chat_message", {
+    ...expected(planner),
+    p_chat_id: chat.chat_id,
+    p_body: "Removed Project participant must not send.",
+  });
+  const laterProjectBody = "Project activity after the planner removal.";
+  await rpc(publisher, "send_project_chat_message", {
+    ...expected(publisher),
+    p_chat_id: chat.chat_id,
+    p_body: laterProjectBody,
+  });
+  const retainedProjectPage = await rpc(
+    planner,
+    "list_own_project_chat_messages",
+    {
+      ...expected(planner),
+      p_chat_id: chat.chat_id,
+      p_limit: 30,
+    },
+  );
+  equal(
+    retainedProjectPage.length,
+    3,
+    "Former Project history retains its exact pre-removal messages",
+  );
+  equal(
+    retainedProjectPage.some((message) => message.body === laterProjectBody),
+    false,
+    "Source rights never reveal Project messages after the independent exit",
+  );
+
+  // Canonical Group unpublication denies even retained source history. The
+  // actual Project author keeps separate Project rights and receives no origin.
+  const [{ version: groupVersion }] =
+    await sql`select version from private.community_groups
+    where id=${group}::uuid`;
+  await rpc(carlo, "set_group_publication_state", {
+    ...expected(carlo),
+    ...key(),
+    p_group_id: group,
+    p_expected_version: Number(groupVersion),
+    p_publication_state: "draft",
+  });
+  equal(
+    await rpc(publisher, "get_project_discussion_origin", {
+      ...expected(publisher),
+      p_project_id: project,
+    }),
+    null,
+    "Revoked source access removes the origin while Project access remains",
+  );
+  await denied(publisher, "get_group_discussion_message_page_v2", {
+    ...expected(publisher),
+    p_room_id: room,
+  });
+  const independentProjectBody =
+    "Project remains usable after source revocation.";
+  await rpc(publisher, "send_project_chat_message", {
+    ...expected(publisher),
+    p_chat_id: chat.chat_id,
+    p_body: independentProjectBody,
+  });
+  const independentProjectPage = await rpc(
+    publisher,
+    "list_own_project_chat_messages",
+    {
+      ...expected(publisher),
+      p_chat_id: chat.chat_id,
+      p_limit: 30,
+    },
+  );
+  equal(
+    independentProjectPage.some(
+      (message) => message.body === independentProjectBody,
+    ),
+    true,
+    "Source revocation does not revoke independent Project read/send rights",
+  );
   console.log(
     `Discussion conversion Auth verifier passed: ${checks} assertions.`,
   );

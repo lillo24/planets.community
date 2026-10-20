@@ -84,7 +84,14 @@ local Auth/OTP subjects on the explicitly selected loopback stack. It exercises
 member and Co-organizer publication denial, two competing publishers, recovery,
 old publisher APIs, attribution changes, archive, freeze, source-only audiences,
 exact zero membership/message counts and invitation replay. It never resets the
-stack or prints sessions. pgTAP `145_group_discussion_conversion.test.sql` checks
+stack or prints sessions. Post-conversion checks remove a Project member while
+preserving frozen planning, deny that former member later Project messages and
+sends, then unpublish the source Group while preserving the actual author's
+independent Project read/send rights and removing the private origin. Flutter
+`discussion_origin_navigation_test.dart` exercises revocation between rendering
+an origin entry and activating it, including explicit denial/Retry without
+leaving Project chat or fetching source history.
+pgTAP `145_group_discussion_conversion.test.sql` checks
 grants, private records, immutable receipts and the common publication trigger.
 Flutter `discussion_conversion_test.dart` replaces C04's disconnected-handoff
 tests because that shortcut is intentionally replaced by the reviewed workflow.
