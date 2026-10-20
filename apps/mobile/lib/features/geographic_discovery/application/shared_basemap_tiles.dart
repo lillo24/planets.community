@@ -326,23 +326,6 @@ class BasemapTileScope {
   }
 }
 
-bool validBasemapTilePng(Uint8List bytes) {
-  if (bytes.length < 45 || bytes.length > 262144) return false;
-  const header = [137, 80, 78, 71, 13, 10, 26, 10];
-  const size = [73, 72, 68, 82, 0, 0, 1, 0, 0, 0, 1, 0];
-  const end = [0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130];
-  for (var i = 0; i < header.length; i++) {
-    if (bytes[i] != header[i]) return false;
-  }
-  for (var i = 0; i < size.length; i++) {
-    if (bytes[12 + i] != size[i]) return false;
-  }
-  for (var i = 0; i < end.length; i++) {
-    if (bytes[bytes.length - end.length + i] != end[i]) return false;
-  }
-  return true;
-}
-
 final basemapCacheTtlProvider = Provider<Duration>(
   (ref) => const Duration(
     seconds: int.fromEnvironment('LOCATION_MAP_CACHE_SECONDS'),

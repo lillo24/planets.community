@@ -1,5 +1,10 @@
 # Repository scripts
 
+- `lib/verify-basemap-budget.mjs` extends the existing disposable local location
+  verifier with genuine Auth/service REST, a bounded Trento cost comparison,
+  cache-only/ceiling/ancestor checks and aggregate request counters. Its provider
+  is synthetic; it never consumes Geoapify credits or creates hosted users.
+
 - `verify-local-group-ideas.mjs` checks the revised General/Idea roles, full
   history, exact exit cutoffs and independent participation/oversight rights.
   `verify-local-group-ideas-upgrade.mjs` separately resets an explicitly disposable

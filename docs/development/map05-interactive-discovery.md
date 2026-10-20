@@ -1,5 +1,11 @@
 # MAP05 interactive public discovery
 
+With MAP-COST01's explicit client/server opt-in, public imagery can reuse the
+fixed Trento baseline and correctly cropped ancestors at the daily cap, while
+geographic queries remain independent. Other errors preserve their own refusal
+and retry contracts; a missing child retains valid neighboring pixels. See the
+[v2 cache, release and evidence runbook](map-cost01-trento-baseline.md).
+
 MAP05 adds one shared Flutter map route, `/discover/map/:origin`, reached through
 List/Map controls on Progetti, Tavoli and Scambio/Dona. MAP04's public
 `search_public_geography_v1` remains the only source of results and geometry.

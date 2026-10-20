@@ -1,5 +1,5 @@
 import { createMapProviderHandler } from "./handler.mjs";
-import { boundedJson } from "../location-search/provider.mjs";
+import { boundedJson, LocationFailure } from "../location-search/provider.mjs";
 
 const url = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -23,6 +23,8 @@ Deno.serve(
         "reserve_map_provider_v1",
         "finish_map_provider_v1",
         "resolve_map_center_v1",
+        "reserve_basemap_tile_v2",
+        "finish_basemap_tile_v2",
       ];
       if (!allowed.includes(name)) throw new Error("Invalid adapter operation");
       const response = await fetch(url + "/rest/v1/rpc/" + name, {
@@ -37,7 +39,12 @@ Deno.serve(
         redirect: "error",
       });
       const data = await boundedJson(response, 400000);
-      if (!response.ok) throw new Error("Map metering unavailable");
+      if (!response.ok) {
+        if (name === "reserve_basemap_tile_v2" && data?.code === "42501") {
+          throw new LocationFailure("unauthorized");
+        }
+        throw new Error("Map metering unavailable");
+      }
       return data;
     },
   }),

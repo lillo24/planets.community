@@ -43,8 +43,31 @@ void main() {
       ['apk', '999999999999999999999999999999999999999'],
       ['apk', '1', '--extra'],
       ['web', '1'],
+      ['--budget-basemap'],
+      ['--budget-basemap', 'debug-apk'],
+      ['debug-apk', '--budget-basemap', '--budget-basemap'],
     ]) {
       expect(() => mapLiveBuildArguments(args), throwsFormatException);
+    }
+  });
+  test('budget basemap is explicit for debug and signed targets', () {
+    for (final target in [
+      ['debug-apk'],
+      ['apk', '123'],
+      ['appbundle', '123'],
+    ]) {
+      final ordinary = mapLiveBuildArguments(target);
+      expect(
+        ordinary.any((arg) => arg.contains('LOCATION_BASEMAP_BUDGET_ENABLED')),
+        isFalse,
+      );
+      final enabled = mapLiveBuildArguments([...target, '--budget-basemap']);
+      expect(enabled.take(ordinary.length), ordinary);
+      expect(
+        enabled.last,
+        '--dart-define=LOCATION_BASEMAP_BUDGET_ENABLED=true',
+      );
+      expect(enabled.contains('--debug'), target.first == 'debug-apk');
     }
   });
 }

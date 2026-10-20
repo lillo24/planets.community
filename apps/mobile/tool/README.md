@@ -22,6 +22,10 @@ separate from runtime config.
   status, backend, package, mode and defines, excluding keys. Record the APK
   SHA-256 and signer alongside this manifest before handoff. The builder does
   not establish that a version code is unused or that live rendering passed.
+  Appending `--budget-basemap` explicitly selects MAP-COST01's v2 public path and
+  records `LOCATION_BASEMAP_BUDGET_ENABLED=true` in the manifest. Ordinary calls
+  keep v1. Use it only after matching server deployment/license gates are verified;
+  [MAP-COST01](../../../docs/development/map-cost01-trento-baseline.md) owns rollout.
 - `generate_italian_municipalities.py` uses Python 3's standard library to check
   the pinned ISTAT workbook SHA-256/schema/count, then extract only official
   municipality name aliases into a const Dart lookup. It invokes the repository's

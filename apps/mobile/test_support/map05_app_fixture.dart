@@ -5,6 +5,7 @@ import 'package:planets_mobile/core/theme/app_theme.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/geographic_discovery/data/geographic_discovery_gateway.dart';
 import 'package:planets_mobile/features/geographic_discovery/data/map_provider_gateway.dart';
+import 'package:planets_mobile/features/geographic_discovery/data/budget_basemap_gateway.dart';
 import 'package:planets_mobile/features/geographic_discovery/domain/map_discovery.dart';
 import 'package:planets_mobile/features/geographic_discovery/presentation/map_discovery_screen.dart';
 import 'package:planets_mobile/features/locations/data/location_preview_gateway.dart';
@@ -29,7 +30,7 @@ import 'map_discovery_fixture.dart';
 /// Actual List, Map and detail widgets behind synthetic gateways only.
 /// This harness is a test entrypoint, never imported by the shipping application.
 class Map05AppFixture {
-  Map05AppFixture({bool tilesEnabled = true})
+  Map05AppFixture({bool tilesEnabled = true, BudgetBasemapGateway? budget})
     : provider = FixtureMapProviderGateway(tilesEnabled: tilesEnabled) {
     proposals.publicItems = [proposalSummaryFixture(id: mapFixtureId(1))];
     proposals.publicDetail = proposalDetailFixture(id: mapFixtureId(1));
@@ -43,6 +44,10 @@ class Map05AppFixture {
       overrides: [
         geographicDiscoveryGatewayProvider.overrideWithValue(geography),
         mapProviderGatewayProvider.overrideWithValue(provider),
+        if (budget != null) ...[
+          budgetBasemapEnabledProvider.overrideWithValue(true),
+          budgetBasemapGatewayProvider.overrideWithValue(budget),
+        ],
         proposalGatewayProvider.overrideWithValue(proposals),
         recurringActivityGatewayProvider.overrideWithValue(tavoli),
         resourceListingGatewayProvider.overrideWithValue(resources),

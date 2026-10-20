@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { createMapProviderHandler } from "../../supabase/functions/map-provider/handler.mjs";
 import { mapCenterFixture, mapTileFixture } from "./map-provider-fixture.mjs";
+import { verifyBasemapBudget } from "./verify-basemap-budget.mjs";
 
 // Reached only through the existing explicit disposable/loopback verifier.
 export async function verifyMapDiscoveryProvider({
@@ -265,6 +266,7 @@ export async function verifyMapDiscoveryProvider({
       (await reserve(shared)).status === "disabled",
       "MAP05 account kill switch blocks existing ready or pending cache",
     );
+    await verifyBasemapBudget({ db, owner, peer, server, rpc, denied, check });
   } finally {
     await db`delete from private.map_provider_cache where cache_key=any(${keys})`;
     await db`update private.location_provider_config c set enabled=s.enabled,daily_units_limit=s.daily_units_limit,actor_daily_units=s.actor_daily_units,actor_minute_requests=s.actor_minute_requests,global_minute_requests=s.global_minute_requests,center_enabled=s.center_enabled,tiles_enabled=s.tiles_enabled,cache_license_approved=s.cache_license_approved,tile_cache_seconds=s.tile_cache_seconds,failure_streak=s.failure_streak,blocked_until=s.blocked_until from jsonb_populate_record(null::private.location_provider_config,${db.json(original)}::jsonb) s where c.singleton`;
