@@ -1,3 +1,4 @@
+import '../../group_discussions/presentation/discussion_group_conversations.dart';
 import '../../settings/application/activities_split_preference_controller.dart';
 import '../../group_projects/presentation/group_project_widgets.dart';
 
@@ -405,6 +406,10 @@ class _PublicRecurringActivityDetailScreenState
             ),
             const SizedBox(height: AppSpacing.large),
             ProjectGroupBadge(resolvedDetail.groupAttribution),
+            if (resolvedDetail.groupAttribution?.groupId != null)
+              GroupCommunicationEntry(
+                groupId: resolvedDetail.groupAttribution!.groupId!,
+              ),
             Row(
               children: [
                 Expanded(

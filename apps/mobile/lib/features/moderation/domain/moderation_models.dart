@@ -31,6 +31,7 @@ enum ModerationTargetKind {
   project('project'),
   proposalTemplate('proposal_template'),
   projectChatMessage('project_chat_message'),
+  groupDiscussionMessage('group_discussion_message'),
   resourceListing('resource_listing'),
   resourceRequest('resource_request'),
   resourceChatMessage('resource_chat_message');
@@ -45,6 +46,7 @@ enum ModerationTargetKind {
     'project' => ModerationTargetKind.project,
     'proposal_template' => ModerationTargetKind.proposalTemplate,
     'project_chat_message' => ModerationTargetKind.projectChatMessage,
+    'group_discussion_message' => ModerationTargetKind.groupDiscussionMessage,
     'resource_listing' => ModerationTargetKind.resourceListing,
     'resource_request' => ModerationTargetKind.resourceRequest,
     'resource_chat_message' => ModerationTargetKind.resourceChatMessage,

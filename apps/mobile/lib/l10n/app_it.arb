@@ -45,8 +45,13 @@
   "workshopDismiss": "Chiudi conferma",
   "workshopDestinationUnavailable": "Bozza non disponibile per questo account.",
   "skillPreviewHidden": "{count} altre competenze. Apri i dettagli per la lista completa.",
-  "@skillPreviewHidden": {"placeholders": {"count": {"type": "int"}}},
-
+  "@skillPreviewHidden": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "proposalNeedsManageTitle": "Gestisci competenze e risorse",
   "proposalResourcesCreatorOnly": "Solo il Creatore può gestire materiali, cronologia e corrispondenze. Qui sotto trovi le necessità pubbliche attuali.",
   "proposalSkillsSave": "Salva competenze",
@@ -69,7 +74,13 @@
   "organizationNoParticipantLink": "Nessun link partecipanti",
   "organizationRoleDetails": "Dettagli del ruolo",
   "organizationInvitationExpiry": "Scade il {date}",
-  "@organizationInvitationExpiry": {"placeholders": {"date": {"type": "String"}}},
+  "@organizationInvitationExpiry": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "organizationLinkHelp": "Informazioni sui link partecipanti",
   "organizationLinkActions": "Azioni del link",
   "organizationDirectAdmissionWarning": "Chiunque abbia il link può partecipare direttamente finché il Progetto accetta partecipanti e ci sono posti. Non viene assegnato un ruolo organizzativo.",
@@ -506,6 +517,7 @@
   "notificationsUnreadSemantics": "{count, plural, =1{Notifiche, 1 non letta} other{Notifiche, {count} non lette}}",
   "notificationsLoading": "Caricamento delle notifiche…",
   "notificationsEmptyTitle": "Nessuna notifica",
+  "notificationsOtherEmptyTitle": "Nessun'altra notifica",
   "notificationsEmptyMessage": "Gli avvisi di partecipazione appariranno qui quando ci saranno novità.",
   "notificationsMarkAllRead": "Segna tutte come lette",
   "notificationsSettingsTooltip": "Impostazioni delle notifiche",
@@ -548,7 +560,13 @@
   "settingsAppSection": "Generale",
   "settingsSandbox": "Sandbox",
   "settingsPersistentTab": "{destination} · Salvato sul dispositivo. Cambia la scheda in basso.",
-  "@settingsPersistentTab": {"placeholders": {"destination": {"type": "String"}}},
+  "@settingsPersistentTab": {
+    "placeholders": {
+      "destination": {
+        "type": "String"
+      }
+    }
+  },
   "settingsAccountSection": "Account",
   "settingsLanguage": "Lingua",
   "settingsLanguageSystem": "Predefinita di sistema",
@@ -1372,9 +1390,21 @@
   "projectOrganizerCapacityConflict": "Aumenta la capienza iscrizioni prima di conteggiare gli organizzatori.",
   "projectCapacityNotSet": "Capienza iscrizioni non impostata",
   "projectCapacityUpToParticipants": "Fino a {capacity} partecipanti",
-  "@projectCapacityUpToParticipants": { "placeholders": { "capacity": { "type": "int" } } },
+  "@projectCapacityUpToParticipants": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityLimit": "Capienza {capacity}",
-  "@projectCapacityLimit": { "placeholders": { "capacity": { "type": "int" } } },
+  "@projectCapacityLimit": {
+    "placeholders": {
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
   "projectCapacityUsage": "{used} / {capacity} posti utilizzati",
   "projectCapacityParticipantUsage": "{participants} / {capacity} posti partecipante utilizzati",
   "projectOrganizerIncludedCount": "{count} organizzatori inclusi",
@@ -1608,7 +1638,13 @@
   "proposalScheduleZone": "Orari mostrati in {zone}",
   "proposalDemoReplaceTitle": "Sostituire i dati inseriti?",
   "proposalDemoReplaceMessage": "I dati di esempio sostituiranno i valori inseriti. Nulla viene salvato finché non scegli di salvare o pubblicare.",
-  "@proposalScheduleZone": {"placeholders": {"zone": {"type": "String"}}},
+  "@proposalScheduleZone": {
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
   "locationManualEntryNotice": "La ricerca dei luoghi non è disponibile. Inserisci il luogo qui sotto.",
   "locationMapUnavailable": "Anteprima della mappa non disponibile. Usa le informazioni sul luogo qui sopra.",
   "locationRestrictedPreview": "Tutti vedono la zona indicativa pubblica. Le istruzioni precise sono disponibili solo agli organizzatori autorizzati e ai partecipanti attuali.",
@@ -1767,9 +1803,21 @@
   "mapCreate": "Crea annuncio",
   "mapOptions": "Area e filtri",
   "mapSearchReference": "Riferimento: {place} · non GPS",
-  "@mapSearchReference": {"placeholders": {"place": {"type": "String"}}},
+  "@mapSearchReference": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
   "mapAppliedFilters": "Filtri elenco ({count})",
-  "@mapAppliedFilters": {"placeholders": {"count": {"type": "int"}}},
+  "@mapAppliedFilters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "mapEditListFilters": "Modifica filtri in Elenco",
   "mapPublicReference": "Trento è il riferimento iniziale di ricerca, non la tua posizione. Scegli un altro centro o sposta la mappa.",
   "mapSearchPlace": "Scegli un luogo in Italia",
@@ -1918,7 +1966,13 @@
   "organizationRemoveWarning": "Rimuovere questa attività e le sue sottoattività?",
   "organizationReadOnly": "Questo Progetto è in sola lettura.",
   "organizationOfficialValue": "Attualmente pubblico: {value}",
-  "@organizationOfficialValue": {"placeholders": {"value": {"type": "String"}}},
+  "@organizationOfficialValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "organizationSuggestionOnly": "Area indicativa",
   "organizationCountry": "Paese (due lettere)",
   "organizationCountryEdit": "Cambia paese",
@@ -1983,7 +2037,14 @@
   "groupsManageError": "Impossibile verificare l’accesso del gestore. Riprova a caricare questa pagina.",
   "groupsLimit": "Massimo 120 caratteri Unicode.",
   "messageGroupCoverPlaceholder": "Nessuna copertina del gruppo per {title}",
-  "@messageGroupCoverPlaceholder": {"description": "Accessible empty/loading/unavailable group cover thumbnail.", "placeholders": {"title": {"type": "String"}}},
+  "@messageGroupCoverPlaceholder": {
+    "description": "Accessible empty/loading/unavailable group cover thumbnail.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "groupPeople": "Persone",
   "groupTeam": "Team",
   "groupRequests": "Richieste di partecipazione",
@@ -2123,6 +2184,124 @@
   "projectWorkspaceKeepEdits": "Mantieni le mie modifiche",
   "projectWorkspaceReloadLinks": "Ricarica i link",
   "projectWorkspaceReviewLatestBody": "Le tue modifiche vengono conservate. Controlla il link attuale prima di salvare di nuovo.",
+  "discussionTitle": "Generale e Idee",
+  "discussionCreate": "Avvia un’Idea",
+  "discussionName": "Titolo dell’Idea",
+  "discussionNoGroups": "Le cartelle dei Gruppi appaiono qui quando entri in un Gruppo o nella conversazione di un suo Progetto.",
+  "discussionNoRooms": "Nessuna Idea da mostrare.",
+  "discussionNoMessages": "Ancora nessun messaggio.",
+  "discussionInvitations": "Inviti alle Idee",
+  "discussionAccept": "Accetta l'invito",
+  "discussionDecline": "Rifiuta l'invito",
+  "discussionConsent": "Entrando vedrai tutti i messaggi precedenti dell’Idea. I responsabili attuali del Gruppo possono leggere e gestire ogni Idea. Uscendo conserverai solo i messaggi consentiti precedenti all’uscita, in sola lettura. La partecipazione al Progetto richiede un’azione separata.",
+  "discussionLeave": "Lascia l’Idea",
+  "discussionLeaveConfirm": "Conservi i messaggi consentiti fino all’uscita, in sola lettura. I messaggi successivi, i link attuali e le modifiche ai partecipanti non saranno più disponibili. Per rientrare serve una nuova azione esplicita.",
+  "discussionArchive": "Archivia l’Idea",
+  "discussionRestore": "Ripristina l’Idea",
+  "discussionRename": "Modifica l’Idea",
+  "discussionInvite": "Invita una persona del gruppo",
+  "discussionPeople": "Partecipanti all’Idea",
+  "discussionUnavailable": "Questa discussione non è disponibile.",
+  "discussionConflict": "Questa azione non è disponibile oppure la discussione è cambiata. Aggiorna prima di riprovare.",
+  "discussionArchived": "Questa azione non è attualmente disponibile. Aggiorna la discussione e il tuo profilo.",
+  "discussionInvalid": "Controlla il nome o il messaggio e riprova.",
+  "discussionLoadError": "Impossibile caricare la discussione.",
+  "discussionRetry": "Riprova",
+  "discussionLoadMore": "Carica altro",
+  "discussionSend": "Invia",
+  "discussionMessage": "Messaggio",
+  "discussionOlder": "Carica messaggi precedenti",
+  "discussionReadOnly": "Cronologia di pianificazione in sola lettura",
+  "discussionHistory": "Cronologia completa dell’Idea · Accessibile ai responsabili del Gruppo",
+  "discussionUncertain": "Impossibile confermare questa azione. Riprova la stessa azione prima di avviarne un’altra.",
+  "discussionAccountUnavailable": "Account non disponibile",
+  "discussionReport": "Segnala messaggio",
+  "discussionReportLabel": "Messaggio di una discussione del gruppo",
+  "discussionProjectChats": "Progetti",
+  "discussionExpanded": "Espanso",
+  "discussionCollapsed": "Compresso",
+  "discussionUnread": "{count, plural, =1{1 messaggio non letto} other{{count} messaggi non letti}}",
+  "discussionLatest": "Nuovi messaggi · mostra gli ultimi",
+  "discussionRemove": "Rimuovi dalla discussione",
+  "discussionSave": "Salva",
+  "discussionReviewLatest": "Controlla la versione attuale",
+  "discussionKeepEdits": "Mantieni le mie modifiche",
+  "discussionCancel": "Annulla",
+  "discussionWorkspace": "Workspace",
+  "discussionCreateProject": "Pubblicazione",
+  "@discussionUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "discussionLinksHistory": "I link attuali sono disponibili alle persone autorizzate del Gruppo o ai partecipanti all’Idea. La cronologia conservata non dà accesso ai link attuali.",
+  "discussionLinksEmpty": "Ancora nessun link condiviso.",
+  "discussionLinkPermissions": "Aprire un link non concede accesso presso il suo fornitore.",
+  "discussionPlanningHelp": "Un’Idea serve a proporre e pianificare nel Gruppo. Solo il Creatore o i Co-creatori possono pubblicare un Progetto per il Gruppo.",
+  "discussionCreationRestricted": "Questo Gruppo consente attualmente solo ai responsabili di avviare Idee.",
+  "discussionSettings": "Impostazioni delle Idee del Gruppo",
+  "discussionCreationHelp": "Cambiare questa impostazione non elimina le Idee esistenti né i diritti di gestione dei loro creatori.",
+  "discussionWhoCreates": "Chi può avviare Idee?",
+  "discussionManagersOnly": "Responsabili del Gruppo",
+  "discussionAllMembers": "Tutti i membri attuali del Gruppo",
+  "discussionSettingsAuthority": "Il Creatore e i Co-creatori del Gruppo gestiscono questa impostazione.",
+  "discussionGroupWorkspace": "Link e comunicazioni del Gruppo",
+  "discussionExternalHint": "Qui trovi gli spazi condivisi e gli eventuali link WhatsApp o Telegram. Aprire un link non ti iscrive automaticamente.",
+  "discussionPurpose": "Scopo · cosa pianifichiamo?",
+  "discussionAudience": "Visibilità",
+  "discussionGroupVisible": "Visibile al Gruppo",
+  "discussionInviteOnly": "Solo su invito + responsabili del Gruppo",
+  "discussionManagerDisclosure": "I responsabili attuali del Gruppo possono trovare, leggere e gestire questa Idea, anche se è solo su invito. Il creatore dell’Idea la gestisce finché è autorizzato.",
+  "discussionJoin": "Partecipa all’Idea",
+  "discussionJoinPreview": "Partecipa esplicitamente per leggere tutta la conversazione.",
+  "discussionFormerHistory": "La tua cronologia consentita fino all’uscita · sola lettura",
+  "discussionMute": "Silenzia gli avvisi dei messaggi",
+  "discussionUnmute": "Attiva gli avvisi dei messaggi",
+  "discussionHide": "Nascondi l’Idea",
+  "discussionUnhide": "Mostra l’Idea",
+  "discussionShowHidden": "Mostra le Idee nascoste",
+  "discussionHiddenHelp": "Le Idee inattive da circa sette giorni vengono nascoste automaticamente e riappaiono con nuove attività. Nascondere cambia solo la visibilità; avvisi e non letti restano separati. Generale resta visibile.",
+  "discussionHidden": "Nascosta",
+  "discussionQuiet": "Inattiva · nascosta automaticamente",
+  "discussionIdeaCreator": "Creatore dell’Idea",
+  "discussionNotices": "Attività delle Idee del Gruppo",
+  "discussionNoticeCreated": "Nuova Idea",
+  "discussionNoticeInvited": "Invito a un’Idea",
+  "discussionNoticeMessage": "Nuovo messaggio nell’Idea",
+  "discussionInviteLink": "Link d’invito all’Idea",
+  "discussionInviteLinkHelp": "Solo le persone attuali del Gruppo possono accettare. Condividere questo link non aggiunge nessuno al Gruppo o a un Progetto. I responsabili attuali possono sempre leggere l’Idea.",
+  "discussionLinkRotate": "Crea / sostituisci il link d’invito",
+  "discussionLinkRevoke": "Revoca il link d’invito",
+  "discussionLinkCopy": "Copia link",
+  "discussionLinkInvalid": "Questo link d’invito non è disponibile oppure devi prima entrare nel suo Gruppo.",
+  "discussionConversion": "Pubblicazione",
+  "discussionRequestPublication": "Richiedi pubblicazione",
+  "discussionConversionHelp": "Proponi un Progetto pubblico. Un Creatore o Co-creatore del Gruppo deve assumersi la responsabilità come autore effettivo. La pianificazione resta attiva fino alla pubblicazione.",
+  "discussionConversionTitle": "Titolo del Progetto",
+  "discussionConversionSummary": "Sintesi del Progetto",
+  "discussionConversionEndorse": "Approva la proposta",
+  "discussionConversionRevise": "Richiedi modifiche",
+  "discussionConversionDraft": "Crea la mia bozza privata di Progetto",
+  "discussionConversionResume": "Continua la mia bozza",
+  "discussionConversionOwned": "Questa proposta è collegata alla bozza privata del suo autore. Solo quell’autore può continuarla; i ruoli nel Gruppo non trasferiscono la proprietà della bozza.",
+  "discussionConversionPublished": "Pubblicata come Progetto",
+  "discussionConversionOpen": "Vedi il Progetto e chiedi di partecipare",
+  "discussionConversionChat": "Apri la conversazione del Progetto",
+  "discussionConversionHistory": "Cronologia di pianificazione",
+  "discussionConversionBoundary": "La pianificazione è in sola lettura. La partecipazione al Progetto richiede una richiesta separata. Solo chi ha accesso indipendente alla pianificazione può vedere questa cronologia.",
+  "discussionGeneral": "Generale",
+  "discussionNoProjectChats": "Nessuna conversazione di Progetto disponibile.",
+  "discussionProjectInvitation": "Invito a partecipare",
+  "discussionProjectInvitationHelp": "Apri il Progetto e invia una normale richiesta di partecipazione. Questo invito non riserva un posto e non ti iscrive.",
+  "discussionProjectInvitationDecline": "Rifiuta invito",
+  "discussionShareProjectLink": "Condividi il link selezionato con il Progetto",
+  "discussionShareProjectLinkHelp": "Questo aggiunge solo questo link allo spazio del Progetto, visibile ai partecipanti e gestori autorizzati. Non concede accesso al servizio esterno.",
+  "discussionShareProjectLinkDone": "Link condiviso con il Progetto",
+  "discussionGeneralHintDismiss": "Ho capito",
+  "discussionGeneralHintLoadFailed": "Non è stato possibile ripristinare questa preferenza del suggerimento. Riprova.",
+  "discussionGeneralHintSaveFailed": "Non è stato possibile salvare questa preferenza del suggerimento. Riprova.",
   "activitiesSplitSetting": "Modalità Progetti / Attività",
   "activitiesSplitHelp": "Separa Progetti e Attività, con attività di esempio. Solo su questo dispositivo.",
   "activitiesSplitRestoreError": "Non è stato possibile ripristinare questa impostazione. La modalità è disattivata. Riprova per salvarla.",

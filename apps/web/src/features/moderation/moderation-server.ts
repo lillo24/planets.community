@@ -1,4 +1,5 @@
 import "server-only";
+import { parseDiscussionEvidence } from "./discussion-evidence";
 import { parseGroupReview } from "./group-moderation-models";
 
 import { cache } from "react";
@@ -165,33 +166,46 @@ export async function readModerationCase(
     return { status: "ready", staffRole: access.role, detail };
   }
 
-  const [corroboration, counterstatement, templateResult, groupResult] =
-    await Promise.all([
-      detail.projectContextId
-        ? access.client.rpc("get_moderation_case_corroboration", {
-            p_expected_staff_profile_id: access.profileId,
-            p_case_id: caseId,
-          })
-        : Promise.resolve(null),
-      detail.resourceRequestContextId
-        ? access.client.rpc("get_moderation_case_counterstatement", {
-            p_expected_staff_profile_id: access.profileId,
-            p_case_id: caseId,
-          })
-        : Promise.resolve(null),
-      detail.targetKind === "proposal_template"
-        ? access.client.rpc("get_moderation_case_template", {
-            p_expected_staff_profile_id: access.profileId,
-            p_case_id: caseId,
-          })
-        : Promise.resolve(null),
-      detail.targetKind === "group"
-        ? access.client.rpc("get_moderation_case_group", {
-            p_expected_staff_profile_id: access.profileId,
-            p_case_id: caseId,
-          })
-        : Promise.resolve(null),
-    ]);
+  const [
+    corroboration,
+    counterstatement,
+    templateResult,
+    groupResult,
+    discussionResult,
+  ] = await Promise.all([
+    detail.projectContextId
+      ? access.client.rpc("get_moderation_case_corroboration", {
+          p_expected_staff_profile_id: access.profileId,
+          p_case_id: caseId,
+        })
+      : Promise.resolve(null),
+    detail.resourceRequestContextId
+      ? access.client.rpc("get_moderation_case_counterstatement", {
+          p_expected_staff_profile_id: access.profileId,
+          p_case_id: caseId,
+        })
+      : Promise.resolve(null),
+    detail.targetKind === "proposal_template"
+      ? access.client.rpc("get_moderation_case_template", {
+          p_expected_staff_profile_id: access.profileId,
+          p_case_id: caseId,
+        })
+      : Promise.resolve(null),
+    detail.targetKind === "group"
+      ? access.client.rpc("get_moderation_case_group", {
+          p_expected_staff_profile_id: access.profileId,
+          p_case_id: caseId,
+        })
+      : Promise.resolve(null),
+    detail.targetKind === "group_discussion_message"
+      ? access.client.rpc("get_moderation_case_group_discussion", {
+          p_expected_staff_profile_id: access.profileId,
+          p_case_id: caseId,
+        })
+      : Promise.resolve(null),
+  ]);
+  if (discussionResult?.error)
+    throw new Error("The discussion report evidence could not be loaded.");
   if (groupResult?.error)
     throw new Error("The group review could not be loaded.");
   if (corroboration?.error) {
@@ -258,6 +272,9 @@ export async function readModerationCase(
       template,
       templateBlueprints,
       templateNextNeedId,
+      discussion: discussionResult
+        ? parseDiscussionEvidence(discussionResult.data)
+        : null,
       templatePageStale,
       templateCoverUrl,
       corroboration: corroboration

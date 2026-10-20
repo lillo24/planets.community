@@ -5,6 +5,7 @@ This folder owns small backend-facing primitives shared across mobile features.
 - `supabase_backend.dart` exposes the configured Supabase client through Riverpod.
 - `owner_collection.dart` completes actor-bound Project/Tavolo/Resource owner RPC
   reads using 200-row UUID keyset pages below the configured 1,000-row API cap.
+  Transport order is explicitly ascending to match each `gt` continuation.
   Later failures/nonadvancing IDs fail the entire source. It restores existing
   created-time ordering afterward; feature gateways batch structural capacity
   reads in groups of at most 100 canonical IDs. No RPC/RLS contract changes.

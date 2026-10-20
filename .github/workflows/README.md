@@ -1,5 +1,22 @@
 # Validation workflow
 
+The revised C lane adds `group:ideas:upgrade:verify:local` before the final fresh
+reset and `group:ideas:verify:local` / `group:conversion:verify:local` after the
+existing discussion/link checks. The extra populated reset is required because
+the approved revision changes old C history and General access while preserving
+stored identities. The real-Auth checks cover these new authorization paths and
+atomic conversion/opt-in membership. All three also run in `check:db`; they add
+no job, provider call or trigger. Shared workflow edits still select all areas.
+
+C01 adds `group:discussions:upgrade:verify:local` before clean replay and
+`group:discussions:verify:local` after Group Project verification. The populated
+check reuses bounded fictional producers, preserves every original public/private
+column and row, and checks repeated additive application. The HTTP check observes
+actual Group-lock waits and tests private admission/history/read/report rules.
+Both also run in `check:db`. This authorization-sensitive upgrade adds one local
+predecessor reset/fixture pass; area classification, required-status aggregation,
+the 25-minute Database budget and main-push behavior remain unchanged.
+
 `validation.yml` classifies the complete PR diff using
 `scripts/classify-validation-paths.mjs` and runs affected Database, Web, Site and
 Mobile jobs. Workflow/root-tooling changes select every area. Manual dispatch
@@ -93,6 +110,12 @@ Changes to shared package/workflow configuration select all four areas for this
 PR. No recurring deployment or hosted database job is introduced.
 
 # MAP01 location validation
+
+C03 adds the room-owned named-link Auth verifier after discussion checks in the
+same database job and full `check:db`. It runs against the disposable local stack
+with fictional OTP actors and makes no external provider requests. The existing
+classification, required-status aggregation and manual complete-suite entry stay
+in place; shared package/workflow edits select all affected areas.
 
 Database validation includes the authenticated location receipt/concurrency
 verifier after pgTAP. It injects synthetic provider-shaped geocoding data and

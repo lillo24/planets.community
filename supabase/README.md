@@ -1,5 +1,14 @@
 # Supabase database
 
+The revised C lane adds one automatic General room per eligible Group, explicit
+Ideas, independent oversight/history scopes, Group and Idea link collections and
+reviewed public Project conversion. See the [approved contract](../docs/development/group-ideas-revision.md),
+[core API](../docs/development/group-ideas-core-revision.md) and
+[conversion API](../docs/development/group-discussion-conversion.md). Forward
+migrations preserve old C identities; tests `143`–`145` and the corresponding
+real-Auth/upgrade verifiers cover the revised policy. General's existing private
+link collection is the Group-wide workspace; it is never a Project collection.
+
 GRP01 adds private group identity/authority/receipts/suppression actions, narrow
 public/manager/staff RPCs and a genuine target in the existing reporting queue.
 See the [group contract](../docs/development/persistent-groups.md),
