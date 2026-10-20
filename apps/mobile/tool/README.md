@@ -16,6 +16,12 @@ separate from runtime config.
   and staging editor search. Check current Play history before choosing the code.
   It builds only; it never installs, uploads or publishes. See
   [MAP-LIVE01](../../../docs/development/map-live01-android-activation.md).
+  `debug-apk` uses the same validated staging configuration and map flags for
+  an owned emulator, without upload signing or a Play version code. A successful
+  build writes `build/map-live-staging/manifest.json` with source commit/dirty
+  status, backend, package, mode and defines, excluding keys. Record the APK
+  SHA-256 and signer alongside this manifest before handoff. The builder does
+  not establish that a version code is unused or that live rendering passed.
 - `generate_italian_municipalities.py` uses Python 3's standard library to check
   the pinned ISTAT workbook SHA-256/schema/count, then extract only official
   municipality name aliases into a const Dart lookup. It invokes the repository's
