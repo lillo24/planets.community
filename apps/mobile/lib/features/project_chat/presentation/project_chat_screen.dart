@@ -236,15 +236,19 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
               !belongs ||
                   (state.phase == ProjectChatDetailPhase.loading &&
                       feedItems.isEmpty)
-              ? LoadingState(message: l10n.projectChatLoading)
+              ? _ProjectScrollableState(
+                  child: LoadingState(message: l10n.projectChatLoading),
+                )
               : state.phase == ProjectChatDetailPhase.failure &&
                     feedItems.isEmpty
-              ? ErrorState(
-                  message: projectChatFailureMessage(l10n, state.failure!),
-                  onRetry: _load,
+              ? _ProjectScrollableState(
+                  child: ErrorState(
+                    message: projectChatFailureMessage(l10n, state.failure!),
+                    onRetry: _load,
+                  ),
                 )
-              : Column(
-                  children: [
+              : _ProjectConversationLayout(
+                  contextChildren: [
                     if (summary != null && _expectedProfileId != null)
                       DiscussionProjectOrigin(
                         actor: _expectedProfileId,
@@ -324,91 +328,151 @@ class _ProjectChatScreenState extends ConsumerState<ProjectChatScreen>
                           ),
                         ),
                       ),
-                    Expanded(
-                      child: RefreshIndicator(
-                        onRefresh: _refresh,
-                        child: feedItems.isEmpty
-                            ? LayoutBuilder(
-                                builder: (context, constraints) =>
-                                    SingleChildScrollView(
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(),
-                                      child: SizedBox(
-                                        height: constraints.maxHeight,
-                                        child: EmptyState(
-                                          title: l10n.projectChatEmptyTitle,
-                                          message: l10n.projectChatEmptyMessage,
-                                          icon: Icons.forum_outlined,
+                  ],
+                  history: RefreshIndicator(
+                    onRefresh: _refresh,
+                    child: feedItems.isEmpty
+                        ? _ProjectScrollableState(
+                            key: const Key('project-chat-empty-history'),
+                            child: EmptyState(
+                              title: l10n.projectChatEmptyTitle,
+                              message: l10n.projectChatEmptyMessage,
+                              icon: Icons.forum_outlined,
+                            ),
+                          )
+                        : ConversationHistoryList<ProjectChatFeedItem>(
+                            key: const Key('project-chat-history'),
+                            controller: _scrollController,
+                            items: feedItems,
+                            itemKey: (item) => item.canonicalKey,
+                            itemBuilder: (context, item) => switch (item) {
+                              ProjectChatHumanMessage message => _MessageBubble(
+                                message: message,
+                                isMine:
+                                    message.senderProfileId ==
+                                    _expectedProfileId,
+                                onReport:
+                                    message.senderProfileId ==
+                                        _expectedProfileId
+                                    ? null
+                                    : () => ModerationRoutes.openReport(
+                                        context,
+                                        projectMessageReportTarget(
+                                          message.itemId,
+                                          l10n.moderationProjectMessageTarget,
                                         ),
                                       ),
-                                    ),
-                              )
-                            : ConversationHistoryList<ProjectChatFeedItem>(
-                                key: const Key('project-chat-history'),
-                                controller: _scrollController,
-                                items: feedItems,
-                                itemKey: (item) => item.canonicalKey,
-                                itemBuilder: (context, item) => switch (item) {
-                                  ProjectChatHumanMessage message =>
-                                    _MessageBubble(
-                                      message: message,
-                                      isMine:
-                                          message.senderProfileId ==
-                                          _expectedProfileId,
-                                      onReport:
-                                          message.senderProfileId ==
-                                              _expectedProfileId
-                                          ? null
-                                          : () => ModerationRoutes.openReport(
-                                              context,
-                                              projectMessageReportTarget(
-                                                message.itemId,
-                                                l10n.moderationProjectMessageTarget,
-                                              ),
-                                            ),
-                                    ),
-                                  ProjectChatRequirementNeededAgain event =>
-                                    _RequirementNeededAgainCard(event: event),
-                                },
-                                enabled:
-                                    belongs &&
-                                    summary != null &&
-                                    _hasExpectedIdentity,
-                                hasMore: state.hasMoreOlder,
-                                loading: state.isLoadingOlder,
-                                failed: state.failure != null,
-                                onLoadOlder: _loadOlder,
-                                fallbackLabel: l10n.projectChatLoadOlder,
-                                buttonKey: const Key('project-chat-load-older'),
-                                empty: const SizedBox.shrink(),
                               ),
-                      ),
-                    ),
-                    if (summary?.hasCurrentEntitlement == true)
-                      _Composer(
-                        controller: _composer,
-                        isSending: state.isSending,
-                        onSend: _send,
-                      )
-                    else if (summary != null)
-                      Semantics(
-                        liveRegion: true,
-                        child: Container(
-                          key: const Key('project-chat-read-only'),
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(AppSpacing.medium),
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                          child: Text(l10n.projectChatReadOnlyNotice),
-                        ),
-                      ),
-                  ],
+                              ProjectChatRequirementNeededAgain event =>
+                                _RequirementNeededAgainCard(event: event),
+                            },
+                            enabled:
+                                belongs &&
+                                summary != null &&
+                                _hasExpectedIdentity,
+                            hasMore: state.hasMoreOlder,
+                            loading: state.isLoadingOlder,
+                            failed: state.failure != null,
+                            onLoadOlder: _loadOlder,
+                            fallbackLabel: l10n.projectChatLoadOlder,
+                            buttonKey: const Key('project-chat-load-older'),
+                            empty: const SizedBox.shrink(),
+                          ),
+                  ),
+                  footer: summary?.hasCurrentEntitlement == true
+                      ? _Composer(
+                          controller: _composer,
+                          isSending: state.isSending,
+                          onSend: _send,
+                        )
+                      : summary != null
+                      ? Semantics(
+                          liveRegion: true,
+                          child: Container(
+                            key: const Key('project-chat-read-only'),
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(AppSpacing.medium),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            child: Text(l10n.projectChatReadOnlyNotice),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                 ),
         ),
       ),
     );
   }
+}
+
+/// Center short states, but let their full copy and Retry scroll when the
+/// history/body is shorter than the state at the selected text size.
+class _ProjectScrollableState extends StatelessWidget {
+  const _ProjectScrollableState({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      primary: false,
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+        child: child,
+      ),
+    ),
+  );
+}
+
+/// Context and the composer grow at accessibility sizes, but never consume all
+/// of the actual body left by the toolbar, navigation and keyboard. Their own
+/// scroll positions are independent of the history controller used for ACK.
+class _ProjectConversationLayout extends StatelessWidget {
+  const _ProjectConversationLayout({
+    required this.contextChildren,
+    required this.history,
+    required this.footer,
+  });
+
+  final List<Widget> contextChildren;
+  final Widget history, footer;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, available) => Column(
+      children: [
+        ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: available.maxHeight * .4),
+          child: SingleChildScrollView(
+            key: const Key('project-chat-context-scroll'),
+            primary: false,
+            child: Column(children: contextChildren),
+          ),
+        ),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, remaining) => Column(
+              children: [
+                Expanded(child: history),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: remaining.maxHeight * .6,
+                  ),
+                  child: SingleChildScrollView(
+                    key: const Key('project-chat-composer-scroll'),
+                    primary: false,
+                    child: footer,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _MessageBubble extends StatelessWidget {
@@ -570,12 +634,9 @@ class _Composer extends StatelessWidget {
       key: const Key('project-chat-composer-bar'),
       elevation: 4,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.small,
-          AppSpacing.small,
-          AppSpacing.small,
-          AppSpacing.small + MediaQuery.viewInsetsOf(context).bottom,
-        ),
+        // Scaffold already removes the keyboard inset from the body. Adding it
+        // again here would displace the editor inside its bounded scroll area.
+        padding: const EdgeInsets.all(AppSpacing.small),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
