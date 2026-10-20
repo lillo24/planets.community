@@ -1,10 +1,12 @@
 # MAP-LIVE02 execution evidence
 
-Execution starts at main `89292af4` on 20 October 2026. Live acceptance remains
-pending an ordinary owner-controlled staging login. No authenticated provider
-response or painted real mobile imagery has yet been established by this run.
+Initial execution starts at main `89292af4` on 20 October 2026. The subsequent
+authorized [staging map rollout](map-staging-rollout.md) deployed map-provider v5,
+applied MAP-COST01 and enabled its seven-day baseline. Authenticated provider
+responses and painted real mobile imagery remain pending an ordinary staging
+session; backend deployment is complete and the baseline is not yet populated.
 
-## Verified layers
+## Initial execution's verified layers
 
 - Read-only management access confirms `planets-staging`,
   `cllpvruvrrvxczjitlqd`, ACTIVE_HEALTHY, Postgres 17.
@@ -67,10 +69,11 @@ Use the journey and bounded quota procedure in the
 Still pending: authenticated tile/city requests, decoded and painted Geoapify
 imagery, real navigation/filter/detail and guest/lifecycle screenshots, measured
 client/Edge/upstream deltas, physical Android/iOS QA and signed distribution.
-No hosted migration/function/configuration change, Play action or quota increase
-is authorized or performed by this execution. Full live acceptance must not be
-inferred from this source change or the public-search success.
+The initial MAP-LIVE02 execution made no hosted changes, Play action or quota
+increase. The later explicitly authorized backend deployment is documented
+separately above. Full live acceptance must not be inferred from a source merge,
+backend deployment or public-search success.
 
-MAP-COST01 may proceed after this PR merges against the stable existing map
-contract while external login evidence is missing. Any subsequently demonstrated
-authorization/API defect stops dependent activation until resolved.
+MAP-COST01 merged as PR #271 against the stable existing map contract; the
+subsequent staging rollout is complete. Any demonstrated authorization/API defect
+stops the affected rollout or acceptance step until resolved.

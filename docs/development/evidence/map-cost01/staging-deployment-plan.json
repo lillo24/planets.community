@@ -1,6 +1,8 @@
 {
   "prepared_at": "2026-10-20",
-  "state": "prepared_not_deployed",
+  "state": "deployed_verified_enabled_not_populated",
+  "execution_record": "hosted-rollout.json",
+  "baseline_note": "already_applied preserves the 96-entry pre-rollout snapshot; current staging has 97 canonical migrations.",
   "source_base": "34786524f440521cb03586eac73cd3de8683e7cf",
   "target_project": "cllpvruvrrvxczjitlqd",
   "target_name": "planets-staging",
