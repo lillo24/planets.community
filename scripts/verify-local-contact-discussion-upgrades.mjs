@@ -329,14 +329,22 @@ async function mixedChecks(sql) {
   );
   const [before] =
     await sql`select count(*) count from private.moderation_reports`;
+  // Several target kinds can share a reporter. Reuse its genuine session rather
+  // than request back-to-back OTPs against the configured one-second interval.
+  const sessions = new Map();
   for (const report of reports) {
     assert.match(report.email, /^[a-z0-9-]+@planets\.invalid$/);
-    const actor = await signInLocalOtpUser({
-      ...status,
-      mailpitUrl,
-      email: report.email,
-      verifierName: "C/D populated upgrade",
-    });
+    let actor = sessions.get(report.email);
+    if (!actor) {
+      actor = await signInLocalOtpUser({
+        ...status,
+        mailpitUrl,
+        email: report.email,
+        verifierName: "C/D populated upgrade",
+        shouldCreateUser: false,
+      });
+      sessions.set(report.email, actor);
+    }
     assert.equal(actor.id, report.reporter_profile_id);
     try {
       const call = async (name, args = {}) => {
