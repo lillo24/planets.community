@@ -15,8 +15,10 @@ PNG/name/byte-count match so a repeated name cannot silently overwrite evidence.
 Review the artifact head and actual images before claiming native
 qualification. The workflow does not replace any existing required check.
 
-The C/D integration adds `contact:discussions:upgrade:verify:local` before the
-ordinary fresh replay. It validates the two actual independently populated
+The C/D integration runs `contact:discussions:upgrade:verify:local` first after
+startup, before the older upgrade gates and ordinary fresh replay. Every older
+gate resets its own predecessor; failing the new rehearsal early avoids redundant
+replays without removing any check. It validates the two actual independently populated
 histories, not a merged timestamp cutoff. Database checkout retains history so
 the verifier can read the immutable predecessor inventories. The Database timeout
 is now 40 minutes

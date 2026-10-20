@@ -150,6 +150,11 @@ jobs:
       - name: Start local Supabase
         run: npm run db:start
 
+      # Each subsequent historical gate resets its own predecessor. Run the
+      # new integration rehearsal first so its failures avoid redundant replays.
+      - name: Verify both exact populated C and D histories
+        run: npm run contact:discussions:upgrade:verify:local
+
       - name: Verify populated participation conversation upgrade and cached delegate privacy
         run: npm run participation:conversations:upgrade:verify:local
 
@@ -179,9 +184,6 @@ jobs:
 
       - name: Verify populated old C to General and Ideas revision
         run: npm run group:ideas:upgrade:verify:local
-
-      - name: Verify both exact populated C and D histories
-        run: npm run contact:discussions:upgrade:verify:local
 
       - name: Replay migrations and seed from zero
         run: npm run db:reset
