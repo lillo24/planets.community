@@ -2,9 +2,11 @@
 
 C merged at `89292af4b084dc2bbd9748797227531b13abe8cc`. D's independent
 published predecessor is `9ea6ca3fa332ead763f98f5d19c7a7d63872748b`.
-Integration does not approve the unresolved member lifetime/history policy or
-authorize hosted database or store deployment. The cumulative PR remains its
-source/validation/decision record.
+The founder approved policies 1/2 on 19 October and the scoped member policy 3 on
+20 October 2026. Cumulative [PR #254](https://github.com/lillo24/planets.community/pull/254)
+merged as `db21460b` after full combined and Android qualification. See the
+[decision ledger and final results](group-contact-parallel-handoff.md#decision-ledger).
+Hosted database and store deployment remain unauthorized.
 
 ## Shared owners
 

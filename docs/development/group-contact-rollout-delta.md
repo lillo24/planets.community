@@ -1,9 +1,9 @@
 # Batch D review and distribution delta
 
-**Representative policies 1 and 2 approved; member policy 3 remains pending.**
+**Representative policies 1/2 and scoped member policy 3 are approved.**
 The [current revision ledger](group-contact-parallel-handoff.md#decision-ledger)
-records the human's 19 October 2026 approval and cumulative merge gates. Hosted
-database and Play Store deployment are explicitly unauthorized. The following
+records the human's 19/20 October 2026 approvals and completed cumulative merge.
+Hosted database and Play Store deployment are explicitly unauthorized. The following
 changes still need distribution/privacy/store review before shipping; source
 approval does not silently replace existing legal terms.
 
@@ -15,14 +15,14 @@ the accepting representative enter bilateral history. Other managers see minimal
 resolved metadata; neither group membership nor Project authority is granted.
 Representatives can Block and report received contact content.
 
-The D/M revision also proposes named personal contact from canonical Group People.
+The D/M revision adds approved named personal contact from canonical Group People.
 The selected origin Group and optional introduction are shared only with the
 named recipient. Acceptance creates an explicitly consented episode for that
-pair and Group; managers have no triage or conversation oversight. The synthetic
-candidate stops sending/notices when either loses their last qualifying origin
+pair and Group; managers have no triage or conversation oversight. The approved
+policy stops sending/notices when either loses their last qualifying origin
 relationship and retains pre-end history read-only. Rejoin, Close or Leave does
-not silently revive consent. This personal lifetime/history choice is separately
-pending in the [revision ledger](group-contact-parallel-handoff.md).
+not silently revive consent. The separate personal lifetime/history approval is
+recorded in the [revision ledger](group-contact-parallel-handoff.md).
 
 Coordination shares a fresh note and initiator identity with the two original
 representatives and invited groups' eligible managers. Claimants explicitly share
@@ -33,8 +33,8 @@ all-party consent and the fresh room. Targeting groups already managed by an
 original person remains excluded by the existing canonical eligibility rule.
 Earlier private history/source context is never inherited.
 
-Current live grant episodes govern history/preview/read tokens. Revocation and
-own leave end access; regrant does not restore it. Lifecycle suspension permits
+For representative contact, current live grant episodes govern history/preview/read
+tokens. Revocation and own leave end access; regrant does not restore it. Lifecycle suspension permits
 read-only history for still-valid admissions. Close is terminal and requires
 current admission; a former participant retains safe own leave/report/recovery.
 Changes in these expectations need accurate user-facing explanations and review
@@ -74,10 +74,10 @@ escalation and appeals under the existing product policy decisions.
 
 ## Release boundary
 
-Review the concrete staged UI, D00 decisions and final native/schema evidence.
-Keep every stage and the cumulative integration PR draft until the required
-approval reference and qualification are present. Client flags cannot activate or
-approve this policy. No hosted database, real users, email/contact delivery,
-provider billing, signing, Play/iOS application or production resource was used
+Required policy approvals and final native/schema qualification are recorded in
+the current handoff; cumulative PR #254 is merged. The earlier stage PRs are
+historical review artifacts, not independent merge candidates. Client flags
+cannot approve a product policy. No hosted database, real users, email/contact
+delivery, provider billing, signing, Play/iOS application or production resource was used
 to authorize the source implementation. Production/app-store rollout is a
 separate account-owner action after this source review gate.

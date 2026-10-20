@@ -2,7 +2,9 @@
 
 Status: representative policies 1 and 2 approved by the human on 19 October 2026;
 see the [current decision ledger](group-contact-parallel-handoff.md#decision-ledger).
-Final native/source qualification and the separate member policy remain gates.
+The separate scoped member policy 3 was approved on 20 October. Full combined
+CI and complete D/M Android qualification passed; PR #254 merged as `db21460b`.
+See the handoff's final qualification; stage snapshots below remain historical.
 The contract and backend are documented in `group-contact-contract.md` and
 `group-contact-backend.md`; no deployment is authorized.
 
@@ -169,7 +171,8 @@ EN and IT 320dp/2x composer, audience and denied frames must be inspected after
 the **entire** driver exits successfully. An intermediate checkpoint or static
 analysis pass does not qualify the native journey. Do not hot restart an active
 integration driver; `--no-dds` follows the repository's Windows native harness
-configuration. The candidate privacy contract remains review-only.
+configuration. All three product policies are approved in the current ledger;
+deployment remains a separate decision.
 
 The private compile-time file lives outside the checkout and must be removed after
 QA. No tokens appear in test logs or committed evidence. Default local ports are
@@ -201,7 +204,7 @@ OTP/PostgREST verifier passed 62 checks with the D02 schema. Web generated types
 passed typechecking. D02 required CI subsequently passed on `a1bf9f9`; D03 and
 the cumulative runtime/schema checks also passed. See the
 [final integration evidence](group-contact-integration-evidence.md) for exact heads
-and the remaining whole native journey blocker.
+and the later completed whole native journeys.
 
 Native debugging exercised submission, exact lost-response recovery, manager
 triage, acceptance, human messages, audience, revocation and protected reporting.

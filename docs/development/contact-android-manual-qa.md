@@ -3,11 +3,12 @@
 This procedure is for the founder and the local QA operator reviewing synthetic
 representative contact (D), three-Group coordination, and member contact (M).
 Representative audience/history and coordination policies 1 and 2 were approved
-by the founder on 19 October 2026. Member policy 3 (origin lifetime and retained
-history) remains **provisional** pending that separate decision in the
-[current ledger](group-contact-parallel-handoff.md#decision-ledger). Completing
-this review does not approve an unresolved product policy or authorize hosted
-database changes or Play Store deployment.
+by the founder on 19 October 2026. The scoped member policy 3 (origin lifetime and
+retained authorized episode history) was approved on 20 October in the
+[current ledger](group-contact-parallel-handoff.md#decision-ledger). The missing
+automated Android journey is complete; this remains a safe optional manual
+procedure. Neither source approval nor testing authorizes hosted database changes
+or Play Store deployment.
 
 The manual app uses `lib/main.dart` and real email OTP sign-in. An APK built from
 `integration_test/group_contact_smoke_test.dart` or
@@ -244,12 +245,12 @@ the committed-request and final-consent lost-response cases, including its
 same-action confirm/recover counters; do not describe a normal successful submit
 as recovery evidence. Do not change clocks, tokens or cooldowns to induce it.
 
-## M: three provisional origin-lifetime journeys
+## M: three approved origin-lifetime journeys
 
 The M owner manages three separate Groups. M Alice and M Bob are ordinary
 participants in each, without authority or photos. Review their actual names and
-the origin Group on every sheet. These candidate lifetime rules are review
-questions, not founder-approved policy.
+the origin Group on every sheet. These lifetime/history rules implement the
+explicitly approved policy 3; they do not define a legal retention period.
 
 1. **Garden / Close.** As Alice, open Garden → People → Bob → **Request
    conversation**. Inspect the shared-Group origin, two-person privacy and optional
