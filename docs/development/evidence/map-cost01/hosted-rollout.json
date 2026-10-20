@@ -1,0 +1,492 @@
+{
+  "executed_at": "2026-10-20T18:35:27.423493+00:00",
+  "state": "deployed_verified_enabled_not_populated",
+  "project": {
+    "name": "planets-staging",
+    "ref": "cllpvruvrrvxczjitlqd",
+    "status": "ACTIVE_HEALTHY"
+  },
+  "source_commit": "93414af566d51c7cf01176c2b7229420e34eed31",
+  "authorization": "Explicit owner staging-map rollout authorization on 2026-10-20, including seven-day public baseline retention and license approval.",
+  "execution_route": "Authenticated connected Supabase management tools. Pinned CLI 2.118.0-beta.39 scoped dry run stopped with AccessTokenRequiredError; no new credentials were created.",
+  "migration": {
+    "version": "20261020150706",
+    "name": "map_cost01_public_trento_baseline",
+    "file_sha256": "549b44da10c304a38884c5aa4686bfc1d07050f631ec04a250b83a3298ef132d",
+    "history_before": 96,
+    "history_after": 97,
+    "previous_history_digest_before": "b6e5df757d6b5428f22e37a84d433edf",
+    "previous_history_digest_after": "b6e5df757d6b5428f22e37a84d433edf",
+    "canonical_sql_executed_before_history_insert": true,
+    "api_wrapper": {
+      "version": "20261020183010",
+      "name": "map_cost01_staging_rollout_20261020",
+      "md5": "d160f24b1680f6596e0f4e1bf5553041",
+      "sha256": "7a7fc57e46e73d14c0858cff0ad8fe82a1be91eda77fe7eadb1dc076db9cbd86",
+      "removed_after_exact_hash_and_canonical_history_verification": true
+    }
+  },
+  "function": {
+    "id": "c5ec25e0-944c-45ee-a874-014e6fb11c10",
+    "name": "map-provider",
+    "before": {
+      "version": 4,
+      "verify_jwt": true,
+      "bundle_sha256": "5913243256db421da6fb82cd71f5a19fc5e0550dd09dc5f8d8c731171ebaf23b"
+    },
+    "after": {
+      "version": 5,
+      "verify_jwt": true,
+      "status": "ACTIVE",
+      "bundle_sha256": "afbba54efcce958ac5416d5e0eb9a9874827da7a931886d8d3181e917fc8b7b3"
+    },
+    "readback_exact_matches": 5,
+    "files": [
+      {
+        "name": "supabase/functions/map-provider/index.ts",
+        "sha256": "58aed220cb7e1e9a0cea4827611ae2f4d73f01e094c998839a124361a5aa5571"
+      },
+      {
+        "name": "supabase/functions/map-provider/handler.mjs",
+        "sha256": "b2d8c21b2ffc2307f97973fe1f5f3cbf25233b83b52951f2177a2f2c7005035f"
+      },
+      {
+        "name": "supabase/functions/map-provider/provider.mjs",
+        "sha256": "7621c2352742702da6729d8e607f2e57234dac9e5b05327acb8c146299bf8e65"
+      },
+      {
+        "name": "supabase/functions/map-provider/basemap.mjs",
+        "sha256": "163f0150162e364184fb3505f15d5a55a5ec058df383232fa9c70e41a3f60841"
+      },
+      {
+        "name": "supabase/functions/location-search/provider.mjs",
+        "sha256": "dce9359a044cebb40d8370d1d5b5d7cf23e5f67305b841b8a3d2e0abfd4d0e8a"
+      }
+    ]
+  },
+  "unchanged_functions": [
+    {
+      "name": "location-search",
+      "version": 5,
+      "verify_jwt": true
+    },
+    {
+      "name": "location-preview",
+      "version": 4,
+      "verify_jwt": false
+    }
+  ],
+  "baseline": {
+    "enabled": true,
+    "revision": 1,
+    "singleton": true,
+    "license_approved": true,
+    "retention_seconds": 604800,
+    "zoom": 12,
+    "x": [2173, 2175],
+    "y": [1454, 1457],
+    "max_tiles": 12,
+    "max_compressed_bytes": 3145728,
+    "populated": false,
+    "population": {
+      "rows": 0,
+      "ready": 0,
+      "compressed_bytes": 0
+    }
+  },
+  "starting_configuration": {
+    "routines": [
+      {
+        "acl": "{postgres=X/postgres,service_role=X/postgres}",
+        "name": "finish_map_provider_v1",
+        "identity": "p_cache_key text, p_token uuid, p_centers jsonb, p_image_base64 text",
+        "definition_md5": "d48bb515786a77814596ba567f152264"
+      },
+      {
+        "acl": "{postgres=X/postgres}",
+        "name": "reserve_location_provider_v1",
+        "identity": "p_consumer text, p_actor uuid, p_charge boolean",
+        "definition_md5": "19fa4a8750307cfec70888ec8aee2c5f"
+      },
+      {
+        "acl": "{postgres=X/postgres,service_role=X/postgres}",
+        "name": "reserve_map_provider_v1",
+        "identity": "p_actor uuid, p_kind text, p_cache_key text",
+        "definition_md5": "1b5a4ffae5b8a2336886b3bd0b9cf250"
+      },
+      {
+        "acl": "{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres}",
+        "name": "search_public_geography_v1",
+        "identity": "p_query jsonb, p_limit integer, p_cursor jsonb",
+        "definition_md5": "d0fd63712b5e097f81e80c1879910d94"
+      }
+    ],
+    "map_config": {
+      "enabled": true,
+      "singleton": true,
+      "blocked_until": null,
+      "tiles_enabled": true,
+      "center_enabled": true,
+      "failure_streak": 0,
+      "actor_daily_units": 8000,
+      "daily_units_limit": 8000,
+      "tile_cache_seconds": 60,
+      "actor_minute_requests": 30,
+      "cache_license_approved": true,
+      "global_minute_requests": 120
+    },
+    "daily_usage": [],
+    "server_time": "2026-10-20T18:26:37.72976+00:00",
+    "history_count": 96,
+    "search_config": {
+      "enabled": true,
+      "singleton": true,
+      "actor_daily": 80,
+      "actor_minute": 10,
+      "global_daily": 1000
+    },
+    "history_digest": "b6e5df757d6b5428f22e37a84d433edf",
+    "baseline_exists": false,
+    "history_columns": [
+      {
+        "type": "text",
+        "column": "version"
+      },
+      {
+        "type": "ARRAY",
+        "column": "statements"
+      },
+      {
+        "type": "text",
+        "column": "name"
+      },
+      {
+        "type": "text",
+        "column": "created_by"
+      },
+      {
+        "type": "text",
+        "column": "idempotency_key"
+      },
+      {
+        "type": "ARRAY",
+        "column": "rollback"
+      }
+    ]
+  },
+  "effective_configuration": {
+    "server_time": "2026-10-20T18:35:27.423493+00:00",
+    "global_units": 0,
+    "search_config": {
+      "enabled": true,
+      "singleton": true,
+      "actor_daily": 80,
+      "actor_minute": 10,
+      "global_daily": 1000
+    },
+    "baseline_config": {
+      "enabled": true,
+      "revision": 1,
+      "singleton": true,
+      "license_approved": true,
+      "retention_seconds": 604800
+    },
+    "global_requests": 0,
+    "provider_config": {
+      "enabled": true,
+      "singleton": true,
+      "blocked_until": null,
+      "tiles_enabled": true,
+      "center_enabled": true,
+      "failure_streak": 0,
+      "actor_daily_units": 8000,
+      "daily_units_limit": 8000,
+      "tile_cache_seconds": 60,
+      "actor_minute_requests": 30,
+      "cache_license_approved": true,
+      "global_minute_requests": 120
+    },
+    "baseline_population": {
+      "rows": 0,
+      "ready": 0,
+      "compressed_bytes": 0
+    },
+    "missing_group_contracts": {
+      "get_group_discussion": true,
+      "list_my_discussion_groups": true,
+      "get_group_discussion_conversion": true
+    }
+  },
+  "preserved_routines": {
+    "count": 595,
+    "before_digest": "c2b4a57330b2710dbab55b12468cf7b1",
+    "after_digest": "c2b4a57330b2710dbab55b12468cf7b1"
+  },
+  "deployed_schema": {
+    "tables": [
+      {
+        "acl": "{postgres=arwdDxtm/postgres}",
+        "rls": true,
+        "name": "map_baseline_config",
+        "anon_select": false,
+        "constraints": [
+          "PRIMARY KEY (singleton)",
+          "CHECK (((retention_seconds >= 1) AND (retention_seconds <= 604800)))",
+          "CHECK ((revision > 0))",
+          "CHECK (singleton)"
+        ],
+        "service_select": false,
+        "authenticated_select": false
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres}",
+        "rls": true,
+        "name": "map_baseline_tiles",
+        "anon_select": false,
+        "constraints": [
+          "CHECK ((((state = 'ready'::text) AND (acquired_at IS NOT NULL) AND (image IS NOT NULL)) OR ((state <> 'ready'::text) AND (image IS NULL))))",
+          "CHECK (((octet_length(image) >= 45) AND (octet_length(image) <= 262144)))",
+          "PRIMARY KEY (z, x, y)",
+          "CHECK ((revision > 0))",
+          "CHECK ((state = ANY (ARRAY['pending'::text, 'ready'::text, 'failed'::text])))",
+          "CHECK (((x >= 2173) AND (x <= 2175)))",
+          "CHECK (((y >= 1454) AND (y <= 1457)))",
+          "CHECK ((z = 12))"
+        ],
+        "service_select": false,
+        "authenticated_select": false
+      }
+    ],
+    "history_count": 97,
+    "new_functions": [
+      {
+        "acl": "{postgres=X/postgres}",
+        "name": "basemap_ancestor_v2",
+        "config": ["search_path=\"\""],
+        "schema": "private",
+        "definer": true,
+        "identity": "p_z integer, p_x integer, p_y integer",
+        "definition_md5": "49ea7d413aad8a31a73c5c9dc6791642"
+      },
+      {
+        "acl": "{postgres=X/postgres}",
+        "name": "basemap_retry_v2",
+        "config": ["search_path=\"\""],
+        "schema": "private",
+        "definer": false,
+        "identity": "p_now timestamp with time zone",
+        "definition_md5": "f0e450e2d7c0e09080d90c83e1867e54"
+      },
+      {
+        "acl": "{postgres=X/postgres}",
+        "name": "basemap_tile_payload_v2",
+        "config": ["search_path=\"\""],
+        "schema": "private",
+        "definer": false,
+        "identity": "p_z integer, p_x integer, p_y integer, p_image bytea, p_expiry timestamp with time zone, p_acquired timestamp with time zone",
+        "definition_md5": "4bccd7de6dea79fe271e846f5be9840b"
+      },
+      {
+        "acl": "{postgres=X/postgres,service_role=X/postgres}",
+        "name": "finish_basemap_tile_v2",
+        "config": ["search_path=\"\""],
+        "schema": "public",
+        "definer": true,
+        "identity": "p_z integer, p_x integer, p_y integer, p_token uuid, p_image_base64 text",
+        "definition_md5": "c2ddad91e5b5745101fe980f91c93875"
+      },
+      {
+        "acl": "{postgres=X/postgres}",
+        "name": "is_trento_baseline_v2",
+        "config": ["search_path=\"\""],
+        "schema": "private",
+        "definer": false,
+        "identity": "p_z integer, p_x integer, p_y integer",
+        "definition_md5": "d32d891ae12727e951d4b5a920381ddb"
+      },
+      {
+        "acl": "{postgres=X/postgres,service_role=X/postgres}",
+        "name": "reserve_basemap_tile_v2",
+        "config": ["search_path=\"\""],
+        "schema": "public",
+        "definer": true,
+        "identity": "p_actor uuid, p_z integer, p_x integer, p_y integer, p_cache_only boolean",
+        "definition_md5": "c7fca65950f718a96467d1835cd6f09d"
+      }
+    ],
+    "baseline_count": 0,
+    "baseline_config": {
+      "enabled": true,
+      "revision": 1,
+      "singleton": true,
+      "license_approved": true,
+      "retention_seconds": 604800
+    },
+    "previous_history_digest": "b6e5df757d6b5428f22e37a84d433edf"
+  },
+  "licensing": {
+    "checked_at": "2026-10-20",
+    "owner_approved_retention_seconds": 604800,
+    "style": "osm-carto",
+    "published_cache_permission": "Provider map-tiles documentation permits caching, storage and redistribution of generated tiles.",
+    "sources": [
+      "https://www.geoapify.com/map-tiles/",
+      "https://apidocs.geoapify.com/docs/maps/",
+      "https://www.geoapify.com/terms-and-conditions/"
+    ],
+    "account_portal": "https://myprojects.geoapify.com/login",
+    "account_specific_restrictions": "No authenticated account portal was available; no concrete contrary restriction was accessible. Owner approval plus published tile policy supplied activation basis.",
+    "credits_per_standard_tile": 0.25,
+    "attribution": "Geoapify and OpenStreetMap; unchanged."
+  },
+  "verification": {
+    "live_sql_assertions": 18,
+    "live_sql_all_passed": true,
+    "live_transport_checks": 10,
+    "provider_node_tests": 47,
+    "provider_node_passed": 47,
+    "prior_complete_source_ci": "https://github.com/lillo24/planets.community/actions/runs/39457745643",
+    "prior_source_ci_results": {
+      "mobile_passed": 3676,
+      "mobile_skipped": 2,
+      "sql_assertions": 5894,
+      "authenticated_local_map_checks": 435
+    },
+    "live_images_fetched": 0,
+    "live_images_cached": 0,
+    "new_screenshots": 0,
+    "earlier_screenshots": "Four committed synthetic Flutter captures; no real-image acceptance claimed.",
+    "ordinary_authenticated_session_available": false,
+    "adb_devices": [],
+    "guest_and_invalid_token_denial_verified": true,
+    "raw_private_access_denied": true,
+    "upstream_key_present_in_runtime": true,
+    "upstream_key_validated_with_provider": false
+  },
+  "credits": {
+    "global_quarter_units_before": 0,
+    "global_quarter_units_after": 0,
+    "delta": 0,
+    "provider_requests_made_by_agent": 0,
+    "live_qa_credits": 0,
+    "qa_credit_cap": 100,
+    "quota_raised": false,
+    "exhaustion_simulated_on_staging": false
+  },
+  "advisors": [
+    {
+      "name": "rls_enabled_no_policy",
+      "level": "INFO",
+      "before": 104,
+      "after": 106,
+      "added": [
+        {
+          "name": "map_baseline_config",
+          "type": "table",
+          "schema": "private"
+        },
+        {
+          "name": "map_baseline_tiles",
+          "type": "table",
+          "schema": "private"
+        }
+      ],
+      "removed": [],
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+    },
+    {
+      "name": "anon_security_definer_function_executable",
+      "level": "WARN",
+      "before": 38,
+      "after": 38,
+      "added": [],
+      "removed": [],
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable"
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "level": "WARN",
+      "before": 315,
+      "after": 315,
+      "added": [],
+      "removed": [],
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+    },
+    {
+      "name": "auth_leaked_password_protection",
+      "level": "WARN",
+      "before": 1,
+      "after": 1,
+      "added": [],
+      "removed": [],
+      "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+    }
+  ],
+  "remaining_blocker": "No ordinary staging login/device session for authenticated provider imagery, city search, cache fill/reuse and real Povo rendering. Population is left to the next eligible new-client foreground visit.",
+  "whole_app_warning": "Latest main db21460b has 122 migrations versus staging's 97: 25 unrelated Group/contact migrations remain unapplied. The current Messages v7 list, combined unread summary and Group discussion RPCs are absent. Map readiness does not establish whole-app compatibility.",
+  "distribution": {
+    "installed_app_changed": false,
+    "build_or_release_created": false,
+    "from_directory": "apps/mobile",
+    "appbundle_command": "dart run tool/build_map_live_staging.dart appbundle UNUSED_PLAY_VERSION_CODE --budget-basemap",
+    "apk_command": "dart run tool/build_map_live_staging.dart apk UNUSED_PLAY_VERSION_CODE --budget-basemap",
+    "version_placeholder": "Owner selects a verified unused Play version code.",
+    "required_defines": {
+      "LOCATION_MAP_TILES_ENABLED": "true",
+      "LOCATION_MAP_CENTERS_ENABLED": "true",
+      "LOCATION_DETAIL_TILES_ENABLED": "true",
+      "LOCATION_MAP_CACHE_SECONDS": "60",
+      "LOCATION_EDITOR_SEARCH_ENABLED": "true",
+      "LOCATION_BASEMAP_BUDGET_ENABLED": "true"
+    }
+  },
+  "deployment_source_pending_migrations": [
+    "20261014074255_group_discussions_domain.sql",
+    "20261014075208_group_discussion_report_evidence.sql",
+    "20261014085233_group_discussion_mobile_projection.sql",
+    "20261014123208_group_discussion_named_links.sql",
+    "20261015094229_group_ideas_general_and_history.sql",
+    "20261015094324_group_ideas_workspaces_and_project_folders.sql",
+    "20261015095020_group_discussion_conversion_final.sql",
+    "20261020123403_group_idea_invitation_context.sql"
+  ],
+  "main_reconciliation": {
+    "main_commit": "db21460bbee3e8238216f1acc0ef094d3ee64ec5",
+    "source_migration_count": 122,
+    "staging_migration_count": 97,
+    "map_sources_unchanged": true,
+    "verified_at": "2026-10-20T18:41:07.402348+00:00",
+    "missing_client_contracts": {
+      "get_group_discussion": true,
+      "list_own_scoped_conversation_items_v7": true,
+      "get_own_message_unread_summary_with_contacts_and_discussions": true
+    },
+    "pending_migrations": [
+      "20261014072939_group_contact_requests.sql",
+      "20261014073229_group_contact_conversations.sql",
+      "20261014074055_group_contact_messages_integration.sql",
+      "20261014074255_group_discussions_domain.sql",
+      "20261014074651_group_contact_safety.sql",
+      "20261014075208_group_discussion_report_evidence.sql",
+      "20261014085233_group_discussion_mobile_projection.sql",
+      "20261014092339_group_contact_context_and_access_invalidation.sql",
+      "20261014100704_group_contact_exit_context.sql",
+      "20261014113958_group_contact_sender_context.sql",
+      "20261014122236_group_coordination_proposals.sql",
+      "20261014123208_group_discussion_named_links.sql",
+      "20261014124500_group_coordination_messages_and_safety.sql",
+      "20261014125000_group_coordination_block_convergence.sql",
+      "20261015094229_group_ideas_general_and_history.sql",
+      "20261015094324_group_ideas_workspaces_and_project_folders.sql",
+      "20261015095004_member_contact_domain.sql",
+      "20261015095020_group_discussion_conversion_final.sql",
+      "20261015095042_member_contact_messages_and_safety.sql",
+      "20261015095248_group_contact_activity_and_preferences.sql",
+      "20261015110945_contact_activity_canonical_projector.sql",
+      "20261015114510_member_contact_block_lock_order.sql",
+      "20261019073011_contact_report_erased_subject_provenance.sql",
+      "20261020123403_group_idea_invitation_context.sql",
+      "20261020144145_contact_discussion_integration.sql"
+    ]
+  }
+}

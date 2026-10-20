@@ -1,8 +1,10 @@
 # MAP-COST01: public Trento baseline and budget fallback
 
-Code starts from `34786524` (MAP-LIVE02, PR #270). No hosted deployment or
-activation is performed by this change. Authenticated real staging imagery and
-native visual acceptance remain pending; see [MAP-LIVE02](map-live02-acceptance.md).
+Implementation starts from `34786524` (MAP-LIVE02, PR #270). The subsequent
+authorized [staging rollout](map-staging-rollout.md), from merged main `93414af5`,
+applied the canonical migration, deployed map-provider v5 and enabled seven-day
+retention. The baseline is **enabled, not populated**. Authenticated real imagery
+and native visual acceptance remain pending; see [MAP-LIVE02](map-live02-acceptance.md).
 
 ## Ownership and measured extent
 
@@ -110,16 +112,23 @@ permits storing/reusing generated tiles. [Maps pricing and attribution](https://
 list 0.25 credit per standard tile, Geoapify/OSM attribution for this osm-carto
 style, and no additional OpenMapTiles credit for osm-carto.
 [Account pricing](https://www.geoapify.com/pricing/) and
-[binding terms](https://www.geoapify.com/terms-and-conditions/) still require
-account/production review. The actual account's longer-retention approval has
-not been verified. New license and enable gates therefore remain off. Source
-defaults are a proposed policy, not evidence of owner-approved hosted settings.
+[binding terms](https://www.geoapify.com/terms-and-conditions/) retain account
+usage limits. The owner explicitly approved seven-day staging retention in the
+subsequent rollout prompt. Published tile permissions were rechecked; the account
+portal required login and exposed no concrete contrary restriction. Staging's
+new license and enable gates are now on. Migration defaults remain off for new
+environments. See the [executed evidence](evidence/map-cost01/hosted-rollout.json).
 
-After **separate owner authorization**, with then-current main and target
-`planets-staging` / `cllpvruvrrvxczjitlqd` reverified:
+The authorized rollout used the procedure below after reverifying main and
+`planets-staging` / `cllpvruvrrvxczjitlqd`. It is retained for reproducibility;
+completed backend steps are recorded in the [rollout report](map-staging-rollout.md).
+Recheck current history before any future deployment:
 
 1. Compare canonical migration history and effective MAP05 dependencies again.
-   This run observed 96 staging migrations versus 104 at the predecessor base.
+   Preparation observed 96 staging migrations versus 104 at the predecessor base.
+   The scoped rollout advanced staging to 97 of its 105 source migrations.
+   Main subsequently advanced to 122; the [rollout report](map-staging-rollout.md)
+   records the 25 unrelated pending Group/contact migrations and Messages warning.
    Normalized definitions of the four existing geographic/reservation routines
    match staging and the current local schema. Do not push the whole checkout and incidentally deploy the eight unrelated
    missing migrations. A scoped directory is already prepared locally at
@@ -151,7 +160,7 @@ After **separate owner authorization**, with then-current main and target
    ceilings. No location-search deployment, static activation or new secret is
    needed. Verify old-client tile/center calls before selecting v2 clients.
 
-3. After reviewing the actual account/style rights and selecting the lifetime,
+3. After reviewing applicable tile permissions and the owner-approved lifetime,
    enable only the new config (example is the proposed maximum policy):
 
    ```sql
@@ -184,11 +193,11 @@ After **separate owner authorization**, with then-current main and target
    read-only without separate installation approval. Keep total bounded live QA
    within the plan's remaining allowance and 100-credit maximum.
 
-The commands/options were checked against pinned CLI 2.118.0-beta.39 help. The
-read-only hosted dry run was attempted against that prepared directory and
-stopped before database access with `AccessTokenRequiredError`: the connected
-management session is available, but CLI authentication is not configured. No
-successful hosted dry run, push, function deployment or activation is claimed.
+The commands/options were rechecked against pinned CLI 2.118.0-beta.39 help.
+The scoped hosted dry run again stopped before database access with
+`AccessTokenRequiredError`. The authenticated management tools completed the
+canonical migration, verified removal of the exact redundant API wrapper,
+function deployment and activation. CLI authentication did not block execution.
 
 Rollback: set `private.map_baseline_config.enabled=false`, rebuild without
 `--budget-basemap`, and restart the client to clear its learned shutdown state.
@@ -276,6 +285,7 @@ Phone was disconnected; the owned API36 emulator failed before boot due to host
 memory/commit allocation. No normal staging login was supplied. Initial local
 container/CLI restart interruptions were recovered before the passing checks;
 no provider/security default or meaningful test coverage was weakened. A new
-MAP-COST01 native APK, real imagery comparison, hosted changes and signed/Play
-release are **not** claimed. Code merge, local synthetic acceptance and hosted
-activation are separate release states. PR/merge identity is recorded by GitHub.
+MAP-COST01 native APK, real imagery comparison and signed/Play release are
+**not** claimed. Hosted deployment/activation is separately verified in the
+[rollout report](map-staging-rollout.md). Code merge, local synthetic acceptance,
+hosted activation and distribution remain separate states.
