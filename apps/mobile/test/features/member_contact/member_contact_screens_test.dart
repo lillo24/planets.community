@@ -11,6 +11,10 @@ import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/blocking/data/blocking_gateway.dart';
 import 'package:planets_mobile/features/group_contact/data/group_contact_gateway.dart'
     show ContactRpc;
+import 'package:planets_mobile/features/group_discussions/application/discussion_controllers.dart';
+import 'package:planets_mobile/features/group_discussions/data/discussion_gateway.dart';
+import 'package:planets_mobile/features/group_discussions/data/discussion_invite_destinations_gateway.dart';
+import 'package:planets_mobile/features/group_discussions/domain/discussion_invite_destination.dart';
 import 'package:planets_mobile/features/group_membership/domain/group_relationships.dart';
 import 'package:planets_mobile/features/member_contact/application/member_contact_access_changes.dart';
 import 'package:planets_mobile/features/member_contact/data/member_contact_gateway.dart';
@@ -27,6 +31,7 @@ import 'package:planets_mobile/features/moderation/presentation/moderation_route
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../support/fake_blocking.dart';
+import '../../support/fake_group_discussions.dart';
 import '../messages/message_unread_test.dart' show Gateway;
 import 'member_contact_fixtures.dart';
 
@@ -36,6 +41,18 @@ class Identity extends AuthSessionController {
       const AuthSessionState.ready(AuthIdentity(id: actor));
   void change(String id) =>
       state = AuthSessionState.ready(AuthIdentity(id: id));
+}
+
+// The composed People sheet now includes C's independent action. These M-only
+// fixtures have no eligible C room; unexpected C mutations still fail loudly.
+class NoIdeaDestinations implements DiscussionInviteDestinationsGateway {
+  @override
+  Future<List<DiscussionInviteDestination>> page(
+    String actor,
+    String group,
+    String person,
+    Map<String, dynamic>? cursor,
+  ) async => [];
 }
 
 Future<(ProviderContainer, GoRouter)> pumpMember(
@@ -53,6 +70,13 @@ Future<(ProviderContainer, GoRouter)> pumpMember(
         MemberContactGateway(call),
       ),
       messageUnreadGatewayProvider.overrideWithValue(Gateway()),
+      discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
+      discussionInviteDestinationsGatewayProvider.overrideWithValue(
+        NoIdeaDestinations(),
+      ),
+      discussionSignalsProvider.overrideWith(
+        (ref) => Stream.value((connected: true, event: 0)),
+      ),
       blockingGatewayProvider.overrideWithValue(FakeBlockingGateway()),
     ],
   );

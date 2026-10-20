@@ -72,6 +72,14 @@ one-of-fourteen typed targets, separate context bounds, rejected mixed targets
 and cross-family contexts, submission-key conflicts, own report labels and
 combined unread/auth parity. A separate sorted fresh replay remains required.
 
+The older D02-to-D03 cutoff includes C's initial empty discussion table. C's
+subsequent General backfill intentionally inserts a room for each available
+Group. That verifier now hashes all original discussion IDs/columns separately
+and requires every added room to be an empty, public-to-Group General with the
+original Group actor. The number must equal available Groups after repeated
+application. Other predecessor tables still require exact whole-table equality;
+neither existing-row loss/change nor arbitrary new discussions are allowed.
+
 To select an exact predecessor, the verifier temporarily moves only the other
 migration files into a newly created OS-temporary directory. It validates both
 absolute parent paths, never rewrites SQL or repairs migration history, and

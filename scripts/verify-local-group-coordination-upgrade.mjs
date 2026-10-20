@@ -92,9 +92,18 @@ try {
     from information_schema.columns where table_schema in ('public','private') and table_name in
       (select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','private') and c.relkind='r')
     group by table_schema,table_name order by 1`;
+  // The interleaved C foundation can already exist at this D02 cutoff. C's
+  // later General migration deliberately adds one empty room per available
+  // Group. Preserve every original C row/column and validate those additions
+  // separately; other tables still require exact whole-table equality.
+  const originalDiscussionIds = tables.some(
+    (table) => table.name === "private.group_discussions",
+  )
+    ? (await sql`select id from private.group_discussions`).map((row) => row.id)
+    : null;
   async function snapshot(table) {
     const [{ rows }] =
-      await sql`select coalesce(jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text),'[]'::jsonb) rows from (select ${sql(table.columns)} from ${sql(table.name)}) r`;
+      await sql`select coalesce(jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text),'[]'::jsonb) rows from (select ${sql(table.columns)} from ${sql(table.name)} ${table.name === "private.group_discussions" && originalDiscussionIds !== null ? sql`where id=any(${originalDiscussionIds}::uuid[])` : sql``}) r`;
     return {
       count: rows.length,
       hash: createHash("sha256").update(JSON.stringify(rows)).digest("hex"),
@@ -124,6 +133,27 @@ try {
       before.get(table.name),
       `D upgrade preserved ${table.name}.`,
     );
+  if (originalDiscussionIds !== null) {
+    const [backfill] = await sql`select count(*)::int added,
+      count(*) filter(where r.kind<>'general' or r.visibility<>'group'
+        or r.title<>'General' or r.archived or r.version<>1 or r.last_sequence<>0
+        or r.creator_id<>g.original_actor_id
+        or not private.group_discussion_group_available(r.group_id))::int invalid,
+      (select count(*)::int from private.community_groups g
+        where private.group_discussion_group_available(g.id)) expected
+      from private.group_discussions r join private.community_groups g on g.id=r.group_id
+      where not(r.id=any(${originalDiscussionIds}::uuid[]))`;
+    assert.equal(
+      backfill.invalid,
+      0,
+      "Only canonical empty C General backfill may add rooms.",
+    );
+    assert.equal(
+      backfill.added,
+      backfill.expected,
+      "Repeated upgrade creates exactly one General per available Group.",
+    );
+  }
   const [after] =
     await sql`select 'private.close_pending_direct_requests_for_user_block(uuid,uuid)'::regprocedure::oid oid`;
   assert.equal(
