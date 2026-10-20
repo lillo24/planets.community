@@ -1,0 +1,58 @@
+{
+  "origin": "https://cllpvruvrrvxczjitlqd.supabase.co",
+  "finished_at": "2026-10-20T18:33:37.996Z",
+  "authenticated_user_session": false,
+  "provider_calls_attempted": 0,
+  "results": [
+    {
+      "name": "public_Trento_search",
+      "http": 200,
+      "items": 1,
+      "has_next": false
+    },
+    {
+      "name": "legacy_tile_guest_denied",
+      "http": 401,
+      "status": "guest_disabled"
+    },
+    {
+      "name": "legacy_city_guest_denied",
+      "http": 401,
+      "status": "guest_disabled"
+    },
+    {
+      "name": "v2_guest_denied",
+      "http": 401,
+      "status": "guest_disabled"
+    },
+    {
+      "name": "v2_cache_only_guest_denied",
+      "http": 401,
+      "status": "guest_disabled"
+    },
+    {
+      "name": "v2_invalid_token_denied",
+      "http": 401,
+      "code": "UNAUTHORIZED_INVALID_JWT_FORMAT"
+    },
+    {
+      "name": "reserve_RPC_client_denied",
+      "http": 401,
+      "code": "42501"
+    },
+    {
+      "name": "finish_RPC_client_denied",
+      "http": 401,
+      "code": "42501"
+    },
+    {
+      "name": "private_schema_not_exposed",
+      "http": 406,
+      "code": "PGRST106"
+    },
+    {
+      "name": "function_preflight",
+      "http": 204
+    }
+  ]
+}
