@@ -1,0 +1,417 @@
+{
+  "prepared_at": "2026-10-20",
+  "state": "prepared_not_deployed",
+  "source_base": "34786524f440521cb03586eac73cd3de8683e7cf",
+  "target_project": "cllpvruvrrvxczjitlqd",
+  "target_name": "planets-staging",
+  "existing_map_routines": [
+    {
+      "name": "finish_map_provider_v1",
+      "digest": "d48bb515786a77814596ba567f152264"
+    },
+    {
+      "name": "reserve_location_provider_v1",
+      "digest": "19fa4a8750307cfec70888ec8aee2c5f"
+    },
+    {
+      "name": "reserve_map_provider_v1",
+      "digest": "1b5a4ffae5b8a2336886b3bd0b9cf250"
+    },
+    {
+      "name": "search_public_geography_v1",
+      "digest": "d0fd63712b5e097f81e80c1879910d94"
+    }
+  ],
+  "already_applied": [
+    {
+      "name": "database_security_foundation",
+      "version": "20260901200051"
+    },
+    {
+      "name": "identity_audit_outbox_primitives",
+      "version": "20260901211937"
+    },
+    {
+      "name": "basic_profiles_skills_visibility",
+      "version": "20260902192101"
+    },
+    {
+      "name": "one_time_proposals_and_discovery",
+      "version": "20260903082017"
+    },
+    {
+      "name": "recurring_activity_domain_foundation",
+      "version": "20260903201641"
+    },
+    {
+      "name": "project_participation_domain_foundation",
+      "version": "20260908164407"
+    },
+    {
+      "name": "notification_domain_outbox_projection",
+      "version": "20260908200948"
+    },
+    {
+      "name": "messages_structured_participation_requests",
+      "version": "20260909162645"
+    },
+    {
+      "name": "push_installation_delivery_job_foundation",
+      "version": "20260912174300"
+    },
+    {
+      "name": "push_delivery_attempt_worker_protocol",
+      "version": "20260912193149"
+    },
+    {
+      "name": "participation_aware_browse_pending_requests",
+      "version": "20260913063431"
+    },
+    {
+      "name": "project_group_chat_lifecycle_authorization",
+      "version": "20260913084320"
+    },
+    {
+      "name": "project_chat_message_domain_realtime",
+      "version": "20260913134856"
+    },
+    {
+      "name": "project_chat_notification_projection_mobile_alerts",
+      "version": "20260914110554"
+    },
+    {
+      "name": "scambio_dona_listing_domain_foundation",
+      "version": "20260914134222"
+    },
+    {
+      "name": "project_resource_needs_domain_foundation",
+      "version": "20260915090235"
+    },
+    {
+      "name": "join_request_contribution_selection_domain",
+      "version": "20260915100846"
+    },
+    {
+      "name": "current_participant_commitments",
+      "version": "20260917133005"
+    },
+    {
+      "name": "join_acceptance_contribution_triage_domain",
+      "version": "20260918081948"
+    },
+    {
+      "name": "live_project_requirement_coverage_domain",
+      "version": "20260918102402"
+    },
+    {
+      "name": "structured_group_need_resurfacing_attention_domain",
+      "version": "20260918131216"
+    },
+    {
+      "name": "one_time_actual_contribution_attribution_domain",
+      "version": "20260918180243"
+    },
+    {
+      "name": "postgrest_safe_conflict_sqlstates",
+      "version": "20260919111637"
+    },
+    {
+      "name": "scambio_dona_resource_request_domain",
+      "version": "20260919135332"
+    },
+    {
+      "name": "reliable_scambio_agreement_loan_barter_domain",
+      "version": "20260919195434"
+    },
+    {
+      "name": "accepted_resource_request_conversation_domain",
+      "version": "20260920084219"
+    },
+    {
+      "name": "unified_messages_resource_notification_projection",
+      "version": "20260920123000"
+    },
+    {
+      "name": "non_null_resource_exchange_terms_flags",
+      "version": "20260920160723"
+    },
+    {
+      "name": "loan_reservation_conflict_domain",
+      "version": "20260922090000"
+    },
+    {
+      "name": "explainable_project_resource_matching",
+      "version": "20260922120000"
+    },
+    {
+      "name": "add_proposal_discovery_query",
+      "version": "20260925092956"
+    },
+    {
+      "name": "personal_saved_resource_search_domain",
+      "version": "20260925112156"
+    },
+    {
+      "name": "saved_search_new_listing_match_projection",
+      "version": "20260925142259"
+    },
+    {
+      "name": "immediate_saved_search_match_notification_projection",
+      "version": "20260925151612"
+    },
+    {
+      "name": "open_stack_database_gate_stabilization",
+      "version": "20260926102538"
+    },
+    {
+      "name": "repair_project_chat_ambiguities",
+      "version": "20260926103400"
+    },
+    {
+      "name": "profile_photo_storage_domain",
+      "version": "20260926122235"
+    },
+    {
+      "name": "project_join_request_private_chat_domain",
+      "version": "20260926141814"
+    },
+    {
+      "name": "profile_photo_viewer_access",
+      "version": "20260926150624"
+    },
+    {
+      "name": "scoped_participation_request_chats",
+      "version": "20260926185124"
+    },
+    {
+      "name": "personal_project_profile_photo_trust_gates",
+      "version": "20260927054617"
+    },
+    {
+      "name": "project_delegate_domain",
+      "version": "20260927060206"
+    },
+    {
+      "name": "scambio_dona_profile_photo_trust_integration",
+      "version": "20260927074009"
+    },
+    {
+      "name": "project_delegate_ux_reads",
+      "version": "20260927075624"
+    },
+    {
+      "name": "delegate_participant_independence",
+      "version": "20260927103437"
+    },
+    {
+      "name": "reporting_moderation_foundation",
+      "version": "20260928063450"
+    },
+    {
+      "name": "cover_media_domain_foundation",
+      "version": "20260928064452"
+    },
+    {
+      "name": "project_cocreator_domain_authority",
+      "version": "20260928075820"
+    },
+    {
+      "name": "group_case_corroboration",
+      "version": "20260928083634"
+    },
+    {
+      "name": "scambio_dona_counterstatement",
+      "version": "20260928114506"
+    },
+    {
+      "name": "user_blocking_domain_enforcement",
+      "version": "20260929155334"
+    },
+    {
+      "name": "exact_outbound_block_status",
+      "version": "20260929170514"
+    },
+    {
+      "name": "project_shared_workspace",
+      "version": "20260929170746"
+    },
+    {
+      "name": "project_people_capacity_fullness",
+      "version": "20260929171419"
+    },
+    {
+      "name": "organizer_aware_capacity_headcount",
+      "version": "20260930140814"
+    },
+    {
+      "name": "founder_qa_mobile_stabilization",
+      "version": "20261001072748"
+    },
+    {
+      "name": "unified_project_people_role_offers",
+      "version": "20261002103310"
+    },
+    {
+      "name": "direct_participant_invitations",
+      "version": "20261003125732"
+    },
+    {
+      "name": "source_linked_proposal_template_workshop",
+      "version": "20261003125831"
+    },
+    {
+      "name": "template_reporting_and_removal",
+      "version": "20261003191351"
+    },
+    {
+      "name": "template_to_draft_creation",
+      "version": "20261004145334"
+    },
+    {
+      "name": "idempotent_editor_draft_creation",
+      "version": "20261004200147"
+    },
+    {
+      "name": "similar_active_proposal_matching",
+      "version": "20261005104541"
+    },
+    {
+      "name": "delegated_participation_notification_actor",
+      "version": "20261005111132"
+    },
+    {
+      "name": "participation_pair_conversations",
+      "version": "20261006101031"
+    },
+    {
+      "name": "message_unread_activity_separation",
+      "version": "20261006131533"
+    },
+    {
+      "name": "new_template_draft_italy_timezone",
+      "version": "20261007090000"
+    },
+    {
+      "name": "push_projector_receipt_recheck",
+      "version": "20261007103000"
+    },
+    {
+      "name": "messages_list_activity_preview",
+      "version": "20261007103322"
+    },
+    {
+      "name": "geoapify_shared_location_foundation",
+      "version": "20261008124856"
+    },
+    {
+      "name": "map02_idempotent_editor_drafts",
+      "version": "20261008144158"
+    },
+    {
+      "name": "map03_location_previews",
+      "version": "20261008193521"
+    },
+    {
+      "name": "map04_geographic_discovery",
+      "version": "20261009070032"
+    },
+    {
+      "name": "map05_interactive_discovery_provider",
+      "version": "20261009083736"
+    },
+    {
+      "name": "defined_proposal_city_only",
+      "version": "20261010075613"
+    },
+    {
+      "name": "public_idea_definition_phase",
+      "version": "20261010112941"
+    },
+    {
+      "name": "proposal_inline_location_privacy",
+      "version": "20261010131622"
+    },
+    {
+      "name": "idea_location_privacy_integration",
+      "version": "20261010173000"
+    },
+    {
+      "name": "policy01b_account_acceptance",
+      "version": "20261011082932"
+    },
+    {
+      "name": "official_starter_templates",
+      "version": "20261011094930"
+    },
+    {
+      "name": "project_organization_private_planning",
+      "version": "20261011100002"
+    },
+    {
+      "name": "project_workspace_named_links",
+      "version": "20261011132245"
+    },
+    {
+      "name": "persistent_groups_backend",
+      "version": "20261011141035"
+    },
+    {
+      "name": "persistent_group_reporting",
+      "version": "20261011141420"
+    },
+    {
+      "name": "location_text_provenance",
+      "version": "20261011180000"
+    },
+    {
+      "name": "profile_content_only_update",
+      "version": "20261012091701"
+    },
+    {
+      "name": "chat_list_group_covers",
+      "version": "20261012094725"
+    },
+    {
+      "name": "proposal_skills_management",
+      "version": "20261012104716"
+    },
+    {
+      "name": "group_membership_and_authority",
+      "version": "20261012110923"
+    },
+    {
+      "name": "group_relationship_api",
+      "version": "20261012111424"
+    },
+    {
+      "name": "group_membership_blocking_and_grants",
+      "version": "20261012111833"
+    },
+    {
+      "name": "group_exact_self_membership_context",
+      "version": "20261012152803"
+    },
+    {
+      "name": "group_project_attribution",
+      "version": "20261013100000"
+    },
+    {
+      "name": "group_project_atomic_creation",
+      "version": "20261013100100"
+    },
+    {
+      "name": "group_project_publish_revision",
+      "version": "20261013100200"
+    },
+    {
+      "name": "project_workspace_paging_and_recovery",
+      "version": "20261013175400"
+    }
+  ],
+  "new_migration": {
+    "version": "20261020150706",
+    "name": "map_cost01_public_trento_baseline",
+    "file": "20261020150706_map_cost01_public_trento_baseline.sql",
+    "sha256": "549b44da10c304a38884c5aa4686bfc1d07050f631ec04a250b83a3298ef132d"
+  }
+}

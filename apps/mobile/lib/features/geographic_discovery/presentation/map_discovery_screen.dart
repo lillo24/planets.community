@@ -22,11 +22,14 @@ import '../../resource_listings/application/resource_listing_controllers.dart';
 import '../application/geographic_discovery_controller.dart';
 import '../application/map_discovery_sessions.dart';
 import '../application/shared_basemap_tiles.dart';
+import '../application/budget_basemap_tiles.dart';
+import '../data/budget_basemap_gateway.dart';
 import '../data/map_provider_gateway.dart';
 import '../domain/geographic_discovery.dart';
 import '../domain/map_discovery.dart';
 import 'map_view_button.dart';
 import 'public_point_map.dart';
+import 'budget_tile_provider.dart';
 
 class MapDiscoveryScreen extends ConsumerStatefulWidget {
   const MapDiscoveryScreen({required this.origin, super.key});
@@ -43,9 +46,10 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
   final _placeInput = TextEditingController();
   final _cardKey = GlobalKey();
   GoRouter? _router;
-  GatewayTileProvider? _tiles;
+  TileProvider? _tiles;
   GeoBounds? _viewport;
   bool _active = false, _foreground = true, _dirty = false, _tileFailed = false;
+  bool _reducedDetail = false, _partialBasemap = false;
   String? _selectedIdentity, _centerError;
   List<MapCenterSuggestion> _suggestions = const [];
   Timer? _debounce;
@@ -163,6 +167,8 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
     _discovery.setActive(value);
     if (value) {
       _tileFailed = false;
+      _reducedDetail = false;
+      _partialBasemap = false;
       _syncTiles();
       unawaited(_discovery.search(_query));
     }
@@ -176,8 +182,36 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
   void _syncTiles() {
     final gateway = ref.read(mapProviderGatewayProvider);
     if (_allowed(gateway) && gateway.tilesEnabled && !_tileFailed) {
+      if (_tiles == null && ref.read(budgetBasemapEnabledProvider)) {
+        _tiles = BudgetTileProvider(
+          ref.read(budgetBasemapTilesProvider),
+          warmTrento:
+              _preferences.cameraLatitude == 46.0748 &&
+              _preferences.cameraLongitude == 11.1217,
+          onReduced: () => _basemapStatus(reduced: true),
+          onRevoked: () => _basemapStatus(revoked: true),
+        );
+      }
       _tiles ??= GatewayTileProvider(ref.read(sharedBasemapTilesProvider));
     }
+  }
+
+  void _basemapStatus({bool reduced = false, bool revoked = false}) {
+    if (!revoked && (reduced ? _reducedDetail : _partialBasemap)) return;
+    final epoch = _viewEpoch;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_active || _disposed || epoch != _viewEpoch) return;
+      setState(() {
+        _reducedDetail = _reducedDetail || reduced;
+        if (revoked) {
+          _tiles?.dispose();
+          _tiles = null;
+          _tileFailed = true;
+        } else if (!reduced) {
+          _partialBasemap = true;
+        }
+      });
+    });
   }
 
   @override
@@ -242,6 +276,20 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
     _dirty = false;
     if (_active) unawaited(_discovery.search(_query));
     setState(() {});
+  }
+
+  void _refresh() {
+    // Only server-derived elapsed reset eligibility can reopen normal-quality IO.
+    // Ordinary filter/search changes do not invalidate unchanged imagery.
+    if (_tiles is BudgetTileProvider &&
+        !ref.read(budgetBasemapTilesProvider).cacheOnly) {
+      _tiles?.dispose();
+      _tiles = null;
+      _reducedDetail = false;
+      _partialBasemap = false;
+      _syncTiles();
+    }
+    _search();
   }
 
   void _cameraChanged(
@@ -578,6 +626,10 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
                                     '${_kind(item, l10n)}: ${item.title}. ${item.isApproximate ? l10n.mapApproximate : l10n.mapPrecise}',
                                 clusterLabel: l10n.mapClusterLoaded,
                                 onTileError: () {
+                                  if (_tiles is BudgetTileProvider) {
+                                    _basemapStatus();
+                                    return;
+                                  }
                                   if (_tileFailed || !_active) return;
                                   _tileFailed = true;
                                   _tiles?.dispose();
@@ -590,7 +642,7 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
                               )
                             : const Center(child: CircularProgressIndicator()),
                       ),
-                      if (_tiles == null)
+                      if (_tiles == null || _reducedDetail || _partialBasemap)
                         Positioned(
                           top: 8,
                           left: 8,
@@ -606,7 +658,9 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
                                 child: Semantics(
                                   liveRegion: true,
                                   child: Text(
-                                    _tileFailed
+                                    _reducedDetail && _tiles != null
+                                        ? l10n.mapReducedDetail
+                                        : _tileFailed || _partialBasemap
                                         ? l10n.mapBasemapFailed
                                         : l10n.mapBasemapDisabled,
                                     style: Theme.of(context)
@@ -902,7 +956,7 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
                       ),
                     OutlinedButton(
                       key: const Key('map-refresh'),
-                      onPressed: !_active ? null : _search,
+                      onPressed: !_active ? null : _refresh,
                       child: Text(l10n.mapRefresh),
                     ),
                   ],

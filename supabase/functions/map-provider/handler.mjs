@@ -5,6 +5,7 @@ import {
   normalizeQuery,
 } from "../location-search/provider.mjs";
 import { fetchTile, validateTile, validateTilePng } from "./provider.mjs";
+import { basemapTileV2 } from "./basemap.mjs";
 
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const headers = {
@@ -73,7 +74,7 @@ export function createMapProviderHandler({
         return respond("invalid_request", {}, 400);
       }
       const allowed =
-        body?.operation === "tile"
+        body?.operation === "basemap_tile_v2"
           ? [
               "operation",
               "expected_profile_id",
@@ -82,12 +83,23 @@ export function createMapProviderHandler({
               "y",
               "style",
               "version",
+              "cache_only",
             ]
-          : body?.operation === "search"
-            ? ["operation", "expected_profile_id", "query", "language"]
-            : body?.operation === "resolve"
-              ? ["operation", "expected_profile_id", "suggestion_id"]
-              : [];
+          : body?.operation === "tile"
+            ? [
+                "operation",
+                "expected_profile_id",
+                "z",
+                "x",
+                "y",
+                "style",
+                "version",
+              ]
+            : body?.operation === "search"
+              ? ["operation", "expected_profile_id", "query", "language"]
+              : body?.operation === "resolve"
+                ? ["operation", "expected_profile_id", "suggestion_id"]
+                : [];
       if (
         !body ||
         typeof body !== "object" ||
@@ -98,7 +110,8 @@ export function createMapProviderHandler({
       ) {
         return respond("invalid_request", {}, 400);
       }
-      const isTile = body.operation === "tile";
+      const isTile =
+        body.operation === "tile" || body.operation === "basemap_tile_v2";
       if (isTile ? !tilesEnabled : !centersEnabled) return respond("disabled");
       let query, tile;
       if (isTile) tile = validateTile(body);
@@ -108,10 +121,20 @@ export function createMapProviderHandler({
           return respond("invalid_request", {}, 400);
       } else if (!uuid.test(body.suggestion_id))
         return respond("invalid_request", {}, 400);
+      if (
+        body.operation === "basemap_tile_v2" &&
+        typeof body.cache_only !== "boolean"
+      )
+        return respond("invalid_request", {}, 400);
       const actor = await authenticate(request.headers.get("Authorization"));
       if (!actor) return respond("guest_disabled", {}, 401);
       if (!uuid.test(actor) || actor !== body.expected_profile_id)
         return respond("unauthorized", {}, 403);
+      if (body.operation === "basemap_tile_v2") {
+        const result = await basemapTileV2({ body, actor, key, rpc, fetcher });
+        const { status: outcome, ...data } = result;
+        return respond(outcome, data);
+      }
       if (body.operation === "resolve") {
         const resolved = await rpc("resolve_map_center_v1", {
           p_actor: actor,

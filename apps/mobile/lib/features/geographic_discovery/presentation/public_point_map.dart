@@ -100,7 +100,7 @@ class PublicPointMap extends StatelessWidget {
   final MapController controller;
   final MapDiscoveryPreferences preferences;
   final List<PublicPointCluster> clusters;
-  final GatewayTileProvider? tileProvider;
+  final TileProvider? tileProvider;
   final void Function(GeoBounds, double, double, double, bool) onCamera;
   final ValueChanged<PublicPointCluster> onCluster;
   final VoidCallback onTileError;
