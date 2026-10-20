@@ -1,0 +1,289 @@
+[
+  {
+    "name": "c02-invitation-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.326Z",
+    "sha256": "e26580167b1449d47d813ba4a2d7c65a4f67e419430dae130434f417f0b8e0bb"
+  },
+  {
+    "name": "c02-empty-frontier-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.335Z",
+    "sha256": "545c6bc952b3009a672edcf561dfc2ce5e127dbf3be0049bd22fb503a8b8d45b"
+  },
+  {
+    "name": "c02-lost-reply-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.335Z",
+    "sha256": "2bea90c57dbd25cb5c2dc2b2de023e34ab2cc0ec0464f68430bf6d772a9e81aa"
+  },
+  {
+    "name": "c02-chat-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.335Z",
+    "sha256": "f289463fbde3c8daaf6f8516e9662c6677cf25062d997956a5dd76e47bd50f60"
+  },
+  {
+    "name": "c02-activity-notices-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.335Z",
+    "sha256": "4ff23043789c5f13b42d1b0585a862968f645e1485d006a137ff6e024ef0264f"
+  },
+  {
+    "name": "c02-chat-it.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.342Z",
+    "sha256": "58674e0aad4de43898a8f896221a2d21e19a747c70e769eaab7dea30a6e6832d"
+  },
+  {
+    "name": "c02-links-it.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.342Z",
+    "sha256": "1c63ebcce63829536c08dc8f133b553c78043c88906a99b72278591a385322ca"
+  },
+  {
+    "name": "c02-group-entry-it.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.342Z",
+    "sha256": "57fc3e9bfbad6d6b7737aecb76716f0dab787134a397adaf74ec109e8a476ca2"
+  },
+  {
+    "name": "c02-group-rooms-it.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.342Z",
+    "sha256": "ddb9c76c7fbefc29575fa94b31b3e9af770b00de88f89d8839fe94e02d1789ce"
+  },
+  {
+    "name": "c02-folder-it.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.351Z",
+    "sha256": "8232b96ff0c07dd07befb09baaaa7d0f511a2b3b6df9cbf3d5daa1ffed91d611"
+  },
+  {
+    "name": "c02-former-history-it.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.351Z",
+    "sha256": "862490ef66aa6d1f7d81c828e2f999ec16abf4087e645d1a6c29fdf0a5340b24"
+  },
+  {
+    "name": "c02-manager-links-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.351Z",
+    "sha256": "e35c39432a089827fdee641005e261b0288025b0bc2c5ddc9a505f98af7035bb"
+  },
+  {
+    "name": "c02-manager-links-it.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.351Z",
+    "sha256": "4ec519db1fa450e878f2a9078d97bdab1d5257cdde18795374edcdc91dba61fa"
+  },
+  {
+    "name": "c02-settings-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.358Z",
+    "sha256": "979fd7e5ab9e2e8ceafef13ccbe4a0fab72d15d76f62f6c3a44e4f2f9e93912e"
+  },
+  {
+    "name": "c02-general-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.358Z",
+    "sha256": "4cfdcbf9c57a3cd1d6b82deb00637990dd738b947d5c0ab6bf9ca1160d260972"
+  },
+  {
+    "name": "c02-general-workspace-empty-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.358Z",
+    "sha256": "dab6f512a75dd5357622e2661ca2a1b430a3cdb200dfe9f0624c616e13670aa2"
+  },
+  {
+    "name": "c02-general-workspace-manager-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.368Z",
+    "sha256": "6c577920e2077756c6263f4eb7587b2880b04ad84ed97301b915154079a5d4ad"
+  },
+  {
+    "name": "c02-general-workspace-member-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.368Z",
+    "sha256": "52eb0faa1e7efbc0d5d09fc06b9169e1eefde6a46cb39eea0ef18076219dcd52"
+  },
+  {
+    "name": "c02-member-create-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.368Z",
+    "sha256": "4d533db03cbd26a495338f95c08b932ff3552686c782f70bd61ecd822a2122ce"
+  },
+  {
+    "name": "c02-restricted-manager-oversight-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.374Z",
+    "sha256": "eebc4d5a2fbff5c91ae62285d2fe5431596c1f9001b0d04325d00d995ccfa2aa"
+  },
+  {
+    "name": "c02-member-idea-muted-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.374Z",
+    "sha256": "4ce7efb3bb88e0dffe1b3fb145cab753905795800e38e394ef9ebf6f78aa7a74"
+  },
+  {
+    "name": "c02-show-hidden-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.374Z",
+    "sha256": "12b26dd01e5d0e6ea618964fb2c93df2b8b65515093895760bc399b31e33f222"
+  },
+  {
+    "name": "c02-folder-en-large-dark.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.374Z",
+    "sha256": "dbdc9bef0c79b052937ba388b08654953bced18118149eea57da4a28f6ee5c2e"
+  },
+  {
+    "name": "c02-folder-it-large-dark.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.385Z",
+    "sha256": "f104677b49364a6a6d1a24f235aa31939449aa08f2392b169a621edec8e41e5e"
+  },
+  {
+    "name": "c02-conversion-request-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.385Z",
+    "sha256": "a02670d36d8f6e13cbb5c6ce60ebda4eff85d179ff025365658514333e3e51fc"
+  },
+  {
+    "name": "c02-conversion-review-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.390Z",
+    "sha256": "8492dcb8620a2139774b8ace1811ba173da9ad4bb09c149e992291e446e07fe7"
+  },
+  {
+    "name": "c02-conversion-owned-draft-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.390Z",
+    "sha256": "3bac015dd4365b190b9f5448e85a89d7db661638d02e084252b4cf0ff78ff788"
+  },
+  {
+    "name": "c02-conversion-published-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.390Z",
+    "sha256": "fc8d51d634d84f6bca8e59bd5572cdecb78f47787e0be0d49cd36cf93a741ab6"
+  },
+  {
+    "name": "c02-conversion-published-it.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.390Z",
+    "sha256": "c08bef22cc4961aa887b922782256bbd5717939cf29449322e95c12de55ea585"
+  },
+  {
+    "name": "c02-conversion-invitation-decline-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.401Z",
+    "sha256": "f6e4aed36b2c6c05cf96cf8f359dd1c01644660a5ad3f1925cf90d48d4206037"
+  },
+  {
+    "name": "c02-conversion-invitation-open-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.401Z",
+    "sha256": "0d4db9f0a30562489fd3db6caf97b915469386d7b25af494d0fe6940547d196a"
+  },
+  {
+    "name": "c02-conversion-open-does-not-enroll-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.401Z",
+    "sha256": "a55776425b4bd0d4e0416f10ed69d0147d17703f30f23d012dbbd0f1d928d6e7"
+  },
+  {
+    "name": "c02-conversion-planner-request-pending-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.406Z",
+    "sha256": "3eed9f6c139c43c26ef06e80e471819f3e853ea11647b4365fd5c1e7e3d28db4"
+  },
+  {
+    "name": "c02-conversion-public-newcomer-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.406Z",
+    "sha256": "dae413af873c35428d440bf9bfeaa31edb22f07abdb2f79e993dc1d2f65b0496"
+  },
+  {
+    "name": "c02-conversion-public-newcomer-it-large-dark.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.406Z",
+    "sha256": "8fbdcc138fc71b79c30a45984e447eba334aac6d641dd6cd41c1961f144aacb0"
+  },
+  {
+    "name": "c02-conversion-joined-planner-frozen-source-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.406Z",
+    "sha256": "9df529489bb324f1dab26d5c90cdc318783683ebe219578ca85cc080cbada7b6"
+  },
+  {
+    "name": "c02-conversion-planner-return-project-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.406Z",
+    "sha256": "157386ff305b846df520feba9662cabaf4325bc3c80ada3524a0701a4a7260ff"
+  },
+  {
+    "name": "c02-conversion-project-and-origin-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.418Z",
+    "sha256": "5100987c6bb4fa34e0ffa31fe2cecd702923fe7e2929dad38441a584fa38bcf7"
+  },
+  {
+    "name": "c02-conversion-linked-planning-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.418Z",
+    "sha256": "1f4d51865c60f7bd1ddfada672a8161d1cd1844ad4e010b6b74bed7626220733"
+  },
+  {
+    "name": "c02-conversion-declined-source-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.418Z",
+    "sha256": "90200895d49012b8a787f964e1d4b5c3e2d6d8d4ee33384da3e93876633d3937"
+  },
+  {
+    "name": "c02-conversion-retained-source-row-en.png",
+    "width": 960,
+    "height": 1920,
+    "modifiedAtUtc": "2026-10-20T13:50:56.422Z",
+    "sha256": "c6ce17497070be70677a43138fd8c1b22da277d28de57e83644ff72fe16a09f1"
+  }
+]
