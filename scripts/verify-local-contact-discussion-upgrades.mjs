@@ -114,10 +114,11 @@ const signatures = [
   "public.list_moderation_cases(uuid,text,integer,timestamptz,uuid)",
   "public.get_moderation_case_detail(uuid,uuid)",
 ];
+// The driver serializes JSONB once. Pre-encoded JSON becomes a scalar string.
 const identities = (
   sql,
 ) => sql`select p.oid, p.oid::regprocedure::text signature, p.proacl::text acl, pg_get_function_result(p.oid) result_shape
-  from pg_proc p where p.oid in (select to_regprocedure(value) from jsonb_array_elements_text(${JSON.stringify(signatures)}::jsonb) a(value)) order by p.oid`;
+  from pg_proc p where p.oid in (select to_regprocedure(value) from jsonb_array_elements_text(${sql.json(signatures)}) a(value)) order by p.oid`;
 async function snapshot(sql) {
   const tables =
     await sql`select table_schema||'.'||table_name name,array_agg(column_name order by ordinal_position) columns
@@ -265,7 +266,7 @@ async function mixedChecks(sql) {
     for (const check of checks) {
       const [{ allowed }] = await sql.unsafe(
         `select (${check.expression}) is not false allowed from jsonb_populate_record(null::private.moderation_cases,$1::jsonb) c`,
-        [JSON.stringify(row)],
+        [row],
       );
       if (!allowed) return false;
     }
