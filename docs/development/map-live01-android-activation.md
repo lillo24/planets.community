@@ -22,6 +22,13 @@ dart run tool/build_map_live_staging.dart apk UNUSED_PLAY_VERSION_CODE
 dart run tool/build_map_live_staging.dart appbundle UNUSED_PLAY_VERSION_CODE
 ```
 
+For an owned emulator, `dart run tool/build_map_live_staging.dart debug-apk`
+uses the same staging validation and map defines without upload signing or a
+Play code. Successful builds record non-secret input provenance in
+`build/map-live-staging/manifest.json`; retain it with the artifact hash and
+signing inspection. See [MAP-LIVE02 evidence](map-live02-acceptance.md) for the
+current live-acceptance boundary.
+
 Replace the final argument with a positive unused Play version code after
 inspecting the package's current upload history. The task observed codes 1 and 2
 on 2026-10-09, with 2 active in Closed testing - Alpha. This is a time-sensitive
@@ -32,13 +39,13 @@ and the existing permanent upload keystore through android/key.properties.
 
 The explicit additional defines are:
 
-| Define | QA value | Ordinary default |
-| --- | --- | --- |
-| LOCATION_MAP_TILES_ENABLED | true | false |
-| LOCATION_MAP_CENTERS_ENABLED | true | false |
-| LOCATION_DETAIL_TILES_ENABLED | true | false |
-| LOCATION_MAP_CACHE_SECONDS | 60 | 0 |
-| LOCATION_EDITOR_SEARCH_ENABLED | true | false; production always inert |
+| Define                         | QA value | Ordinary default               |
+| ------------------------------ | -------- | ------------------------------ |
+| LOCATION_MAP_TILES_ENABLED     | true     | false                          |
+| LOCATION_MAP_CENTERS_ENABLED   | true     | false                          |
+| LOCATION_DETAIL_TILES_ENABLED  | true     | false                          |
+| LOCATION_MAP_CACHE_SECONDS     | 60       | 0                              |
+| LOCATION_EDITOR_SEARCH_ENABLED | true     | false; production always inert |
 
 Detail tiles exclude static rendering even on failure/guests. CACHE01's public
 compressed-byte reuse, protected transient scopes, authorization leases and
