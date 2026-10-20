@@ -5,6 +5,7 @@ if [[ "${GITHUB_ACTIONS:-}" != true || "${RUNNER_ENVIRONMENT:-}" != github-hoste
   echo 'Contact native CI requires an explicitly disposable GitHub-hosted Linux runner.' >&2
   exit 1
 fi
+export TMPDIR="$RUNNER_TEMP"
 root="$(git rev-parse --show-toplevel)"
 cd "$root"
 if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
