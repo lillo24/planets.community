@@ -2,7 +2,7 @@
 
 Authority: the founder-supplied [complete C package](../../history-implementations/PLANETS_Parallel_C01_D00_Packages_2026-10-15/PLANETS_Chat_C01_Full_Package_2026-10-15.md), version PARALLEL-CD-2026-10-15-v1. This contract supersedes the provisional C00 audience/history matrix. The older C evidence remains evidence for its exact historical source, not this revision.
 
-Implementation and local qualification are recorded on cumulative PR #257. Starting source is C `e8c5c8c`; main `5c3d50b4` is incorporated at `a7092c99`, main `224bcab6` at `0bcf6e23`, and ACTSPLIT01 main `32f37791` at `d298f059`. D #254 remains unmerged and is not incorporated; the lane handoff records the inspected peer interfaces. The final published-head checks, merge event and closeout on that PR record the operational completion gate; no earlier CI run substitutes for it. No hosted operation is authorized.
+Implementation and local qualification are recorded on cumulative PR #257. Starting source is C `e8c5c8c`; main `5c3d50b4` is incorporated at `a7092c99`, main `224bcab6` at `0bcf6e23`, ACTSPLIT01 main `32f37791` at `d298f059`, and the later map-plan-only main `9fc89268` at `93a98558`. D #254 remains unmerged and is not incorporated; the lane handoff records the inspected peer interfaces. The final published-head checks, merge event and closeout on that PR record the operational completion gate; no earlier CI run substitutes for it. No hosted operation is authorized.
 
 ## Decision ledger
 

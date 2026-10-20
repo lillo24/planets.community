@@ -7,6 +7,11 @@ consent correction `2ee7a995340e932bb6322c08b5699e7e6aca062e`, the bounded Proje
 `32f37791b11f759adfe4b61c2cdd1b600fdf84f2`. Subsequent qualification commits add tests, verifier assertions, documentation and these evidence files only; runtime Mobile sources and migrations remain identical. D was unmerged and was
 not imported or simulated.
 
+Main later advanced to `9fc89268dd735a5fbf1796b54e3e7b21b3ff08c6` with only two
+additional implementation plan documents. The final branch incorporates them;
+its runtime Mobile sources, migrations and native harness remain identical to
+this APK source. Final published-head CI and merge provenance belong to PR #257.
+
 The 41 originals are real Android screenshots from one completed run of
 `group_discussion_smoke_test.dart` and `discussion_conversion_journey.dart`.
 The historical `c02-` filename prefix belongs to the reused screenshot driver;

@@ -110,6 +110,12 @@ locale values. The lanes serialize the following focused SDK/native checks.
 The package allows C to merge first; D is not a waiting dependency. Main and
 peer heads are rechecked immediately before merge.
 
+During final CI, main advanced to `9fc89268` with only the MAP-LIVE02 and
+MAP-COST01 plan documents. C incorporates those documents before source merge;
+runtime Mobile, migrations and native harness remain identical. The updated
+published head receives a new complete classified CI run. CI576's three passing
+client jobs qualify its older head, not the final merge gate.
+
 The final runtime source `56e657ed` passed all 41 revised Android checkpoints
 with driver exit 0 and 41 fresh 960×1920 screenshots; seven contact sheets and
 critical originals were inspected. The [R07 evidence map](evidence/group-discussions/r07/README.md)

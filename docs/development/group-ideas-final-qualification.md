@@ -31,6 +31,13 @@ cleanup. Those operational records must pass before the task is complete.
 - Core, mobile and conversion revision work was integrated from separate C
   branches. The source commits and later corrections remain in the cumulative
   PR's history; no backend-only C stage merged independently.
+- Main advanced again during the final CI window to
+  `9fc89268dd735a5fbf1796b54e3e7b21b3ff08c6`, adding only the MAP-LIVE02 and
+  MAP-COST01 implementation plan documents. It is incorporated at `93a98558` before final
+  source merge. Runtime Mobile sources, migrations and native harness are
+  byte-identical to the qualified runtime; published-head CI is repeated after
+  this reconciliation. CI576 on the previous `89c1ed6e` head passed Mobile, Web
+  and Site before being superseded; it is not the final merge gate.
 - Final runtime source is `56e657ed6694fdff3e10bb8cf4a063a3781f05c2`, with
   the final consent reader `2ee7a995340e932bb6322c08b5699e7e6aca062e` and
   Project layout repair in the runtime commit,
