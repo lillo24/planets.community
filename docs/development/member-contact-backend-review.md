@@ -1,14 +1,16 @@
-# Group-member personal contact — synthetic review candidate
+# Group-member personal contact — approved scoped policy
 
-**Policy status: PROVISIONAL, NOT APPROVED.** D-M00/M01 of package
-`PARALLEL-CD-2026-10-15-v1` explicitly permits synthetic implementation, but this
-runtime must remain on the D review stack until the founder resolves the personal
-conversation lifetime/history policy. Passing tests does not approve that policy.
-No migration has been applied to a hosted environment by this work.
+**Policy status: approved on 20 October 2026.** After clarification, the founder
+approved policy 3: named, explicitly accepted contact through a shared Group's
+current People list, with retained authorized episode history after context loss
+or Close/Leave. This grants no unrestricted personal messaging. The
+[decision ledger and final qualification](group-contact-parallel-handoff.md#decision-ledger)
+record the approval, validation and cumulative PR #254 merge. No migration has
+been applied to a hosted environment by this work.
 
-## Candidate and ownership
+## Contract and ownership
 
-The implemented candidate uses a named human pair and one deliberately selected
+The approved implementation uses a named human pair and one deliberately selected
 origin Group. A separate private `member_contact_pairs` anchor is unique on
 `(group_id, least(profile_id), greatest(profile_id))`. It is not the existing
 Project requester/Creator pair, a representative D admission, or a C Idea room.
@@ -36,7 +38,7 @@ Names frozen on requests/messages add no profile-field/photo/affiliation grant.
 Block does not terminate an already accepted episode. Ending the block removes
 that send restriction only if the original episode and Group eligibility still
 exist. Close/Leave/context loss cannot be undone by unblock or rejoin. This is part
-of the synthetic candidate, not an inferred founder decision.
+of the explicitly approved policy 3.
 The EN/IT read-only notice describes fresh consent conditionally for an ended
 conversation; a temporary send restriction must not falsely claim that its live
 episode has ended. The Mobile regression checks blocked, restored and ended

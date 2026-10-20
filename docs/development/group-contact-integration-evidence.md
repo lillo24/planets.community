@@ -5,11 +5,12 @@ revised D/M interfaces, policy decisions and final qualification are tracked in
 [the parallel revision handoff](group-contact-parallel-handoff.md). Historical
 green checks and partial native frames do not qualify the revised source.
 
-**Historical draft evidence.** The founder approved representative policies 1 and
-2 on 19 October 2026, as recorded in the current handoff linked above. The separate
-member policy and final native/source qualification remain gates. Passing tests
-cannot approve an unresolved choice. No hosted migration, production deployment
-or app-store action occurred.
+**Historical stage evidence.** Policies 1/2 were approved on 19 October and the
+scoped member policy 3 on 20 October 2026. Full combined CI and both complete
+Android journeys passed; cumulative PR #254 merged as `db21460b`. The
+[final qualification](group-contact-parallel-handoff.md#final-qualification-and-merge-20-october-2026)
+supersedes the pending gates below without changing the original stage results.
+No hosted migration, production deployment or app-store action occurred.
 
 ## Source and traceability
 

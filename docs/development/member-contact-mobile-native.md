@@ -1,9 +1,11 @@
 # Member contact native review harness
 
-This is synthetic review coverage for D-M02. The candidate lifetime policy remains
-review-only until the founder decision recorded by the parent implementation is
-resolved. Source compilation and intermediate screenshots do not constitute a
-completed native run or approval of that policy.
+This is synthetic review coverage for D-M02. The founder approved the scoped
+lifetime/history policy 3 on 20 October 2026. Both complete Android drivers and
+the evidence collector passed in run 39464814368. The
+[final qualification](group-contact-parallel-handoff.md#final-qualification-and-merge-20-october-2026)
+records the actual source, 75 D/M frames, visual inspection and limits. Source
+compilation or intermediate screenshots alone do not constitute a native pass.
 
 The combined journey also invites the named person to an independently joined C
 Idea using C's canonical command, checks that invitation alone grants neither

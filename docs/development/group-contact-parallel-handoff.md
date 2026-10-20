@@ -8,12 +8,13 @@ old D privacy model.
 ## Source and current status
 
 - Cumulative source: [D #254](https://github.com/lillo24/planets.community/pull/254),
-  `codex/d-integration`; preserves all D00–D03 ancestry.
+  merged into `main` as `db21460bbee3e8238216f1acc0ef094d3ee64ec5` on
+  20 October 2026; preserves all D00–D03 ancestry.
 - Published D predecessor: `9ea6ca3f`; post-ACTSPLIT01 qualification and the
-  remaining native follow-up are recorded below.
+  subsequent completed combined qualification are recorded below.
 - Main integration target: `93414af566d51c7cf01176c2b7229420e34eed31`, including
   the actual C merge `89292af4` and subsequently merged MAP-LIVE02/MAP-COST01.
-  Combined qualification is in progress. Integrating merged main does not
+  Combined qualification passed on `2026a697`. Integrating merged main does not
   authorize deploying those map features or changing their default-off flags.
 - Peer inspected: [C #257](https://github.com/lillo24/planets.community/pull/257),
   `99407174f6d183716e32464963aa40121a0431d3`; merged by `89292af4` on 20 October.
@@ -42,24 +43,29 @@ and authorizes cumulative merge after the remaining policy and validation gates.
 Hosted database and Play Store deployment are explicitly excluded. The reference
 is the human message in this task; no transcript URL is invented.
 
-| Topic                          | Classification / actual reference                              | Review candidate and dependent scope                                                                                                                            |
-| ------------------------------ | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Representation                 | User decision: package `00_START_HERE_D00`, requested behavior | Current Creator, Co-creator, Co-organizer; real human attribution; ordinary members cannot represent or publish through D                                       |
-| Personal contact               | User decision: same section and D-M00 fixed flow               | Current canonical Group People; selected origin Group; named recipient explicitly accepts; no Project prerequisite or manager oversight                         |
-| Group People                   | Existing implemented contract: GRP03A/GRP03B                   | Accepted membership and management are independent relationships; pending applicants/outsiders have no People/contact grant                                     |
-| Pending D audience             | Approved: human policy 1, 19 October 2026                      | All eligible target managers triage the pending request; only the disclosed pending audience receives its note                                                  |
-| Accepted D audience            | Approved: human policy 1, 19 October 2026                      | Submitter plus first accepting human; other managers do not inherit chat admission/history                                                                      |
-| Role loss / Leave / regrant    | Approved: human policy 2, 19 October 2026                      | Role loss/own Leave denies former content; regrant/replacement inherits none; Close preserves read-only history for still-valid admissions                      |
-| Multi-group disclosure/history | Approved: human policy 2, 19 October 2026                      | Staged named/versioned all-party consent; fresh room and authored summary; no copied bilateral/C history                                                        |
-| Member lifetime/history        | Unresolved D-M00 question                                      | Candidate stops sends/notices after loss of either person's last origin relationship and retains pre-end history; alternatives remove history access or defer M |
-| Member identity/re-entry       | Review candidate, included in the question                     | Stable pair plus selected origin Group, separate explicit consent episodes; reverse requests deduplicate; rejoin alone does not restore sending                 |
-| Bounds                         | Reversible implementation choices, not founder policy          | Existing documented finite operational limits remain synthetic values pending verification; no permanent ban/retention decision inferred                        |
-| Individual-to-Group            | Deferred by active package                                     | No arbitrary individual-to-Group request endpoint                                                                                                               |
-| Distribution/erasure           | Outside source authorization                                   | No hosted migration, real-user contact, deployment or new legal retention rule                                                                                  |
+On 20 October 2026, after the scoped member conversation and the difference in
+history access were explained, the founder answered: "Yes, I approve." This
+approves policy 3 as specified below and releases the final source-merge hold.
+It does not reopen unrestricted personal direct messaging or authorize deployment.
 
-All runtime depending on unresolved rows stays on this draft branch. A client
-flag cannot make it mergeable. C does not wait for these decisions. Any separately
-merged subset must state its exclusions and prove it has no dependent endpoint.
+| Topic                          | Classification / actual reference                              | Policy and dependent scope                                                                                                                           |
+| ------------------------------ | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Representation                 | User decision: package `00_START_HERE_D00`, requested behavior | Current Creator, Co-creator, Co-organizer; real human attribution; ordinary members cannot represent or publish through D                            |
+| Personal contact               | User decision: same section and D-M00 fixed flow               | Current canonical Group People; selected origin Group; named recipient explicitly accepts; no Project prerequisite or manager oversight              |
+| Group People                   | Existing implemented contract: GRP03A/GRP03B                   | Accepted membership and management are independent relationships; pending applicants/outsiders have no People/contact grant                          |
+| Pending D audience             | Approved: human policy 1, 19 October 2026                      | All eligible target managers triage the pending request; only the disclosed pending audience receives its note                                       |
+| Accepted D audience            | Approved: human policy 1, 19 October 2026                      | Submitter plus first accepting human; other managers do not inherit chat admission/history                                                           |
+| Role loss / Leave / regrant    | Approved: human policy 2, 19 October 2026                      | Role loss/own Leave denies former content; regrant/replacement inherits none; Close preserves read-only history for still-valid admissions           |
+| Multi-group disclosure/history | Approved: human policy 2, 19 October 2026                      | Staged named/versioned all-party consent; fresh room and authored summary; no copied bilateral/C history                                             |
+| Member lifetime/history        | Approved: human policy 3, 20 October 2026                      | Stops sends/notices after loss of either person's last origin relationship or Close/Leave; both retain only their authorized pre-end episode history |
+| Member identity/re-entry       | Approved: human policy 3, 20 October 2026                      | Stable pair plus selected origin Group, separate explicit consent episodes; reverse requests deduplicate; rejoin alone does not restore sending      |
+| Bounds                         | Reversible implementation choices, not founder policy          | Existing documented finite operational limits remain synthetic values pending verification; no permanent ban/retention decision inferred             |
+| Individual-to-Group            | Deferred by active package                                     | No arbitrary individual-to-Group request endpoint                                                                                                    |
+| Distribution/erasure           | Outside source authorization                                   | No hosted migration, real-user contact, deployment or new legal retention rule                                                                       |
+
+All three required product policies are approved and the cumulative source is
+merged. Operational bounds and distribution/erasure decisions retain their
+separate scope; passing tests or client flags do not approve those decisions.
 
 Policy 3 covers only a named private request from one current Group person to
 another through that Group's authorized People list. Canonical eligibility is
@@ -69,7 +75,7 @@ acceptance. There is no public people directory, profile-based arbitrary contact
 manager oversight or free-form messaging before acceptance. Existing Project/
 Resource conversations and C rooms are separate scopes.
 
-The unresolved candidate ends sending/notices when either person loses their last
+The approved member policy ends sending/notices when either person loses their last
 qualifying origin relationship, or explicitly closes/leaves. Both retain only
 their authorized episode history, including incoming messages within that boundary
 that were not yet read. Rejoin requires fresh request/acceptance. A temporary Block
@@ -77,7 +83,53 @@ stops sending/notices but does not itself terminate a live episode; unblock can
 restore sending only if that episode and both origin relationships still qualify.
 This differs from representative access because the latter is tied to a specific
 authority grant. The difference is a product choice, not a technical requirement,
-and policies 1/2 do not approve member history retention.
+and the separate policy 3 approval explicitly authorizes member history access
+within these episode bounds. It defines no legal retention period or erasure rule.
+
+## Final qualification and merge, 20 October 2026
+
+[Full Validation 39470587711](https://github.com/lillo24/planets.community/actions/runs/39470587711)
+passed Change classification, Mobile, Web, Site and Database on qualified source
+`2026a697cdd45810a5ef779058c186e2052538d9`, including latest main `93414af5`
+and C's actual merge `89292af4`:
+
+- Mobile: 3,783 tests passed, two skipped; clean Flutter analysis and formatting
+  of all 826 source/test files.
+- Database: sorted fresh replay of all 122 migrations, lint/advisors, 157 SQL
+  suites / 6,325 assertions, genuine Auth/integration suites and generated-type
+  drift verification. The combined schema exposes 434 public RPC names.
+- Exact C-first populated upgrade preserved 135 original table/column snapshots
+  and four warmed function OIDs/ACLs/result contracts. D-first preserved 147
+  snapshots and five function contracts. Repeated application was harmless.
+  Both orders passed the 14-case mixed C/D/M checks, all six new report kinds,
+  cross-family key rejection, own v4 labels and combined unread/auth parity.
+- C01 completed final source/contract and mixed-verifier reviews with no
+  remaining concrete mismatch.
+
+[Android 39464814368](https://github.com/lillo24/planets.community/actions/runs/39464814368)
+passed both complete drivers and the strict evidence collector on actual source
+`b36c2a480051af42ce06863e1a76c77312a3d1aa`: 29 D plus 46 M unique PNGs,
+720×1600 at 320dp/2x text, EN/IT, real keyboard inset and genuine local OTP/backend.
+All 75 hashes, dimensions, byte counts and compact response records were verified.
+Selected disclosure, named-audience, denied-access, keyboard and retained-history
+frames were visually inspected. All eight Git objects covering Mobile, Supabase,
+shared Node helpers, dependency manifests and native workflow/runner/collector
+match the qualified source exactly; later changes concern independent verifiers,
+documentation and Database gate ordering. Artifacts retain their actual commit.
+No physical-device or iOS qualification is claimed.
+
+Automatic approval review rejected a local service-start/binding-probe command
+with only "blocked by policy". It was not retried through another launcher.
+The successful authorized execution route was disposable GitHub-hosted CI;
+the owned D machine remains stopped. The safe
+[manual Android procedure](contact-android-manual-qa.md) remains available, but
+the previously missing automated journey is now complete.
+
+After the founder's policy 3 approval, PR #254 merged at 18:39 UTC. No hosted
+database migration, production deployment, signing release or Play Store
+submission was performed. The stage/seam entries below preserve earlier
+checkpoints; their pending gates and failures are historical, superseded by this
+final qualification rather than rewritten as earlier successes.
 
 ## Stage map
 
