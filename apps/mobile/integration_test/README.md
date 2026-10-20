@@ -14,11 +14,20 @@ invalidating a lazy recovery row between the check and tap. Missing/disabled
 actions still fail with a sanitized route, auth phase and widget-state summary.
 The final consent journey requires one confirmation and explicit recovery with
 that original action UUID, then the canonical exact audience and fresh empty room.
+Ordinary acknowledged coordination commands also finish their original receipt
+before the next action. If an access hint invalidates the old UI epoch, the
+journey uses its exposed Recover control for the known receipt without resending.
+The EN/IT claimed-invitation regression verifies direct Decline reachability and
+the access-hint/known-receipt recovery boundary. Unknown final-reply recovery keeps
+its separate exact one-confirmation/one-recovery assertions.
 The EN/IT coordination widget regression delays an actual screen refresh through
 the former readiness gap; it does not bypass the production button callback.
 See [contact native QA](../../../docs/development/group-contact-mobile.md) for
 isolated engine/ports, actual 320dp configuration, injection boundaries and
 completion requirements. Its unresolved privacy choices remain review-only.
+Contact host drivers save compact result metadata and separate PNGs; see
+[host driver ownership](../test_driver/README.md). Image bytes are not
+pretty-encoded into a second large JSON copy after app assertions complete.
 
 ## UIPOLISH03 presentation capture
 

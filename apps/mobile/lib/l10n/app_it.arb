@@ -2224,7 +2224,7 @@
   "memberContactPersonActions": "Persona e azioni",
   "memberContactPrivacy": "Una conversazione personale tramite il Gruppo condiviso. Solo voi due potete leggerla. È richiesta l’accettazione; i ruoli nel Gruppo non danno accesso.",
   "memberContactOrigin": "Tramite {group}",
-  "memberContactNote": "Presentazione facoltativa",
+  "memberContactNote": "Nota facoltativa",
   "memberContactNotEligible": "Una nuova richiesta non è disponibile. Controlla le richieste e le conversazioni private esistenti, oppure riprova più tardi.",
   "memberContactAcceptBody": "Accettare una conversazione privata con questa persona tramite il Gruppo indicato? Non comporta la partecipazione a un Progetto né l’assegnazione di un ruolo nel Gruppo.",
   "memberContactInfo": "Impostazioni della conversazione",

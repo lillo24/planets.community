@@ -9,11 +9,12 @@ old D privacy model.
 
 - Cumulative source: [D #254](https://github.com/lillo24/planets.community/pull/254),
   `codex/d-integration`; preserves all D00–D03 ancestry.
-- Runtime integration base: `c56629b0`; post-ACTSPLIT01 qualification and the
+- Runtime integration base: `cb8b8a08`; post-ACTSPLIT01 qualification and the
   remaining native follow-up are recorded below.
-- Included main: `32f37791b11f759adfe4b61c2cdd1b600fdf84f2`.
+- Included main: `9fc89268dd735a5fbf1796b54e3e7b21b3ff08c6`. Its two later map-plan
+  documents do not change runtime behavior or authorize executing those plans.
 - Peer inspected: [C #257](https://github.com/lillo24/planets.community/pull/257),
-  `7183efe0a678a86c1526f265b7f522b54b75eda9`; unmerged, not imported.
+  `99407174f6d183716e32464963aa40121a0431d3`; unmerged, not imported.
 - Main reconciliation preserves startup signed-out handling, compact card skills,
   event schedules, request UI, STAGING01 evidence and UIPOLISH02. Localization
   conflicts retain both contact copy and the actual skill/Workshop changes.
@@ -498,6 +499,55 @@ Current-head CI outcomes belong to the cumulative PR checks/comments. Historical
 Validation 574 passed all jobs on `eed96e5d` (including 3,611 Mobile tests with two
 existing skips), and does not qualify the later notice wording. Final native
 qualification and the remaining policy 3 answer still gate cumulative merge.
+
+## 20 October executed native attempts and focused repairs
+
+The same reviewed D-only emulator launch executed successfully under the human's
+authorization, without changing an executor or permission setting. Both `f355736a`
+APKs built against seven verified D services and 112 migrations. The first D
+attempt encountered a System UI ANR before submission; zero requests/receipts
+were verified before reusing that fixture. A process-local 2 GiB/two-core launch
+with a visually verified healthy launcher then passed nine D checkpoints,
+including the real IME, committed-request recovery, acceptance and chat. It failed
+at the first coordination Decline action while the canonical read still allowed
+declining. Neither attempt is a completed native pass.
+
+M passed every app assertion and teardown, saving 40 fresh PNGs, but its host
+driver then exhausted heap while serializing the response and exited 1. This is
+also not a complete native pass. Sanitized attempts are kept separately at
+`C:/Users/utente/.planets/qa/d-contact-2026-10-20-native-f355736a`.
+
+The focused repairs preserve authorization and the deliberate final lost-reply
+assertions:
+
+- Both host drivers retain the SDK's screenshot validation and PNG callback, then
+  write bounded screenshot metadata rather than serializing a second copy of
+  image bytes. Eight pure tests cover malformed data, early failure, preservation
+  and a large byte list that must never be read or copied.
+- The D journey explicitly settles ordinary known coordination receipts. An
+  access refresh can keep an acknowledged claim frozen until the existing Recover
+  action reconciles it. Real-screen EN/IT tests prove that recovery exposes
+  Decline without repeating the claim; the final deliberate uncertain confirmation
+  still requires its original UUID and one explicit recovery.
+- Narrow EN/IT confirmation buttons use the existing compact Accept caption while
+  preserving the full consent body and callback. Real glyph-bound tests at 320 dp
+  and 2x text prove the caption fits. The Italian optional-note label is shorter.
+
+All 80 scoped contact/coordination/member/driver tests passed together. Full Flutter
+analysis passed with no issues in 75.6 seconds; localization generation, changed
+Dart/document formatting and diff checks passed. Fresh fixtures, APKs and complete
+driver exit-zero reruns remain required for these repairs. Historical Validation
+575 passed every job on `f355736a`; final-head CI is recorded on the PR, without a
+results-only source push.
+
+The D AVD and seven label/workdir-verified containers were stopped after those
+attempts, with volumes preserved and zero owned processes/listeners/devices. C
+subsequently completed its native qualification and explicitly returned the full
+SDK/runtime slot to D; its own machine is stopped. No global engine, WSL or device
+configuration was changed. C now has eight forward migrations; 120 combined
+migrations is only an integration preflight count, not evidence of qualification.
+If C merges first, actual sorted clean replay, both populated lane orders, shared
+API reconciliation and regenerated combined types remain required.
 
 ## Later final-main review
 

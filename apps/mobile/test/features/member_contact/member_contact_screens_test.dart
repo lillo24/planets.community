@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart' hide group;
 import 'package:go_router/go_router.dart';
@@ -452,6 +453,61 @@ void main() {
   });
 
   for (final language in ['en', 'it']) {
+    testWidgets(
+      '$language enlarged accept confirmation keeps its glyphs on the button',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 711);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final calls = <String>[];
+        await pumpMember(
+          tester,
+          (name, args) async {
+            calls.add(name);
+            return basic(name, args);
+          },
+          path: '/messages/requests/member-contact/$requestId',
+          language: language,
+          scale: 2,
+        );
+        final accept = find.byKey(const Key('contact-accept'));
+        await reveal(tester, accept);
+        await Scrollable.ensureVisible(tester.element(accept), alignment: .5);
+        await tester.pumpAndSettle();
+        expect(accept.hitTestable(), findsOneWidget);
+        await tester.tap(accept);
+        await tester.pumpAndSettle();
+        final button = find.byKey(const Key('contact-confirm-accept'));
+        final label = find.descendant(of: button, matching: find.byType(Text));
+        final paragraph = tester.renderObject<RenderParagraph>(label);
+        final boxes = paragraph.getBoxesForSelection(
+          TextSelection(
+            baseOffset: 0,
+            extentOffset: paragraph.text.toPlainText().length,
+          ),
+        );
+        expect(
+          boxes.map((box) => box.top).toSet().length,
+          lessThanOrEqualTo(2),
+        );
+        final bounds = tester.getRect(button);
+        for (final box in boxes) {
+          final topLeft = paragraph.localToGlobal(Offset(box.left, box.top));
+          final bottomRight = paragraph.localToGlobal(
+            Offset(box.right, box.bottom),
+          );
+          expect(topLeft.dx, greaterThanOrEqualTo(bounds.left - .1));
+          expect(bottomRight.dx, lessThanOrEqualTo(bounds.right + .1));
+          expect(topLeft.dy, greaterThanOrEqualTo(bounds.top - .1));
+          expect(bottomRight.dy, lessThanOrEqualTo(bounds.bottom + .1));
+        }
+        expect(calls.toSet(), {'get_own_member_contact_request'});
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+
     testWidgets(
       '$language temporary read-only access does not claim the episode ended',
       (tester) async {

@@ -84,7 +84,7 @@ if (-not (Test-Path -LiteralPath $manualEmulator -PathType Leaf)) {
 Start-Process -FilePath $manualEmulator -WindowStyle Normal -ArgumentList @(
   '-avd','PLANETS_D_QA','-port','5580',
   '-no-snapshot-load','-no-snapshot-save','-no-audio',
-  '-gpu','swiftshader','-cores','2','-memory','1536'
+  '-gpu','swiftshader','-cores','2','-memory','2048'
 )
 ```
 
@@ -92,6 +92,12 @@ Run this only after the operator verifies C's resource handoff, the exact D AVD,
 unused D ports and no existing 5580 process. It does not change the AVD, global
 engine, security settings or another task's device. A successful human launch is
 not an automated test pass; record who launched it and each subsequent outcome.
+
+The 20 October retry used process-local 2 GiB RAM after a 1.5 GiB cold boot left a
+System UI ANR holding focus. Boot completion alone was insufficient: verify a
+responsive launcher with visible icons and no ANR before starting the app. This
+is a bounded test configuration, not a proven general fix for emulator crashes;
+do not edit global WSL/engine settings or another task's AVD.
 
 ### Fresh fixtures and normal app
 

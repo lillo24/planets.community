@@ -148,7 +148,7 @@ class _MemberContactRequestScreenState
               style: contactFilledButtonStyle,
               key: const Key('contact-confirm-accept'),
               onPressed: () => Navigator.pop(context, true),
-              child: Text(l.contactAccept),
+              child: Text(l.groupAccept),
             ),
           ],
         ),

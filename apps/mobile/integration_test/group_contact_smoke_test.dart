@@ -12,6 +12,7 @@ import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
+import 'package:planets_mobile/features/group_contact/application/contact_attempt.dart';
 import 'package:planets_mobile/features/group_contact/data/group_contact_gateway.dart';
 import 'package:planets_mobile/features/group_contact/presentation/group_contact_routes.dart';
 import 'package:planets_mobile/features/group_contact/presentation/group_contact_compose_screen.dart';
@@ -256,11 +257,53 @@ void main() {
           'D native action failure: path=$path '
           'phase=${scope.read(authSessionProvider).phase.name}; $diagnostics',
         );
+        for (final entry in scope.read(contactAttemptsProvider).entries) {
+          debugPrint(
+            'D retained action: operation=${entry.value.operation}, '
+            'ambiguous=${entry.value.ambiguous}, '
+            'knownReceipt=${entry.value.receipt != null}.',
+          );
+        }
         await binding
             .takeScreenshot('d03-missing-$key')
             .timeout(const Duration(seconds: 30));
       },
     );
+
+    Future<void> settleCoordinationReceipt(
+      String proposalId,
+      String operation,
+    ) async {
+      final owner = currentScope!;
+      final id = owner.read(authSessionProvider).identity!.id;
+      final slot = 'coordination/$proposalId';
+      final original = owner.read(contactAttemptsProvider)[slot];
+      if (original == null) return;
+      expect(original.actor, id);
+      expect(original.operation, operation);
+      await harness.waitUntil(tester, () {
+        expect(currentScope, same(owner));
+        expect(owner.read(authSessionProvider).identity?.id, id);
+        final pending = owner.read(contactAttemptsProvider)[slot];
+        if (pending == null) return true;
+        expect(pending, same(original));
+        return pending.receipt != null;
+      });
+      if (owner.read(contactAttemptsProvider)[slot] == null) return;
+      // A real own-access hint can invalidate the command's old UI epoch even
+      // after its canonical reply arrived. Follow the exposed Recover control
+      // for that exact receipt before the next action; never send it again.
+      // Deliberate unknown-reply recovery has its separate final-consent checks.
+      expect(original.receipt, isNotNull);
+      expect(original.ambiguous, isFalse);
+      await tap('coordination-recover');
+      await harness.waitUntil(tester, () {
+        expect(currentScope, same(owner));
+        expect(owner.read(authSessionProvider).identity?.id, id);
+        return owner.read(contactAttemptsProvider)[slot] == null;
+      });
+      debugPrint('D native known $operation receipt explicitly reconciled.');
+    }
 
     Future<void> tapFinder(Finder finder) async {
       await reveal(finder);
@@ -482,8 +525,10 @@ void main() {
         .go(coordinationProposalRoute(declinedCoordination));
     await tap('coordination-claim-$library');
     await tap('coordination-confirm-dialog');
+    await settleCoordinationReceipt(declinedCoordination, 'claim');
     await tap('coordination-decline');
     await tap('coordination-confirm-dialog');
+    await settleCoordinationReceipt(declinedCoordination, 'decline');
     await reveal(find.text('Declined'));
     final declinedState = await coordination(dave, declinedCoordination);
     expect(declinedState['status'], 'declined');
@@ -497,6 +542,7 @@ void main() {
     inviteeRouter.go(coordinationProposalRoute(proposalId));
     await tap('coordination-claim-$library');
     await tap('coordination-confirm-dialog');
+    await settleCoordinationReceipt(proposalId, 'claim');
     await reveal(
       find.text(
         'The original representatives must confirm the complete named audience before it is shared with invitees.',
@@ -512,6 +558,7 @@ void main() {
     await reveal(find.text('Fresh fictional three-group coordination'));
     await tap('coordination-confirm');
     await tap('coordination-confirm-dialog');
+    await settleCoordinationReceipt(proposalId, 'confirm');
     await confirmed(alice, proposalId);
     final earlierAudience = await coordination(alice, proposalId);
     // Re-selecting the same Group deliberately retires its named seat. The
@@ -527,6 +574,7 @@ void main() {
     await tap('coordination-group-$library');
     await tap('coordination-use-groups');
     await tap('coordination-confirm-dialog');
+    await settleCoordinationReceipt(proposalId, 'targets');
     final replacementDeadline = DateTime.now().add(const Duration(seconds: 45));
     var replacedAudience = await coordination(alice, proposalId);
     while (replacedAudience['version'] == earlierAudience['version'] &&
@@ -577,6 +625,7 @@ void main() {
     reclaimed.read(appRouterProvider).go(coordinationProposalRoute(proposalId));
     await tap('coordination-claim-$library');
     await tap('coordination-confirm-dialog');
+    await settleCoordinationReceipt(proposalId, 'claim');
     await reveal(
       find.text(
         'The original representatives must confirm the complete named audience before it is shared with invitees.',
@@ -588,6 +637,7 @@ void main() {
         .go(coordinationProposalRoute(proposalId));
     await tap('coordination-confirm');
     await tap('coordination-confirm-dialog');
+    await settleCoordinationReceipt(proposalId, 'confirm');
     await confirmed(alice, proposalId);
     final secondConsent = await asPerson(carol, carolToken);
     secondConsent
@@ -596,6 +646,7 @@ void main() {
     await reveal(find.text('Fresh fictional three-group coordination'));
     await tap('coordination-confirm');
     await tap('coordination-confirm-dialog');
+    await settleCoordinationReceipt(proposalId, 'confirm');
     await confirmed(carol, proposalId);
     final finalConsent = await asPerson(
       dave,

@@ -41,8 +41,11 @@ does not withdraw a submitted request. A withdrawal is a separate command.
 Representative, member-contact and coordination FilledButtons share the local
 `contactFilledButtonStyle`: `AppRadii.medium` (12px) rounded rectangles. The
 Material stadium default can curve behind enlarged multiline labels in narrow
-dialogs; the local shape keeps every line on the filled background. Labels,
-text scaling, padding, callbacks and the global app theme remain unchanged.
+dialogs; the local shape keeps every line on the filled background. Accept
+confirmation buttons use the existing compact Accept/Accetta caption while the
+full consent body remains visible. Glyph-bound regressions at 320dp and 2x text
+check that the caption stays inside the button. Text scaling, padding, callbacks
+and the global app theme remain unchanged.
 Actual member submit/accept screens are compared in EN/IT at 320dp and 2x text;
 widget captures supplement the native frames and do not qualify a native run.
 
@@ -73,6 +76,10 @@ additive metadata endpoint, not a replacement authorization decision for reads.
 For a founder-operated normal app with real OTP sign-in, use the separate
 [manual Android procedure](contact-android-manual-qa.md). Its observations do not
 replace the deterministic lost-response and canonical postconditions below.
+
+On Windows, prepend the checkout's `node_modules/.bin` to process-local PATH
+before invoking preparation directly with `node`; its status reader requires
+the project-scoped Supabase CLI. Do not change global PATH.
 
 Use an owned emulator and an explicitly disposable local Supabase project. Never
 reset a shared project or install over the Play app on a physical phone. Fixtures
@@ -172,6 +179,13 @@ ignored `apps/mobile/build/group-contact-screenshots`; inspect them before claim
 visual QA. This is a bounded journey, not a substitute for physical-device or iOS
 release validation. The final integration evidence records actual successful runs
 and any limitations.
+
+The host driver writes `build/group_contact_response_data.json` with frame names,
+byte counts and other result metadata. PNGs remain in the screenshot directory.
+It preserves the SDK's screenshot/pass/fail checks while avoiding a second pretty
+JSON copy of the image bytes after completion. A host-driver error still fails
+the run, even if the app printed that all assertions passed. See
+[host driver ownership](../../apps/mobile/test_driver/README.md).
 
 Native QA also exercises the shared moderation category selector at narrow width.
 Long EN/IT category labels wrap within the bounded field and menu at enlarged text.

@@ -22,6 +22,10 @@ non-loopback services and requires a defines file inside OS temporary storage,
 outside the checkout. Never print, commit or attach that file: it contains actual
 short-lived local Auth JWTs.
 
+For direct preparation with `node` on Windows, prepend this checkout's
+`node_modules/.bin` to process-local PATH so the status reader finds the installed
+Supabase CLI. Do not change global PATH or another task's engine selection.
+
 The native/database owner alone runs the following commands, substituting the
 owned engine, API/Mailpit ports and emulator. For the D review stack, the API and
 Mailpit ports are 55321 and 55324. Finish cold database image downloads and checks
@@ -59,6 +63,14 @@ used throughout. English and Italian frames come from the same real screen,
 after loaded content has replaced progress indicators. The screenshot driver
 writes PNGs under ignored `apps/mobile/build/member-contact-screenshots` and
 retains failure response data.
+
+The host driver saves `build/member_contact_response_data.json` with frame names,
+byte counts and other result metadata. Its unchanged screenshot callback saves
+every PNG, and the SDK still validates the callbacks and app result. Only duplicate
+JSON image-byte arrays are omitted: default pretty encoding exhausted the host
+heap after the complete 40-frame app journey passed. Driver exit zero remains
+mandatory; app-pass/host-error is not final qualification. See
+[host driver ownership](../../apps/mobile/test_driver/README.md).
 
 Keyboard frames additionally require a real positive bottom view inset. Enable
 the owned emulator's software keyboard as above; no keyboard geometry is faked.
