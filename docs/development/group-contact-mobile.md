@@ -1,8 +1,10 @@
 # D02 contact client and native verification
 
-Status: **provisional review only**, with no founder approval reference. The
-contract and backend are documented in `group-contact-contract.md` and
-`group-contact-backend.md`.
+Status: representative policies 1 and 2 approved by the human on 19 October 2026;
+see the [current decision ledger](group-contact-parallel-handoff.md#decision-ledger).
+Final native/source qualification and the separate member policy remain gates.
+The contract and backend are documented in `group-contact-contract.md` and
+`group-contact-backend.md`; no deployment is authorized.
 
 ## Context and ownership
 
@@ -67,6 +69,10 @@ group role cannot produce an own seat; identity mismatch is rejected. It is an
 additive metadata endpoint, not a replacement authorization decision for reads.
 
 ## Reproduce native QA
+
+For a founder-operated normal app with real OTP sign-in, use the separate
+[manual Android procedure](contact-android-manual-qa.md). Its observations do not
+replace the deterministic lost-response and canonical postconditions below.
 
 Use an owned emulator and an explicitly disposable local Supabase project. Never
 reset a shared project or install over the Play app on a physical phone. Fixtures

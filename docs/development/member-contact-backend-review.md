@@ -37,6 +37,10 @@ Block does not terminate an already accepted episode. Ending the block removes
 that send restriction only if the original episode and Group eligibility still
 exist. Close/Leave/context loss cannot be undone by unblock or rejoin. This is part
 of the synthetic candidate, not an inferred founder decision.
+The EN/IT read-only notice describes fresh consent conditionally for an ended
+conversation; a temporary send restriction must not falsely claim that its live
+episode has ended. The Mobile regression checks blocked, restored and ended
+projections without submitting a request, acceptance or message.
 
 Pending request metadata remains visible to its named endpoints. The sender can
 read their note. The recipient receives note text through an exact request read

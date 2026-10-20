@@ -1,8 +1,9 @@
 # D01 — Group contact backend (provisional)
 
-Approval status: **PROVISIONAL — REVIEW ONLY**. The
-[D00 contract](group-contact-contract.md) owns recipient/history choices. These
-migrations and APIs must stay on the draft stack until that review is approved.
+Approval status: representative recipient/history policies 1 and 2 were approved
+by the human on 19 October 2026; see the [current decision ledger](group-contact-parallel-handoff.md#decision-ledger).
+The [D00 contract](group-contact-contract.md) owns those semantics. Cumulative
+member-policy/native/source gates remain; no hosted migration is authorized.
 
 ## Ownership and API
 

@@ -1,9 +1,11 @@
 # Batch D review and distribution delta
 
-**Provisional; no founder approval, production migration or distribution claimed.**
-The concrete D00 [review table](group-contact-contract.md#explicit-review-gate) remains
-the release gate. The following changes need policy/privacy/store review before
-shipping; they do not silently replace the existing legal terms.
+**Representative policies 1 and 2 approved; member policy 3 remains pending.**
+The [current revision ledger](group-contact-parallel-handoff.md#decision-ledger)
+records the human's 19 October 2026 approval and cumulative merge gates. Hosted
+database and Play Store deployment are explicitly unauthorized. The following
+changes still need distribution/privacy/store review before shipping; source
+approval does not silently replace existing legal terms.
 
 ## New audiences and processing
 
@@ -26,9 +28,9 @@ Coordination shares a fresh note and initiator identity with the two original
 representatives and invited groups' eligible managers. Claimants explicitly share
 their own person/group seat with the originals. Complete identity disclosure to
 claimants requires both originals' exact audience confirmation; every additional
-person must then confirm that same version. This staged disclosure and the
-conservative restriction on targeting groups already managed by an original
-person require explicit founder approval together with D00's fresh-room policy.
+person must then confirm that same version. Policy 2 approves staged named/versioned
+all-party consent and the fresh room. Targeting groups already managed by an
+original person remains excluded by the existing canonical eligibility rule.
 Earlier private history/source context is never inherited.
 
 Current live grant episodes govern history/preview/read tokens. Revocation and

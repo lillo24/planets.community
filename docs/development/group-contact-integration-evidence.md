@@ -5,10 +5,11 @@ revised D/M interfaces, policy decisions and final qualification are tracked in
 [the parallel revision handoff](group-contact-parallel-handoff.md). Historical
 green checks and partial native frames do not qualify the revised source.
 
-**Provisional draft; founder approval reference: none.** The D00 review gate,
-including the staged D03 identity disclosure and retention/distribution delta,
-still prevents activation or source merge. Passing tests cannot approve those
-decisions. No hosted migration, production deployment or app-store action occurred.
+**Historical draft evidence.** The founder approved representative policies 1 and
+2 on 19 October 2026, as recorded in the current handoff linked above. The separate
+member policy and final native/source qualification remain gates. Passing tests
+cannot approve an unresolved choice. No hosted migration, production deployment
+or app-store action occurred.
 
 ## Source and traceability
 

@@ -1,8 +1,9 @@
-# D03 provisional coordination protocol
+# D03 coordination protocol
 
-**Review only. D00 approval reference remains absent.** This is a bounded extension
-of a live accepted bilateral D contact. It is not deployed or approved for release.
-The [D00 contract](group-contact-contract.md) owns the access and retention gate.
+**Named/versioned consent and fresh history approved as policy 2 on 19 October 2026.** See the human reference in the [revision ledger](group-contact-parallel-handoff.md#decision-ledger).
+This is a bounded extension of a live accepted bilateral D contact. Cumulative
+member-policy/native/source gates remain, and deployment is not authorized.
+The [D00 contract](group-contact-contract.md) owns representative access.
 
 ## Seats, audience and activation
 
@@ -21,8 +22,8 @@ even when they represent several groups. Ordinary membership supplies no seat.
 Every seat claim/replacement changes the audience version. Both original people
 review the complete named audience and confirm that exact version before the
 additional claimants can see the complete human audience. Each additional person
-then confirms the same version. This staged identity disclosure is a conservative
-**provisional clarification requiring founder review**, not an approved policy.
+then confirms the same version. This staged identity disclosure is included in
+the approved named/versioned all-party consent policy.
 Any changed group/person/grant invalidates earlier confirmations. Changed targets
 retire the previous additional seats and start a new selection round even when
 the same groups are chosen; original seats remain. A revoked grant

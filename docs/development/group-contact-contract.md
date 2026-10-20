@@ -1,16 +1,19 @@
 # D00 — Purposeful group contact and coordination
 
-Approval status: **PROVISIONAL — REVIEW ONLY**
-
-Approval reference: **none**
+Approval status: **Representative policies 1 and 2 approved, 19 October 2026**.
+The human approval and exact current scope are recorded in the
+[revision decision ledger](group-contact-parallel-handoff.md#decision-ledger).
+The cumulative source still requires the separate member policy and final native/
+source validation gates. This approval does not authorize hosted deployment or
+app-store distribution. The original D00 proposal and its historical review table
+below remain useful background; the current ledger owns approval status.
 
 Base inspected: `58c5b18` (14 October 2026); Batch A #243 is merged.
 
-This is the proposed contract for the isolated D00–D03 stack. The request to
-implement Batch D authorizes preparation and synthetic local verification, not
-approval of these private audiences. Do not merge or apply these migrations to
-a shared environment until the review choices below have an explicit approval
-reference. No runtime toggle substitutes for that gate.
+This is the contract for the isolated D00–D03 stack. Do not merge the cumulative
+runtime until the current revision gates are satisfied. Shared-environment
+migrations remain a separately unauthorized external action. No runtime toggle
+substitutes for a policy or validation gate.
 
 ## Fixed direction and provisional choices
 

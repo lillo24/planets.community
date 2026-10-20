@@ -451,6 +451,60 @@ void main() {
     expect(find.textContaining('read-only'), findsOneWidget);
   });
 
+  for (final language in ['en', 'it']) {
+    testWidgets(
+      '$language temporary read-only access does not claim the episode ended',
+      (tester) async {
+        var blocked = true;
+        var ended = false;
+        final calls = <String>[];
+        final (container, _) = await pumpMember(
+          tester,
+          (name, args) async {
+            calls.add(name);
+            if (name == 'get_own_member_contact_conversation') {
+              return {
+                ...chatRow(readOnly: blocked || ended),
+                'current_episode_id': ended ? null : episode,
+                'ended_reason': ended ? 'closed' : null,
+              };
+            }
+            return basic(name, args);
+          },
+          path: '/chat',
+          language: language,
+        );
+        final notice = language == 'en'
+            ? 'This conversation is read-only. Permitted history stays available. '
+                  'Ended conversations need a new request and acceptance; '
+                  'unblocking cannot reopen them.'
+            : 'Questa conversazione è in sola lettura. La cronologia consentita '
+                  'resta qui. Se è terminata, servono nuova richiesta e '
+                  'accettazione: sbloccare non la riapre.';
+        expect(find.text(notice), findsOneWidget);
+        expect(find.text('Fictional received message'), findsOneWidget);
+        expect(find.byKey(const Key('contact-message-body')), findsNothing);
+
+        blocked = false;
+        container.read(messageChatsRefreshProvider.notifier).notifyChanged();
+        await tester.pumpAndSettle();
+        expect(find.text(notice), findsNothing);
+        expect(find.byKey(const Key('contact-message-body')), findsOneWidget);
+
+        ended = true;
+        container.read(messageChatsRefreshProvider.notifier).notifyChanged();
+        await tester.pumpAndSettle();
+        expect(find.text(notice), findsOneWidget);
+        expect(find.text('Fictional received message'), findsOneWidget);
+        expect(find.byKey(const Key('contact-message-body')), findsNothing);
+        expect(calls.toSet(), {
+          'get_own_member_contact_conversation',
+          'get_own_member_contact_feed',
+        });
+      },
+    );
+  }
+
   testWidgets('lost send keeps original episode after a refreshed admission', (
     tester,
   ) async {
