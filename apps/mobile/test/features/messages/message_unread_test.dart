@@ -7,6 +7,7 @@ import 'package:planets_mobile/core/backend/private_broadcast_payload.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/messages/application/message_unread_controller.dart';
+import 'package:planets_mobile/features/group_discussions/application/discussion_controllers.dart';
 import 'package:planets_mobile/features/messages/data/message_unread_gateway.dart';
 import 'package:planets_mobile/features/messages/domain/message_unread_models.dart';
 import 'package:planets_mobile/features/messages/presentation/message_read_viewport.dart';
@@ -90,6 +91,77 @@ class Gateway implements MessageUnreadGateway {
 
 void main() {
   testWidgets(
+    'shared C hints clear unread, reject a late actor and recover connection',
+    (tester) async {
+      final gateway = Gateway();
+      final session = Session();
+      final signals = {
+        'reader': StreamController<({bool connected, int event})>(),
+        'next': StreamController<({bool connected, int event})>(),
+      };
+      final container = ProviderContainer(
+        overrides: [
+          authSessionProvider.overrideWith(() => session),
+          messageUnreadGatewayProvider.overrideWithValue(gateway),
+          discussionSignalsProvider.overrideWith((ref) {
+            final actor = ref.watch(authSessionProvider).identity?.id;
+            return signals[actor]?.stream ?? const Stream.empty();
+          }),
+        ],
+      );
+      final listener = container.listen(messageUnreadProvider, (_, _) {});
+      addTearDown(() async {
+        listener.close();
+        container.dispose();
+        for (final stream in signals.values) {
+          await stream.close();
+        }
+      });
+      await tester.pump();
+      signals['reader']!.add((connected: true, event: 1));
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump();
+      expect(container.read(messageUnreadProvider).summary?.total, 2);
+      expect(container.read(messageUnreadProvider).disconnected, isFalse);
+
+      gateway.held = Completer();
+      signals['reader']!.add((connected: true, event: 2));
+      await tester.pump();
+      expect(container.read(messageUnreadProvider).summary, isNull);
+      expect(container.read(messageUnreadProvider).stale, isTrue);
+      await tester.pump(const Duration(milliseconds: 250));
+      gateway.value = const MessageUnreadSummary(
+        total: 0,
+        private: 0,
+        groups: 0,
+      );
+      session.change('next');
+      await tester.pump();
+      signals['next']!.add((connected: true, event: 1));
+      gateway.held!.complete(
+        const MessageUnreadSummary(total: 9, private: 9, groups: 0),
+      );
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump();
+      expect(container.read(messageUnreadProvider).profileId, 'next');
+      expect(container.read(messageUnreadProvider).summary?.total, 0);
+      signals['reader']!.add((connected: true, event: 3));
+      await tester.pump();
+      expect(container.read(messageUnreadProvider).summary?.total, 0);
+
+      signals['next']!.add((connected: false, event: 2));
+      await tester.pump();
+      expect(container.read(messageUnreadProvider).summary, isNull);
+      expect(container.read(messageUnreadProvider).disconnected, isTrue);
+      signals['next']!.add((connected: true, event: 3));
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump();
+      expect(container.read(messageUnreadProvider).summary?.total, 0);
+      expect(container.read(messageUnreadProvider).disconnected, isFalse);
+    },
+  );
+
+  testWidgets(
     'scope unavailable state is explicit and canonical zero is hidden',
     (tester) async {
       final gateway = Gateway()..failed = true;
@@ -97,6 +169,9 @@ void main() {
         overrides: [
           authSessionProvider.overrideWith(Session.new),
           messageUnreadGatewayProvider.overrideWithValue(gateway),
+          discussionSignalsProvider.overrideWith(
+            (ref) => Stream.value((connected: true, event: 1)),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -253,6 +328,9 @@ void main() {
         overrides: [
           authSessionProvider.overrideWith(() => session),
           messageUnreadGatewayProvider.overrideWithValue(gateway),
+          discussionSignalsProvider.overrideWith(
+            (ref) => Stream.value((connected: true, event: 1)),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -311,6 +389,9 @@ void main() {
         overrides: [
           authSessionProvider.overrideWith(Session.new),
           messageUnreadGatewayProvider.overrideWithValue(gateway),
+          discussionSignalsProvider.overrideWith(
+            (ref) => Stream.value((connected: true, event: 1)),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -334,6 +415,9 @@ void main() {
         overrides: [
           authSessionProvider.overrideWith(Session.new),
           messageUnreadGatewayProvider.overrideWithValue(gateway),
+          discussionSignalsProvider.overrideWith(
+            (ref) => Stream.value((connected: true, event: 1)),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -365,6 +449,9 @@ void main() {
         overrides: [
           authSessionProvider.overrideWith(() => session),
           messageUnreadGatewayProvider.overrideWithValue(gateway),
+          discussionSignalsProvider.overrideWith(
+            (ref) => Stream.value((connected: true, event: 1)),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -396,6 +483,9 @@ void main() {
         overrides: [
           authSessionProvider.overrideWith(Session.new),
           messageUnreadGatewayProvider.overrideWithValue(gateway),
+          discussionSignalsProvider.overrideWith(
+            (ref) => Stream.value((connected: true, event: 1)),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -451,6 +541,9 @@ void main() {
         overrides: [
           authSessionProvider.overrideWith(Session.new),
           messageUnreadGatewayProvider.overrideWithValue(gateway),
+          discussionSignalsProvider.overrideWith(
+            (ref) => Stream.value((connected: true, event: 1)),
+          ),
         ],
       );
       addTearDown(container.dispose);

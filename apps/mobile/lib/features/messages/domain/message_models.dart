@@ -1,10 +1,16 @@
+import '../../member_contact/domain/member_contact_models.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../resource_listings/domain/resource_listing_models.dart';
 import '../../resource_requests/domain/resource_request_models.dart';
+import '../../group_contact/domain/group_contact_models.dart';
+import '../../group_coordination/domain/coordination_models.dart';
 
 enum StructuredRequestItemKind {
   participationRequest('participation_request'),
-  resourceRequest('resource_request');
+  resourceRequest('resource_request'),
+  memberContactRequest('member_contact_request'),
+  groupContactRequest('group_contact_request'),
+  groupCoordinationProposal('group_coordination_proposal');
 
   const StructuredRequestItemKind(this.wireValue);
 
@@ -13,6 +19,10 @@ enum StructuredRequestItemKind {
   static StructuredRequestItemKind fromWire(String value) => switch (value) {
     'participation_request' => StructuredRequestItemKind.participationRequest,
     'resource_request' => StructuredRequestItemKind.resourceRequest,
+    'member_contact_request' => StructuredRequestItemKind.memberContactRequest,
+    'group_contact_request' => StructuredRequestItemKind.groupContactRequest,
+    'group_coordination_proposal' =>
+      StructuredRequestItemKind.groupCoordinationProposal,
     _ => throw const FormatException('Unsupported structured request kind.'),
   };
 }
@@ -21,7 +31,10 @@ enum MessageViewerRole {
   requester('requester'),
   creator('creator'),
   delegate('delegate'),
-  owner('owner');
+  owner('owner'),
+  // M owns its named actor/capabilities; it is not a legacy owner/delegate role.
+  // This local discriminator is never accepted by legacy wire-role parsing.
+  memberContactPerson('member_contact_person');
 
   const MessageViewerRole(this.wireValue);
 
@@ -82,8 +95,10 @@ sealed class StructuredRequestMessageItem {
   final StructuredRequestItemKind kind;
   final String requestId;
   final MessageViewerRole viewerRole;
-  final String requesterProfileId;
-  final String requesterDisplayName;
+  // D's resolved triage/own recovery may intentionally omit personal identity.
+  // Legacy concrete variants keep their required non-null identity contract.
+  final String? requesterProfileId;
+  final String? requesterDisplayName;
   final String? requestMessage;
   final DateTime createdAt;
   final DateTime? resolvedAt;
@@ -122,6 +137,23 @@ sealed class StructuredRequestMessageItem {
         item.agreementId,
         item.coordinationClosedAt,
       ),
+      GroupContactRequestMessageItem item => (
+        item.contact.status,
+        item.contact.title,
+        item.contact.purpose,
+        item.contact.sourceGroupId,
+        item.contact.targetGroupId,
+        item.contact.sourceGroupName,
+        item.contact.targetGroupName,
+        item.contact.chatId,
+        item.contact.canReview,
+        item.contact.canWithdraw,
+        item.contact.publicProjectId,
+        item.contact.publicProjectKind,
+        item.contact.publicProjectTitle,
+      ),
+      MemberContactRequestMessageItem item => item.contact.refreshValue,
+      GroupCoordinationMessageItem item => item.proposal.refreshValue,
     },
   );
   String get compositeId => '${kind.wireValue}:$requestId';
@@ -134,8 +166,8 @@ class ParticipationRequestMessageItem extends StructuredRequestMessageItem {
     required this.projectKind,
     required this.projectTitle,
     required super.viewerRole,
-    required super.requesterProfileId,
-    required super.requesterDisplayName,
+    required String requesterProfileId,
+    required String requesterDisplayName,
     required this.creatorProfileId,
     required this.creatorDisplayName,
     required super.requestMessage,
@@ -143,7 +175,16 @@ class ParticipationRequestMessageItem extends StructuredRequestMessageItem {
     required super.createdAt,
     required super.resolvedAt,
     required super.activityAt,
-  }) : super(kind: StructuredRequestItemKind.participationRequest);
+  }) : super(
+         kind: StructuredRequestItemKind.participationRequest,
+         requesterProfileId: requesterProfileId,
+         requesterDisplayName: requesterDisplayName,
+       );
+
+  @override
+  String get requesterProfileId => super.requesterProfileId!;
+  @override
+  String get requesterDisplayName => super.requesterDisplayName!;
 
   final String projectId;
   final ProjectKind projectKind;
@@ -159,8 +200,8 @@ class ResourceRequestMessageItem extends StructuredRequestMessageItem {
   const ResourceRequestMessageItem({
     required super.requestId,
     required super.viewerRole,
-    required super.requesterProfileId,
-    required super.requesterDisplayName,
+    required String requesterProfileId,
+    required String requesterDisplayName,
     required super.requestMessage,
     required super.createdAt,
     required super.resolvedAt,
@@ -175,7 +216,16 @@ class ResourceRequestMessageItem extends StructuredRequestMessageItem {
     required this.chatId,
     required this.agreementId,
     required this.coordinationClosedAt,
-  }) : super(kind: StructuredRequestItemKind.resourceRequest);
+  }) : super(
+         kind: StructuredRequestItemKind.resourceRequest,
+         requesterProfileId: requesterProfileId,
+         requesterDisplayName: requesterDisplayName,
+       );
+
+  @override
+  String get requesterProfileId => super.requesterProfileId!;
+  @override
+  String get requesterDisplayName => super.requesterDisplayName!;
 
   final String listingId;
   final ResourceListingMode listingMode;
@@ -191,6 +241,39 @@ class ResourceRequestMessageItem extends StructuredRequestMessageItem {
   bool get isPending => status == ResourceRequestStatus.pending;
   bool get isCoordinationOpen =>
       status == ResourceRequestStatus.accepted && coordinationClosedAt == null;
+}
+
+final class GroupContactRequestMessageItem
+    extends StructuredRequestMessageItem {
+  GroupContactRequestMessageItem(this.contact)
+    : super(
+        kind: StructuredRequestItemKind.groupContactRequest,
+        requestId: contact.id,
+        viewerRole: MessageViewerRole.fromWire(contact.viewerRole),
+        requesterProfileId: contact.submitterId,
+        requesterDisplayName: contact.submitterName,
+        requestMessage: contact.note,
+        createdAt: contact.createdAt,
+        resolvedAt: contact.resolvedAt,
+        activityAt: contact.activityAt,
+      );
+  final GroupContactRequest contact;
+}
+
+final class GroupCoordinationMessageItem extends StructuredRequestMessageItem {
+  GroupCoordinationMessageItem(this.proposal)
+    : super(
+        kind: StructuredRequestItemKind.groupCoordinationProposal,
+        requestId: proposal.id,
+        viewerRole: MessageViewerRole.fromWire(proposal.viewerRole),
+        requesterProfileId: proposal.initiatorId,
+        requesterDisplayName: proposal.initiatorName,
+        requestMessage: proposal.note,
+        createdAt: proposal.createdAt,
+        resolvedAt: proposal.resolvedAt,
+        activityAt: proposal.activityAt,
+      );
+  final CoordinationProposal proposal;
 }
 
 class MessageCursor {
@@ -213,4 +296,21 @@ class StructuredRequestMessagePage {
 
   final List<StructuredRequestMessageItem> items;
   final bool hasMore;
+}
+
+final class MemberContactRequestMessageItem
+    extends StructuredRequestMessageItem {
+  MemberContactRequestMessageItem(this.contact)
+    : super(
+        kind: StructuredRequestItemKind.memberContactRequest,
+        requestId: contact.id,
+        viewerRole: MessageViewerRole.memberContactPerson,
+        requesterProfileId: contact.senderId,
+        requesterDisplayName: contact.senderName,
+        requestMessage: contact.note,
+        createdAt: contact.createdAt,
+        resolvedAt: null,
+        activityAt: contact.activityAt,
+      );
+  final MemberContactRequest contact;
 }

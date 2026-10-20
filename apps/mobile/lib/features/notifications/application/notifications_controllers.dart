@@ -6,6 +6,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/backend/revalidate_window.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../group_contact/application/contact_access_changes.dart';
+import '../../member_contact/application/member_contact_access_changes.dart';
+import '../../messages/application/message_chats_refresh.dart';
 import '../data/notifications_gateway.dart';
 import '../domain/notification_models.dart';
 
@@ -35,6 +38,12 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
 
   @override
   NotificationsUnreadState build() {
+    ref.listen(contactAccessChangesProvider, (_, _) => _invalidateContacts());
+    ref.listen(
+      memberContactAccessChangesProvider,
+      (_, _) => _invalidateContacts(),
+    );
+    ref.listen(messageChatsRefreshProvider, (_, _) => _refreshContacts());
     ref.listen(
       authSessionProvider.select(
         (session) =>
@@ -51,6 +60,26 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
       _loadRevision++;
     });
     return const NotificationsUnreadState();
+  }
+
+  void _refreshContacts() {
+    final id = state.expectedProfileId;
+    if (id != null && _hasReadyIdentity(id)) {
+      unawaited(load(id, refresh: true));
+    }
+  }
+
+  void _invalidateContacts() {
+    final id = state.expectedProfileId;
+    if (id == null) return;
+    _identityRevision++;
+    _loadRevision++;
+    _activeLoad = null;
+    state = NotificationsUnreadState(expectedProfileId: id);
+    if (ref.read(authSessionProvider).phase == AuthSessionPhase.ready &&
+        ref.read(authSessionProvider).identity?.id == id) {
+      unawaited(load(id, refresh: true));
+    }
   }
 
   Future<bool>? _activeLoad;
@@ -139,6 +168,12 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
       ref.read(authSessionProvider).phase == AuthSessionPhase.ready &&
       ref.read(authSessionProvider).identity?.id == profileId;
 
+  bool _hasReadyIdentity(String profileId) {
+    final session = ref.read(authSessionProvider);
+    return session.phase == AuthSessionPhase.ready &&
+        session.identity?.id == profileId;
+  }
+
   void _requireReadyIdentity(String profileId) {
     final session = ref.read(authSessionProvider);
     if (session.phase != AuthSessionPhase.ready ||
@@ -197,6 +232,12 @@ class NotificationsInboxController extends Notifier<NotificationsInboxState> {
 
   @override
   NotificationsInboxState build() {
+    ref.listen(contactAccessChangesProvider, (_, _) => _invalidateContacts());
+    ref.listen(
+      memberContactAccessChangesProvider,
+      (_, _) => _invalidateContacts(),
+    );
+    ref.listen(messageChatsRefreshProvider, (_, _) => _refreshContacts());
     ref.listen(
       authSessionProvider.select(
         (session) =>
@@ -217,6 +258,36 @@ class NotificationsInboxController extends Notifier<NotificationsInboxState> {
       _pendingReadIds.clear();
     });
     return const NotificationsInboxState();
+  }
+
+  void _refreshContacts() {
+    final id = state.expectedProfileId;
+    if (id != null && _hasReadyIdentity(id)) {
+      unawaited(load(id, refresh: true));
+    }
+  }
+
+  void _invalidateContacts() {
+    final id = state.expectedProfileId;
+    if (id == null) return;
+    // An older read mutation must not restore its pre-revocation snapshot.
+    _identityRevision++;
+    _loadRevision++;
+    _pendingReadIds.clear();
+    _activeRefresh = null;
+    _activeMore = null;
+    // Even an offline failed reread cannot keep an obsolete private target ID.
+    state = NotificationsInboxState(
+      expectedProfileId: id,
+      items: state.items
+          .where((item) => !item.kind.isContact)
+          .toList(growable: false),
+      hasMore: state.hasMore,
+    );
+    if (ref.read(authSessionProvider).phase == AuthSessionPhase.ready &&
+        ref.read(authSessionProvider).identity?.id == id) {
+      unawaited(load(id, refresh: true));
+    }
   }
 
   Future<bool>? _activeRefresh;

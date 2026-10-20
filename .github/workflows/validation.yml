@@ -131,7 +131,7 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.database == 'true' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - name: Check out repository
         uses: actions/checkout@v7.0.1
@@ -150,6 +150,11 @@ jobs:
       - name: Start local Supabase
         run: npm run db:start
 
+      # Each subsequent historical gate resets its own predecessor. Run the
+      # new integration rehearsal first so its failures avoid redundant replays.
+      - name: Verify both exact populated C and D histories
+        run: npm run contact:discussions:upgrade:verify:local
+
       - name: Verify populated participation conversation upgrade and cached delegate privacy
         run: npm run participation:conversations:upgrade:verify:local
 
@@ -164,6 +169,15 @@ jobs:
 
       - name: Verify populated group Project attribution preservation
         run: npm run group:projects:upgrade:verify:local
+
+      - name: Verify populated D contact upgrade without inherited history
+        run: npm run group:contact:upgrade:verify:local
+
+      - name: Verify populated bilateral contact upgrade to explicit coordination
+        run: npm run group:coordination:upgrade:verify:local
+
+      - name: Verify populated D predecessor upgrade to isolated personal consent
+        run: npm run member:contact:upgrade:verify:local
 
       - name: Verify populated Group discussion upgrade preservation
         run: npm run group:discussions:upgrade:verify:local
@@ -196,6 +210,15 @@ jobs:
 
       - name: Verify group membership, authority, recovery and lock races
         run: npm run group:membership:verify:local
+
+      - name: Verify purposeful group contact, legacy contracts and observed role races
+        run: npm run group:contact:verify:local
+
+      - name: Verify explicit group coordination consent and observed activation races
+        run: npm run group:coordination:verify:local
+
+      - name: Verify personal Group-member consent, retained history and observed exit races
+        run: npm run member:contact:verify:local
 
       - name: Verify local mobile email OTP flow
         run: npm run auth:verify:local

@@ -15,6 +15,8 @@ enum BlockingContextConsequence {
   projectMember,
   projectChat,
   acceptedResourceCoordination,
+  groupContact,
+  memberContact,
 }
 
 class BlockingActionButton extends ConsumerWidget {
@@ -128,6 +130,9 @@ class BlockingActionButton extends ConsumerWidget {
     final name = _safeName(targetDisplayName) ?? 'this user';
     final consequenceCopy = switch (consequence) {
       BlockingContextConsequence.none => null,
+      BlockingContextConsequence.groupContact => l10n.contactBlockConsequence,
+      BlockingContextConsequence.memberContact =>
+        l10n.memberContactBlockConsequence,
       BlockingContextConsequence.pendingRequest =>
         l10n.blockingPendingRequestConsequence,
       BlockingContextConsequence.projectMember =>

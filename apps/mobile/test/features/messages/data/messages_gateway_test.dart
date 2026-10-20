@@ -110,8 +110,8 @@ void main() {
   test('Messages list and exact reads use only the unified C2 RPCs', () {
     final source = File('lib/features/messages/data/messages_gateway.dart')
         .readAsStringSync();
-    expect(source, contains("'list_own_structured_request_message_items'"));
-    expect(source, contains("'get_own_structured_request_message_item'"));
+    expect(source, contains("'list_own_structured_request_message_items_v4'"));
+    expect(source, contains("'get_own_structured_request_message_item_v4'"));
     expect(source, contains("'p_cursor_item_kind'"));
     expect(
       source,

@@ -1,3 +1,5 @@
+import '../../member_contact/application/member_contact_access_changes.dart';
+
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/backend/revalidate_window.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../group_contact/application/contact_access_changes.dart';
 import '../../project_chat/application/project_chat_refresh.dart';
 import '../../project_chat/data/project_chat_gateway.dart';
 import '../../project_chat/domain/project_chat_models.dart';
@@ -70,6 +73,40 @@ class MessageChatsController extends Notifier<MessageChatsState> {
 
   @override
   MessageChatsState build() {
+    ref.listen(contactAccessChangesProvider, (_, next) {
+      final actor = state.expectedProfileId;
+      if (actor == null || next.$1 != actor) return;
+      _revision++;
+      _activeRefresh = null;
+      _activeMore = null;
+      state = MessageChatsState(
+        phase: MessageChatsPhase.ready,
+        expectedProfileId: actor,
+        items: state.items
+            .where((i) => i.kind != MessageChatItemKind.groupContactChat)
+            .toList(),
+        hasMore: state.hasMore,
+        hasConnectionIssue: state.hasConnectionIssue,
+      );
+      _scheduleCurrentRefresh();
+    });
+    ref.listen(memberContactAccessChangesProvider, (_, next) {
+      final actor = state.expectedProfileId;
+      if (actor == null || next.$1 != actor) return;
+      _revision++;
+      _activeRefresh = null;
+      _activeMore = null;
+      state = MessageChatsState(
+        phase: MessageChatsPhase.ready,
+        expectedProfileId: actor,
+        items: state.items
+            .where((i) => i.kind != MessageChatItemKind.memberContactChat)
+            .toList(),
+        hasMore: state.hasMore,
+        hasConnectionIssue: state.hasConnectionIssue,
+      );
+      _scheduleCurrentRefresh();
+    });
     ref.listen(
       authSessionProvider.select(
         (session) =>
@@ -324,7 +361,9 @@ class MessageChatsController extends Notifier<MessageChatsState> {
           profileIds.add(item.counterpartyProfileId);
         case ResourceMessageChatItem item:
           profileIds.add(item.counterpartyProfileId);
-        case ProjectMessageChatItem():
+        case ProjectMessageChatItem() ||
+            GroupContactMessageChatItem() ||
+            MemberContactMessageChatItem():
           break;
       }
     }

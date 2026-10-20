@@ -1,6 +1,7 @@
 import "server-only";
 import { parseDiscussionEvidence } from "./discussion-evidence";
 import { parseGroupReview } from "./group-moderation-models";
+import { parseGroupContactEvidence } from "./group-contact-moderation-models";
 
 import { cache } from "react";
 
@@ -171,6 +172,7 @@ export async function readModerationCase(
     counterstatement,
     templateResult,
     groupResult,
+    contactResult,
     discussionResult,
   ] = await Promise.all([
     detail.projectContextId
@@ -197,6 +199,16 @@ export async function readModerationCase(
           p_case_id: caseId,
         })
       : Promise.resolve(null),
+    detail.targetKind === "group_contact_request" ||
+    detail.targetKind === "group_contact_message" ||
+    detail.targetKind === "group_coordination_proposal" ||
+    detail.targetKind === "member_contact_request" ||
+    detail.targetKind === "member_contact_message"
+      ? access.client.rpc("get_moderation_case_group_contact", {
+          p_expected_staff_profile_id: access.profileId,
+          p_case_id: caseId,
+        })
+      : Promise.resolve(null),
     detail.targetKind === "group_discussion_message"
       ? access.client.rpc("get_moderation_case_group_discussion", {
           p_expected_staff_profile_id: access.profileId,
@@ -204,6 +216,15 @@ export async function readModerationCase(
         })
       : Promise.resolve(null),
   ]);
+  if (contactResult?.error)
+    throw new Error("The contact case evidence could not be loaded.");
+  const groupContact = contactResult
+    ? parseGroupContactEvidence(contactResult.data)
+    : null;
+  if (groupContact && groupContact.kind !== detail.targetKind)
+    throw new Error(
+      "The contact case evidence did not match the reported kind.",
+    );
   if (discussionResult?.error)
     throw new Error("The discussion report evidence could not be loaded.");
   if (groupResult?.error)
@@ -268,6 +289,7 @@ export async function readModerationCase(
     staffRole: access.role,
     detail: {
       ...detail,
+      groupContact,
       group: groupResult ? parseGroupReview(groupResult.data) : null,
       template,
       templateBlueprints,

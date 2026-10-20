@@ -134,6 +134,14 @@ select ok(
     where t.tgrelid = 'auth.users'::regclass
       and not t.tgisinternal
       and n.nspname in ('public', 'private')
+      -- D02 adds one reviewed AFTER DELETE cache-invalidation trigger. It
+      -- cannot create profiles; still reject every other application trigger.
+      and not (
+        t.tgname = 'group_contact_auth_delete_access'
+        and n.nspname = 'private'
+        and p.proname = 'group_contact_identity_access'
+        and t.tgtype = 9 -- ROW + DELETE, AFTER (no INSERT/UPDATE/BEFORE bits)
+      )
   ),
   'PLANETS installs no automatic profile-creation trigger on Auth users'
 );

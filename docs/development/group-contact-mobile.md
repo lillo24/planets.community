@@ -1,0 +1,211 @@
+# D02 contact client and native verification
+
+Status: representative policies 1 and 2 approved by the human on 19 October 2026;
+see the [current decision ledger](group-contact-parallel-handoff.md#decision-ledger).
+Final native/source qualification and the separate member policy remain gates.
+The contract and backend are documented in `group-contact-contract.md` and
+`group-contact-backend.md`; no deployment is authorized.
+
+## Context and ownership
+
+Public group and attributed Project details expose a labelled Contact group
+sheet. Supported purposes are Idea and Collaboration. The sending human chooses
+an eligible represented group explicitly. The recipient disclosure explains that
+the sender is the current authenticated person, whose minimal self-name projection
+is displayed alongside their chosen group, and that
+current destination managers can triage the note; only the submitting human and
+the accepting representative enter the resulting conversation. Participation
+continues through its existing independent group/Project action.
+
+Routes are `/groups/<uuid>/contact?project=<public-project-uuid>&purpose=<purpose>`,
+`/messages/requests/group-contact/<uuid>`,
+`/messages/chats/group-contact/<uuid>` and its `/info` route. Sign-in, profile and
+policy gates retain only a sanitized destination and never execute a contact
+command. The optional onboarding group offer recognizes D continuations.
+
+Central Messages uses Requests v2, scoped Chats v6 and unread/acknowledge v2. The
+new request kind is `group_contact_request`, and `group_contact_chat` belongs to
+Groups with neutral group imagery. Lists preserve independent scope windows,
+lookahead, compound cursor and identity refresh epochs. D participants are omitted
+from personal photo batching. Resolved target managers have a minimal outcome and
+no note, acceptor identity or chat route. Exact detail does not trust list cache.
+
+The feature folder README maps implementation owners. Attempts freeze exact
+submitted text and context, including whitespace, until a definitive rejection or
+receipt. Network/parse failure is ambiguous. Check delivery status remains
+available after role loss and returns metadata only; it never reopens body access.
+Completed operations whose original screen was disposed can also recover their
+receipt. No private note/action token is persisted or logged. Closing a composer
+does not withdraw a submitted request. A withdrawal is a separate command.
+
+Representative, member-contact and coordination FilledButtons share the local
+`contactFilledButtonStyle`: `AppRadii.medium` (12px) rounded rectangles. The
+Material stadium default can curve behind enlarged multiline labels in narrow
+dialogs; the local shape keeps every line on the filled background. Accept
+confirmation buttons use the existing compact Accept/Accetta caption while the
+full consent body remains visible. Glyph-bound regressions at 320dp and 2x text
+check that the caption stays inside the button. Text scaling, padding, callbacks
+and the global app theme remain unchanged.
+Actual member submit/accept screens are compared in EN/IT at 320dp and 2x text;
+widget captures supplement the native frames and do not qualify a native run.
+
+## Access invalidation
+
+The D02 additive migration augments authorized public references with current
+kind/title and introduces `group.contact_access_changed` on the existing own
+account topic. Both D events have only `profile_id` plus the pinned Realtime
+transport's delivery ID. Access hints may reach a former admission's still-open
+socket solely to clear displayed content. They include no affected request/chat,
+human activity, body or name. Delegate/seat, group/accountable Creator, closed-room
+and profile/Auth identity changes invalidate displayed data. Regrant retains the
+old episode's denial. Own receipt/report/exit permission is independently checked.
+
+The client clears D bodies/list rows/badges before rereading after an access hint.
+A failed reread is an explicit failure, not an empty conversation or authorization
+verdict. The chat keeps known incoming IDs for the narrow protected Report action.
+Valid read-only admissions retain permitted history and info/exit controls.
+
+`has_own_group_contact_admission` returns only whether the verified actor still
+has their own non-left seat, irrespective of live representation. Info can offer
+safe leave after role loss without reading body or audience. Another manager's
+group role cannot produce an own seat; identity mismatch is rejected. It is an
+additive metadata endpoint, not a replacement authorization decision for reads.
+
+## Reproduce native QA
+
+For a founder-operated normal app with real OTP sign-in, use the separate
+[manual Android procedure](contact-android-manual-qa.md). Its observations do not
+replace the deterministic lost-response and canonical postconditions below.
+
+On Windows, prepend the checkout's `node_modules/.bin` to process-local PATH
+before invoking preparation directly with `node`; its status reader requires
+the project-scoped Supabase CLI. Do not change global PATH.
+
+Use an owned emulator and an explicitly disposable local Supabase project. Never
+reset a shared project or install over the Play app on a physical phone. Fixtures
+are genuine OTP sessions for four synthetic `@planets.invalid` accounts, three
+public groups, a Co-organizer grant and a separate public Project. The Co-organizer
+has no photo; existing Project join retains its own photo requirement.
+
+From the repository root, with its `node_modules/.bin` on PATH and the correct
+local container engine/loopback Mailpit configured:
+
+```powershell
+$env:CONTAINER_CONNECTION='planets-d-qa-root'
+$env:DOCKER_HOST='npipe:////./pipe/podman-planets-d-qa'
+$env:MAILPIT_URL='http://127.0.0.1:55324'
+$env:PLANETS_DISPOSABLE_QA='1'
+node apps/mobile/integration_test/prepare_group_contact_smoke.mjs "$env:TEMP/planets-d-r04-native-defines.json"
+adb -s emulator-5580 reverse tcp:55321 tcp:55321
+adb -s emulator-5580 shell wm size 720x1600
+adb -s emulator-5580 shell wm density 360
+adb -s emulator-5580 shell settings put secure show_ime_with_hard_keyboard 1
+cd apps/mobile
+flutter drive -d emulator-5580 --no-dds --no-pub --driver=test_driver/group_contact_screenshots.dart --target=integration_test/group_contact_smoke_test.dart --dart-define-from-file="$env:TEMP/planets-d-r04-native-defines.json"
+```
+
+The preparer resolves Supabase from its **working directory**; that directory's
+uncommitted config must identify the D project and ports. `PLANETS_DISPOSABLE_QA`
+alone does not isolate a database. Set D's Mailpit explicitly: the shared helper's
+default is port 54324. On Windows, both task-local Podman variables above select
+the owned engine without changing the machine's default connection. Start the
+database and finish cold image downloads before the emulator on a memory-limited
+host. Every captured frame asserts an actual 320dp viewport and 2x text scaling.
+
+To avoid overlapping Gradle and emulator memory on Windows, build with the
+emulator stopped, then boot only the owned device and drive the resulting APK:
+
+```powershell
+$env:GRADLE_OPTS='-Dorg.gradle.workers.max=2 -Dorg.gradle.daemon=false "-Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m -XX:ReservedCodeCacheSize=256m"'
+$env:JAVA_TOOL_OPTIONS='-XX:ActiveProcessorCount=2'
+flutter build apk --debug --no-pub --target=integration_test/group_contact_smoke_test.dart --dart-define-from-file="$env:TEMP/planets-d-r04-native-defines.json"
+New-Item -ItemType Directory -Path build/native-review -Force | Out-Null
+Copy-Item -LiteralPath build/app/outputs/flutter-apk/app-debug.apk -Destination build/native-review/d-contact.apk
+# Boot/configure the owned emulator as above, then:
+flutter drive -d emulator-5580 --no-dds --no-pub --use-application-binary=build/native-review/d-contact.apk --driver=test_driver/group_contact_screenshots.dart --target=integration_test/group_contact_smoke_test.dart
+```
+
+These process-local Gradle limits do not change repository build configuration or
+stop other Gradle daemons. Keep a distinct ignored APK for each test target: a
+later member build replaces `app-debug.apk`. Rebuild after changing the target,
+source or fixtures, and allow for the genuine fixture tokens' expiry when
+coordinating validation slots; do not extend token lifetime to make a run pass.
+The instrumented APK contains the private compile-time fixture tokens too: keep
+it ignored locally and remove it with those defines after QA.
+
+The owned emulator must allow its software keyboard even when a host keyboard is
+present. Keyboard checkpoints require a real positive bottom view inset; they do
+not fake IME geometry. The native scroll helpers exclude text fields' inner
+scroll positions so lazy page actions after a field are actually revealed. A
+missing visible target saves a failure frame and still fails the original check.
+
+The chat composer is capped at half of the resized body and scrolls independently,
+so enlarged multiline input and unknown-delivery recovery cannot overflow above
+the IME or consume the complete history viewport. Status, read-only and delivery
+recovery content above history shares a separate scroll region capped at one
+quarter of that body. If access changes with the keyboard open, the private body
+and composer disappear immediately; the retained known-message report control
+stays reachable by scrolling without reloading protected content or acknowledging
+cleared history. The focused EN/IT widget regression covers both a denied reread
+and an offline reread at 320×711, 2x text and a 380dp keyboard inset. Flutter
+integration screenshots capture the app surface; the positive inset proves the
+real keyboard is open, while keyboard pixels require a separate full-device capture.
+
+The complete synthetic review journey includes a declined coordination proposal,
+an explicit audience replacement that retires the selected seat and old consent,
+three exact human/Group consent pairs, no conversation before final consent,
+recovery after a deliberately lost final reply, and a fresh conversation whose
+new representative cannot read the source. It checks actual unread changes,
+role revocation/regrant without old admission revival, the exact protected report
+target and persisted report, blocking, safe former-representative leave, close with
+permitted history, and a separate pending Project request without membership.
+The fixtures and postconditions use the real backend; only initial UI identity
+and the two lost responses are injected. Account switches dispose the preceding
+scope/client. Both keyed and text actions reveal their current-route target
+before tapping at enlarged text. Lazy-scroll lookups use the current route; screenshots wait for
+loaded content, and the driver retains failure response data too.
+
+EN and IT 320dp/2x composer, audience and denied frames must be inspected after
+the **entire** driver exits successfully. An intermediate checkpoint or static
+analysis pass does not qualify the native journey. Do not hot restart an active
+integration driver; `--no-dds` follows the repository's Windows native harness
+configuration. The candidate privacy contract remains review-only.
+
+The private compile-time file lives outside the checkout and must be removed after
+QA. No tokens appear in test logs or committed evidence. Default local ports are
+543xx; the task-owned project uses 553xx as described in the backend document.
+Adjust only the owned emulator's reverse port. The driver saves native PNGs under
+ignored `apps/mobile/build/group-contact-screenshots`; inspect them before claiming
+visual QA. This is a bounded journey, not a substitute for physical-device or iOS
+release validation. The final integration evidence records actual successful runs
+and any limitations.
+
+The host driver writes `build/group_contact_response_data.json` with frame names,
+byte counts and other result metadata. PNGs remain in the screenshot directory.
+It preserves the SDK's screenshot/pass/fail checks while avoiding a second pretty
+JSON copy of the image bytes after completion. A host-driver error still fails
+the run, even if the app printed that all assertions passed. See
+[host driver ownership](../../apps/mobile/test_driver/README.md).
+
+Native QA also exercises the shared moderation category selector at narrow width.
+Long EN/IT category labels wrap within the bounded field and menu at enlarged text.
+The chat checks foreground route and laid-out scroll dimensions before following
+newest history, including when an info route covers its still-mounted parent.
+
+## Stage validation status
+
+The scoped Mobile regression run passed 451 tests before the final sender/layout
+additions; the final focused contact/moderation run passed 23 tests. The additive
+access/sender/exit/expiry SQL suite passed 20 assertions, and the inherited real
+OTP/PostgREST verifier passed 62 checks with the D02 schema. Web generated types
+passed typechecking. D02 required CI subsequently passed on `a1bf9f9`; D03 and
+the cumulative runtime/schema checks also passed. See the
+[final integration evidence](group-contact-integration-evidence.md) for exact heads
+and the remaining whole native journey blocker.
+
+Native debugging exercised submission, exact lost-response recovery, manager
+triage, acceptance, human messages, audience, revocation and protected reporting.
+It found a covered-parent scroll callback and a report selector overflow; both
+were repaired. A clean whole-journey native rerun is still pending at this stage
+snapshot; partial screenshots do not qualify the complete journey. The final D
+integration evidence must replace this status with actual results and limits.

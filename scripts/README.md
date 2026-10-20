@@ -1,5 +1,31 @@
 # Repository scripts
 
+- `run-contact-native-ci.sh` owns the explicitly opted-in ephemeral Linux Android
+  runtime for both D/M review journeys, with serial builds and complete drivers.
+  It refuses developer/self-hosted runtimes. `collect-contact-native-evidence.mjs`
+  exports only fictional PNGs, compact results, source hashes and scrubbed failure
+  diagnostics; session defines, instrumented APKs and raw logs stay private.
+  See [workflow triggers and cost](../.github/workflows/README.md).
+
+- `verify-local-member-contact.mjs` owns real local OTP/PostgREST checks for
+  personal consent, retained history, legacy readers and observed context-loss races.
+- `verify-local-member-contact-upgrade.mjs` resets an explicitly disposable local
+  predecessor, hashes existing records and verifies additive/repeated upgrades.
+  Both are in `check:db`; see the [provisional contract](../docs/development/member-contact-backend-review.md)
+  for isolation and the unresolved policy gate. No hosted or peer-stack use.
+
+- `verify-local-group-contact.mjs` owns D01 real Auth/PostgREST checks for
+  private requests, explicit conversation admission, receipts, v5/v6 compatibility,
+  unread, targeted reporting and observed send/revoke races.
+  It genuinely reports both a disclosed pending request and a received message,
+  checks exact target/context storage and rejects outsider/self request reports;
+  the mixed C/D/M upgrade gate requires both populated families.
+- `verify-local-group-contact-upgrade.mjs` resets only an explicitly disposable
+  loopback stack to the pre-D boundary, populates current-main demo/group history,
+  hashes every existing table/column/row and verifies additive/repeated upgrades.
+  Set `PLANETS_DISPOSABLE_QA=1` outside CI; `MAILPIT_URL` follows the selected
+  local stack. Both commands use the checkout's pinned CLI and fail on unavailable
+  runtime state. See the provisional D contract and execution evidence.
 - `lib/verify-basemap-budget.mjs` extends the existing disposable local location
   verifier with genuine Auth/service REST, a bounded Trento cost comparison,
   cache-only/ceiling/ancestor checks and aggregate request counters. Its provider
@@ -106,3 +132,11 @@ No submitted query history or matching worker is created.
 - `verify-local-demo-stack.mjs` composes PI05 and TW05 phases under one mutation lock/session pool, retaining both interruption proofs. The standalone runners export their existing phases for this owner.
 - `verify-local-global-notifications.mjs` exercises the unrestricted canonical worker after delegated blocking/domain rejection producers, without demo row locks or fabricated receipts.
 - `verify-local-stack-upgrades.mjs` owns two sequential disposable predecessor stacks and interleaved migration replay. `verify-local-stack-upgrade-state.mjs` hashes every original column/row, checks explicit new-column projections, then separately proves combined seed convergence. The [integration record](../docs/development/template-stack-integration.md) records immutable inputs, port ownership and cleanup.
+
+## C/D populated integration
+
+`verify-local-contact-discussion-upgrades.mjs` owns the exact immutable C→D and
+D→C populated upgrade checks, row/function preservation and genuine mixed report/
+unread checks. It serially resets only the explicitly disposable selected local
+stack. Its temporary migration-set journal and recovery steps are documented in
+[combined qualification](../docs/development/contact-discussion-integration.md).

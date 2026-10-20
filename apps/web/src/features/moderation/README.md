@@ -1,5 +1,28 @@
 # Moderation staff surface
 
+D01 adds `group-contact-moderation-models.ts` for strict case-scoped evidence of
+a reported group contact request or representative message. The server loads it
+only for those typed cases. Staff see the exact reported content and canonical
+human/group identifiers, without another message, audience roster or source-chat
+link. Staff roles never grant ordinary D conversation access. This follows the
+provisional [D contract](../../../../../docs/development/group-contact-contract.md).
+
+The member-contact review candidate extends that same case-bound RPC and parser
+for `member_contact_request` and `member_contact_message`. Personal evidence names
+the origin Group, not a represented Group. An omitted request introduction is
+explicitly shown as absent; message bodies remain required. Erased authors may
+have a null current profile reference, while the evidence retains its immutable
+human identifier. The server rejects a returned evidence kind that differs from
+the case, and neither staff nor Group managers gain conversation access. See the
+[provisional member contract](../../../../../docs/development/member-contact-backend-review.md).
+
+The five representative, coordination and member contact target kinds permit an
+erased subject's null current profile reference in the strict queue/detail model.
+Canonical staff projections label that subject `Deleted account`; only an actual
+official template uses the organization label. Legacy human target kinds still
+require their installed subject identity. Exact reported contact provenance and
+case authorization remain required.
+
 This feature owns the private server-side moderation client used by `/admin`.
 `moderation-server.ts` verifies signed claims and checks the canonical database
 staff role before every read. `moderation-operations.ts` repeats that check for

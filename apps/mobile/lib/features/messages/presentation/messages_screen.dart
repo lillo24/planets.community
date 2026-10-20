@@ -1,3 +1,6 @@
+import '../../member_contact/presentation/member_contact_widgets.dart';
+import '../../member_contact/presentation/member_contact_routes.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -33,6 +36,9 @@ import 'messages_routes.dart';
 import 'messages_navigation.dart';
 import 'message_unread_badge.dart';
 import 'participation_request_details.dart';
+import '../../group_contact/presentation/group_contact_widgets.dart';
+import '../../group_contact/presentation/group_contact_routes.dart';
+import '../../group_coordination/presentation/coordination_routes.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
@@ -285,7 +291,9 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                                 visiblePhotos.entryFor(
                                   item.counterpartyProfileId,
                                 ),
-                              ProjectMessageChatItem() => null,
+                              ProjectMessageChatItem() ||
+                              GroupContactMessageChatItem() ||
+                              MemberContactMessageChatItem() => null,
                             },
                           ),
                         if (state.hasMore)
@@ -368,7 +376,9 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                                 visiblePhotos.entryFor(
                                   item.counterpartyProfileId,
                                 ),
-                              ProjectMessageChatItem() => null,
+                              ProjectMessageChatItem() ||
+                              GroupContactMessageChatItem() ||
+                              MemberContactMessageChatItem() => null,
                             },
                           ),
                         );
@@ -397,6 +407,12 @@ class _ChatCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (item case MemberContactMessageChatItem contact) {
+      return MemberContactChatCard(contact);
+    }
+    if (item case GroupContactMessageChatItem contact) {
+      return GroupContactChatCard(contact);
+    }
     final l10n = AppLocalizations.of(context);
     final viewerId = ref.watch(authSessionProvider).identity?.id;
     final colors = Theme.of(context).colorScheme;
@@ -404,9 +420,13 @@ class _ChatCard extends ConsumerWidget {
       ProjectMessageChatItem i => i.displayTitle,
       ResourceMessageChatItem i => i.counterpartyDisplayName,
       ProjectRequestMessageChatItem i => i.counterpartyDisplayName,
+      GroupContactMessageChatItem i => i.displayTitle,
+      MemberContactMessageChatItem i => i.displayTitle,
     };
     final counterpartyId = switch (item) {
-      ProjectMessageChatItem() => null,
+      ProjectMessageChatItem() ||
+      GroupContactMessageChatItem() ||
+      MemberContactMessageChatItem() => null,
       ResourceMessageChatItem i => i.counterpartyProfileId,
       ProjectRequestMessageChatItem i => i.counterpartyProfileId,
     };
@@ -446,6 +466,16 @@ class _ChatCard extends ConsumerWidget {
         'project-request-chat-item-${i.chatId}',
         'project-request-chat-link-${i.requestId}',
         projectRequestChatRoute(i.requestId),
+      ),
+      MemberContactMessageChatItem i => (
+        'member-contact-chat-${i.chatId}',
+        'member-contact-link-${i.chatId}',
+        memberContactChatRoute(i.chatId),
+      ),
+      GroupContactMessageChatItem i => (
+        'group-contact-chat-${i.chatId}',
+        'group-contact-link-${i.chatId}',
+        groupContactChatRoute(i.chatId),
       ),
     };
     return Semantics(
@@ -711,6 +741,13 @@ class _StructuredRequestCard extends StatelessWidget {
       item: item,
     ),
     ResourceRequestMessageItem item => _ResourceRequestCard(item: item),
+    MemberContactRequestMessageItem item => MemberContactRequestCard(
+      item.contact,
+    ),
+    GroupContactRequestMessageItem item => GroupContactRequestCard(
+      item.contact,
+    ),
+    GroupCoordinationMessageItem item => CoordinationRequestCard(item.proposal),
   };
 }
 

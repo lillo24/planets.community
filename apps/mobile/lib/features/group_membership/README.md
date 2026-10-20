@@ -29,3 +29,7 @@ without reading the Creator's draft. No Co-organizer content editor exists.
 
 See [the contract](../../../../../docs/development/group-membership-and-roles.md)
 and [GRP03B QA/rollout](../../../../../docs/development/grp03b-group-membership-ui.md).
+
+The private People list opens `member_contact/` compact person actions from a
+name or labelled menu. That feature rechecks canonical eligibility and owns
+named-person consent; Group roles never grant oversight of personal chats.

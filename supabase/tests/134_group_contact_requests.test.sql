@@ -1,0 +1,45 @@
+begin;
+select no_plan();
+select ok(not has_table_privilege(r,'private.group_contact_requests','select'),r||' has no direct request read') from unnest(array['anon','authenticated','service_role']) r;
+select ok(has_function_privilege('authenticated','public.submit_group_contact_request(uuid,uuid,uuid,uuid,text,text,text,uuid)','execute'),'authenticated command gateway');
+select ok(not has_function_privilege(r,'public.submit_group_contact_request(uuid,uuid,uuid,uuid,text,text,text,uuid)','execute'),r||' cannot submit') from unnest(array['anon','service_role']) r;
+select ok(prosecdef and proconfig @> array['search_path=""'],'fixed privileged search path') from pg_proc where oid='public.submit_group_contact_request(uuid,uuid,uuid,uuid,text,text,text,uuid)'::regprocedure;
+insert into auth.users(id,email) select ('d1000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'d-contact-tap-'||n||'@planets.invalid' from generate_series(1,5) n;
+insert into public.profiles(id,display_name) select id,'Fictional D person' from auth.users where email like 'd-contact-tap-%';
+insert into private.community_groups(id,name,description,group_kind,volunteering_focus,publication_state,original_actor_id)
+select ('d1010000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'Fictional D group '||n,'A fictional group description for local tests.','informal',false,'published',('d1000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid from generate_series(1,3) n;
+insert into private.community_group_managers(group_id,profile_id,appointed_by_actor_id)
+select id,original_actor_id,original_actor_id from private.community_groups where id::text like 'd101%';
+insert into private.group_delegates(id,group_id,profile_id,initial_role,delegate_role,granted_by)
+values('d1020000-0000-4000-8000-000000000001','d1010000-0000-4000-8000-000000000002','d1000000-0000-4000-8000-000000000004','co_organizer','co_organizer','d1000000-0000-4000-8000-000000000002');
+create temp table d_contact_results(value jsonb);
+grant all on d_contact_results to authenticated;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d1000000-0000-4000-8000-000000000001',true);
+select is(jsonb_array_length(public.list_my_contact_groups('d1000000-0000-4000-8000-000000000001')),1,'bounded exact own representation');
+insert into d_contact_results select public.submit_group_contact_request('d1000000-0000-4000-8000-000000000001','d1030000-0000-4000-8000-000000000001','d1010000-0000-4000-8000-000000000001','d1010000-0000-4000-8000-000000000002','idea',' A shared garden ',' Private synthetic note ');
+select is((select value->>'outcome' from d_contact_results),'pending','explicit submit creates pending request');
+select is(public.submit_group_contact_request('d1000000-0000-4000-8000-000000000001','d1030000-0000-4000-8000-000000000001','d1010000-0000-4000-8000-000000000001','d1010000-0000-4000-8000-000000000002','idea',' A shared garden ',' Private synthetic note ')->>'replayed','true','exact transport retry is original action');
+select throws_ok($$select public.submit_group_contact_request('d1000000-0000-4000-8000-000000000001','d1030000-0000-4000-8000-000000000001','d1010000-0000-4000-8000-000000000001','d1010000-0000-4000-8000-000000000002','idea','Changed','Private synthetic note')$$,'PT409',null,'changed intent cannot reuse key');
+select throws_ok($$select public.submit_group_contact_request('d1000000-0000-4000-8000-000000000001',gen_random_uuid(),'d1010000-0000-4000-8000-000000000001','d1010000-0000-4000-8000-000000000002','idea','Duplicate','Synthetic note')$$,'PT409',null,'pending group pair duplicate denied');
+select throws_ok($$select public.submit_group_contact_request('d1000000-0000-4000-8000-000000000001',gen_random_uuid(),'d1010000-0000-4000-8000-000000000001','d1010000-0000-4000-8000-000000000003','other','Wrong purpose','Synthetic note')$$,'22023',null,'no unrestricted other purpose');
+select throws_ok($$select public.list_my_contact_groups('d1000000-0000-4000-8000-000000000002')$$,'42501',null,'expected actor mismatch denied');
+select set_config('request.jwt.claim.sub','d1000000-0000-4000-8000-000000000005',true);
+select is(jsonb_array_length(public.list_own_group_contact_requests('d1000000-0000-4000-8000-000000000005')),0,'unrelated empty state is legitimate');
+select throws_ok($$select public.get_own_group_contact_request('d1000000-0000-4000-8000-000000000005',(select (value->>'request_id')::uuid from d_contact_results))$$,'42501',null,'exact private read denied');
+select throws_ok($$select public.submit_group_contact_request('d1000000-0000-4000-8000-000000000005',gen_random_uuid(),'d1010000-0000-4000-8000-000000000001','d1010000-0000-4000-8000-000000000003','idea','Fake group','Synthetic note')$$,'42501',null,'membership cannot forge representation');
+select set_config('request.jwt.claim.sub','d1000000-0000-4000-8000-000000000004',true);
+select is(public.get_own_group_contact_request('d1000000-0000-4000-8000-000000000004',(select (value->>'request_id')::uuid from d_contact_results))->>'request_message','Private synthetic note','current Co-organizer can triage note');
+select public.decline_group_contact_request('d1000000-0000-4000-8000-000000000004','d1030000-0000-4000-8000-000000000002',(select (value->>'request_id')::uuid from d_contact_results));
+select is(public.get_own_group_contact_request('d1000000-0000-4000-8000-000000000004',(select (value->>'request_id')::uuid from d_contact_results))->>'request_message',null::text,'resolved triage cannot read note');
+select set_config('request.jwt.claim.sub','d1000000-0000-4000-8000-000000000001',true);
+select throws_ok($$select public.submit_group_contact_request('d1000000-0000-4000-8000-000000000001',gen_random_uuid(),'d1010000-0000-4000-8000-000000000001','d1010000-0000-4000-8000-000000000002','idea','Repeat','Synthetic note')$$,'PT409',null,'decline cooldown enforced');
+select is(public.recover_group_contact_action('d1000000-0000-4000-8000-000000000001','d1030000-0000-4000-8000-000000000001')->>'outcome','pending','receipt recovers original outcome not current state');
+select is(public.recover_group_contact_action('d1000000-0000-4000-8000-000000000001',gen_random_uuid()),null::jsonb,'no committed action means no receipt');
+select throws_ok($$select public.list_own_group_contact_requests('d1000000-0000-4000-8000-000000000001',51)$$,'22023',null,'bounded server page');
+select throws_ok($$select public.list_own_group_contact_requests('d1000000-0000-4000-8000-000000000001',20,now(),null)$$,'22023',null,'paired cursor required');
+reset role;
+select is((select count(*) from private.group_contact_requests where submitter_id='d1000000-0000-4000-8000-000000000001'),1::bigint,'replays and rejected attempts created no duplicate rows');
+select ok(not exists(select 1 from private.group_contact_receipts where result::text like '%synthetic%'),'receipts contain no private note');
+select * from finish();
+rollback;

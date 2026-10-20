@@ -13,6 +13,7 @@ import '../../groups/presentation/group_widgets.dart';
 import '../application/discussion_controllers.dart';
 import '../data/discussion_gateway.dart';
 import '../domain/discussion_models.dart';
+import '../domain/discussion_invite_destination.dart';
 import 'discussion_feedback.dart';
 import 'discussion_routes.dart';
 import 'discussion_invitation_link.dart';
@@ -99,7 +100,9 @@ class _DiscussionPeopleScreenState
     final room = c.room;
     if (room == null) return;
     final commands = ref.read(discussionCommandsProvider),
-        slot = '${action.name}/$object';
+        slot = action == DiscussionAction.invite
+            ? discussionInviteSlot(c.actor, room.groupId, room.id, object)
+            : '${action.name}/$object';
     if (!(action == DiscussionAction.invite
             ? room.canInvite
             : room.canManage) &&
@@ -355,7 +358,13 @@ class _DiscussionPeopleScreenState
                             subtitle: Text(groupRoleLabel(l, p.authority)),
                             trailing: Builder(
                               builder: (context) {
-                                final a = commands.attempts['invite/${p.id}'];
+                                final a =
+                                    commands.attempts[discussionInviteSlot(
+                                      c.actor,
+                                      room.groupId,
+                                      room.id,
+                                      p.id,
+                                    )];
                                 return Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [

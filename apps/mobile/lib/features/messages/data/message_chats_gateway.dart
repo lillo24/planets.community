@@ -1,3 +1,5 @@
+import '../../member_contact/domain/member_contact_models.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,6 +10,7 @@ import '../../resource_chat/domain/resource_chat_models.dart';
 import '../domain/message_chat_models.dart';
 import '../domain/message_unread_models.dart';
 import '../../../core/backend/cover_media_path.dart';
+import '../../group_contact/domain/group_contact_models.dart';
 
 abstract interface class MessageChatsGateway {
   Future<MessageChatPage> listItems({
@@ -32,7 +35,7 @@ class SupabaseMessageChatsGateway implements MessageChatsGateway {
     MessageChatCursor? cursor,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_scoped_conversation_items_v5',
+      'list_own_scoped_conversation_items_v7',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_scope': scope.wireValue,
@@ -93,6 +96,14 @@ class MessageChatsPayloadParser {
 
   MessageChatItem item(Object? value) {
     final row = _row(value, 'Unified chat item');
+    if (row['item_kind'] == 'member_contact_chat') {
+      return MemberContactMessageChatItem(MemberContactConversation(row));
+    }
+    if (row['item_kind'] == 'group_contact_chat') {
+      return GroupContactMessageChatItem(
+        GroupContactConversation.parse(row, listItem: true),
+      );
+    }
     _requireExactKeys(row, _keys, 'Unified chat item');
     _validatePreview(row);
     final kind = MessageChatItemKind.fromWire(_string(row, 'item_kind'));
@@ -100,6 +111,10 @@ class MessageChatsPayloadParser {
       MessageChatItemKind.projectChat => _projectItem(row),
       MessageChatItemKind.resourceChat => _resourceItem(row),
       MessageChatItemKind.projectRequestChat => _projectRequestItem(row),
+      MessageChatItemKind.memberContactChat ||
+      MessageChatItemKind.groupContactChat => throw const FormatException(
+        'Malformed D conversation row.',
+      ),
     };
   }
 

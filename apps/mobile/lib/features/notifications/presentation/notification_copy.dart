@@ -2,6 +2,17 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../domain/notification_models.dart';
 
 String notificationCopy(AppLocalizations l10n, AppNotification notification) {
+  if (notification.kind.isContact) {
+    return switch (notification.kind) {
+      NotificationKind.groupContactRequest =>
+        l10n.notificationGroupContactRequest,
+      NotificationKind.groupCoordinationProposal =>
+        l10n.notificationGroupCoordinationProposal,
+      NotificationKind.memberContactRequest =>
+        l10n.notificationMemberContactRequest,
+      _ => l10n.notificationsGeneric,
+    };
+  }
   if (notification.category == NotificationCategory.matching) {
     if (notification.kind != NotificationKind.matchingAvailable) {
       return l10n.notificationsGeneric;

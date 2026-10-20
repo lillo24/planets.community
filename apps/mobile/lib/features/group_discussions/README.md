@@ -32,6 +32,14 @@ folders still fetch no room history, people or links.
   paging, read-viewport ACK, reporting and explicit version-conflict review.
 - `presentation/discussion_people_screen.dart` owns admitted People, bounded
   current Group People invitation selection, withdrawal and removal.
+- `domain/discussion_invite_destination.dart` and
+  `data/discussion_invite_destinations_gateway.dart` own the minimal target-bound
+  eligible-Idea page. The backend filters eligibility before pagination; this
+  reader fetches no preview, history, roster, unread or grant data.
+- `presentation/discussion_person_invite.dart` composes that selector into the
+  compact Group People sheet and reuses the existing C invitation command and
+  retained receipt. Both entry points scope invitation attempts by actor, Group,
+  room and target. Closing a sheet does not discard an uncertain attempt.
 - `presentation/discussion_widgets.dart` contains pure theme/localization widgets
   and a 320px / large-text preview; it imports no native transport.
 - `presentation/discussion_routes.dart` defines C destinations and the exact

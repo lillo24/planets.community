@@ -1,5 +1,7 @@
 import '../../group_discussions/presentation/discussion_group_conversations.dart';
 import '../../group_projects/presentation/group_project_widgets.dart';
+import '../../group_contact/presentation/group_contact_widgets.dart';
+import '../../participation/presentation/participation_routes.dart';
 
 import 'dart:async';
 
@@ -558,6 +560,16 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                   ),
                   const SizedBox(height: AppSpacing.small),
                   ProjectGroupBadge(detail.summary.groupAttribution),
+                  if (detail.summary.groupAttribution?.available == true)
+                    GroupContactEntry(
+                      groupId: detail.summary.groupAttribution!.groupId!,
+                      groupName: detail.summary.groupAttribution!.name!,
+                      projectId: detail.summary.id,
+                      participationRoute: ParticipationRoutes.join(
+                        ProjectKind.oneTime,
+                        detail.summary.id,
+                      ),
+                    ),
                   if (detail.summary.groupAttribution?.groupId != null)
                     GroupCommunicationEntry(
                       groupId: detail.summary.groupAttribution!.groupId!,
