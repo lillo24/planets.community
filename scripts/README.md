@@ -17,6 +17,9 @@
 - `verify-local-group-contact.mjs` owns D01 real Auth/PostgREST checks for
   private requests, explicit conversation admission, receipts, v5/v6 compatibility,
   unread, targeted reporting and observed send/revoke races.
+  It genuinely reports both a disclosed pending request and a received message,
+  checks exact target/context storage and rejects outsider/self request reports;
+  the mixed C/D/M upgrade gate requires both populated families.
 - `verify-local-group-contact-upgrade.mjs` resets only an explicitly disposable
   loopback stack to the pre-D boundary, populates current-main demo/group history,
   hashes every existing table/column/row and verifies additive/repeated upgrades.

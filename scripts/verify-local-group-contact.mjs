@@ -169,6 +169,49 @@ try {
     p_request_id: request.request_id,
   });
   equal(triage.request_message, requestIntent.p_note, "authorized triage");
+  // Populate the request-report family through its real disclosed recipient,
+  // independently of the later message report and without creating a chat.
+  const requestReportArgs = {
+    p_expected_reporter_profile_id: carol.id,
+    p_client_submission_id: randomUUID(),
+    p_category: "other",
+    p_explanation: "Synthetic report of the disclosed pending contact note.",
+    p_target_kind: "group_contact_request",
+    p_target_id: request.request_id,
+  };
+  const requestReport = await call(
+    carol,
+    "submit_moderation_report",
+    requestReportArgs,
+  );
+  const [requestCase] =
+    await sql`select target_kind,target_group_contact_request_id,
+    target_group_contact_message_id,group_contact_context_id,subject_profile_id
+    from private.moderation_cases where id=${requestReport[0].case_id}::uuid`;
+  equal(
+    requestCase,
+    {
+      target_kind: "group_contact_request",
+      target_group_contact_request_id: request.request_id,
+      target_group_contact_message_id: null,
+      group_contact_context_id: null,
+      subject_profile_id: alice.id,
+    },
+    "Recipient report stores exactly the request target without chat admission",
+  );
+  equal(
+    (await call(carol, "submit_moderation_report", requestReportArgs))[0]
+      .case_id,
+    requestReport[0].case_id,
+    "Disclosed request report retry preserves its case",
+  );
+  for (const person of [outsider, alice]) {
+    await denied(person, "submit_moderation_report", {
+      ...requestReportArgs,
+      p_expected_reporter_profile_id: person.id,
+      p_client_submission_id: randomUUID(),
+    });
+  }
   const acceptArgs = {
     p_action_id: randomUUID(),
     p_request_id: request.request_id,
