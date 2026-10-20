@@ -227,6 +227,9 @@ class DiscussionSettings {
 
 class DiscussionInvitation with DiscussionCursor {
   DiscussionInvitation(Object? value) {
+    final revised =
+        value is Map &&
+        (value.containsKey('purpose') || value.containsKey('visibility'));
     final r = discussionObject(value, {
       'invitation_id',
       'room_id',
@@ -236,6 +239,7 @@ class DiscussionInvitation with DiscussionCursor {
       'group_id',
       'group_name',
       'inviter_name',
+      if (revised) ...{'purpose', 'visibility'},
     });
     if (r['status'] != 'pending') {
       throw const FormatException('Unsupported discussion invitation.');
@@ -247,11 +251,19 @@ class DiscussionInvitation with DiscussionCursor {
     groupName = groupText(r['group_name'], 120);
     inviterName = discussionName(r['inviter_name']);
     createdAt = groupDate(r['created_at']);
+    // Legacy readers retain their exact eight-field projection. V2 supplies
+    // consent context directly, without fetching private room/history data.
+    purpose = revised ? groupText(r['purpose'], 500) : null;
+    visibility = revised ? groupText(r['visibility'], 20) : null;
+    if (revised && !{'group', 'invitation'}.contains(visibility)) {
+      throw const FormatException('Invalid invitation audience.');
+    }
   }
   @override
   late final String id;
   late final String roomId, groupId, title, groupName;
   late final String? inviterName;
+  late final String? purpose, visibility;
   @override
   late final DateTime createdAt;
 }

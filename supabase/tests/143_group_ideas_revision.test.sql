@@ -24,6 +24,7 @@ select has_trigger('private','group_memberships','group_memberships_start_genera
 set local role anon;
 select throws_ok($$select public.get_group_discussion_v2(null,gen_random_uuid())$$,'42501',null,'Anonymous cannot discover private Group rooms');
 select throws_ok($$select public.preview_group_discussion_invitation_link(null,repeat('a',64))$$,'42501',null,'Anonymous capability possession grants no Group entry');
+select throws_ok($$select public.list_group_discussion_invitations_v2(null)$$,'42501',null,'Anonymous cannot read targeted consent context');
 reset role;
 select * from finish();
 rollback;

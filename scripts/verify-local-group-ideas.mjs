@@ -433,6 +433,86 @@ try {
   const suggestion = await invite(carlo, manager, idea);
   await accept(manager, suggestion);
   const targeted = await invite(bea, carlo, restricted);
+  const otherConsentRoom = (
+    await create(bea, group, "Fictional second consent context")
+  ).room_id;
+  const otherConsent = await invite(bea, carlo, otherConsentRoom);
+  const legacyInvitations = await rpc(
+    carlo,
+    "list_group_discussion_invitations",
+    expected(carlo),
+  );
+  const consentInvitations = await rpc(
+    carlo,
+    "list_group_discussion_invitations_v2",
+    expected(carlo),
+  );
+  const consent = consentInvitations.find(
+    (i) => i.invitation_id === targeted.object_id,
+  );
+  equal(
+    consent?.purpose,
+    "Fictional local planning purpose.",
+    "Targeted consent includes purpose before admission",
+  );
+  equal(
+    consent?.visibility,
+    "invitation",
+    "Targeted consent discloses restricted audience",
+  );
+  equal(
+    consentInvitations.find((i) => i.invitation_id === otherConsent.object_id)
+      ?.visibility,
+    "group",
+    "Group-visible targeted consent discloses its distinct audience",
+  );
+  const firstConsentPage = await rpc(
+    carlo,
+    "list_group_discussion_invitations_v2",
+    { ...expected(carlo), p_limit: 1 },
+  );
+  const secondConsentPage = await rpc(
+    carlo,
+    "list_group_discussion_invitations_v2",
+    {
+      ...expected(carlo),
+      p_limit: 1,
+      p_before_created_at: firstConsentPage[0].created_at,
+      p_before_id: firstConsentPage[0].invitation_id,
+    },
+  );
+  equal(
+    [...firstConsentPage, ...secondConsentPage],
+    consentInvitations.slice(0, 2),
+    "Targeted context retains canonical bounded cursor order without duplicates",
+  );
+  equal(
+    consentInvitations.map(({ purpose, visibility, ...row }) => row),
+    legacyInvitations,
+    "Legacy shape and authorized ordering remain unchanged",
+  );
+  equal(
+    await rpc(diana, "list_group_discussion_invitations_v2", expected(diana)),
+    [],
+    "Outsider receives no targeted invitation context",
+  );
+  await denied(carlo, "get_group_discussion_v2", {
+    ...expected(carlo),
+    p_room_id: restricted,
+  });
+  await denied(carlo, "get_group_discussion_message_page_v2", {
+    ...expected(carlo),
+    p_room_id: restricted,
+  });
+  await denied(carlo, "list_group_discussion_invitations_v2", {
+    ...expected(bea),
+  });
+  await denied(
+    carlo,
+    "list_group_discussion_invitations_v2",
+    { ...expected(carlo), p_limit: 0 },
+    "22023",
+  );
   equal(
     (
       await rpc(carlo, "list_group_discussion_invitations", expected(carlo))
@@ -441,6 +521,13 @@ try {
     "Targeted invitation is a structured explicit request",
   );
   await accept(carlo, targeted);
+  equal(
+    (
+      await rpc(carlo, "list_group_discussion_invitations_v2", expected(carlo))
+    ).some((i) => i.invitation_id === targeted.object_id),
+    false,
+    "Accepted context leaves the pending consent list",
+  );
   equal(
     (await history(carlo, restricted)).items.length,
     2,

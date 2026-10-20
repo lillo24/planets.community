@@ -65,6 +65,15 @@ managers issue restricted-room invitations; admitted people may suggest a
 Group-visible Idea to other current Group people. A target must still be
 eligible and pass the existing blocking barrier when accepting.
 
+`20261020123403_group_idea_invitation_context.sql` adds the targeted consent
+reader `list_group_discussion_invitations_v2`. It delegates eligibility, bounds,
+cursor validation and order to the unchanged legacy reader, then adds only the
+authorized room purpose and visibility. This allows Requests to disclose both
+before Accept without reading messages, current links or the roster, creating
+an admission or granting restricted-room discovery. The old eight-field shape
+remains available to installed clients; v2 has exactly those fields plus
+`purpose` and `visibility`.
+
 Invitation links use opaque 256-bit tokens, stored as hashes, valid for 30 days.
 They are renewable/revocable with optimistic link versions. Possession supplies
 only preview context to current Group people; explicit acceptance creates a
@@ -106,6 +115,8 @@ Legacy summary kinds and envelopes remain unchanged. Revised clients use:
   `preview_group_discussion_invitation_link`,
   `accept_group_discussion_invitation_link`.
 - `list_own_group_discussion_notices`, `mark_group_discussion_notice_read`.
+- `list_group_discussion_invitations_v2` for targeted purpose/audience consent;
+  its parameters and stable invitation cursor match the legacy reader.
 
 Existing send/invite/respond/withdraw/remove/leave names route through the revised
 canonical dispatcher. Mutations keep `{room_id,object_id,version,sequence}`;

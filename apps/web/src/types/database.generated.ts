@@ -4584,6 +4584,15 @@ export type Database = {
         }
         Returns: Json
       }
+      list_group_discussion_invitations_v2: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_group_discussion_links: {
         Args: {
           p_before_created_at?: string

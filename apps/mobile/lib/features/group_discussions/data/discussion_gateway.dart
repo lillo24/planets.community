@@ -145,7 +145,7 @@ class SupabaseDiscussionGateway implements DiscussionGateway {
   Future<List<DiscussionInvitation>> invitations(
     String actor,
     Map<String, dynamic>? cursor,
-  ) => page('list_group_discussion_invitations', actor, {
+  ) => page('list_group_discussion_invitations_v2', actor, {
     ...?cursor,
   }, DiscussionInvitation.new);
   @override

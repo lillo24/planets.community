@@ -23,6 +23,9 @@ folders still fetch no room history, people or links.
   account/readiness epochs, admission changes and frozen command recovery.
 - `presentation/discussion_folders.dart` owns one-level Messages folders and
   explicit invitation consent; collapsed folders never load room history or ACK.
+  The versioned invitation list supplies purpose and audience before acceptance,
+  including the current-manager disclosure for restricted Ideas. The legacy
+  eight-field reader remains compatible; previews fetch no transcript or roster.
 - `presentation/discussion_group_screen.dart` owns deliberate creation and the
   narrow Auth-only own leave/decline screens.
 - `presentation/discussion_chat_screen.dart` owns plain text chat, anchored older

@@ -125,8 +125,14 @@ void main() {
       }
 
       await harness.waitFor(tester, find.text('Accept invitation'));
+      expect(find.text('Fictional invitation-only planning.'), findsOneWidget);
+      expect(
+        find.text('Audience: Invitation-only + Group managers'),
+        findsOneWidget,
+      );
       expect(find.text('Private message before your admission.'), findsNothing);
       await shot('invitation-en');
+      await harness.reveal(tester, find.text('Accept invitation'));
       await tester.tap(find.text('Accept invitation'));
       await harness.waitFor(tester, find.byType(AlertDialog));
       await tester.pump(const Duration(milliseconds: 300));

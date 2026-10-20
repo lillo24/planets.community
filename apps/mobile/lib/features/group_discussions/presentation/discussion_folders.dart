@@ -528,6 +528,21 @@ class DiscussionInvitationTile extends ConsumerWidget {
                     invitation.title,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
+                  if (invitation.purpose case final purpose?
+                      when purpose.isNotEmpty)
+                    Text(
+                      purpose,
+                      key: ValueKey(
+                        'discussion-invitation-purpose-${invitation.id}',
+                      ),
+                    ),
+                  if (invitation.visibility case final visibility?)
+                    Text(
+                      '${l.discussionAudience}: ${visibility == 'group' ? l.discussionGroupVisible : l.discussionInviteOnly}',
+                      key: ValueKey(
+                        'discussion-invitation-audience-${invitation.id}',
+                      ),
+                    ),
                   Text(invitation.groupName),
                   Text(
                     invitation.inviterName ?? l.discussionAccountUnavailable,
