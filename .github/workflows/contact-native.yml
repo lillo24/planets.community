@@ -1,0 +1,60 @@
+name: Contact Android review
+
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contact-native-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contact-native:
+    name: Contact Android review
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.label.name == 'qa-contact-native' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      PLANETS_DISPOSABLE_QA: "1"
+      MAILPIT_URL: http://127.0.0.1:54324
+      TMPDIR: ${{ runner.temp }}
+    steps:
+      - name: Check out the reviewed source
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24.20.0
+          cache: npm
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.2
+          cache: true
+
+      - name: Restore Node packages
+        run: npm ci
+
+      - name: Run both synthetic Android journeys
+        run: bash scripts/run-contact-native-ci.sh
+
+      - name: Retain bounded review evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: contact-android-${{ github.event.pull_request.head.sha || github.sha }}
+          path: contact-native-evidence/
+          if-no-files-found: warn
+          retention-days: 7

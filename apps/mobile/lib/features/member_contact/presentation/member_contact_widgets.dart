@@ -7,6 +7,7 @@ import '../../auth/application/auth_session_controller.dart';
 import '../../blocking/presentation/blocking_action.dart';
 import '../../group_membership/domain/group_relationships.dart';
 import '../../group_membership/presentation/group_membership_widgets.dart';
+import '../../group_discussions/presentation/discussion_person_invite.dart';
 import '../../messages/domain/message_chat_models.dart';
 import '../../messages/presentation/messages_formatters.dart';
 import '../../messages/presentation/message_unread_badge.dart';
@@ -26,8 +27,11 @@ String memberContactStatusLabel(AppLocalizations l, String status) =>
       _ => throw const FormatException('Unsupported member request status.'),
     };
 
-/// Receives only the private People projection. Never fetches a public profile,
-/// photo or any unrelated Group affiliation. C may compose its invitation here.
+/// Receives only the private People projection.
+///
+/// It fetches no public profile, photo or unrelated Group affiliation.
+/// C independently authorizes its
+/// target-bound Idea invitation action; member request eligibility grants none.
 class MemberContactPersonSheet extends ConsumerStatefulWidget {
   const MemberContactPersonSheet({
     required this.groupId,
@@ -123,6 +127,12 @@ class _PersonSheetState extends ConsumerState<MemberContactPersonSheet> {
             TextButton(onPressed: load, child: Text(l.retryAction)),
           ] else if (actor != null && actor != widget.person.id)
             const LinearProgressIndicator(),
+          if (actor != null && actor != widget.person.id)
+            DiscussionPersonInviteAction(
+              groupId: widget.groupId,
+              personId: widget.person.id,
+              eligibilityRevision: epoch,
+            ),
           if (actor != null && actor != widget.person.id)
             BlockingActionButton(
               targetProfileId: widget.person.id,

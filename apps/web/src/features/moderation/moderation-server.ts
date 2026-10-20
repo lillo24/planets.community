@@ -1,4 +1,5 @@
 import "server-only";
+import { parseDiscussionEvidence } from "./discussion-evidence";
 import { parseGroupReview } from "./group-moderation-models";
 import { parseGroupContactEvidence } from "./group-contact-moderation-models";
 
@@ -172,6 +173,7 @@ export async function readModerationCase(
     templateResult,
     groupResult,
     contactResult,
+    discussionResult,
   ] = await Promise.all([
     detail.projectContextId
       ? access.client.rpc("get_moderation_case_corroboration", {
@@ -207,6 +209,12 @@ export async function readModerationCase(
           p_case_id: caseId,
         })
       : Promise.resolve(null),
+    detail.targetKind === "group_discussion_message"
+      ? access.client.rpc("get_moderation_case_group_discussion", {
+          p_expected_staff_profile_id: access.profileId,
+          p_case_id: caseId,
+        })
+      : Promise.resolve(null),
   ]);
   if (contactResult?.error)
     throw new Error("The contact case evidence could not be loaded.");
@@ -217,6 +225,8 @@ export async function readModerationCase(
     throw new Error(
       "The contact case evidence did not match the reported kind.",
     );
+  if (discussionResult?.error)
+    throw new Error("The discussion report evidence could not be loaded.");
   if (groupResult?.error)
     throw new Error("The group review could not be loaded.");
   if (corroboration?.error) {
@@ -284,6 +294,9 @@ export async function readModerationCase(
       template,
       templateBlueprints,
       templateNextNeedId,
+      discussion: discussionResult
+        ? parseDiscussionEvidence(discussionResult.data)
+        : null,
       templatePageStale,
       templateCoverUrl,
       corroboration: corroboration

@@ -1,11 +1,25 @@
 # Supabase database
 
+Combined C/D/M source uses an additive complete unread reader and preserves the
+installed lane readers and distinct read boundaries. Both exact populated lane
+orders and sorted fresh replay are required; see
+[combined qualification](../docs/development/contact-discussion-integration.md).
+
 The provisional D-M member-contact migrations own named personal pair/origin-Group
 consent, without representative or manager oversight. See the
 [review-only contract](../docs/development/member-contact-backend-review.md) for
 migration owners, current RPC versions, verification and the unapproved lifetime
 boundary. `tests/140_member_contact.test.sql` protects that candidate; green tests
 do not approve source merge or hosted rollout.
+
+The revised C lane adds one automatic General room per eligible Group, explicit
+Ideas, independent oversight/history scopes, Group and Idea link collections and
+reviewed public Project conversion. See the [approved contract](../docs/development/group-ideas-revision.md),
+[core API](../docs/development/group-ideas-core-revision.md) and
+[conversion API](../docs/development/group-discussion-conversion.md). Forward
+migrations preserve old C identities; tests `143`–`145` and the corresponding
+real-Auth/upgrade verifiers cover the revised policy. General's existing private
+link collection is the Group-wide workspace; it is never a Project collection.
 
 GRP01 adds private group identity/authority/receipts/suppression actions, narrow
 public/manager/staff RPCs and a genuine target in the existing reporting queue.

@@ -34,7 +34,13 @@ or project content.
   resurfacing cards, the current-member Needs/Organization/Workspace tools strip
   (Organization is one-time only and owned by `../project_organization`),
   text/send-focused composer, former-member read-only state, and group-info
-  entry point.
+  entry point. Context (including connection warnings and planning-origin entry)
+  scrolls within 40% of the available body; the composer/read-only notice uses at
+  most 60% of the remaining space. These independent scroll areas preserve a
+  positive history viewport at large text sizes without changing its controller
+  or read ACK. Scaffold owns keyboard resizing; the composer adds no second inset.
+  Empty, initial-loading and failure states center when they fit and scroll their
+  full content and Retry when the available height is smaller.
 - `presentation/project_needs_sheet.dart` renders the scroll-controlled current
   Needs drawer and acknowledges attention only after refreshed canonical
   content has completed a frame. Covered requirements (participant or manual)

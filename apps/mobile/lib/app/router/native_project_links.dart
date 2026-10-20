@@ -1,5 +1,7 @@
 /// The OS filters are shape globs; this is the application trust boundary.
 /// Internal app navigation remains independent of the public HTTPS allowlist.
+/// Uri canonicalizes percent-encoded unreserved characters before this boundary;
+/// authorization uses the resulting exact token, never its raw URL spelling.
 String? nativeProjectDestination(Uri uri) {
   if (uri.scheme != 'https' ||
       uri.host != 'planets.community' ||
@@ -17,6 +19,10 @@ String? nativeProjectDestination(Uri uri) {
   final detail = RegExp(
     r'^/(?:proposals|tavoli|groups)/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
   );
+  if (RegExp(r'^/messages/discussions/invite/[0-9a-f]{64}$').hasMatch(path) &&
+      !uri.hasQuery) {
+    return path;
+  }
   if (token.hasMatch(path) && !uri.hasQuery) return path;
   if (path.startsWith('/groups/') && uri.hasQuery) {
     return null;

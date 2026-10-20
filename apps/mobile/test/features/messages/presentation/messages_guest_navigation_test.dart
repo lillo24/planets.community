@@ -1,3 +1,5 @@
+import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
+
 import '../../../support/fake_policy.dart';
 
 import 'dart:async';
@@ -6,6 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/features/group_discussions/data/discussion_gateway.dart';
+
+import '../../../support/fake_group_discussions.dart';
+
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/app/startup/startup_flow.dart';
@@ -574,6 +580,10 @@ class _Fixture {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          discussionProjectsGatewayProvider.overrideWithValue(
+            EmptyDiscussionProjectsGateway(),
+          ),
+          discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
           preacceptedPolicyFixture,
           if (tutorialCompleted)
             initialStartupPreferenceProvider.overrideWithValue(

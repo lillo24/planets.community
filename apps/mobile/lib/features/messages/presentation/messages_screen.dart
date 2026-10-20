@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../group_discussions/presentation/discussion_folders.dart';
+import '../../group_discussions/presentation/discussion_group_conversations.dart';
+
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
@@ -170,7 +173,7 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
     final initialLoading =
         !belongs || (state.phase == MessageChatsPhase.loading && items.isEmpty);
 
-    return Column(
+    Widget content(List<MessageChatItem> items, Widget? folders) => Column(
       children: [
         MessageChatScopeToggle(
           scope: scope,
@@ -186,14 +189,38 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
         ),
         const SizedBox(height: AppSpacing.small),
         Expanded(
-          child: initialLoading
+          child:
+              scope == MessageChatScope.groups &&
+                  items.isEmpty &&
+                  !state.hasMore
+              ? RefreshIndicator(
+                  onRefresh: widget.onRefresh,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(AppSpacing.medium),
+                    children: [
+                      folders!,
+                      if (initialLoading)
+                        LoadingState(message: l10n.messageChatsLoading)
+                      else if (state.phase == MessageChatsPhase.failure)
+                        ErrorState(
+                          message: messageChatsFailureMessage(
+                            l10n,
+                            state.failure!,
+                          ),
+                          onRetry: widget.onRefresh,
+                        ),
+                    ],
+                  ),
+                )
+              : initialLoading
               ? LoadingState(message: l10n.messageChatsLoading)
               : state.phase == MessageChatsPhase.failure && items.isEmpty
               ? ErrorState(
                   message: messageChatsFailureMessage(l10n, state.failure!),
                   onRetry: widget.onRefresh,
                 )
-              : items.isEmpty
+              : items.isEmpty && scope != MessageChatScope.groups
               ? RefreshIndicator(
                   onRefresh: widget.onRefresh,
                   child: LayoutBuilder(
@@ -238,12 +265,18 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                         scope,
                       ),
                       rowIds: [
+                        if (scope == MessageChatScope.groups)
+                          'discussion-folders',
                         if (state.hasConnectionIssue) 'connection',
                         if (state.failure != null) 'error',
                         for (final item in items) item.compositeId,
                         if (state.hasMore) 'more',
                       ],
                       rowValues: [
+                        if (scope == MessageChatScope.groups)
+                          // The alias resolver can finish without changing any
+                          // canonical chat row; replace its cached header too.
+                          (widget.expectedProfileId, folders),
                         if (state.hasConnectionIssue) state.hasConnectionIssue,
                         if (state.failure != null) state.failure,
                         for (final item in items)
@@ -268,6 +301,10 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                       ],
                       padding: const EdgeInsets.all(AppSpacing.medium),
                       itemBuilder: (context, index) {
+                        if (scope == MessageChatScope.groups) {
+                          if (index == 0) return folders!;
+                          index--;
+                        }
                         if (state.hasConnectionIssue && index == 0) {
                           return Padding(
                             padding: const EdgeInsets.only(
@@ -352,6 +389,14 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
         ),
       ],
     );
+    return scope == MessageChatScope.groups
+        ? DiscussionGroupConversations(
+            items: items,
+            expectedActor: widget.expectedProfileId,
+            refreshKey: (state.phase, state.hasConnectionIssue),
+            builder: content,
+          )
+        : content(items, null);
   }
 }
 
@@ -598,10 +643,15 @@ class _RequestsTab extends ConsumerWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: EmptyState(
-                title: l10n.messagesEmptyTitle,
-                message: l10n.messagesEmptyMessage,
-                icon: Icons.mail_outline,
+              child: Column(
+                children: [
+                  const DiscussionRequests(),
+                  EmptyState(
+                    title: l10n.messagesEmptyTitle,
+                    message: l10n.messagesEmptyMessage,
+                    icon: Icons.mail_outline,
+                  ),
+                ],
               ),
             ),
           ),
@@ -623,17 +673,21 @@ class _RequestsTab extends ConsumerWidget {
           key: const Key('messages-request-list'),
           storageKey: ('messages-request-list', expectedProfileId),
           rowIds: [
+            'idea-invitations',
             if (state.failure != null) 'error',
             for (final item in items) item.compositeId,
             if (state.hasMore) 'more',
           ],
           rowValues: [
+            expectedProfileId,
             if (state.failure != null) state.failure,
             ...items,
             if (state.hasMore) (state.phase, state.failure, showFallback),
           ],
           padding: const EdgeInsets.all(AppSpacing.medium),
           itemBuilder: (context, index) {
+            if (index == 0) return const DiscussionRequests();
+            index--;
             if (state.failure != null && index == 0) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.small),

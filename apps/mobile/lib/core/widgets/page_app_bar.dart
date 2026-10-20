@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// Arrow-free page header. Pushed pages retain a textual, guarded exit.
+/// An arrow-free page header with a textual, guarded exit.
+///
 /// Expanded text puts actions below the title so cancellation never overflows.
+/// [preserveTitleSize] keeps content titles at their normal font size (callers
+/// supply wrapping/ellipsis) and moves actions below them on narrow windows.
 PreferredSizeWidget pageAppBar(
   BuildContext context, {
   Widget? title,
@@ -10,6 +13,7 @@ PreferredSizeWidget pageAppBar(
   String? closeLabel,
   Key closeKey = const Key('page-close'),
   bool automaticallyImplyClose = true,
+  bool preserveTitleSize = false,
 }) {
   final implied =
       automaticallyImplyClose &&
@@ -28,15 +32,17 @@ PreferredSizeWidget pageAppBar(
         ),
       ),
   ];
+  final largeText = MediaQuery.textScalerOf(context).scale(14) > 20;
   final expanded =
       buttons.length > 1 &&
       buttons.any((button) => button is ButtonStyleButton) &&
       MediaQuery.sizeOf(context).width < 480 &&
-      MediaQuery.textScalerOf(context).scale(14) > 20;
+      (preserveTitleSize || largeText);
+  final actionHeight = preserveTitleSize && !largeText ? 56.0 : 112.0;
   return AppBar(
     automaticallyImplyLeading: false,
     // Composite titles (avatars/Expanded rows) need bounded toolbar constraints.
-    title: title is Text
+    title: title is Text && !preserveTitleSize
         ? FittedBox(
             fit: BoxFit.scaleDown,
             alignment: AlignmentDirectional.centerStart,
@@ -46,9 +52,9 @@ PreferredSizeWidget pageAppBar(
     actions: expanded ? null : buttons,
     bottom: expanded
         ? PreferredSize(
-            preferredSize: const Size.fromHeight(112),
+            preferredSize: Size.fromHeight(actionHeight),
             child: SizedBox(
-              height: 112,
+              height: actionHeight,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Align(

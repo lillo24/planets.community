@@ -222,7 +222,8 @@ void main() {
     expect(find.text('Loading notifications…'), findsOneWidget);
     pending.complete();
     await tester.pumpAndSettle();
-    expect(find.text('No notifications yet'), findsOneWidget);
+    expect(find.text('Group Idea activity'), findsOneWidget);
+    expect(find.text('No other notifications yet'), findsOneWidget);
 
     notifications
       ..listDelay = null

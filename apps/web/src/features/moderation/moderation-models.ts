@@ -76,6 +76,8 @@ export type ModerationCounterstatementEvidence = Readonly<{
 export type ModerationCaseDetail = Readonly<{
   groupContact?:
     import("./group-contact-moderation-models").GroupContactEvidence | null;
+
+  discussion?: import("./discussion-evidence").DiscussionEvidence | null;
   group?: import("./group-moderation-models").GroupReview | null;
   caseId: string;
   state: ModerationState;

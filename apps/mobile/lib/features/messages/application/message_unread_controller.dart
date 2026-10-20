@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../group_contact/application/contact_access_changes.dart';
+import '../../group_discussions/application/discussion_controllers.dart';
 import '../data/message_unread_gateway.dart';
 import '../domain/message_unread_models.dart';
 import 'message_chats_refresh.dart';
@@ -33,12 +34,37 @@ class MessageUnreadController extends Notifier<MessageUnreadState>
   Timer? _timer;
   int _revision = 0;
   int _request = 0;
+  bool _baseDisconnected = true;
+  bool _discussionDisconnected = true;
   @override
   MessageUnreadState build() {
     final session = ref.watch(authSessionProvider);
     final id = session.phase == AuthSessionPhase.ready
         ? session.identity?.id
         : null;
+    _baseDisconnected = true;
+    _discussionDisconnected =
+        ref.read(discussionSignalsProvider).asData?.value.connected != true;
+    // Share C's account subscription. A second channel for the same topic would
+    // evict the existing one in the resolved Realtime client. Hints carry no
+    // message/room data; clear counts before rereading current authorization.
+    ref.listen(discussionSignalsProvider, (_, next) {
+      if (id == null ||
+          state.profileId != id ||
+          ref.read(authSessionProvider).identity?.id != id) {
+        return;
+      }
+      final signal = next.asData?.value;
+      if (signal == null && !next.hasError) return;
+      _discussionDisconnected = signal?.connected != true;
+      _request++;
+      state = MessageUnreadState(
+        profileId: id,
+        stale: true,
+        disconnected: _baseDisconnected || _discussionDisconnected,
+      );
+      if (signal?.connected == true) _schedule(id);
+    });
     ref.listen(contactAccessChangesProvider, (_, next) {
       if (id != null && next.$1 == id && state.profileId == id) {
         _request++;
@@ -90,11 +116,12 @@ class MessageUnreadController extends Notifier<MessageUnreadState>
                 },
                 (connected) {
                   if (!_current(revision, id)) return;
+                  _baseDisconnected = !connected;
                   state = MessageUnreadState(
                     profileId: id,
                     summary: state.summary,
                     failed: state.failed,
-                    disconnected: !connected,
+                    disconnected: _baseDisconnected || _discussionDisconnected,
                     stale: state.stale,
                   );
                   if (connected) _schedule(id);

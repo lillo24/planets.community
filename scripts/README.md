@@ -1,5 +1,12 @@
 # Repository scripts
 
+- `run-contact-native-ci.sh` owns the explicitly opted-in ephemeral Linux Android
+  runtime for both D/M review journeys, with serial builds and complete drivers.
+  It refuses developer/self-hosted runtimes. `collect-contact-native-evidence.mjs`
+  exports only fictional PNGs, compact results, source hashes and scrubbed failure
+  diagnostics; session defines, instrumented APKs and raw logs stay private.
+  See [workflow triggers and cost](../.github/workflows/README.md).
+
 - `verify-local-member-contact.mjs` owns real local OTP/PostgREST checks for
   personal consent, retained history, legacy readers and observed context-loss races.
 - `verify-local-member-contact-upgrade.mjs` resets an explicitly disposable local
@@ -16,6 +23,24 @@
   Set `PLANETS_DISPOSABLE_QA=1` outside CI; `MAILPIT_URL` follows the selected
   local stack. Both commands use the checkout's pinned CLI and fail on unavailable
   runtime state. See the provisional D contract and execution evidence.
+
+- `verify-local-group-ideas.mjs` checks the revised General/Idea roles, full
+  history, exact exit cutoffs and independent participation/oversight rights.
+  `verify-local-group-ideas-upgrade.mjs` separately resets an explicitly disposable
+  loopback stack to the complete old C predecessor and proves populated row and
+  admission preservation across repeated forward application.
+- `verify-local-group-discussion-links.mjs` checks General and Idea workspaces,
+  versioned mutations, full current collections and canonical Project-only folders.
+  `verify-local-group-discussion-conversion.mjs` checks reviewed publication,
+  frozen source history and deliberate Project admission. These verifiers run in
+  the existing Database job; the upgrade runs before its final fresh reset.
+
+- `verify-local-group-discussions.mjs` owns C01 real OTP consent, episode/history
+  denial, command receipts, canonical unread/read snapshots, exact staff evidence
+  and observed Group-lock races. `--upgrade` requires CI or
+  `PLANETS_DISPOSABLE_QA=1`, resets the selected loopback stack to C01's predecessor,
+  populates existing demo/Group/moderation histories and compares every old column
+  and row after additive and repeated migration application.
 
 - `verify-local-group-membership.mjs` owns GRP03A genuine Auth/PostgREST
   relationship, role, block, retry and observed multi-connection lock races.
@@ -100,3 +125,11 @@ No submitted query history or matching worker is created.
 - `verify-local-demo-stack.mjs` composes PI05 and TW05 phases under one mutation lock/session pool, retaining both interruption proofs. The standalone runners export their existing phases for this owner.
 - `verify-local-global-notifications.mjs` exercises the unrestricted canonical worker after delegated blocking/domain rejection producers, without demo row locks or fabricated receipts.
 - `verify-local-stack-upgrades.mjs` owns two sequential disposable predecessor stacks and interleaved migration replay. `verify-local-stack-upgrade-state.mjs` hashes every original column/row, checks explicit new-column projections, then separately proves combined seed convergence. The [integration record](../docs/development/template-stack-integration.md) records immutable inputs, port ownership and cleanup.
+
+## C/D populated integration
+
+`verify-local-contact-discussion-upgrades.mjs` owns the exact immutable C→D and
+D→C populated upgrade checks, row/function preservation and genuine mixed report/
+unread checks. It serially resets only the explicitly disposable selected local
+stack. Its temporary migration-set journal and recovery steps are documented in
+[combined qualification](../docs/development/contact-discussion-integration.md).

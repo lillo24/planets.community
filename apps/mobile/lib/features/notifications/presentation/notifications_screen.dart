@@ -18,6 +18,7 @@ import '../domain/notification_models.dart';
 import 'notification_copy.dart';
 import 'notification_destination.dart';
 import 'notifications_failure_message.dart';
+import '../../group_discussions/presentation/discussion_notices.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -166,10 +167,16 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       constraints: BoxConstraints(
                         minHeight: constraints.maxHeight,
                       ),
-                      child: EmptyState(
-                        title: l10n.notificationsEmptyTitle,
-                        message: l10n.notificationsEmptyMessage,
-                        icon: Icons.notifications_none,
+                      child: Column(
+                        children: [
+                          const DiscussionNotices(),
+                          EmptyState(
+                            // Group Idea activity above has its own reader.
+                            title: l10n.notificationsOtherEmptyTitle,
+                            message: l10n.notificationsEmptyMessage,
+                            icon: Icons.notifications_none,
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -191,11 +198,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     key: const Key('notifications-list'),
                     storageKey: ('notifications-list', _expectedProfileId),
                     rowIds: [
+                      'idea-notices',
                       if (state.failure != null) 'error',
                       for (final item in items) item.notificationId,
                       if (state.hasMore) 'more',
                     ],
                     rowValues: [
+                      _expectedProfileId,
                       if (state.failure != null) state.failure,
                       for (final item in items)
                         (
@@ -207,6 +216,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     ],
                     padding: const EdgeInsets.all(AppSpacing.medium),
                     itemBuilder: (context, index) {
+                      if (index == 0) return const DiscussionNotices();
+                      index--;
                       if (state.failure != null && index == 0) {
                         return Padding(
                           padding: const EdgeInsets.only(

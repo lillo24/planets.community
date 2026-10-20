@@ -6,6 +6,7 @@ import 'package:planets_mobile/features/activities_sandbox/presentation/activity
 
 import '../../support/rendered_evidence.dart';
 import '../../support/fake_policy.dart';
+import '../../support/fake_group_discussions.dart';
 
 import 'dart:async';
 
@@ -30,6 +31,8 @@ import 'package:planets_mobile/features/group_projects/data/group_project_gatewa
 import 'package:planets_mobile/features/group_projects/domain/group_project_models.dart';
 import 'package:planets_mobile/features/groups/data/group_gateway.dart';
 import 'package:planets_mobile/features/messages/data/messages_gateway.dart';
+import 'package:planets_mobile/features/group_discussions/data/discussion_gateway.dart';
+import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
 import 'package:planets_mobile/features/geographic_discovery/data/geographic_discovery_gateway.dart';
 import 'package:planets_mobile/features/messages/data/message_chats_gateway.dart';
 import 'package:planets_mobile/features/moderation/data/corroboration_gateway.dart';
@@ -2144,6 +2147,10 @@ Future<ProviderContainer> _pump(
           navigationStore ?? FakeNavigationPreferenceStore(),
         ),
         messagesGatewayProvider.overrideWithValue(FakeMessagesGateway()),
+        discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
+        discussionProjectsGatewayProvider.overrideWithValue(
+          EmptyDiscussionProjectsGateway(),
+        ),
         messageChatsGatewayProvider.overrideWithValue(
           FakeMessageChatsGateway(),
         ),

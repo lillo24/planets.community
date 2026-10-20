@@ -19,12 +19,16 @@ if (
   temporary === "" ||
   process.env.PLANETS_DISPOSABLE_QA !== "1"
 ) {
-  throw new Error("Provide an OS-temporary defines path and explicitly disposable stack.");
+  throw new Error(
+    "Provide an OS-temporary defines path and explicitly disposable stack.",
+  );
 }
 const status = readLocalSupabaseStatus(process.cwd());
 const mailpitUrl = process.env.MAILPIT_URL ?? "http://127.0.0.1:54324";
 for (const endpoint of [status.apiUrl, status.databaseUrl, mailpitUrl]) {
-  if (!["localhost", "127.0.0.1", "[::1]"].includes(new URL(endpoint).hostname)) {
+  if (
+    !["localhost", "127.0.0.1", "[::1]"].includes(new URL(endpoint).hostname)
+  ) {
     throw new Error("Member contact fixtures require loopback services.");
   }
 }
@@ -79,7 +83,8 @@ try {
       p_client_request_id: randomUUID(),
       p_content: {
         name: `${name} ${run}`,
-        description: "Synthetic neighbours sharing a local Group for consent verification.",
+        description:
+          "Synthetic neighbours sharing a local Group for consent verification.",
         group_kind: "informal",
         locality: "Trento",
         volunteering_focus: true,
@@ -95,11 +100,15 @@ try {
     defines[`M_${key}_GROUP`] = group;
     defines[`M_${key}_GROUP_NAME`] = `${name} ${run}`;
     for (const person of [people.alice, people.bob]) {
-      const [invitation] = await rpc(people.owner, "create_group_participant_invitation", {
-        p_expected_profile_id: people.owner.id,
-        p_group_id: group,
-        p_client_request_id: randomUUID(),
-      });
+      const [invitation] = await rpc(
+        people.owner,
+        "create_group_participant_invitation",
+        {
+          p_expected_profile_id: people.owner.id,
+          p_group_id: group,
+          p_client_request_id: randomUUID(),
+        },
+      );
       await rpc(person, "accept_group_participant_invitation", {
         p_expected_profile_id: person.id,
         p_token: invitation.invite_token,
@@ -107,8 +116,27 @@ try {
       });
     }
   }
-  await writeFile(output, `${JSON.stringify(defines, null, 2)}\n`, { mode: 0o600, flag: "wx" });
-  console.log("Prepared three synthetic members and three origins; private defines written to OS temporary storage.");
+  const idea = await rpc(people.owner, "create_group_discussion_v2", {
+    p_expected_profile_id: people.owner.id,
+    p_client_request_id: randomUUID(),
+    p_group_id: defines.M_CLOSE_GROUP,
+    p_title: `Synthetic shared Idea ${run}`,
+    p_purpose: "Plan a fictional neighbourhood garden together.",
+    p_visibility: "group",
+  });
+  await rpc(people.alice, "join_group_discussion", {
+    p_expected_profile_id: people.alice.id,
+    p_client_request_id: randomUUID(),
+    p_room_id: idea.room_id,
+  });
+  defines.M_INVITE_IDEA = idea.room_id;
+  await writeFile(output, `${JSON.stringify(defines, null, 2)}\n`, {
+    mode: 0o600,
+    flag: "wx",
+  });
+  console.log(
+    "Prepared three synthetic members, three origins and one independently joined C Idea; private defines written to OS temporary storage.",
+  );
 } finally {
   await sql.end();
   for (const person of Object.values(people)) {

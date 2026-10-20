@@ -306,3 +306,36 @@ English and Italian final frames assert actual 320dp width and 2x text scaling.
 See [native ownership, commands and evidence boundaries](../../../docs/development/member-contact-mobile-native.md).
 Only the designated native/database owner executes this fixture and journey;
 source checks alone do not qualify the whole native gate.
+
+# Group discussion probe
+
+`prepare_group_discussion_smoke.mjs` prepares verified fictional OTP identities,
+ready profiles/photos, Group membership, a pending room invitation and a separate
+conversion source on an explicitly disposable loopback backend. Preparation uses
+canonical APIs; the native harness restores those verified identities rather than
+claiming to exercise signup/profile setup UI.
+
+`group_discussion_smoke_test.dart` and `discussion_conversion_journey.dart`
+exercise real C RPCs through General/settings, member-created restricted Ideas,
+manager oversight, consent, full/former history, lost-send recovery, hide/mute,
+named links and reviewed Project publication. The conversion journey declines
+one invitation and opens another through the normal Project Join request form;
+organizer approvals and the public newcomer's request use genuine Auth clients.
+It checks that the newcomer UI never requests private planning history, and that
+an entitled planner can open frozen planning and return to Project chat.
+
+Use a task-owned emulator/API reverse mapping and private defines outside Git:
+
+```text
+node apps/mobile/integration_test/prepare_group_discussion_smoke.mjs <private-defines.json>
+# From apps/mobile, after preparing the isolated backend and emulator:
+flutter build apk --debug --target=integration_test/group_discussion_smoke_test.dart --dart-define-from-file=<private-defines.json>
+flutter drive --driver=test_driver/groups_screenshots.dart --target=integration_test/group_discussion_smoke_test.dart --use-application-binary=build/app/outputs/flutter-apk/app-debug.apk --device-id=<owned-emulator> --no-dds
+```
+
+`groups_screenshots.dart` writes actual native PNGs to
+`apps/mobile/build/groups-screenshots`; the legacy `group_discussion_driver.dart`
+uses the OS temporary `planets-c-runtime` directory. Check each frame's source/run
+freshness before publishing evidence: a failed journey can leave partial frames
+alongside older files. Actual qualification belongs in
+`docs/development/group-ideas-final-qualification.md`.

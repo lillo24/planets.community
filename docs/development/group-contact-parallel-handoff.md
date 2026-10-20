@@ -9,12 +9,13 @@ old D privacy model.
 
 - Cumulative source: [D #254](https://github.com/lillo24/planets.community/pull/254),
   `codex/d-integration`; preserves all D00–D03 ancestry.
-- Runtime integration base: `cb8b8a08`; post-ACTSPLIT01 qualification and the
+- Published D predecessor: `9ea6ca3f`; post-ACTSPLIT01 qualification and the
   remaining native follow-up are recorded below.
-- Included main: `9fc89268dd735a5fbf1796b54e3e7b21b3ff08c6`. Its two later map-plan
-  documents do not change runtime behavior or authorize executing those plans.
+- Main integration target: `89292af4b084dc2bbd9748797227531b13abe8cc`, the actual
+  C merge. Combined qualification is in progress as recorded below. Its preceding
+  `9fc89268` map-plan documents do not authorize executing those plans here.
 - Peer inspected: [C #257](https://github.com/lillo24/planets.community/pull/257),
-  `99407174f6d183716e32464963aa40121a0431d3`; unmerged, not imported.
+  `99407174f6d183716e32464963aa40121a0431d3`; merged by `89292af4` on 20 October.
 - Main reconciliation preserves startup signed-out handling, compact card skills,
   event schedules, request UI, STAGING01 evidence and UIPOLISH02. Localization
   conflicts retain both contact copy and the actual skill/Workshop changes.
@@ -548,6 +549,69 @@ configuration was changed. C now has eight forward migrations; 120 combined
 migrations is only an integration preflight count, not evidence of qualification.
 If C merges first, actual sorted clean replay, both populated lane orders, shared
 API reconciliation and regenerated combined types remain required.
+
+## Actual C merge integration in progress
+
+C merged at `89292af4` after its complete Validation 577 passed. D now reconciles
+that actual source. Both Group entry widgets, locale key/value sets, Messages
+folders/cards, notification owners and exact moderation evidence loaders are
+preserved. The additive combined unread reader and shared C signal/ACK ownership
+are documented in [combined qualification](contact-discussion-integration.md).
+The immutable source review found no concrete early report-constraint abort;
+no already-merged C migration is rewritten on speculation.
+
+The first 17 combined unread/ACK tests and full Flutter analysis passed (no issues,
+76.2 seconds); 98 tooling tests and formatting of 859 Dart files passed. The
+broader local Mobile run failed to start reliably when Windows exhausted process
+memory; it is not a passing full test run or a demonstrated product test failure.
+The owned D containers and machine are stopped, with volumes preserved. Another
+PLANETS Android task is active outside the C/D resource agreement; its processes,
+AVD and backend are untouched. A request to the human to authorize a serialized
+resource handoff remains pending; no message to that task is inferred as allowed.
+
+`verify-local-contact-discussion-upgrades.mjs` adds exact C-first and D-first
+populated histories, mixed reports and unread/auth parity. Both histories,
+full affected suites, fresh native builds/
+drivers and final published-head CI remain pending. The
+preceding standalone Validation 578 passed all jobs on `9ea6ca3f`; it does not
+qualify this combined source. Policy 3 remains unresolved.
+
+The database-only D follow-up actually applied all 121 combined migrations,
+passed the nine new pgTAP API/security assertions, and regenerated the combined
+types. All 371 public function names from D and all 368 from C remain present
+among 432 combined RPC names. This incremental D-first application is not the
+two populated histories or sorted clean replay. Only D's database was started;
+it and the machine are stopped again, other services/AVD untouched.
+
+The now-required C People action is implemented over a target-bound metadata
+selector and the existing invitation command. C's source review identified four
+concrete recovery/cache/context races; guards and regressions were added. The
+cross-route notification fix now passes all ten new widget/domain regressions,
+including connected/disconnected invalidation and deferred context changes.
+The actual selector SQL suite passes 28 assertions, including pre-limit
+authorization, manager independence, cursor bounds, exact metadata, pending
+invitations, admission, Block/Unblock, membership loss, deleted profiles and
+combined unread without an implicit ACK. The initial fixture attempted to delete
+a profile referenced by retained Block audit; it now uses a separate unblocked
+synthetic target and leaves the production foreign key unchanged. Together with
+the nine API probes, 37 new pgTAP assertions passed. Broader analysis, full suites
+and native completion remain separate gates. The member native fixture/journey now
+also creates, explicitly joins and invites through a real C Idea, checking that
+the pending invitation creates no personal request or room admission.
+
+The opt-in Android workflow uses an ephemeral standard Linux runner with local
+Supabase and synthetic accounts to avoid contention with unrelated Windows work.
+Both fresh APKs build before booting its owned emulator, both complete drivers
+must exit zero, and only fictional PNGs/compact metadata/scrubbed diagnostics are
+retained. This workflow is prepared, not yet executed or qualified. Its label is
+explicitly reapplied for each reviewed source head; ordinary pushes add no native
+run. No hosted database or store action is included.
+
+After the selector fixes, full Flutter analysis passed with no issues (5.8
+seconds). Its initial analysis findings were confined to the new integration:
+explicit mounted guards, braces and one redundant null assertion were corrected.
+The ten selector tests passed before those lint-only/control-flow guard edits;
+the complete published-head Mobile job remains required.
 
 ## Later final-main review
 

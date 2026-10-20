@@ -1,3 +1,4 @@
+import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
 import 'package:planets_mobile/features/project_chat/application/project_needs_controller.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 
@@ -6,8 +7,13 @@ import '../../../support/fake_policy.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:planets_mobile/features/group_discussions/data/discussion_conversion_gateway.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/features/group_discussions/data/discussion_gateway.dart';
+
+import '../../../support/fake_group_discussions.dart';
+
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
@@ -1513,6 +1519,10 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        discussionProjectsGatewayProvider.overrideWithValue(
+          EmptyDiscussionProjectsGateway(),
+        ),
+        discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
         preacceptedPolicyFixture,
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(
@@ -1547,6 +1557,9 @@ Future<ProviderContainer> _pump(
                 ]),
         ),
         projectChatGatewayProvider.overrideWithValue(chats),
+        discussionConversionGatewayProvider.overrideWithValue(
+          emptyDiscussionConversionGateway(),
+        ),
         resourceChatGatewayProvider.overrideWithValue(
           FakeResourceChatGateway(),
         ),

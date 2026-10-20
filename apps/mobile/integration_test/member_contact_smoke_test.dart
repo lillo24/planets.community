@@ -48,7 +48,8 @@ void main() {
         ownerToken = String.fromEnvironment('M_OWNER_TOKEN'),
         closeGroup = String.fromEnvironment('M_CLOSE_GROUP'),
         leaveGroup = String.fromEnvironment('M_LEAVE_GROUP'),
-        contextGroup = String.fromEnvironment('M_CONTEXT_GROUP');
+        contextGroup = String.fromEnvironment('M_CONTEXT_GROUP'),
+        inviteIdea = String.fromEnvironment('M_INVITE_IDEA');
     if ([
       alice,
       aliceToken,
@@ -59,6 +60,7 @@ void main() {
       closeGroup,
       leaveGroup,
       contextGroup,
+      inviteIdea,
     ].any((s) => s.isEmpty)) {
       throw StateError('Prepare fresh local member contact defines first.');
     }
@@ -342,7 +344,40 @@ void main() {
       await tap('group-people');
       await tapFinder(find.text('Fictional Bob'));
       await reveal(find.text(strings().memberContactAction));
-      if (evidence) await shotPair('people-sheet');
+      if (evidence) {
+        await shotPair('people-sheet');
+        final beforeIdea = submits;
+        await tap('person-invite-to-idea');
+        await reveal(find.byKey(Key('person-invite-idea-$inviteIdea')));
+        await shotPair('idea-invite-destinations');
+        Future<void> openIdeaConfirmation() =>
+            tap('person-invite-idea-$inviteIdea');
+        await openIdeaConfirmation();
+        await dialogPair('idea-invite-confirmation', openIdeaConfirmation);
+        expect(submits, beforeIdea);
+        await confirmDialog();
+        await untilRpc(() async {
+          final invitations = await bobClient.rpc<List<dynamic>>(
+            'list_group_discussion_invitations_v2',
+            params: {'p_expected_profile_id': bob, 'p_limit': 25},
+          );
+          return invitations.any((row) => row['room_id'] == inviteIdea);
+        }, 'The existing C invitation must commit for the named recipient.');
+        final ideaContext = await bobClient.rpc<Map<String, dynamic>>(
+          'get_group_discussion_v2',
+          params: {'p_expected_profile_id': bob, 'p_room_id': inviteIdea},
+        );
+        expect(ideaContext['admission_id'], isNull);
+        expect(ideaContext['access'], 'discoverable');
+        expect(ideaContext['can_send'], isFalse);
+        expect(
+          submits,
+          beforeIdea,
+          reason: 'An Idea invitation creates no personal request or room admission.',
+        );
+        await tester.binding.handlePopRoute();
+        await reveal(find.text(strings().memberContactAction));
+      }
       await tapFinder(find.text(strings().memberContactAction));
       await reveal(find.byKey(const Key('member-contact-note')));
       final before = submits;

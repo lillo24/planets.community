@@ -5,6 +5,7 @@ import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../template_workshop/presentation/template_workshop_screens.dart';
+import '../../group_projects/domain/group_project_creation_return.dart';
 
 /// Browsing or choosing cannot create a draft; existing commands own mutations.
 class ProposalCreationChoice extends StatefulWidget {
@@ -20,13 +21,24 @@ class _ProposalCreationChoiceState extends State<ProposalCreationChoice> {
     if (_opening) return;
     setState(() => _opening = true);
     try {
+      final origin = GoRouterState.of(context).extra;
       final target = widget.groupId == null
           ? route
           : Uri(
               path: route,
               queryParameters: {'group': widget.groupId!},
             ).toString();
-      await context.push(target);
+      final result = await context.push<Object?>(
+        target,
+        extra: origin is GroupProjectCreationReturn ? origin : null,
+      );
+      if (mounted &&
+          origin is GroupProjectCreationReturn &&
+          result is GroupProjectCreationResult &&
+          result.actor == origin.actor &&
+          ModalRoute.of(context)?.isCurrent == true) {
+        context.pop(result);
+      }
     } finally {
       if (mounted) setState(() => _opening = false);
     }

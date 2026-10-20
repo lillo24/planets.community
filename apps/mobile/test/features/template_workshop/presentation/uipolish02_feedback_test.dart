@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/group_projects/domain/group_project_creation_return.dart';
 import 'package:planets_mobile/features/proposals/domain/proposal_models.dart';
 import 'package:planets_mobile/features/proposals/presentation/proposal_editor_screen.dart';
 import 'package:planets_mobile/features/template_workshop/application/template_controllers.dart';
@@ -18,6 +19,37 @@ import '../../../support/fake_proposal.dart';
 import 'template_workshop_test.dart' as workshop;
 
 void main() {
+  testWidgets('Group return and Workshop editor acknowledgement compose', (
+    tester,
+  ) async {
+    final app = await workshop.pumpWorkshop(tester);
+    app.router.push(
+      WorkshopRoutes.detail(templateId),
+      extra: const GroupProjectCreationReturn(
+        templateActor,
+        returnPath: '/origin',
+      ),
+    );
+    await tester.pumpAndSettle();
+    await workshop.reveal(tester, find.byKey(const Key('template-use')));
+    await tester.tap(find.byKey(const Key('template-use')));
+    await tester.pumpAndSettle();
+    final editor = tester.widget<ProposalEditorScreen>(
+      find.byType(ProposalEditorScreen),
+    );
+    expect(editor.readObserver?.actor, templateActor);
+    final origin =
+        app.router.routerDelegate.state.extra as GroupProjectCreationReturn;
+    expect(origin.returnPath, '/origin');
+    expect(origin.readObserver, same(editor.readObserver));
+    final attempt = app.container
+        .read(templateApplicationsProvider.notifier)
+        .latest(templateActor, templateId)!;
+    expect(
+      app.container.read(templateFeedbackProvider).acknowledged,
+      contains(attempt.requestId),
+    );
+  });
   testWidgets(
     'a covered Workshop keeps a late receipt without stealing navigation',
     (tester) async {

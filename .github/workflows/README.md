@@ -1,5 +1,45 @@
 # Validation workflow
 
+`contact-native.yml` is an opt-in Android review, separate from required Validation
+checks. Adding `qa-contact-native` to a same-repository PR runs its exact head;
+remove/reapply the label after a source change. It does not run on ordinary pushes
+or synchronizations. Manual dispatch is available once the workflow is on main.
+Its standard GitHub-hosted Linux runner owns a disposable local Supabase stack,
+synthetic OTP accounts and one private headless Android emulator. Both APKs are
+built before booting the emulator, then both complete screenshot drivers must exit
+zero. The 50-minute cap bounds this occasional integration cost. No hosted backend,
+signing or store secrets are used. Artifacts retain only fictional UI PNGs, compact
+metadata and scrubbed diagnostics for seven days; private defines/APKs/raw logs
+are excluded. Review the artifact head and actual images before claiming native
+qualification. The workflow does not replace any existing required check.
+
+The C/D integration adds `contact:discussions:upgrade:verify:local` before the
+ordinary fresh replay. It validates the two actual independently populated
+histories, not a merged timestamp cutoff. Database checkout retains history so
+the verifier can read the immutable predecessor inventories. The Database timeout
+is now 40 minutes
+for those serialized local resets and genuine fixtures; trigger frequency,
+classification and required checks are unchanged. See
+[combined qualification](../../docs/development/contact-discussion-integration.md).
+
+The revised C lane adds `group:ideas:upgrade:verify:local` before the final fresh
+reset and `group:ideas:verify:local` / `group:conversion:verify:local` after the
+existing discussion/link checks. The extra populated reset is required because
+the approved revision changes old C history and General access while preserving
+stored identities. The real-Auth checks cover these new authorization paths and
+atomic conversion/opt-in membership. All three also run in `check:db`; they add
+no job, provider call or trigger. Shared workflow edits still select all areas.
+
+C01 adds `group:discussions:upgrade:verify:local` before clean replay and
+`group:discussions:verify:local` after Group Project verification. The populated
+check reuses bounded fictional producers, preserves every original public/private
+column and row, and checks repeated additive application. The HTTP check observes
+actual Group-lock waits and tests private admission/history/read/report rules.
+Both also run in `check:db`. This authorization-sensitive upgrade adds one local
+predecessor reset/fixture pass; area classification, required-status aggregation,
+the existing area-selection and main-push behavior remain unchanged. The later
+C/D integration timeout adjustment is explained above.
+
 `validation.yml` classifies the complete PR diff using
 `scripts/classify-validation-paths.mjs` and runs affected Database, Web, Site and
 Mobile jobs. Workflow/root-tooling changes select every area. Manual dispatch
@@ -93,6 +133,12 @@ Changes to shared package/workflow configuration select all four areas for this
 PR. No recurring deployment or hosted database job is introduced.
 
 # MAP01 location validation
+
+C03 adds the room-owned named-link Auth verifier after discussion checks in the
+same database job and full `check:db`. It runs against the disposable local stack
+with fictional OTP actors and makes no external provider requests. The existing
+classification, required-status aggregation and manual complete-suite entry stay
+in place; shared package/workflow edits select all affected areas.
 
 Database validation includes the authenticated location receipt/concurrency
 verifier after pgTAP. It injects synthetic provider-shaped geocoding data and

@@ -29,16 +29,32 @@ class ModerationRpcContract {
     required ModerationCategory category,
     required String explanation,
     required ModerationReportTarget target,
-  }) => {
-    'p_expected_reporter_profile_id': expectedProfileId,
-    'p_client_submission_id': clientSubmissionId,
-    'p_category': category.wireValue,
-    'p_explanation': explanation.trim(),
-    'p_target_kind': target.kind.wireValue,
-    'p_target_id': target.id,
-    'p_context_kind': target.contextKind?.wireValue,
-    'p_context_id': target.contextId,
-  };
+  }) {
+    if (target.kind == ModerationTargetKind.groupDiscussionMessage) {
+      if (target.contextKind != null || target.contextId != null) {
+        throw const FormatException(
+          'Discussion reports cannot carry another context.',
+        );
+      }
+      return {
+        'p_expected_reporter_profile_id': expectedProfileId,
+        'p_client_submission_id': clientSubmissionId,
+        'p_category': category.wireValue,
+        'p_explanation': explanation.trim(),
+        'p_message_id': target.id,
+      };
+    }
+    return {
+      'p_expected_reporter_profile_id': expectedProfileId,
+      'p_client_submission_id': clientSubmissionId,
+      'p_category': category.wireValue,
+      'p_explanation': explanation.trim(),
+      'p_target_kind': target.kind.wireValue,
+      'p_target_id': target.id,
+      'p_context_kind': target.contextKind?.wireValue,
+      'p_context_id': target.contextId,
+    };
+  }
 
   Map<String, dynamic> listParams(String expectedProfileId) => {
     'p_expected_reporter_profile_id': expectedProfileId,
@@ -147,7 +163,9 @@ class SupabaseModerationGateway implements ModerationGateway {
     required ModerationReportTarget target,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'submit_moderation_report',
+      target.kind == ModerationTargetKind.groupDiscussionMessage
+          ? 'submit_group_discussion_report'
+          : 'submit_moderation_report',
       params: contract.submitParams(
         expectedProfileId: expectedProfileId,
         clientSubmissionId: clientSubmissionId,
