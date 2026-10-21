@@ -120,6 +120,11 @@ environment variable separately). The opt-in `qa-mock-backend` CI label runs the
 same genuine two-realm qualification without any hosted/provider secrets.
 Its transport maps only the two fixed production-shaped origins to the two
 owned loopback stacks; Auth, RPC, RLS and Storage remain real. It deliberately
+overrides the pinned CLI's shared local opaque API-key defaults through supported
+`auth.publishable_key`, `auth.secret_key`, `auth.jwt_secret` environment references
+and separate asymmetric signing-key files. All values stay in private child
+environments and task-owned files; both credential sets must differ.
+It deliberately
 overlaps profile UUIDs and tests token rejection in both directions, same-persona
 independent refresh sessions, encrypted recovery, server credential guards and
 offboarding. It stops only its newly created disposable stacks.

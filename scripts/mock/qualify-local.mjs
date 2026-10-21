@@ -32,6 +32,7 @@ assert.ok(
 const root = process.cwd();
 const taskRoot = await mkdtemp(path.join(os.tmpdir(), "planets-mock-qa-"));
 const stacks = [];
+const stackSecrets = new Map();
 let context;
 let checks = 0;
 function equal(a, b, label) {
@@ -44,6 +45,7 @@ function run(cwd, args) {
     args,
     {
       cwd,
+      env: { ...process.env, ...stackSecrets.get(cwd) },
       encoding: "utf8",
       shell: process.platform === "win32",
       timeout: 900000,
@@ -66,6 +68,19 @@ async function stack(name, offset) {
       { recursive: true },
     );
   let config = await readFile(path.join(root, "supabase/config.toml"), "utf8");
+  // Pinned CLI v2.118.0-beta.39 generates asymmetric JWTs from signing_keys_path,
+  // but opaque API keys otherwise remain shared local defaults. Its auth config
+  // supports Secret env references for these three values (pkg/config/auth.go).
+  stackSecrets.set(directory, {
+    MOCK_QA_PUBLISHABLE_KEY:
+      "sb_publishable_" + randomBytes(24).toString("base64url"),
+    MOCK_QA_SECRET_KEY: "sb_secret_" + randomBytes(32).toString("base64url"),
+    MOCK_QA_JWT_SECRET: randomBytes(48).toString("base64url"),
+  });
+  config = config.replace(
+    /(\[auth\]\r?\n)/,
+    '$1publishable_key = "env(MOCK_QA_PUBLISHABLE_KEY)"\nsecret_key = "env(MOCK_QA_SECRET_KEY)"\njwt_secret = "env(MOCK_QA_JWT_SECRET)"\n',
+  );
   config = config
     .replace(
       'project_id = "planets-community"',
