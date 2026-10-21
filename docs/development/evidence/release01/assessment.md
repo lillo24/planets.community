@@ -88,3 +88,11 @@ raise occurred. The release workflow remains disabled through absent enable vars
 and unset bootstrap approvals. The next deployment step is owner review of the
 26-file manifest plus recovery decision and protected-environment provisioning;
 the [runbook](../../release01-staging-play.md) supplies exact fields and commands.
+
+## Subsequent owner authorization — 21 October
+
+The owner approved all 26 files in this manifest for staging and explicitly waived
+a backup for this RELEASE01 reconciliation: “No backup is fine”. The exact hashes
+and successful populated rehearsal run are pinned in `scripts/release/policy.json`.
+This resolves scope/recovery approval, not proof of execution or CI credentials.
+Hosted writes still wait for final complete CI and a fresh live-history check.

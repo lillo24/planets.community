@@ -20,14 +20,7 @@ if (
     "RELEASE01 rehearsal requires its isolated disposable Linux Actions workspace",
   );
 }
-const policy = JSON.parse(readFileSync("scripts/release/policy.json", "utf8"));
 mkdirSync("build/release01", { recursive: true });
-if (policy.bootstrap_complete) {
-  console.log(
-    "Bootstrap is reconciled; complete Validation owns routine migration upgrade checks.",
-  );
-  process.exit(0);
-}
 const cli = resolve("node_modules/.bin/supabase");
 function command(program, args) {
   const result = spawnSync(program, args, {

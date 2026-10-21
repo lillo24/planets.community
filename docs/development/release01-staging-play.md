@@ -9,10 +9,10 @@ records the blockers; merging release plumbing does not resolve them.
 ## First-time owner setup
 
 1. Review the [26-file manifest](evidence/release01/migration-manifest.json).
-   CAT01 is authorized conditionally by RELEASE01; the other 25 files need
-   explicit hosted deployment approval. Member-contact policy 3 was approved on
-   20 October; that does not authorize its hosted deployment. The stale pending
-   footer of the older member review is not a new policy decision.
+   The owner explicitly approved all 26 files on 21 October after reviewing the
+   manifest and populated rehearsal. `policy.json` records their exact hashes and
+   the explicit task-specific backup waiver, “No backup is fine”. No backup exists
+   or is claimed. This approval does not cover changed files or another backlog.
 2. Establish a recovery route before consequential writes: an owner-held encrypted
    logical backup, including appropriate Auth/Storage metadata and object recovery
    requirements, with a restore rehearsal; or obtain an explicit task-specific
@@ -68,11 +68,13 @@ records the blockers; merging release plumbing does not resolve them.
    created by this PR. Dispatch `inspect`, review its sanitized artifact, then
    dispatch `deploy`. Approve only the exact reviewed scope in the environment.
 
-After successful reconciliation, confirm complete parity and post-deployment
-checks, then commit `bootstrap_complete=true` and `reconciled_through` equal to
-the reconciled canonical boundary through a PR. Remove bootstrap approvals/digest
-after preserving their evidence. Future reviewed main migrations above that
-boundary deploy automatically; older timestamp gaps or changed applied SQL fail.
+The fixed `bootstrap_boundary=20261021155653` describes the approved catch-up,
+not a claim that deployment has occurred. Live history determines completion:
+any pending version at/below the boundary requires exact manifest approval,
+allowlisted hashes and recovery/rehearsal references. Once none remain, genuinely
+new reviewed main migrations above it can deploy automatically. Unexpected older
+gaps or changed applied SQL fail closed. Preserve bootstrap evidence; a stale
+approval digest cannot authorize a different predecessor or pending set.
 
 ## Routine operation and release approval
 
@@ -99,8 +101,9 @@ Validation is reused by exact SHA or explicitly dispatched; every Mobile, Web,
 Site and Database check must succeed, including generated types and existing
 upgrade/RLS/Auth tests. Existing change-scoped PR CI is unchanged. The extra
 populated predecessor job runs only for changes to release plumbing/baseline and
-bootstrap release runs, because the observed 97-file predecessor is not a simple
-timestamp prefix. It becomes a short no-op after bootstrap is reconciled.
+release runs, because the observed 97-file predecessor is not a simple timestamp
+prefix. It remains a real populated upgrade check after reconciliation; it takes
+approximately three minutes and runs separately from hosted writes.
 
 The CLI receives no seed/role/Vault options. A session advisory lock and comparison
 with independently identified management history protect application; applied

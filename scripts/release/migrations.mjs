@@ -80,8 +80,10 @@ export function deploymentSet(diff, policy, approvalDigest) {
     throw new ReleaseError("Unapproved deployment owner/target");
   if (diff.drift.length)
     throw new ReleaseError("Migration history drift blocks deployment");
+  if (!/^\d{14}$/.test(policy.bootstrap_boundary ?? ""))
+    throw new ReleaseError("Missing reviewed bootstrap boundary");
   if (!diff.pending.length) return [];
-  if (!policy.bootstrap_complete) {
+  if (diff.pending.some((m) => m.version <= policy.bootstrap_boundary)) {
     // The digest binds approval to every byte and the exact observed predecessor.
     const digest = sha256(JSON.stringify(diff));
     if (
@@ -98,12 +100,7 @@ export function deploymentSet(diff, policy, approvalDigest) {
       )
     )
       throw new ReleaseError("Unapproved historical backlog");
-  } else if (
-    !policy.reconciled_through ||
-    diff.pending.some(
-      (m) => m.version <= policy.reconciled_through || m.historical,
-    )
-  ) {
+  } else if (diff.pending.some((m) => m.historical)) {
     throw new ReleaseError(
       "Unexpected historical backlog; reconcile separately",
     );

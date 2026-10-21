@@ -55,7 +55,7 @@ const diff = migrationDiff([migration], [], STAGING_REF);
 const policy = {
   project_ref: STAGING_REF,
   migration_owner: "github-actions",
-  bootstrap_complete: false,
+  bootstrap_boundary: migration.version,
   bootstrap_approvals: { [migration.version]: migration.sha256 },
   recovery_reference: "owned encrypted backup with restore rehearsal",
   rehearsal_reference: "populated CI evidence",
@@ -169,6 +169,7 @@ test("bootstrap binds every hash and exact predecessor to approval/recovery/rehe
   const approval = sha256(JSON.stringify(diff));
   assert.deepEqual(deploymentSet(diff, policy, approval), diff.pending);
   for (const candidate of [
+    { ...policy, bootstrap_boundary: null },
     { ...policy, bootstrap_approvals: {} },
     { ...policy, recovery_reference: null },
     { ...policy, rehearsal_reference: null },
@@ -202,8 +203,7 @@ test("bootstrap binds every hash and exact predecessor to approval/recovery/rehe
 test("routine deployment rejects historical gaps even after bootstrap", () => {
   const reconciled = {
     ...policy,
-    bootstrap_complete: true,
-    reconciled_through: "20261020150706",
+    bootstrap_boundary: "20261020150706",
   };
   assert.equal(deploymentSet(diff, reconciled).length, 1);
   assert.throws(
@@ -218,10 +218,12 @@ test("routine deployment rejects historical gaps even after bootstrap", () => {
     () =>
       deploymentSet(diff, {
         ...reconciled,
-        reconciled_through: "20261022100000",
+        bootstrap_boundary: "20261022100000",
       }),
-    /historical/,
+    /Bootstrap/,
   );
+  // Completion is inferred from live applied history, with no manual flag flip.
+  assert.deepEqual(deploymentSet({ ...diff, pending: [] }, policy), []);
 });
 
 test("every backend failure blocks Android, and verify SQL includes current category/message contracts", () => {

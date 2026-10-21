@@ -7,8 +7,9 @@ Nothing enables deployment merely by merging these files.
 diagnostics stay out of public Actions output.
 
 - `policy.json` pins staging, the observed closed track/code floor/upload
-  certificate and approved Edge bundle/source hashes. Bootstrap approvals,
-  recovery and rehearsal references deliberately remain unset.
+  certificate and approved Edge bundle/source hashes. It records the 26 approved
+  bootstrap hashes, fixed boundary, populated rehearsal and explicit backup waiver.
+  Live history determines whether bootstrap is complete; no state flag bypasses it.
 - `migrations.mjs` inventories canonical files, compares applied history and
   rejects drift or an unexpected backlog. `sql-fingerprint.mjs` compares SQL
   tokens without changing literals or function bodies; original file and remote
