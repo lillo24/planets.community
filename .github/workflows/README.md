@@ -1,5 +1,42 @@
 # Validation workflow
 
+`mock-hosted.yml` is an explicitly selected `qa-mock-hosted` same-repository
+label/manual operation for the disabled `planets-mock` environment. It runs the
+reviewed seed and read-only verifier with a private five-minute CLI database
+login and mock-only server credential, bound to the exact source SHA. It never
+receives a management token or normal staging credential. It cannot enroll or
+activate; artifacts contain counts/provenance only. Remove the temporary
+`PLANETS_MOCK_OPERATOR` secret after each operation. This occasional job is
+bounded to ten minutes and does not change required Validation checks/triggers.
+
+`mock-native.yml` is an explicit `qa-mock-native` same-repository label gate
+(remove/reapply after executable source changes), or manual dispatch after merge.
+It uses the exact PR head, two independently keyed disposable Supabase stacks,
+the reviewed broker runtime and a CI-owned Android emulator. A release-mode APK
+uses a temporary fixture signing key through the existing signing guard. It is
+never upload-ready and neither that key nor the APK is exported. The journey
+uses ordinary OTP, three personas, canonical interaction, a forced process
+restart and full logout. No test Auth gateway is injected. Narrow loopback
+proxies record request families/operations without headers, tokens or payloads.
+The job is bounded to 50 minutes, runs only on explicit request and supplements
+required Validation without changing required-status/path classification.
+Only synthetic PNGs, hashes, safe outcomes and artifact-scan metadata are retained
+for seven days. This is local/CI proof, never hosted deployment or Play readiness.
+The fixture is Android x64, stops its compiler daemon before the emulator, and
+explicitly opts into the native integration plugin excluded by Flutter release
+defaults. That Gradle opt-in requires the exact test target and GitHub-owned
+Linux environment and never bypasses release-signing checks.
+
+`mock-qualification.yml` is an opt-in isolated-backend gate. Apply
+`qa-mock-backend` to a same-repository draft/integration PR (remove/reapply after
+source changes) or dispatch manually after merge. It creates two owned disposable
+loopback stacks with independent private signing keys, exercises standard Auth,
+canonical fixture RPCs/Storage, same-persona sessions and tester offboarding, then
+stops only those stacks. CLI status/secrets are captured privately and never
+uploaded. It uses no hosted credentials and does not replace required Validation.
+The bounded 25-minute job runs only at the requested stack checkpoints; it is
+not an ordinary push trigger. Native qualification is reported separately.
+
 `contact-native.yml` is an opt-in Android review, separate from required Validation
 checks. Adding `qa-contact-native` to a same-repository PR runs its exact head;
 remove/reapply the label after a source change. It does not run on ordinary pushes

@@ -25,6 +25,44 @@ WorkspaceLinkDraft _draft({
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+  test(
+    'equal actors/projects cannot inherit another realm or root journal',
+    () async {
+      final normal = SharedPreferencesWorkspacePendingAddStore(
+        namespace: 'normal:https://normal.test:',
+      );
+      final mockA = SharedPreferencesWorkspacePendingAddStore(
+        namespace: 'mock:https://mock.test:root-a:',
+      );
+      final mockB = SharedPreferencesWorkspacePendingAddStore(
+        namespace: 'mock:https://mock.test:root-b:',
+      );
+      await normal.write(_draft());
+      expect(await mockA.read('actor-a', 'project-a'), isNull);
+      await mockA.write(_draft(request: _nextRequest));
+      expect(await mockB.read('actor-a', 'project-a'), isNull);
+      expect((await normal.read('actor-a', 'project-a'))?.requestId, _request);
+      expect(
+        (await mockA.read('actor-a', 'project-a'))?.requestId,
+        _nextRequest,
+      );
+    },
+  );
+  test('legacy exact intent migrates only to known normal origin after acknowledgment', () async {
+    await SharedPreferencesWorkspacePendingAddStore().write(_draft());
+    final mock = SharedPreferencesWorkspacePendingAddStore(
+      namespace: 'mock:https://pnolarmzxmmjtguligfc.supabase.co:root:',
+    );
+    expect(await mock.read('actor-a', 'project-a'), isNull);
+    expect((await SharedPreferences.getInstance()).containsKey(_key), isTrue);
+    final normal = SharedPreferencesWorkspacePendingAddStore(
+      namespace: 'normal:https://cllpvruvrrvxczjitlqd.supabase.co:',
+    );
+    expect((await normal.read('actor-a', 'project-a'))?.requestId, _request);
+    expect((await SharedPreferences.getInstance()).containsKey(_key), isFalse);
+    await normal.clear(_draft());
+    expect(await normal.read('actor-a', 'project-a'), isNull);
+  });
   test('actual preference serialization restores the same submitted action after restart', () async {
     final store = SharedPreferencesWorkspacePendingAddStore();
     await store.write(_draft());

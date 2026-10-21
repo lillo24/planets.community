@@ -1,0 +1,35 @@
+# Sparse, mock-only hosted Auth configuration. Preview with config diff and
+# require the independent disabled marker before pushing to pnolarmzxmmjtguligfc.
+# Do not copy the development config template or push this to normal staging.
+project_id = "planets-mock"
+[auth]
+enable_signup = false
+enable_anonymous_sign_ins = false
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+additional_redirect_urls = []
+[auth.email]
+enable_signup = false
+double_confirm_changes = true
+enable_confirmations = true
+[auth.external.google]
+enabled = false
+[auth.external.apple]
+enabled = false
+[auth.mfa.totp]
+enroll_enabled = false
+verify_enabled = false
+[auth.mfa.phone]
+enroll_enabled = false
+verify_enabled = false
+[auth.sms]
+enable_signup = false
+# The sparse CLI cannot turn the platform's provider selector off. Phone signup
+# stays disabled and the send-SMS hook below rejects delivery before any provider.
+[auth.hook.send_email]
+enabled = true
+uri = "pg-functions://postgres/mock_control/deny_external_auth_delivery"
+[auth.hook.send_sms]
+enabled = true
+uri = "pg-functions://postgres/mock_control/deny_external_auth_delivery"

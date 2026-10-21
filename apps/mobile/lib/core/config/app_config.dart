@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 
 import 'google_auth_config.dart';
+import 'mock_environment_config.dart';
 
 enum AppEnvironment {
   local('local'),
@@ -31,6 +33,8 @@ final class AppConfig {
     required this.sentryDsn,
     required this.demoToolsEnabled,
     required this.googleWebClientId,
+    required this.closedTestMockEnabled,
+    required this.mockEnvironment,
   });
 
   factory AppConfig.fromCompileTime() {
@@ -43,6 +47,19 @@ final class AppConfig {
       sentryDsn: const String.fromEnvironment('SENTRY_DSN'),
       enableDemoTools: const String.fromEnvironment('ENABLE_DEMO_TOOLS'),
       googleWebClientId: const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID'),
+      enableClosedTestMock: const String.fromEnvironment(
+        'ENABLE_CLOSED_TEST_MOCK',
+      ),
+      mockSupabaseUrl: const String.fromEnvironment('MOCK_SUPABASE_URL'),
+      mockSupabasePublishableKey: const String.fromEnvironment(
+        'MOCK_SUPABASE_PUBLISHABLE_KEY',
+      ),
+      mockPersonaBrokerUrl: const String.fromEnvironment(
+        'MOCK_PERSONA_BROKER_URL',
+      ),
+      mockFixtureGeneration: const String.fromEnvironment(
+        'MOCK_FIXTURE_GENERATION',
+      ),
     );
   }
 
@@ -53,6 +70,11 @@ final class AppConfig {
     String sentryDsn = '',
     String enableDemoTools = '',
     String googleWebClientId = '',
+    String enableClosedTestMock = '',
+    String mockSupabaseUrl = '',
+    String mockSupabasePublishableKey = '',
+    String mockPersonaBrokerUrl = '',
+    String mockFixtureGeneration = '',
   }) {
     final environment = AppEnvironment.parse(
       _requireUnpaddedValue('APP_ENV', appEnvironment),
@@ -83,6 +105,40 @@ final class AppConfig {
       enableDemoTools,
     );
     final String? parsedGoogleWebClientId;
+    final mockRequested = switch (enableClosedTestMock) {
+      '' || 'false' => false,
+      'true' => true,
+      _ => throw const AppConfigException(
+        'ENABLE_CLOSED_TEST_MOCK must be true or false.',
+      ),
+    };
+    final closedTestMockEnabled =
+        environment != AppEnvironment.production && !kIsWeb && mockRequested;
+    if (closedTestMockEnabled && demoToolsEnabled) {
+      throw const AppConfigException(
+        'Mock capability requires ENABLE_DEMO_TOOLS=false.',
+      );
+    }
+    if (closedTestMockEnabled &&
+        !MockEnvironmentConfig.publicKey(publishableKey)) {
+      throw const AppConfigException(
+        'Mock capability requires a client-safe normal publishable key.',
+      );
+    }
+    final MockEnvironmentConfig? mockEnvironment;
+    try {
+      mockEnvironment = MockEnvironmentConfig.parse(
+        local: environment == AppEnvironment.local,
+        normalOrigin: parsedSupabaseUrl,
+        normalKey: publishableKey,
+        mockUrl: mockSupabaseUrl,
+        mockKey: mockSupabasePublishableKey,
+        brokerUrl: mockPersonaBrokerUrl,
+        generation: mockFixtureGeneration,
+      );
+    } on FormatException catch (error) {
+      throw AppConfigException(error.message);
+    }
     try {
       parsedGoogleWebClientId = parseGoogleWebClientId(googleWebClientId);
     } on FormatException catch (error) {
@@ -96,6 +152,8 @@ final class AppConfig {
       sentryDsn: parsedSentryDsn,
       demoToolsEnabled: demoToolsEnabled,
       googleWebClientId: parsedGoogleWebClientId,
+      closedTestMockEnabled: closedTestMockEnabled,
+      mockEnvironment: mockEnvironment,
     );
   }
 
@@ -105,8 +163,29 @@ final class AppConfig {
   final Uri? sentryDsn;
   final bool demoToolsEnabled;
   final String? googleWebClientId;
+  final bool closedTestMockEnabled;
+  final MockEnvironmentConfig? mockEnvironment;
 
-  bool get monitoringEnabled => sentryDsn != null;
+  // Closed-test realm switching never starts external monitoring, including in
+  // its normal scope. Ordinary builds preserve their existing Sentry behavior.
+  bool get monitoringEnabled => sentryDsn != null && !closedTestMockEnabled;
+
+  AppConfig forMockDataRealm() {
+    final mock = mockEnvironment;
+    if (!closedTestMockEnabled || mock == null) {
+      throw StateError('Mock environment unavailable.');
+    }
+    return AppConfig._(
+      environment: environment,
+      supabaseUrl: mock.origin,
+      supabasePublishableKey: mock.publishableKey,
+      sentryDsn: null,
+      demoToolsEnabled: false,
+      googleWebClientId: null,
+      closedTestMockEnabled: true,
+      mockEnvironment: mock,
+    );
+  }
 
   @override
   String toString() {

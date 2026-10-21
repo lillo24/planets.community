@@ -1,5 +1,38 @@
 # Local native integration checks
 
+## Mock realm release fixture
+
+`mock_realm_release_test.dart` uses the complete bootstrap, confidential storage,
+ordinary OTP and production session coordinator with two independent disposable
+backends. It does not inject an Auth identity/gateway or compile session tokens.
+The explicit `qa-mock-native` CI job builds a release APK with an ephemeral CI
+fixture signer through the normal signing validation, then boots its own
+`emulator-5554` at 320dp/2x text. It never discovers or touches USB devices.
+The test enters through the real Sandbox/Help selector, visits three personas,
+sends/reads/replies canonically, rejects a normal link during mock, restores after
+an Android process force-stop, returns to normal and explicitly logs out.
+Native Flutter PNGs include EN/IT light/dark selector states and fictional profiles.
+This runner uses `IntegrationTestWidgetsFlutterBinding.allTestsPassed` to send a
+bounded result to its CI-only loopback bridge; no VM service/debug driver is
+required. PNGs come from the native Flutter render tree. The plugin's native
+result channel remains present. See Flutter's integration-test binding and
+[official integration documentation](https://docs.flutter.dev/testing/integration-tests).
+The fixture explicitly registers Flutter's automation keyboard and checks each
+field's resulting text. Unregistered test input uses client ID -1, which release
+mode correctly ignores. This is text-driver coverage, not physical IME evidence.
+The release manifest permits cleartext only for IPv4 loopback/localhost; external
+traffic remains HTTPS. Debug retains its existing network resource overlay.
+The fixture binary and its temporary signer are never distributed. A real upload
+AAB still requires verified staging configuration, the owner's upload key and an
+unused Play version code, and a hosted journey remains separate.
+Flutter 3.47 excludes native development plugins from release variants. The
+`PLANETS_MOCK_RELEASE_QA=1` Gradle path explicitly includes only the integration
+plugin for this exact target, checks GitHub-hosted Linux ownership and retains
+the normal upload-signing validation. The CI fixture targets Android x64 only;
+ordinary release builds do not enable this path. The final revocation case
+revokes only its owned synthetic normal sentinel's sessions through real Auth, then
+requires the ordinary sign-in screen. No hosted account is involved.
+
 ## Representative contact and coordination
 
 `group_contact_smoke_test.dart` owns the real-backend synthetic representative
