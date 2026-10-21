@@ -387,6 +387,11 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+# Public version/store metadata must be readable before login. No product data,
+# service key or writes; a missing/invalid policy returns an explicit 503.
+[functions.client-compatibility]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

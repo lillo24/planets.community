@@ -6,7 +6,9 @@ separate from runtime config.
 - `staging_distribution.dart` rejects local/example backends, non-publishable
   keys, extra config keys and enabled/omitted demo tools without logging values.
   The optional public `GOOGLE_WEB_CLIENT_ID` is shape-validated; empty/omitted
-  keeps Google disabled. See the [Google runbook](../../../docs/development/auth01b-google-android.md).
+  keeps Google disabled. The optional `ENABLE_CLIENT_COMPATIBILITY_CHECK`
+  must be `"true"` when supplied in staging distribution configuration;
+  omission uses the enabled staging default. See the [Google runbook](../../../docs/development/auth01b-google-android.md).
 - `build_staging_bundle.dart` reads ignored local config, checks for the signing
   file, then invokes the ordinary Flutter release bundle command. Gradle owns
   validation of the signing material.

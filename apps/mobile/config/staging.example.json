@@ -4,5 +4,6 @@
   "SUPABASE_PUBLISHABLE_KEY": "replace-with-staging-publishable-key",
   "SENTRY_DSN": "",
   "ENABLE_DEMO_TOOLS": "false",
-  "GOOGLE_WEB_CLIENT_ID": ""
+  "GOOGLE_WEB_CLIENT_ID": "",
+  "ENABLE_CLIENT_COMPATIBILITY_CHECK": "true"
 }

@@ -3173,5 +3173,16 @@
   "personPreviewAnonymous": "PLANETS member",
   "personPreviewNoDetails": "No further public profile details are available.",
   "personPreviewReadError": "Could not load this profile.",
-  "personPreviewBlocked": "You have blocked this person."
+  "personPreviewBlocked": "You have blocked this person.",
+  "appCompatibilityChecking": "Checking for required updates…",
+  "appCompatibilityFailedTitle": "Could not check for updates",
+  "appCompatibilityFailedBody": "Connect to the internet and try again before opening PLANETS.",
+  "appUpdateRequiredTitle": "Update required",
+  "appUpdateRequiredBody": "Update PLANETS to continue.",
+  "appUpdateNotCompleted": "Update not completed. Try again.",
+  "appUpdateStoreFailed": "Could not open the store. Try again.",
+  "appUpdateAndroidAction": "Update with Google Play",
+  "appUpdateGooglePlay": "Open Google Play",
+  "appUpdateAppStore": "Update from the App Store",
+  "appUpdateRecheck": "Check again"
 }

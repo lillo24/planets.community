@@ -31,6 +31,7 @@ final class AppConfig {
     required this.sentryDsn,
     required this.demoToolsEnabled,
     required this.googleWebClientId,
+    required this.clientCompatibilityCheckEnabled,
   });
 
   factory AppConfig.fromCompileTime() {
@@ -43,6 +44,9 @@ final class AppConfig {
       sentryDsn: const String.fromEnvironment('SENTRY_DSN'),
       enableDemoTools: const String.fromEnvironment('ENABLE_DEMO_TOOLS'),
       googleWebClientId: const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID'),
+      enableClientCompatibilityCheck: const String.fromEnvironment(
+        'ENABLE_CLIENT_COMPATIBILITY_CHECK',
+      ),
     );
   }
 
@@ -53,6 +57,7 @@ final class AppConfig {
     String sentryDsn = '',
     String enableDemoTools = '',
     String googleWebClientId = '',
+    String enableClientCompatibilityCheck = '',
   }) {
     final environment = AppEnvironment.parse(
       _requireUnpaddedValue('APP_ENV', appEnvironment),
@@ -96,6 +101,10 @@ final class AppConfig {
       sentryDsn: parsedSentryDsn,
       demoToolsEnabled: demoToolsEnabled,
       googleWebClientId: parsedGoogleWebClientId,
+      clientCompatibilityCheckEnabled: _parseClientCompatibilityCheck(
+        environment,
+        enableClientCompatibilityCheck,
+      ),
     );
   }
 
@@ -105,6 +114,7 @@ final class AppConfig {
   final Uri? sentryDsn;
   final bool demoToolsEnabled;
   final String? googleWebClientId;
+  final bool clientCompatibilityCheckEnabled;
 
   bool get monitoringEnabled => sentryDsn != null;
 
@@ -116,6 +126,23 @@ final class AppConfig {
         'monitoringEnabled: $monitoringEnabled, '
         'demoToolsEnabled: $demoToolsEnabled)';
   }
+}
+
+bool _parseClientCompatibilityCheck(AppEnvironment environment, String value) {
+  final enabled = switch (value) {
+    '' => environment != AppEnvironment.local,
+    'true' => true,
+    'false' => false,
+    _ => throw const AppConfigException(
+      'ENABLE_CLIENT_COMPATIBILITY_CHECK must be true or false.',
+    ),
+  };
+  if (environment == AppEnvironment.production && !enabled) {
+    throw const AppConfigException(
+      'Production clients must check compatibility.',
+    );
+  }
+  return enabled;
 }
 
 final appConfigProvider = Provider<AppConfig>((ref) {

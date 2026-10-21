@@ -3,6 +3,37 @@ import 'package:planets_mobile/core/config/app_config.dart';
 
 void main() {
   group('AppConfig', () {
+    test('compatibility checks default on outside local and cannot be disabled in production', () {
+      AppConfig compatibility(String environment, [String value = '']) =>
+          AppConfig.fromValues(
+            appEnvironment: environment,
+            supabaseUrl: 'https://example.supabase.co',
+            supabasePublishableKey: 'test-key',
+            enableClientCompatibilityCheck: value,
+          );
+      expect(compatibility('local').clientCompatibilityCheckEnabled, isFalse);
+      expect(
+        compatibility('local', 'true').clientCompatibilityCheckEnabled,
+        isTrue,
+      );
+      expect(compatibility('staging').clientCompatibilityCheckEnabled, isTrue);
+      expect(
+        compatibility('staging', 'false').clientCompatibilityCheckEnabled,
+        isFalse,
+      );
+      expect(
+        compatibility('production').clientCompatibilityCheckEnabled,
+        isTrue,
+      );
+      expect(
+        () => compatibility('production', 'false'),
+        throwsA(isA<AppConfigException>()),
+      );
+      expect(
+        () => compatibility('staging', 'yes'),
+        throwsA(isA<AppConfigException>()),
+      );
+    });
     test('parses a local configuration with optional monitoring disabled', () {
       final config = AppConfig.fromValues(
         appEnvironment: 'local',

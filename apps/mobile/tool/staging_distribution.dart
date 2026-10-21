@@ -9,6 +9,7 @@ const _allowedKeys = {
   'SENTRY_DSN',
   'ENABLE_DEMO_TOOLS',
   'GOOGLE_WEB_CLIENT_ID',
+  'ENABLE_CLIENT_COMPATIBILITY_CHECK',
 };
 
 void validateStagingDistribution(Object? value) {
@@ -20,6 +21,14 @@ void validateStagingDistribution(Object? value) {
     );
   }
   parseGoogleWebClientId(value['GOOGLE_WEB_CLIENT_ID'] as String? ?? '');
+  // Older ignored config files omit this key and use the staging default
+  // (enabled). Signed/test distribution must not disable the update gate.
+  final compatibilityCheck = value['ENABLE_CLIENT_COMPATIBILITY_CHECK'];
+  if (compatibilityCheck != null && compatibilityCheck != 'true') {
+    throw const FormatException(
+      'Staging distribution requires ENABLE_CLIENT_COMPATIBILITY_CHECK=true when set.',
+    );
+  }
   if (value['APP_ENV'] != 'staging' || value['ENABLE_DEMO_TOOLS'] != 'false') {
     throw const FormatException(
       'Closed testing requires APP_ENV=staging and ENABLE_DEMO_TOOLS="false".',

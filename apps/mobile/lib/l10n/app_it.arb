@@ -2435,5 +2435,16 @@
   "personPreviewAnonymous": "Persona su PLANETS",
   "personPreviewNoDetails": "Non sono disponibili altri dettagli pubblici del profilo.",
   "personPreviewReadError": "Impossibile caricare questo profilo.",
-  "personPreviewBlocked": "Hai bloccato questa persona."
+  "personPreviewBlocked": "Hai bloccato questa persona.",
+  "appCompatibilityChecking": "Verifica degli aggiornamenti necessari…",
+  "appCompatibilityFailedTitle": "Impossibile verificare gli aggiornamenti",
+  "appCompatibilityFailedBody": "Connettiti a Internet e riprova prima di aprire PLANETS.",
+  "appUpdateRequiredTitle": "Aggiornamento necessario",
+  "appUpdateRequiredBody": "Aggiorna PLANETS per continuare.",
+  "appUpdateNotCompleted": "Aggiornamento non completato. Riprova.",
+  "appUpdateStoreFailed": "Impossibile aprire lo store. Riprova.",
+  "appUpdateAndroidAction": "Aggiorna con Google Play",
+  "appUpdateGooglePlay": "Apri Google Play",
+  "appUpdateAppStore": "Aggiorna dall’App Store",
+  "appUpdateRecheck": "Verifica di nuovo"
 }

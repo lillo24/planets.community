@@ -1,5 +1,11 @@
 # Server function boundaries
 
+`client-compatibility/` owns public pre-login minimum-version/store metadata for
+APPVER01. Its pure handler validates one operational environment policy and adds
+no product data or provider calls. Its README maps configuration and responses;
+inactive example floors do not trigger a rollout. See the
+[rollout prerequisite](../../docs/development/appver01-client-compatibility.md).
+
 `location-search/` owns the authenticated MAP01 search/selection adapter.
 `provider.mjs` normalizes the fixed Geoapify autocomplete response;
 `handler.mjs` validates scope and reserves canonical database budgets;
