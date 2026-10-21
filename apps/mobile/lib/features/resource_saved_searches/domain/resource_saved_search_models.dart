@@ -10,11 +10,13 @@ class ResourceSavedSearch {
     required this.locality,
     required this.createdAt,
     required this.updatedAt,
+    this.category,
   });
 
   final String id;
   final String? query;
   final ResourceListingMode? mode;
+  final ResourceCategory? category;
   final String? locality;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -22,8 +24,12 @@ class ResourceSavedSearch {
   ResourceSavedSearchCursor get cursor =>
       ResourceSavedSearchCursor(updatedAt: updatedAt, id: id);
 
-  ResourceSavedSearchInput get input =>
-      ResourceSavedSearchInput(query: query, mode: mode, locality: locality);
+  ResourceSavedSearchInput get input => ResourceSavedSearchInput(
+    query: query,
+    mode: mode,
+    locality: locality,
+    category: category,
+  );
 }
 
 class ResourceSavedSearchInput {
@@ -31,20 +37,24 @@ class ResourceSavedSearchInput {
     required this.query,
     required this.mode,
     required this.locality,
+    this.category,
   });
 
   factory ResourceSavedSearchInput.normalized({
     required String query,
     required ResourceListingMode? mode,
     required String locality,
+    ResourceCategory? category,
   }) => ResourceSavedSearchInput(
     query: _trimmedOrNull(query),
     mode: mode,
     locality: _trimmedOrNull(locality),
+    category: category,
   );
 
   final String? query;
   final ResourceListingMode? mode;
+  final ResourceCategory? category;
   final String? locality;
 
   bool get isValid =>
@@ -56,7 +66,7 @@ class ResourceSavedSearchInput {
           (locality!.trim() == locality &&
               locality!.isNotEmpty &&
               locality!.length <= resourceSavedSearchTextMaxLength)) &&
-      (query != null || mode != null || locality != null);
+      (query != null || mode != null || locality != null || category != null);
 }
 
 class ResourceSavedSearchCursor {
