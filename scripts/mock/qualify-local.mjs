@@ -166,6 +166,47 @@ async function login(status, id, email) {
 try {
   const normal = await stack("normal", 1000),
     mock = await stack("mock", 2000);
+  // Run the real service-worker concurrency/rollback regression early on this
+  // owned loopback realm, before any expensive native build. No hosted inputs.
+  const notificationRegression = spawnSync(
+    process.execPath,
+    [path.join(root, "scripts/verify-local-notifications.mjs")],
+    {
+      cwd: normal.directory,
+      env: {
+        ...process.env,
+        ...stackSecrets.get(normal.directory),
+        PATH: `${path.join(root, "node_modules/.bin")}${path.delimiter}${process.env.PATH}`,
+        MAILPIT_URL: "http://127.0.0.1:55324",
+      },
+      encoding: "utf8",
+      timeout: 60000,
+      maxBuffer: 1024 * 1024,
+    },
+  );
+  if (notificationRegression.status !== 0) {
+    for (const line of (notificationRegression.stderr ?? "").split(/\r?\n/)) {
+      if (
+        /^(Error: |PostgresError: |Notification concurrency diagnostics:)/.test(
+          line,
+        )
+      )
+        console.error(
+          line
+            .replace(
+              /sb_(?:secret|publishable)_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,
+              "[redacted]",
+            )
+            .slice(0, 2000),
+        );
+    }
+    throw new Error(
+      "Owned notification concurrency/rollback regression failed.",
+    );
+  }
+  console.log(
+    "Real notification concurrency and rollback/retry regression passed.",
+  );
   equal(
     normal.publishableKey !== mock.publishableKey,
     true,
@@ -620,6 +661,7 @@ try {
       sourceSchema: inventory.fingerprint,
       personas: first.personas,
       normalCalls: network.filter((n) => n.origin === NORMAL_ORIGIN).length,
+      notificationRegressionPassed: true,
       success: true,
     }),
   );

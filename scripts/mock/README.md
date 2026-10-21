@@ -13,7 +13,9 @@ local demo seeder and never removes its loopback guard.
 - `verify.mjs` reads canonical fixtures without repairing them.
 - `target.test.mjs` exercises target-confusion and credential rejection.
 - `qualify-local.mjs` owns two new disposable stacks, unique signing/API keys,
-  canonical fixture replay, standard Auth sessions, isolation and offboarding.
+  canonical fixture replay, standard Auth sessions, isolation and client retirement.
+  It first runs the real notification worker concurrency/rollback regression on
+  its owned loopback realm, so a queue failure stops before an expensive native build.
 - `native-bridge.mjs` is restricted to GitHub-hosted Linux. It forwards the
   release fixture's loopback traffic to those real stacks and the reviewed broker,
   captures bounded synthetic PNGs, and verifies the canonical cross-person write.

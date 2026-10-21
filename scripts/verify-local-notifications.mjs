@@ -311,9 +311,80 @@ async function verifyNotifications() {
     );
   }
 
+  await verifyProjectionFailureRollback(creator, requester);
+
   console.log(
-    "Confirmed private notification projection, concurrent idempotency, six-event participation mapping, stable request targets, preference suppression, safe inbox context, read state, and independent consumer receipts.",
+    "Confirmed private notification projection, concurrent idempotency, rollback/retry atomicity, six-event participation mapping, stable request targets, preference suppression, safe inbox context, read state, and independent consumer receipts.",
   );
+}
+
+async function verifyProjectionFailureRollback(creator, requester) {
+  // Fault injection is restricted to this disposable loopback stack. The
+  // transaction-local trigger/function never becomes an installed product hook.
+  if (
+    !["127.0.0.1", "localhost", "[::1]"].includes(new URL(databaseUrl).hostname)
+  )
+    throw new Error(
+      "Notification rollback verification requires a loopback database.",
+    );
+  await drainExistingNotificationEvents();
+  const project = await createProposal(creator, "Synthetic rollback courtyard");
+  const request = await requestToJoin(
+    requester,
+    project,
+    "Synthetic retry request",
+  );
+  const [event] = await sql`select id from private.outbox_events
+    where event_type='project.join_requested' and payload->>'request_id'=${request}`;
+  if (!event?.id) throw new Error("Rollback source event missing.");
+  await sql.begin(async (tx) => {
+    await tx`select set_config('planets.qa_notification_event',${event.id},true)`;
+    await tx.unsafe(`create function pg_temp.fail_notification_projection() returns trigger
+      language plpgsql set search_path='' as $$ begin
+        if new.source_outbox_event_id=current_setting('planets.qa_notification_event')::uuid then
+          raise exception using errcode='ZX001',message='Intentional local notification projection failure';
+        end if;
+        return new;
+      end; $$;
+      create trigger qa_notification_projection_failure before insert on public.notifications
+        for each row execute function pg_temp.fail_notification_projection();
+      create function pg_temp.exercise_notification_failure() returns boolean
+      language plpgsql set search_path='' as $$ begin
+        perform public.process_notification_outbox_batch(100);
+        return false;
+      exception when sqlstate 'ZX001' then return true;
+      end; $$;`);
+    const [failure] =
+      await tx`select pg_temp.exercise_notification_failure() observed`;
+    if (failure.observed !== true)
+      throw new Error("Projection failure was not propagated.");
+    const [state] = await tx`select
+      (select count(*)::int from private.outbox_consumer_receipts
+        where outbox_event_id=${event.id}::uuid and consumer_key='notifications.v1') receipts,
+      (select count(*)::int from public.notifications where source_outbox_event_id=${event.id}::uuid) notifications`;
+    if (state.receipts !== 0 || state.notifications !== 0)
+      throw new Error(
+        "A failed projection left a receipt or partial notification.",
+      );
+    await tx.unsafe(
+      "drop trigger qa_notification_projection_failure on public.notifications",
+    );
+  });
+  assertBatchTotals([await processNotificationBatch()], {
+    processed: 1,
+    created: 1,
+    suppressed: 0,
+  });
+  assertBatchTotals([await processNotificationBatch()], {
+    processed: 0,
+    created: 0,
+    suppressed: 0,
+  });
+  const notice = (await listNotifications(creator)).filter(
+    (n) => n.project_id === project,
+  );
+  if (notice.length !== 1 || notice[0].request_id !== request)
+    throw new Error("Retry did not create exactly one canonical notification.");
 }
 
 async function drainExistingNotificationEvents() {
