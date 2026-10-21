@@ -108,8 +108,11 @@ Changing a password does not remedy that observed pre-authentication failure.
 
 Available management access can issue a five-minute `cli_login_postgres` login
 through the supported CLI endpoint. The operator accepts that exact mock session
-pooler identity on 5432, requests its authorized postgres role on every connection
-and verifies current_user before reading the marker. Query overrides, transaction
+pooler identity on 5432 and initializes all four real pooled sessions with
+`SET SESSION ROLE postgres`, matching the pinned CLI. Startup-option role hints
+were not preserved by the hosted pooler. Every guard verifies current_user;
+an unexpected connection closure aborts the operator rather than silently
+reconnecting without initialization. Query overrides, transaction
 pooler ports and normal identities are rejected. No permanent password is changed.
 A permanent mock-password rotation requires separate explicit approval.
 

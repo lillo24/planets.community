@@ -395,6 +395,13 @@ try {
     persona_key: "giulia",
     request_id: randomUUID(),
   };
+  await sql`update auth.users set role='service_role' where id=${PERSONAS[0].id}::uuid`;
+  equal(
+    (await send(clientOne, intent)).status,
+    403,
+    "Privileged Auth role cannot become a selectable persona",
+  );
+  await sql`update auth.users set role='authenticated' where id=${PERSONAS[0].id}::uuid`;
   const response = await send(clientOne, intent);
   equal(response.status, 200, "Real broker issuance");
   const delivery = await response.json();

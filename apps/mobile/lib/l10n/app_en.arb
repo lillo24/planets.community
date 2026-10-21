@@ -3132,7 +3132,7 @@
   "mockAccountsTitle": "Mock Accounts",
   "mockSwitching": "Changing account…",
   "mockRestoring": "Restoring your account…",
-  "mockRecovery": "The account change could not be completed. Try again or return to your normal account.",
+  "mockRecovery": "The account change could not be completed. Try again or return to normal mode.",
   "mockReturnNormal": "Return to normal",
   "mockDenied": "This mock service or persona is unavailable. Return to normal or try again later.",
   "mockSharedWorld": "This is a shared fictional community. Other testers can see changes. Do not enter personal information.",

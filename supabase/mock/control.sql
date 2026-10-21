@@ -138,6 +138,7 @@ begin
     'name',p.display_name,'scenario',p.scenario) order by p.persona_key),'[]'::jsonb) into people
     from (select * from mock_control.personas where available order by persona_key limit 12) p
     join auth.users u on u.id=p.user_id and u.email=p.email and u.deleted_at is null
+      and u.role='authenticated' and u.is_super_admin is not true
     where not exists(select 1 from private.moderation_staff_roles s where s.profile_id=p.user_id);
   return jsonb_build_object('client_id',client,'personas',people);
 end $$;
@@ -151,7 +152,8 @@ begin
   select id into client from mock_control.clients where capability_hash=p_capability for update;
   if not found then raise insufficient_privilege; end if;
   select * into p from mock_control.personas where persona_key=p_persona and available for update;
-  if not found or not exists(select 1 from auth.users where id=p.user_id and email=p.email and deleted_at is null)
+  if not found or not exists(select 1 from auth.users where id=p.user_id and email=p.email and deleted_at is null
+      and role='authenticated' and is_super_admin is not true)
     or exists(select 1 from private.moderation_staff_roles where profile_id=p.user_id)
     then raise insufficient_privilege; end if;
   select * into d from mock_control.client_deliveries where client_id=client and request_id=p_request for update;

@@ -2394,7 +2394,7 @@
   "mockAccountsTitle": "Account Mock",
   "mockSwitching": "Cambio account…",
   "mockRestoring": "Ripristino dell’account…",
-  "mockRecovery": "Non è stato possibile completare il cambio account. Riprova oppure torna al tuo account normale.",
+  "mockRecovery": "Non è stato possibile completare il cambio account. Riprova oppure torna alla modalità normale.",
   "mockReturnNormal": "Torna alla modalità normale",
   "mockDenied": "Il servizio o la persona di prova non è disponibile. Torna alla modalità normale o riprova più tardi.",
   "mockSharedWorld": "Questa è una comunità immaginaria condivisa. Le modifiche sono visibili alle altre persone che partecipano al test. Non inserire informazioni personali.",

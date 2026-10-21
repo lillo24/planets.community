@@ -68,7 +68,11 @@ export function createRuntime({
     issue: async (persona) => {
       // Independent request-scoped REST calls have no shared mutable Auth client.
       const user = await auth(`admin/users/${persona.user_id}`);
-      if (user.id !== persona.user_id || user.email !== persona.email)
+      if (
+        user.id !== persona.user_id ||
+        user.email !== persona.email ||
+        user.role !== "authenticated"
+      )
         throw new BrokerFailure("persona_unavailable", 403);
       const link = await auth("admin/generate_link", {
         type: "magiclink",
@@ -89,7 +93,7 @@ export function createRuntime({
         service,
         `Bearer ${session.access_token}`,
       );
-      if (verified.id !== persona.user_id)
+      if (verified.id !== persona.user_id || verified.role !== "authenticated")
         throw new BrokerFailure("persona_unavailable", 403);
       const segment = session.access_token
         .split(".")[1]

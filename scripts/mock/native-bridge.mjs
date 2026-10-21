@@ -66,7 +66,7 @@ export async function nativeBridge({
     MOCK_PERSONA_BROKER_URL:
       "http://127.0.0.1:57422/functions/v1/mock-personas",
     MOCK_FIXTURE_GENERATION: GENERATION,
-    MOCK_QA_CONTROL_ID: normalSentinel.id,
+    MOCK_QA_NORMAL_ID: normalSentinel.id,
     MOCK_QA_PROJECT: first.project,
     MOCK_QA_TAVOLO: first.tavolo,
     MOCK_QA_CHAT: chat.id,
@@ -96,6 +96,25 @@ export async function nativeBridge({
     screenshots = [],
     steps = [];
   const usedMailIds = new Set();
+  const ordinaryProbe = createClient(normal.apiUrl, normal.publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const ordinaryOtp = await ordinaryProbe.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: false },
+  });
+  assert.equal(
+    ordinaryOtp.error?.code ?? null,
+    null,
+    "Owned normal ordinary OTP preflight",
+  );
+  const initialMailbox = await (
+    await fetch(
+      `http://127.0.0.1:55324/api/v1/search?query=${encodeURIComponent(`to:${email}`)}&limit=20`,
+    )
+  ).json();
+  for (const message of initialMailbox.messages ?? [])
+    usedMailIds.add(message.ID);
   const sockets = new Set(),
     servers = [];
   let resolveDone, rejectDone;
@@ -188,6 +207,9 @@ export async function nativeBridge({
         method: req.method,
         family,
         operation,
+        authAction: url.pathname.startsWith("/auth/v1/")
+          ? url.pathname.substring(9)
+          : null,
         maintenance,
         status: null,
       };
@@ -282,7 +304,7 @@ export async function nativeBridge({
             mode = value.mode;
             return json(res, { accepted: true });
           }
-          if (req.method === "POST" && url.pathname === "/qa/expire-control") {
+          if (req.method === "POST" && url.pathname === "/qa/expire-normal") {
             assert.equal(stage, "restart");
             assert.equal(mode, "mock");
             // Only the owned synthetic normal sentinel; never accepts an ID or
@@ -299,7 +321,7 @@ export async function nativeBridge({
           if (req.method === "POST" && url.pathname.startsWith("/qa/png/")) {
             const name = url.pathname.substring(8);
             assert.match(name, /^[a-z][a-z0-9-]{3,90}\.png$/);
-            assert.ok(screenshots.length < 32);
+            assert.ok(screenshots.length < 40);
             assert.ok(!screenshots.some((s) => s.name === name));
             const bytes = await body(req, 8 * 1024 * 1024);
             assert.equal(
@@ -347,6 +369,14 @@ export async function nativeBridge({
                   steps: value.steps,
                   failures: value.failures,
                   errors: value.errors,
+                  normalAuth: calls
+                    .filter((r) => r.realm === "normal" && r.authAction)
+                    .slice(-12)
+                    .map(({ method, authAction, status }) => ({
+                      method,
+                      action: authAction,
+                      status,
+                    })),
                 }),
               );
             }

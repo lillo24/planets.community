@@ -52,6 +52,7 @@ class MockModeCoordinator extends ChangeNotifier {
   int _pendingOperations = 0;
   bool selectionRequested = false;
   bool requiresNormalLogin = false;
+  bool normalHomeRequested = false;
   bool fencing = false;
   bool get isMock => active != null;
   bool get busy =>
@@ -361,6 +362,7 @@ class MockModeCoordinator extends ChangeNotifier {
       if (_disposed || revision != _revision) return false;
       active = null;
       requiresNormalLogin = returningAccount && access.normalIdentity == null;
+      normalHomeRequested = true;
       scopeRevision = revision;
       phase = MockModePhase.normal;
       selectionRequested = false;
@@ -419,6 +421,7 @@ class MockModeCoordinator extends ChangeNotifier {
       phase = MockModePhase.normal;
       failure = null;
       requiresNormalLogin = false;
+      normalHomeRequested = false;
       _emit();
     } catch (error) {
       if (revision == _revision && !_disposed) _failed(error);

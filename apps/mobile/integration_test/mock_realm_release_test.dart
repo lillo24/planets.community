@@ -15,6 +15,7 @@ import 'package:planets_mobile/bootstrap/bootstrap.dart';
 import 'package:planets_mobile/core/backend/supabase_backend.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
+import 'package:planets_mobile/features/auth/application/auth_command_controller.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/mock_mode/application/mock_mode_coordinator.dart';
 import 'package:planets_mobile/features/mock_mode/presentation/mock_mode_routes.dart';
@@ -98,7 +99,7 @@ void main() {
     }),
   );
   testWidgets(
-    'release two-realm ordinary login, three personas, interaction, restart and logout',
+    'release guest entry, personas, interaction, restart, guest No, retained normal account and logout',
     (tester) async {
       expect(
         kReleaseMode,
@@ -155,7 +156,7 @@ void main() {
 
       Future<void> tap(Finder finder) async {
         await reveal(finder);
-        await tester.tap(finder);
+        await tester.tap(finder.hitTestable());
         await tester.pump(const Duration(milliseconds: 400));
       }
 
@@ -186,7 +187,7 @@ void main() {
         }, 'ready ordinary identity');
       }
 
-      Future<void> profile(String name) async {
+      Future<void> profile(String name, {String tag = ""}) async {
         await navigate('/profile');
         await wait(
           () => find.text(name).evaluate().isNotEmpty,
@@ -197,7 +198,7 @@ void main() {
           name == 'NORMAL ONLY SENTINEL' ? findsOneWidget : findsNothing,
         );
         await capture(
-          'profile-${name == 'NORMAL ONLY SENTINEL' ? 'normal' : name.toLowerCase()}-$stage',
+          'profile-${name == 'NORMAL ONLY SENTINEL' ? 'normal' : name.toLowerCase()}-$stage${tag.isEmpty ? '' : '-$tag'}',
         );
       }
 
@@ -255,12 +256,18 @@ void main() {
         steps.add('persona-$key-home');
       }
 
-      const control = String.fromEnvironment('MOCK_QA_CONTROL_ID');
+      const normalId = String.fromEnvironment('MOCK_QA_NORMAL_ID');
       const giulia = '81000000-0000-4000-8000-000000000001';
       const marco = '81000000-0000-4000-8000-000000000002';
       const sara = '81000000-0000-4000-8000-000000000003';
       const chat = String.fromEnvironment('MOCK_QA_CHAT');
+      DateTime? lastNormalOtp;
       Future<void> normalLogin() async {
+        if (lastNormalOtp case final previous?) {
+          final remaining =
+              const Duration(seconds: 61) - DateTime.now().difference(previous);
+          if (remaining > Duration.zero) await Future<void>.delayed(remaining);
+        }
         await navigate('/auth/email?returnTo=%2Fsettings');
         operation = 'normal-email-field';
         await tap(find.byKey(const Key('auth-email-field')));
@@ -269,13 +276,19 @@ void main() {
           find.byKey(const Key('auth-email-field')),
           'normal-sentinel@planets.invalid',
         );
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pump(const Duration(milliseconds: 600));
         operation = 'normal-request-code';
+        lastNormalOtp = DateTime.now();
         await tap(find.byKey(const Key('auth-request-button')));
         operation = 'normal-await-code-form';
-        await wait(
-          () => find.byKey(const Key('auth-code-field')).evaluate().isNotEmpty,
-          'ordinary OTP requested',
-        );
+        await wait(() {
+          final failure = scope().read(authCommandProvider).failure;
+          if (failure != null) {
+            fail('Native ordinary Auth failed ${failure.name}');
+          }
+          return find.byKey(const Key('auth-code-field')).evaluate().isNotEmpty;
+        }, 'ordinary OTP requested');
         String? code;
         operation = 'normal-read-private-mailpit';
         for (var i = 0; i < 30 && code == null; i++) {
@@ -294,7 +307,7 @@ void main() {
         operation = 'normal-verify-code';
         await tap(find.byKey(const Key('auth-verify-button')));
         operation = 'normal-ready';
-        await ready(control);
+        await ready(normalId);
       }
 
       if (stage == 'first') {
@@ -316,22 +329,19 @@ void main() {
         expect(tester.widget<SegmentedButton<bool>>(setting).selected, {false});
         await tap(find.descendant(of: setting, matching: find.text('Yes')));
         await wait(
-          () =>
-              find.byKey(const Key('auth-close-button')).evaluate().isNotEmpty,
-          'guest normal sign in',
+          () => find.byKey(const Key('mock-login-dario')).evaluate().isNotEmpty,
+          'guest selector without normal login',
         );
-        await tap(find.byKey(const Key('auth-close-button')));
+        expect(find.byKey(const Key('auth-email-field')), findsNothing);
+        expect(normalBackendRuntime.client.auth.currentSession, isNull);
+        await tap(find.byKey(const Key('page-close')));
         expect(scope().read(activeMockRealmProvider), isFalse);
-        steps.add('guest-enable-cancel-keeps-no');
-        await normalLogin();
-        steps.add('normal-otp-real-auth');
-        await profile('NORMAL ONLY SENTINEL');
-        await navigate('/settings');
-        await reveal(setting);
+        expect(tester.widget<SegmentedButton<bool>>(setting).selected, {false});
+        steps.add('guest-selector-cancel-keeps-no');
         await tap(find.descendant(of: setting, matching: find.text('Yes')));
         await wait(
           () => find.byKey(const Key('mock-login-dario')).evaluate().isNotEmpty,
-          'first selector',
+          'guest selector',
         );
         for (final language in [
           LanguagePreference.english,
@@ -352,7 +362,7 @@ void main() {
         tester.platformDispatcher.platformBrightnessTestValue =
             Brightness.light;
         await asPerson('giulia', giulia);
-        expect(control, giulia, reason: 'Deliberate equal normal/mock UUID');
+        expect(normalId, giulia, reason: 'Deliberate equal normal/mock UUID');
         for (final language in [
           LanguagePreference.english,
           LanguagePreference.italian,
@@ -524,20 +534,59 @@ void main() {
         await reveal(setting);
         final no = AppLocalizations.of(tester.element(setting)).mockNo;
         await tap(find.descendant(of: setting, matching: find.text(no)));
-        await ready(control);
-        expect(scope().read(activeMockRealmProvider), isFalse);
-        expect(
-          scope().read(appConfigProvider).supabaseUrl.origin,
-          config.supabaseUrl.origin,
+        await wait(
+          () =>
+              find.byType(PlanetsApp).evaluate().isNotEmpty &&
+              scope().read(authSessionProvider).phase ==
+                  AuthSessionPhase.signedOut &&
+              scope()
+                      .read(appRouterProvider)
+                      .routeInformationProvider
+                      .value
+                      .uri
+                      .path ==
+                  '/',
+          'guest No returns guest Home',
         );
-        await profile('NORMAL ONLY SENTINEL');
-        steps.add('return-normal-preserves-control-login');
+        expect(normalBackendRuntime.client.auth.currentSession, isNull);
+        expect(scope().read(activeMockRealmProvider), isFalse);
+        await capture('guest-no-home');
+        steps.add('guest-no-returns-home-without-sign-in');
         await navigate('/help');
         expect(
           find.byKey(const Key('help-mock-accounts-action')),
           findsNothing,
         );
+        await normalLogin();
+        steps.add('normal-otp-real-auth');
+        await profile('NORMAL ONLY SENTINEL', tag: 'before-mock');
         await navigate('/settings');
+        await reveal(setting);
+        await tap(find.descendant(of: setting, matching: find.text('Yes')));
+        await wait(
+          () => find.byKey(const Key('mock-login-dario')).evaluate().isNotEmpty,
+          'retained account selector',
+        );
+        await asPerson('dario', '81000000-0000-4000-8000-000000000004');
+        await profile('Dario');
+        await request('/qa/mode', {'mode': 'normal'});
+        await navigate('/settings');
+        await reveal(setting);
+        await tap(find.descendant(of: setting, matching: find.text('No')));
+        await ready(normalId);
+        expect(scope().read(activeMockRealmProvider), isFalse);
+        await profile('NORMAL ONLY SENTINEL', tag: 'after-mock');
+        steps.add('return-normal-preserves-retained-account');
+        await navigate('/settings');
+        await reveal(setting);
+        await tap(find.descendant(of: setting, matching: find.text('Yes')));
+        await wait(
+          () => find.byKey(const Key('mock-login-dario')).evaluate().isNotEmpty,
+          'logout selector',
+        );
+        await asPerson('giulia', giulia);
+        await navigate('/settings');
+        await request('/qa/mode', {'mode': 'normal'});
         await tap(find.byKey(const Key('account-sign-out-button')));
         await wait(
           () =>
@@ -551,22 +600,21 @@ void main() {
                   '/welcome',
           'full logout Welcome',
         );
-        expect(normalBackendRuntime.client.auth.currentSession == null, isTrue);
+        expect(normalBackendRuntime.client.auth.currentSession, isNull);
         expect(scope().read(activeMockRealmProvider), isFalse);
         await capture('logout-welcome');
         steps.add('explicit-logout-clears-both-sessions');
-        // A genuine Auth authority loss while mock is active must return to the
-        // normal login screen rather than adopt a missing profile or mock guest.
+        // Only a previously retained real session can require normal login on No.
         await normalLogin();
         await navigate('/settings');
         await reveal(setting);
         await tap(find.descendant(of: setting, matching: find.text('Yes')));
         await wait(
           () => find.byKey(const Key('mock-login-dario')).evaluate().isNotEmpty,
-          'revocation selector',
+          'expired normal selector',
         );
-        await asPerson('dario', '81000000-0000-4000-8000-000000000004');
-        expect((await request('/qa/expire-control', {}))['expired'], isTrue);
+        await asPerson('elena', '81000000-0000-4000-8000-000000000005');
+        expect((await request('/qa/expire-normal', {}))['expired'], isTrue);
         await request('/qa/mode', {'mode': 'normal'});
         await navigate('/settings');
         await reveal(setting);
@@ -581,12 +629,12 @@ void main() {
                       .uri
                       .path ==
                   '/auth',
-          'expired normal login',
+          'expired retained normal login',
         );
         expect(scope().read(activeMockRealmProvider), isFalse);
-        expect(normalBackendRuntime.client.auth.currentSession == null, isTrue);
-        await capture('expired-control-normal-sign-in');
-        steps.add('revoked-control-returns-normal-sign-in');
+        expect(normalBackendRuntime.client.auth.currentSession, isNull);
+        await capture('expired-normal-sign-in');
+        steps.add('expired-retained-account-returns-normal-sign-in');
       }
       expect(tester.takeException(), isNull);
     },

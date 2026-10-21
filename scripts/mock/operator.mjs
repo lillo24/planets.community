@@ -25,16 +25,30 @@ export async function operator(configPath) {
   assertTarget(config, expected, inventory.fingerprint);
   const databaseUrl = process.env.MOCK_DATABASE_URL;
   const { temporary } = databaseTarget(databaseUrl);
+  let initialized = false;
+  let connectionLost = false;
+  const connectionFailure = (code) =>
+    Object.assign(new Error("Mock database session initialization failed."), {
+      code,
+    });
   const sql = postgres(databaseUrl, {
     max: 4,
     ssl: "require",
     connect_timeout: 15,
-    // Applied to every connection, including replacements. PostgreSQL itself
-    // checks role membership; no grant or privilege bypass is attempted here.
-    ...(temporary ? { connection: { options: "-c role=postgres" } } : {}),
+    // Supavisor does not preserve the startup options role. Initialize real
+    // sessions explicitly, as the pinned CLI does; do not emulate SQL locks.
+    onclose: () => {
+      if (temporary && initialized) connectionLost = true;
+    },
     onnotice: () => {},
   });
   async function guard(tx = sql) {
+    if (temporary) {
+      if (connectionLost) throw connectionFailure("MOCK_CONNECTION_LOST");
+      const [identity] = await tx`select current_user`;
+      if (identity.current_user !== "postgres")
+        throw connectionFailure("MOCK_ROLE_NOT_ASSUMED");
+    }
     const [marker] =
       await tx`select * from mock_control.environment where singleton`;
     assertTarget(config, marker, inventory.fingerprint);
@@ -42,13 +56,25 @@ export async function operator(configPath) {
   }
   try {
     if (temporary) {
-      const [identity] = await sql`select current_user`;
-      if (identity.current_user !== "postgres")
-        throw new Error("Temporary CLI connection did not assume postgres.");
+      const sessions = [];
+      try {
+        // Holding all reservations ensures every one of the four physical
+        // session-pooler connections is initialized before any operator work.
+        for (let i = 0; i < 4; i++) sessions.push(await sql.reserve());
+        for (const session of sessions) {
+          await session`SET SESSION ROLE postgres`;
+          const [identity] = await session`select current_user`;
+          if (identity.current_user !== "postgres")
+            throw connectionFailure("MOCK_ROLE_NOT_ASSUMED");
+        }
+      } finally {
+        for (const session of sessions) session.release();
+      }
+      initialized = true;
     }
     await guard();
   } catch (error) {
-    await sql.end();
+    await sql.end({ timeout: 5 });
     throw error;
   }
   return {

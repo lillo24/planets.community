@@ -3,6 +3,50 @@ import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { createRuntime } from "./runtime.mjs";
 
+test("privileged registered Auth identity is rejected before one-time login generation", async () => {
+  const user = "20000000-0000-4000-8000-000000000001";
+  const client = "10000000-0000-4000-8000-000000000001";
+  const persona = {
+    key: "giulia",
+    user_id: user,
+    email: "giulia@personas.planets.invalid",
+  };
+  let minted = false;
+  const json = (value) => new Response(JSON.stringify(value));
+  const handler = createRuntime({
+    enabled: true,
+    mockOrigin: "https://pnolarmzxmmjtguligfc.supabase.co",
+    service: "synthetic-server-key",
+    deliveryKey: randomBytes(32).toString("base64"),
+    fetcher: async (url) => {
+      const path = new URL(url).pathname;
+      if (path.endsWith("/mock_control_catalog"))
+        return json({ client_id: client, personas: [persona] });
+      if (path.endsWith("/mock_control_claim"))
+        return json({ state: "new", user_id: user, email: persona.email });
+      if (path.endsWith("/admin/users/" + user))
+        return json({ id: user, email: persona.email, role: "service_role" });
+      if (path.endsWith("/mock_control_retire"))
+        return new Response(null, { status: 204 });
+      if (path.endsWith("/admin/generate_link")) minted = true;
+      throw Error("unexpected privilege use");
+    },
+  });
+  const response = await handler(
+    new Request("https://broker.invalid", {
+      method: "POST",
+      headers: { "x-mock-client": "a".repeat(64) },
+      body: JSON.stringify({
+        action: "issue",
+        persona_key: "giulia",
+        request_id: "30000000-0000-4000-8000-000000000001",
+      }),
+    }),
+  );
+  assert.equal(response.status, 403);
+  assert.equal(minted, false);
+});
+
 test("normal and persona bearer tokens grant no broker authority or normal Auth traffic", async () => {
   let calls = 0;
   const handler = createRuntime({
@@ -70,7 +114,7 @@ test("standard Auth exchange accepts void RPC completion and recovers encrypted 
         return new Response(null, { status: 204 });
       }
       if (target.pathname.endsWith("/admin/users/" + user))
-        return json({ id: user, email: persona.email });
+        return json({ id: user, email: persona.email, role: "authenticated" });
       if (target.pathname.endsWith("/admin/generate_link")) {
         generations++;
         assert.deepEqual(body, { type: "magiclink", email: persona.email });
@@ -82,7 +126,8 @@ test("standard Auth exchange accepts void RPC completion and recovers encrypted 
           access_token: token,
           refresh_token: "synthetic-refresh",
         });
-      if (target.pathname.endsWith("/user")) return json({ id: user });
+      if (target.pathname.endsWith("/user"))
+        return json({ id: user, role: "authenticated" });
       throw new Error("Unexpected server request");
     },
   });

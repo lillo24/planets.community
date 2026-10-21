@@ -189,6 +189,9 @@ class _MockRealmHostState extends State<MockRealmHost>
         initialNavigationPreferenceProvider.overrideWithValue(_navigation),
         initialActivitiesSplitPreferenceProvider.overrideWithValue(_split),
         initialStartupPreferenceProvider.overrideWithValue(_startup),
+        initialStartupEnteredProvider.overrideWithValue(
+          coordinator?.normalHomeRequested == true,
+        ),
         closedTestMockCapabilityProvider.overrideWithValue(true),
         activeMockRealmProvider.overrideWithValue(mock),
         mockModeCoordinatorProvider.overrideWithValue(coordinator),
