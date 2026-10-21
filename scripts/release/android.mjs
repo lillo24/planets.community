@@ -16,7 +16,6 @@ import {
   playClient,
   selectTrack,
   allocateCode,
-  publishBundle,
 } from "./play.mjs";
 
 export function manualCode(env, policy, now = Date.now()) {
@@ -131,8 +130,10 @@ function command(program, args, cwd) {
 }
 
 export async function androidRelease(mode, env = process.env) {
-  if (!["build", "publish"].includes(mode))
-    throw new ReleaseError("Use android.mjs build|publish");
+  if (mode !== "build")
+    throw new ReleaseError(
+      "Use android.mjs build; publication is a separate approval job",
+    );
   const root = process.cwd();
   const policy = JSON.parse(
     readFileSync("scripts/release/policy.json", "utf8"),
@@ -173,10 +174,6 @@ export async function androidRelease(mode, env = process.env) {
       await api.discard(edit.id);
     }
   } else {
-    if (mode === "publish")
-      throw new ReleaseError(
-        "Play publication requires PLAY_SERVICE_ACCOUNT_JSON; use build for the manual artifact route",
-      );
     code = manualCode(env, policy);
   }
   const cleanup = prepareSigning(env, root);
@@ -211,26 +208,6 @@ export async function androidRelease(mode, env = process.env) {
       `build/release01/${name}`,
     );
     console.log(`Verified manual-upload artifact: build/release01/${name}`);
-    if (mode === "publish") {
-      if (currentMain() !== env.GITHUB_SHA)
-        throw new ReleaseError(
-          "Main advanced before publication; do not upload this artifact",
-        );
-      await stagingRelease("verify", env);
-      const release = await publishBundle(api, {
-        policy,
-        bundle: readFileSync(`build/release01/${name}`),
-        evidence,
-        backendReady: true,
-      });
-      writeFileSync(
-        "build/release01/play.json",
-        JSON.stringify(release, null, 2),
-      );
-      console.log(
-        "Play API edit committed and track re-read; Console review/installability and Play-device smoke remain separate gates",
-      );
-    }
   } finally {
     cleanup();
   }

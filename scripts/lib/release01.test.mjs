@@ -36,6 +36,7 @@ import {
 } from "../release/play.mjs";
 import { manualCode, prepareSigning } from "../release/android.mjs";
 import { requireFullValidation } from "../release/validation.mjs";
+import { verifyPersistedArtifact } from "../release/publish.mjs";
 
 const sql = "create table private.example(id integer);";
 const migration = {
@@ -502,6 +503,44 @@ const evidence = {
   sha256: sha256(Buffer.from("bundle")),
   source_sha: "a".repeat(40),
 };
+test("publication approves only the persisted verified source/certificate/AAB receipt", () => {
+  const p = { ...playPolicy, upload_certificate_sha256: "b".repeat(64) };
+  const e = {
+    ...evidence,
+    backend: `https://${STAGING_REF}.supabase.co`,
+    debuggable: false,
+    demos_enabled: false,
+    target_sdk: 36,
+    signed_payloads: 3,
+    native_16k_checks: 2,
+    upload_certificate_sha256: p.upload_certificate_sha256,
+  };
+  const v = {
+    source_sha: e.source_sha,
+    areas: ["Mobile", "Database", "Web", "Site"],
+  };
+  assert.doesNotThrow(() =>
+    verifyPersistedArtifact(p, e, Buffer.from("bundle"), v, e.source_sha),
+  );
+  for (const changed of [
+    { ...e, source_sha: "c".repeat(40) },
+    { ...e, upload_certificate_sha256: "c".repeat(64) },
+    { ...e, target_sdk: undefined },
+    { ...e, demos_enabled: true },
+  ])
+    assert.throws(() =>
+      verifyPersistedArtifact(
+        p,
+        changed,
+        Buffer.from("bundle"),
+        v,
+        e.source_sha,
+      ),
+    );
+  assert.throws(() =>
+    verifyPersistedArtifact(p, e, Buffer.from("modified"), v, e.source_sha),
+  );
+});
 test("backend/artifact failure causes zero Play API calls", async () => {
   const api = mockPlay();
   await assert.rejects(

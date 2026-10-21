@@ -146,7 +146,7 @@ jobs:
       needs.staging.result == 'success' &&
       ((github.event_name == 'push' && vars.STAGING_AUTO_PUBLISH == 'true') ||
         (github.event_name == 'workflow_dispatch' && (inputs.operation == 'build' || inputs.operation == 'publish')))
-    environment: planets-play-closed
+    environment: planets-android-build
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -171,9 +171,8 @@ jobs:
         with:
           name: release-validation-${{ github.run_id }}
           path: build/release01
-      - name: Verify backend, sign/inspect AAB, optionally deliver to verified closed track
+      - name: Verify backend, sign and inspect the reviewable AAB
         env:
-          OPERATION: ${{ inputs.operation || 'publish' }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           STAGING_CONFIG_JSON: ${{ secrets.STAGING_CONFIG_JSON }}
           ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
@@ -183,7 +182,7 @@ jobs:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           PLAY_VERIFIED_UNUSED_CODE: ${{ vars.PLAY_VERIFIED_UNUSED_CODE }}
           PLAY_CONSOLE_CHECKED_AT: ${{ vars.PLAY_CONSOLE_CHECKED_AT }}
-        run: node scripts/release/android.mjs "$OPERATION"
+        run: node scripts/release/android.mjs build
       - name: Persist verified AAB and sanitized evidence
         if: always()
         uses: actions/upload-artifact@v6
@@ -193,8 +192,46 @@ jobs:
             build/release01/*.aab
             build/release01/artifact.json
             build/release01/backend.json
-            build/release01/play.json
             build/release01/validation.json
+            build/release01/http-smoke.json
+          retention-days: 30
+
+  publish:
+    needs: android
+    if: >-
+      needs.android.result == 'success' &&
+      ((github.event_name == 'push' && vars.STAGING_AUTO_PUBLISH == 'true') ||
+        (github.event_name == 'workflow_dispatch' && inputs.operation == 'publish'))
+    # The verified AAB already exists before first-release owner approval.
+    environment: planets-play-closed
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24.20.0
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v5
+        with:
+          name: planets-closed-test-${{ github.run_id }}
+          path: build/release01
+      - name: Recheck persisted artifact/backend and submit only the existing closed track
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          STAGING_CONFIG_JSON: ${{ secrets.STAGING_CONFIG_JSON }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: node scripts/release/publish.mjs
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: planets-play-state-${{ github.run_id }}
+          path: |
+            build/release01/play.json
+            build/release01/backend.json
             build/release01/http-smoke.json
           retention-days: 30
       - name: Delivery status

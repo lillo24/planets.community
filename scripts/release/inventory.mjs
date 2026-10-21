@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { readMigrations, migrationDiff, STAGING_REF } from "./migrations.mjs";
 import { summarizeHistory } from "./backend.mjs";
 import { sha256 } from "./sql-fingerprint.mjs";
+import { execFileSync } from "node:child_process";
 
 // Offline inspection of a bounded metadata export; never runs SQL or applies it.
 const [input, output] = process.argv.slice(2);
@@ -55,8 +56,11 @@ const pending = diff.pending.map((m) => {
   };
 });
 const report = {
-  source_sha: "62781c91323836807dad7ac4c014adac253c71e2",
-  observed_at: "2026-10-21",
+  source_sha: execFileSync("git", ["rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim(),
+  observed_at: process.env.RELEASE_INVENTORY_OBSERVED_AT ?? null,
+  generated_at: new Date().toISOString(),
   ...diff,
   pending,
   approval_digest: sha256(JSON.stringify(diff)),

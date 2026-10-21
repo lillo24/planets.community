@@ -96,6 +96,15 @@ export async function stagingRelease(mode, env = process.env) {
         throw new ReleaseError(
           "Deployment requires tested main and confirmed single deployment owner",
         );
+      const main = spawnSync(
+        "git",
+        ["ls-remote", "origin", "refs/heads/main"],
+        { encoding: "utf8", timeout: 60000 },
+      );
+      if (main.status !== 0 || main.stdout.split(/\s/)[0] !== env.GITHUB_SHA)
+        throw new ReleaseError(
+          "Main advanced before migration approval; start a new release run",
+        );
       assertDatabaseUrl(env.STAGING_DB_URL);
       const sql = postgres(env.STAGING_DB_URL, {
         ssl: { rejectUnauthorized: true },

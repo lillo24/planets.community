@@ -26,9 +26,12 @@ records the blockers; merging release plumbing does not resolve them.
    version→SHA-256 in `bootstrap_approvals`, and the live preflight's exact
    `approval_digest` in environment variable `BOOTSTRAP_MANIFEST_SHA256`.
    A changed predecessor, SQL file or pending set requires renewed review.
-4. Create GitHub Environments `planets-staging` and `planets-play-closed`. Restrict
-   both to the `main` branch (no tags), require the owner as reviewer for initial
-   deployment/publication and disable administrator bypass where available.
+4. Create GitHub Environments `planets-staging`, `planets-android-build` and
+   `planets-play-closed`. Restrict all to `main` (no tags), require the owner as
+   reviewer on staging and publication for initial deployment/publication and
+   disable administrator bypass where available. Build preparation can run without
+   repeated approval; its verified artifact exists before the publication job asks
+   for owner approval.
    GitHub supports required reviewers for this public repository. Do not create
    an unprotected substitute if account features prevent enforcement.
 5. Confirm Supabase native GitHub migration deployment is **disabled** for this
@@ -39,11 +42,12 @@ records the blockers; merging release plumbing does not resolve them.
    `gh secret set --env ...` reading a protected local file/stdin; never paste
    credentials into chat, command history, committed JSON or an issue:
 
-   | Environment                | Secrets                                                                                                                                                   |
-   | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-   | Both                       | `SUPABASE_ACCESS_TOKEN` (legitimate project-scoped management access), `STAGING_CONFIG_JSON`                                                              |
-   | `planets-staging` only     | `STAGING_DB_URL` (original staging database credential; exact direct host or session pooler identity, TLS certificate validation enabled)                 |
-   | `planets-play-closed` only | `ANDROID_UPLOAD_KEYSTORE_BASE64`, `ANDROID_UPLOAD_STORE_PASSWORD`, `ANDROID_UPLOAD_KEY_PASSWORD`, `ANDROID_UPLOAD_KEY_ALIAS`, `PLAY_SERVICE_ACCOUNT_JSON` |
+   | Environment                        | Secrets                                                                                                                                   |
+   | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+   | All three                          | `SUPABASE_ACCESS_TOKEN` (legitimate project-scoped management access), `STAGING_CONFIG_JSON`                                              |
+   | `planets-staging` only             | `STAGING_DB_URL` (original staging database credential; exact direct host or session pooler identity, TLS certificate validation enabled) |
+   | `planets-android-build` only       | `ANDROID_UPLOAD_KEYSTORE_BASE64`, `ANDROID_UPLOAD_STORE_PASSWORD`, `ANDROID_UPLOAD_KEY_PASSWORD`, `ANDROID_UPLOAD_KEY_ALIAS`              |
+   | Android build and Play publication | `PLAY_SERVICE_ACCOUNT_JSON` (build uses a temporary edit for inventory, then discards it; only the publication job uploads/commits)       |
 
    Use the original upload key, not Play's distribution key. The verified upload
    SHA-256 is pinned in `policy.json`; no replacement key is generated. Base64
@@ -75,8 +79,9 @@ boundary deploy automatically; older timestamp gaps or changed applied SQL fail.
 `workflow_dispatch` defaults to read-only `inspect`. `deploy` runs complete
 exact-source Validation and the bootstrap rehearsal, then SQL preflight → apply
 → verification. `build` additionally persists a verified upload-signed AAB;
-`publish` additionally uploads/validates/commits the Play edit and re-reads the
-track. Every mutation requires current `main`; an advancing main aborts delivery.
+`publish` additionally waits for first-publication owner approval of that persisted
+AAB, then uploads/validates/commits the Play edit and re-reads the track in a separate
+job. This job has no signing key. Every mutation requires current `main`; an advancing main aborts delivery.
 
 The guarded main-push trigger covers mobile code, migrations/functions, release
 tooling, dependency manifests and this workflow. Documentation/plan archival alone

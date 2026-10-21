@@ -28,11 +28,14 @@ diagnostics stay out of public Actions output.
   local/shared/remote targets. Its result is evidence, never rollout approval.
 - `validation.mjs` reuses or dispatches the complete existing `Validation` suite
   on the exact main SHA. All four areas must succeed; skipped checks do not count.
-- `android.mjs build|publish` rechecks hosted readiness, selects a verified fresh
+- `android.mjs build` rechecks hosted readiness, selects a verified fresh
   code, creates temporary signing/config files without overwriting owner inputs,
-  calls the existing Dart map builder, verifies/persists the AAB, and optionally
-  submits it to the existing closed track. Its `finally` removes only files it
+  calls the existing Dart map builder and verifies/persists the AAB. Its `finally` removes only files it
   created. Runner termination is additionally covered by ephemeral runner teardown.
+- `publish.mjs` runs in a separate publication environment after the artifact is
+  reviewable. It checks the persisted receipt/hash/source, rechecks hosted readiness
+  and submits only that AAB; it needs no signing key. First owner approval occurs
+  here, after preparation.
 - `artifact.py` inspects package/code/SDK/debug flags, upload signature and every
   signed payload, original certificate, source/backend/map flags, compiled origin
   and 64-bit ELF alignment using checksum-pinned bundletool and the installed JDK.
