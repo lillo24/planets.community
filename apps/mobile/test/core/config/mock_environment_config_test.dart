@@ -46,6 +46,7 @@ void main() {
         () => config(mock: 'https://cllpvruvrrvxczjitlqd.supabase.co'),
         () => config(broker: 'https://example.com/functions/v1/mock-personas'),
         () => config(key: 'sb_secret_synthetic_privileged_value'),
+        () => config(key: 'sb_publishable_normal_fixture_123456789'),
         () => config(mock: 'pnolarmzxmmjtguligfc.supabase.co'),
       ]) {
         expect(create, throwsA(isA<AppConfigException>()));

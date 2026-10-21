@@ -177,14 +177,31 @@ try {
     "Independent administrative credentials",
   );
   const signup = await fetch(`${mock.apiUrl}/auth/v1/signup`, {
-    method: "POST", headers: { apikey: mock.publishableKey, "content-type": "application/json" },
-    body: JSON.stringify({ email: "unsupported-signup@personas.planets.invalid", password: "synthetic-denied-signup-value" }),
+    method: "POST",
+    headers: {
+      apikey: mock.publishableKey,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      email: "unsupported-signup@personas.planets.invalid",
+      password: "synthetic-denied-signup-value",
+    }),
   });
-  equal((await signup.json()).error_code, "signup_disabled", "Mock Auth rejects public signup at the server");
-  const authSettings = await (await fetch(`${mock.apiUrl}/auth/v1/settings`, {
-    headers: { apikey: mock.publishableKey },
-  })).json();
-  equal(authSettings.external.google, false, "Mock Google provider is disabled at the server");
+  equal(
+    (await signup.json()).error_code,
+    "signup_disabled",
+    "Mock Auth rejects public signup at the server",
+  );
+  const authSettings = await (
+    await fetch(`${mock.apiUrl}/auth/v1/settings`, {
+      headers: { apikey: mock.publishableKey },
+    })
+  ).json();
+  equal(
+    authSettings.external.google,
+    false,
+    "Mock Google provider is disabled at the server",
+  );
   const sql = postgres(mock.databaseUrl, { max: 4, onnotice: () => {} });
   const inventory = await migrationInventory(root);
   await sql.unsafe(await readFile("supabase/mock/marker.sql", "utf8"));
@@ -491,7 +508,14 @@ try {
   );
   if (process.argv[2] === "--native") {
     const { nativeBridge } = await import("./native-bridge.mjs");
-    await nativeBridge({ directory: process.argv[3], normal, mock, sql, first, normalSentinel });
+    await nativeBridge({
+      directory: process.argv[3],
+      normal,
+      mock,
+      sql,
+      first,
+      normalSentinel,
+    });
   }
 } catch (error) {
   console.error(

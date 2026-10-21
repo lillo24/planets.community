@@ -17,20 +17,20 @@ passes the same validated JSON through without enabling mock or new providers.
 
 ## Audited owners
 
-| Owner | Boundary |
-| --- | --- |
-| `core/backend/supabase_backend.dart` | Stable normal client, sole normal Auth refresh owner |
-| `core/backend/secure_session_storage.dart` | Confidential normal, PKCE and per-root/request mock credentials |
-| `core/backend/realm_transport.dart` | Exact origin/no redirects; product fence, original in-flight request tracking |
-| `mock_mode/application/mock_mode_coordinator.dart` | Serialized transitions, monotone generation, recovery and stale completion rejection |
-| `mock_mode/data/mock_session_access.dart` | Fixed broker, ordinary Auth session and canonical profile/registry validation |
-| `mock_mode/presentation/mock_realm_host.dart` | Entire root product ProviderScope/router/image cache replaced per realm/revision |
-| `app/router/app_router.dart` | Guarded picker, normal-link boundary and denied persona provider Auth/support/deletion routes |
-| `project_workspace_pending_add_store.dart` | Realm/root/actor/project journal and acknowledged known-normal legacy migration |
-| `group_discussions/data/discussion_hint_store.dart` | Realm/root/actor hint; no private Group content |
-| Sharing provider, `ShareLinkButtons`, delegate result sheet | Clear unavailable external sharing; no normal-origin mock capability disclosure |
-| `help/application/support_mail.dart` | Denied persona mailto handoff; public policies remain readable |
-| `core/monitoring/app_monitoring.dart` | Sentry never initializes for a closed-capability build |
+| Owner                                                       | Boundary                                                                                      |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `core/backend/supabase_backend.dart`                        | Stable normal client, sole normal Auth refresh owner                                          |
+| `core/backend/secure_session_storage.dart`                  | Confidential normal, PKCE and per-root/request mock credentials                               |
+| `core/backend/realm_transport.dart`                         | Exact origin/no redirects; product fence, original in-flight request tracking                 |
+| `mock_mode/application/mock_mode_coordinator.dart`          | Serialized transitions, monotone generation, recovery and stale completion rejection          |
+| `mock_mode/data/mock_session_access.dart`                   | Fixed broker, ordinary Auth session and canonical profile/registry validation                 |
+| `mock_mode/presentation/mock_realm_host.dart`               | Entire root product ProviderScope/router/image cache replaced per realm/revision              |
+| `app/router/app_router.dart`                                | Guarded picker, normal-link boundary and denied persona provider Auth/support/deletion routes |
+| `project_workspace_pending_add_store.dart`                  | Realm/root/actor/project journal and acknowledged known-normal legacy migration               |
+| `group_discussions/data/discussion_hint_store.dart`         | Realm/root/actor hint; no private Group content                                               |
+| Sharing provider, `ShareLinkButtons`, delegate result sheet | Clear unavailable external sharing; no normal-origin mock capability disclosure               |
+| `help/application/support_mail.dart`                        | Denied persona mailto handoff; public policies remain readable                                |
+| `core/monitoring/app_monitoring.dart`                       | Sentry never initializes for a closed-capability build                                        |
 
 All product gateways depend on the active root client: Profile/visibility and
 avatar/cover Storage, Groups/People/history, Ideas, Projects/Tavoli/workspaces/
@@ -61,7 +61,8 @@ unlock on this device only. Normal legacy SDK preferences migrate after secure
 write/readback; conflicting sessions fail closed. Legacy loopback keys omit
 ports and cannot be safely attributed, so a nonempty such key requires explicit
 recovery. Late callbacks cannot overwrite rotated or cleared credentials.
-Android backup/extraction rules exclude SharedPreferences from cloud backup and
+Android backup/extraction rules exclude SharedPreferences XML and its DataStore
+directory from cloud backup and
 device transfer, including secure ciphertext, legacy Auth, pending capabilities
 and installation settings. Device-bound encryption keys must not be restored
 onto another device. This does not clear existing installation data.
@@ -85,5 +86,8 @@ only while mock is active; initial entry requires the explicit Sandbox action.
 Scenarios are localized exploration suggestions and do not assert current roles.
 The release Android network policy permits HTTP only for IPv4 loopback/localhost
 QA; external destinations remain HTTPS. Debug keeps its existing overlay.
+The map-build manifest records only the public mock origin, fixed broker,
+generation and capability; it excludes client keys and states that hosted
+readiness has not been established by a build.
 No production fake gateway fallback exists. Hosted setup and the normal
 staging migration gap remain separately recorded in `mock-hosted-status.json`.

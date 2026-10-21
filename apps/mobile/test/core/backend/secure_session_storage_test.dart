@@ -24,6 +24,7 @@ class MemoryCredentials implements ConfidentialStore {
 class LegacySession extends LocalStorage {
   LegacySession(this.raw);
   String? raw;
+  bool failRemove = false;
   @override
   Future<void> initialize() async {}
   @override
@@ -37,12 +38,30 @@ class LegacySession extends LocalStorage {
 
   @override
   Future<void> removePersistedSession() async {
-    raw = null;
+    if (!failRemove) raw = null;
   }
 }
 
 void main() {
   final origin = Uri.parse('https://cllpvruvrrvxczjitlqd.supabase.co');
+  test(
+    'legacy deletion must be acknowledged before normal bootstrap proceeds',
+    () async {
+      final credentials = MemoryCredentials();
+      final legacy = LegacySession('legacy')..failRemove = true;
+      final storage = SecureNormalSessionStorage(
+        store: credentials,
+        origin: origin,
+        legacy: legacy,
+      );
+      await expectLater(
+        storage.initialize(),
+        throwsA(isA<SessionStorageFailure>()),
+      );
+      expect(legacy.raw, 'legacy');
+      expect(await storage.accessToken(), 'legacy');
+    },
+  );
   test(
     'normal legacy credentials move only after acknowledged confidential write',
     () async {

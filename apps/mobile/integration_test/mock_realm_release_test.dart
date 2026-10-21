@@ -176,7 +176,8 @@ void main() {
       }
 
       Future<void> picker() async {
-        await navigate('/help');
+        await navigate('/');
+        await tap(find.byKey(const Key('open-help-button')));
         await tap(find.byKey(const Key('help-mock-accounts-action')));
         await wait(
           () =>
@@ -305,6 +306,28 @@ void main() {
         await asPerson('giulia', giulia);
         expect(control, giulia, reason: 'Deliberate equal normal/mock UUID');
         await profile('Giulia');
+        await navigate(
+          '/proposals/${const String.fromEnvironment('MOCK_QA_PROJECT')}',
+        );
+        await wait(
+          () => find
+              .text('Costruiamo le cassette per le erbe')
+              .evaluate()
+              .isNotEmpty,
+          'mock Project detail',
+        );
+        steps.add('project-detail-and-media');
+        await navigate(
+          '/messages/chats/group-contact/${const String.fromEnvironment('MOCK_QA_GROUP_CONTACT')}',
+        );
+        await wait(
+          () => find
+              .text('Proponiamo un incontro per scegliere i materiali.')
+              .evaluate()
+              .isNotEmpty,
+          'representative contact history',
+        );
+        steps.add('group-contact-canonical-history');
         await navigate('/messages/chats/$chat');
         await wait(
           () => find
@@ -327,6 +350,21 @@ void main() {
         await picker();
         await asPerson('marco', marco);
         await profile('Marco');
+        await navigate(
+          '/tavoli/${const String.fromEnvironment('MOCK_QA_TAVOLO')}',
+        );
+        await wait(
+          () => find.text('Repair Café del sabato').evaluate().isNotEmpty,
+          'mock Tavolo detail',
+        );
+        await navigate(
+          '/resources/${const String.fromEnvironment('MOCK_QA_LISTING')}',
+        );
+        await wait(
+          () => find.text('Vasi per nuove piante').evaluate().isNotEmpty,
+          'mock Scambio detail',
+        );
+        steps.add('tavolo-scambio-detail-and-media');
         for (final route in [
           '/tavoli',
           '/resources',
@@ -359,7 +397,20 @@ void main() {
         steps.add('cross-person-chat-canonical');
         final garden = const String.fromEnvironment('MOCK_QA_GARDEN');
         await navigate('/messages/discussions/groups/$garden');
+        await reveal(find.text('General'));
+        await reveal(find.text('Progettiamo le cassette per le erbe'));
         steps.add('sara-group-general-ideas');
+        await navigate(
+          '/messages/chats/member-contact/${const String.fromEnvironment('MOCK_QA_MEMBER_CONTACT')}',
+        );
+        await wait(
+          () => find
+              .text('Porterò il disegno delle cassette.')
+              .evaluate()
+              .isNotEmpty,
+          'member contact canonical history',
+        );
+        steps.add('member-contact-canonical-history');
         // Native link is presented as an external URI, never looked up in mock.
         scope()
             .read(appRouterProvider)

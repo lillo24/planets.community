@@ -3,4 +3,5 @@
      contain legacy Auth and scoped pending capabilities; never transfer them. -->
 <full-backup-content>
     <exclude domain="sharedpref" path="." />
+    <exclude domain="file" path="datastore/" />
 </full-backup-content>

@@ -101,6 +101,9 @@ class SecureNormalSessionStorage extends LocalStorage {
     await store.write(_key, old);
     if (await store.read(_key) != old) throw const SessionStorageFailure();
     await _legacy.removePersistedSession();
+    if (await _legacy.accessToken() != null) {
+      throw const SessionStorageFailure();
+    }
   }
 
   @override

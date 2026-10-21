@@ -8,6 +8,9 @@ set -euo pipefail
 root="$PWD"
 private="$(mktemp -d /tmp/planets-mock-native.XXXXXX)"
 chmod 700 "$private"
+export PATH="$root/node_modules/.bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
+export ANDROID_AVD_HOME="$private/avd"
+mkdir -p "$ANDROID_AVD_HOME"
 phase=setup
 backend_pid=''
 emulator_started=false

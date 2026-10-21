@@ -33,6 +33,11 @@ final class MockEnvironmentConfig {
         'MOCK_SUPABASE_PUBLISHABLE_KEY must be a client-safe publishable key.',
       );
     }
+    if (mockKey.isNotEmpty && mockKey == normalKey) {
+      throw const FormatException(
+        'Normal and mock client credentials must differ.',
+      );
+    }
     if ([
       mockUrl,
       mockKey,
