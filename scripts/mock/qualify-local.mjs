@@ -208,6 +208,32 @@ try {
   await sql`insert into mock_control.environment(project_ref,generation,schema_fingerprint,operator_confirmed)
     values(${MOCK_REF},${GENERATION},${inventory.fingerprint},true)`;
   await sql.unsafe(await readFile("supabase/mock/control.sql", "utf8"));
+  const [hookResult] =
+    await sql`select mock_control.deny_external_auth_delivery('{}'::jsonb) as result`;
+  equal(
+    hookResult.result.error.http_code,
+    403,
+    "Auth delivery hook fails closed without sending mail/SMS",
+  );
+  const [hookPrivileges] = await sql`select
+    has_function_privilege('authenticated','mock_control.deny_external_auth_delivery(jsonb)','execute') as ordinary,
+    has_function_privilege('supabase_auth_admin','mock_control.deny_external_auth_delivery(jsonb)','execute') as auth,
+    has_schema_privilege('supabase_auth_admin','mock_control','usage') as auth_usage`;
+  equal(
+    hookPrivileges.ordinary,
+    false,
+    "Ordinary users cannot invoke private Auth hook",
+  );
+  equal(
+    hookPrivileges.auth,
+    true,
+    "Only Auth hook role receives execution permission",
+  );
+  equal(
+    hookPrivileges.auth_usage,
+    true,
+    "Auth hook role can resolve only its explicitly granted schema/function",
+  );
   context = {
     sql,
     guard: async (tx = sql) => {

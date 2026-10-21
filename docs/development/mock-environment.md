@@ -107,6 +107,32 @@ persona credential/email/provider/MFA mutation while allowing ordinary profile
 edits. Genuine Auth verification must prove their compatibility before enabling
 hosted use. Optional basemaps stay unavailable without separate configuration.
 
+The sparse `supabase/mock/auth-config.toml` is the reviewed Auth baseline. After
+checking the exact disabled marker, copy it into a private CLI work directory,
+preview `supabase config diff --project-ref pnolarmzxmmjtguligfc --workdir <private>`,
+then push only that reviewed diff. Never push the local development template.
+The private SQL delivery hook returns an error for email/SMS; only
+`supabase_auth_admin` receives usage/execute, and ordinary users receive neither.
+The interactive email provider is disabled, while server-side admin link
+generation plus standard verification remains supported. The CLI cannot switch
+the platform's SMS-provider selector off; phone signup/login is disabled and the
+send-SMS hook rejects provider delivery. No carrier credentials are installed.
+This behavior is portable to GoTrue's Postgres hooks, documented in
+[Auth Hooks](https://supabase.com/docs/guides/auth/auth-hooks).
+
+`mock-hosted-auth-proof.json` records the actual managed Auth check: ordinary
+no-mail link/verification and exact UUID passed; direct email OTP returned 422
+`email_provider_disabled`. The temporary synthetic probe was removed. Four
+broker secret digests matched the private supplied values, with
+`MOCK_BROKER_ENABLED=false`. This proves Auth configuration only. It does not
+prove a seeded world, approved enrollment or a hosted tester-to-broker journey.
+The current seeder requires a persistent session-pooler Postgres connection for
+its advisory lock and transaction semantics. Management SQL calls are not a
+substitute for that connection. The passwordless CLI path timed out here;
+provide the exact mock session-pooler credential or run the reviewed operator
+from a host where it is available. Do not fake SQL locks, reset the shared world,
+grant an unreviewed execution endpoint or use the normal staging credential.
+
 Enable the database marker and `MOCK_BROKER_ENABLED` only after configuration,
 entire approved roster, fixture/media verification and hosted smoke tests pass.
 The mobile capability remains off in ordinary builds and until this is proven.

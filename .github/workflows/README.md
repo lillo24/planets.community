@@ -13,6 +13,10 @@ The job is bounded to 50 minutes, runs only on explicit request and supplements
 required Validation without changing required-status/path classification.
 Only synthetic PNGs, hashes, safe outcomes and artifact-scan metadata are retained
 for seven days. This is local/CI proof, never hosted deployment or Play readiness.
+The fixture is Android x64, stops its compiler daemon before the emulator, and
+explicitly opts into the native integration plugin excluded by Flutter release
+defaults. That Gradle opt-in requires the exact test target and GitHub-owned
+Linux environment and never bypasses release-signing checks.
 
 `mock-qualification.yml` is an opt-in isolated-backend gate. Apply
 `qa-mock-backend` to a same-repository draft/integration PR (remove/reapply after

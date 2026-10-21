@@ -74,11 +74,22 @@ Preparing mock clients have automatic refresh off. Only the active mock client
 starts refresh after commit, stops on pause/departure and revalidates entitlement
 on resume. Restored pending issuance enters recovery and retries its original
 request/persona. Restored Yes validates its confidential session and registry;
-it does not silently issue a new session or send OTP. Changed configuration,
+it does not silently issue a new session or send OTP.
+Recovery keeps conflicting actions disabled until the originating operation has
+settled and completed scoped cleanup, even after control-account A/B/A changes.
+Retirement coalesces concurrent callers; failed secure deletion remains retryable.
+Normal product transport resumes only after No is persisted and its revision is
+still current. A superseded activation cannot install a retired candidate.
+Changed configuration,
 control account replacement, denial, mock Auth loss and downtime show isolated
 recovery instead of normal content. No/persona change retires only the current
 mock session; explicit PLANETS logout clears retained normal and local mock
 access and metadata. Failure remains recovery rather than a success message.
+Returning to normal revalidates its retained Auth authority before product reads
+resume. A lost/expired normal session opens ordinary sign-in with Mock Mode off;
+explicit PLANETS logout still owns the Welcome transition. A delayed validation
+cannot sign out a newer normal token/account. Authoritative mock Auth loss
+disposes protected presentation rather than retaining its hidden product scope.
 
 The shared selector consumes `catalog()` and
 `select(persona, prepareDeparture: ...)` on the same coordinator. Help exposes it

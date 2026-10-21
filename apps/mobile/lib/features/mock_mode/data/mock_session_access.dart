@@ -59,6 +59,7 @@ class SupabaseMockRealm implements MockRealmHandle {
   bool retired = false;
   bool _retiring = false;
   bool _cleaned = false;
+  Future<void>? _retirement;
   String get key => mockSessionKey(
     Uri.parse(selection.origin),
     selection.rootId,
@@ -79,14 +80,23 @@ class SupabaseMockRealm implements MockRealmHandle {
     }
   }
 
-  Future<void> retire() async {
+  Future<void> retire() => _retirement ??= _retire().whenComplete(() {
+    _retirement = null;
+  });
+
+  Future<void> _retire() async {
     if (_cleaned) return;
     _retiring = true;
+    transport.productBlocked = true;
     client.auth.stopAutoRefresh();
+    await client.removeAllChannels();
+    await client.realtime.disconnect();
     // Local scope revokes only this session, never all sessions of the persona.
     if (!retired) {
       try {
-        await client.auth.signOut(scope: SignOutScope.local);
+        await client.auth
+            .signOut(scope: SignOutScope.local)
+            .timeout(const Duration(seconds: 12));
       } catch (_) {
         _retiring = false;
         rethrow;
@@ -277,7 +287,9 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
       final saved = await credentials.read(candidate.key);
       try {
         if (saved != null) {
-          await client.auth.recoverSession(saved);
+          await client.auth
+              .recoverSession(saved)
+              .timeout(const Duration(seconds: 12));
         } else {
           if (storedOnly) {
             throw const MockFailure(MockFailureKind.invalidSession);
@@ -312,9 +324,9 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
             }, token);
             throw const MockFailure(MockFailureKind.expired);
           }
-          final response = await client.auth.setSession(
-            value['refresh_token'] as String,
-          );
+          final response = await client.auth
+              .setSession(value['refresh_token'] as String)
+              .timeout(const Duration(seconds: 12));
           if (response.user?.id != selection.userId) {
             throw const MockFailure(MockFailureKind.invalidSession);
           }
@@ -324,7 +336,9 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
       }
     }
     if (candidate.retired) throw const MockFailure(MockFailureKind.expired);
-    final user = await candidate.client.auth.getUser();
+    final user = await candidate.client.auth.getUser().timeout(
+      const Duration(seconds: 12),
+    );
     if (user.user?.id != selection.userId ||
         candidate.client.auth.currentUser?.id != selection.userId) {
       throw const MockFailure(MockFailureKind.invalidSession);
@@ -333,7 +347,8 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
         .from('profiles')
         .select('id,display_name')
         .eq('id', selection.userId)
-        .maybeSingle();
+        .maybeSingle()
+        .timeout(const Duration(seconds: 12));
     if (row?['id'] != selection.userId ||
         row?['display_name'] is! String ||
         (row!['display_name'] as String).trim().isEmpty) {
@@ -369,6 +384,7 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
   Future<void> activate(MockRealmHandle candidate) async {
     if (candidate is! SupabaseMockRealm ||
         candidate.retired ||
+        candidate._retiring ||
         candidate.selection.rootId != controlId) {
       throw const MockFailure(MockFailureKind.invalidSession);
     }
@@ -380,6 +396,11 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
       await previous.retire();
       _candidates.remove(previous.selection.requestId);
       _operationTokens.remove(previous.selection.requestId);
+    }
+    if (candidate.retired ||
+        candidate._retiring ||
+        candidate.selection.rootId != controlId) {
+      throw const MockFailure(MockFailureKind.invalidSession);
     }
     _active = candidate;
     candidate.transport.productBlocked = false;
@@ -399,12 +420,39 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
     // product refresh resumes until the mock client was retired.
     if (normal.auth.currentSession?.isExpired == true) {
       try {
-        await normal.auth.refreshSession();
+        await normal.auth.refreshSession().timeout(const Duration(seconds: 12));
       } on AuthException {
         if (normal.auth.currentSession != null) rethrow;
       }
     }
-    normalTransport.productBlocked = false;
+    if (normal.auth.currentSession != null) {
+      final checkedToken = normal.auth.currentSession!.accessToken;
+      final checkedId = controlId;
+      try {
+        final result = await normal.auth.getUser().timeout(
+          const Duration(seconds: 12),
+        );
+        if (normal.auth.currentSession?.accessToken != checkedToken ||
+            result.user?.id != checkedId) {
+          throw const MockFailure(MockFailureKind.controlLoginRequired);
+        }
+      } on AuthRetryableFetchException {
+        rethrow;
+      } on AuthException catch (error) {
+        if (normal.auth.currentSession != null &&
+            normal.auth.currentSession!.accessToken != checkedToken) {
+          throw const MockFailure(MockFailureKind.controlLoginRequired);
+        }
+        if (!{'401', '403', '404'}.contains(error.statusCode)) rethrow;
+        // Actual normal Auth authority was lost while its data scope was absent.
+        // SDK local sign-out clears its session before revocation and tolerates
+        // these authoritative statuses; no mock identity enters normal readiness.
+        await normal.auth.signOut(scope: SignOutScope.local);
+        await credentials.delete(normalSessionKey(config.normalOrigin));
+      }
+    }
+    // The coordinator releases the fence only after committing No and checking
+    // its revision, so a superseded return cannot reopen a newer realm.
   }
 
   @override

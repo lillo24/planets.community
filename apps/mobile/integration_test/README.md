@@ -22,6 +22,13 @@ traffic remains HTTPS. Debug retains its existing network resource overlay.
 The fixture binary and its temporary signer are never distributed. A real upload
 AAB still requires verified staging configuration, the owner's upload key and an
 unused Play version code, and a hosted journey remains separate.
+Flutter 3.47 excludes native development plugins from release variants. The
+`PLANETS_MOCK_RELEASE_QA=1` Gradle path explicitly includes only the integration
+plugin for this exact target, checks GitHub-hosted Linux ownership and retains
+the normal upload-signing validation. The CI fixture targets Android x64 only;
+ordinary release builds do not enable this path. The final revocation case
+deletes only its owned synthetic normal sentinel through real Auth admin, then
+requires the ordinary sign-in screen. No hosted account is involved.
 
 ## Representative contact and coordination
 

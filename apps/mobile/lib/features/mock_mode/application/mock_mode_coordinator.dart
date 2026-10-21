@@ -44,12 +44,19 @@ class MockModeCoordinator extends ChangeNotifier {
   bool _disposed = false;
   bool _logout = false;
   bool _leaving = false;
+  bool _returning = false;
+  // Recovery can replace the visible phase while an older request still owns
+  // cleanup. Do not let Retry reuse that request until its Future has settled.
+  int _pendingOperations = 0;
   String? _transitionRoot;
   bool selectionRequested = false;
+  bool requiresNormalLogin = false;
   bool fencing = false;
   bool get isMock => active != null;
   bool get busy =>
-      phase == MockModePhase.switching || phase == MockModePhase.restoring;
+      _pendingOperations > 0 ||
+      phase == MockModePhase.switching ||
+      phase == MockModePhase.restoring;
   bool get showProduct =>
       phase == MockModePhase.normal || phase == MockModePhase.mock;
 
@@ -76,7 +83,7 @@ class MockModeCoordinator extends ChangeNotifier {
   }
 
   void _controlChanged(String? id) {
-    if (_disposed || ((_logout || _leaving) && id == null)) return;
+    if (_disposed || ((_logout || _returning) && id == null)) return;
     final expected =
         _transitionRoot ?? _record.pending?.rootId ?? active?.rootId;
     if (expected != null && id != expected) {
@@ -89,24 +96,35 @@ class MockModeCoordinator extends ChangeNotifier {
   }
 
   Future<void> start() async {
+    if (_pendingOperations > 0 || _disposed) return;
+    _pendingOperations++;
+    var revision = _revision;
     try {
-      _record = await store.read(config);
-      _revision = _record.revision;
+      final restored = await store.read(config);
+      if (_disposed || revision != _revision) return;
+      _record = restored;
+      if (_record.revision > _revision) _revision = _record.revision;
+      revision = ++_revision;
       active = _record.active;
       if (_record.pending != null) {
         await access.suspend();
+        if (_disposed || revision != _revision) return;
         _failed(const MockFailure(MockFailureKind.pending));
         return;
       }
       if (active case final selection?) {
         await access.suspend();
-        final revision = ++_revision;
+        if (!_current(revision, selection.rootId)) return;
         final candidate = await access.prepare(selection, storedOnly: true);
         if (!_current(revision, selection.rootId)) {
           await access.retire(selection);
           return;
         }
         await access.activate(candidate);
+        if (!_current(revision, selection.rootId)) {
+          await access.retire(selection);
+          return;
+        }
         scopeRevision = revision;
         phase = MockModePhase.mock;
       } else {
@@ -114,7 +132,10 @@ class MockModeCoordinator extends ChangeNotifier {
       }
       _emit();
     } catch (error) {
-      _failed(error);
+      if (!_disposed && revision == _revision) _failed(error);
+    } finally {
+      _pendingOperations--;
+      _emit();
     }
   }
 
@@ -165,6 +186,7 @@ class MockModeCoordinator extends ChangeNotifier {
       return false;
     }
     final revision = ++_revision;
+    _pendingOperations++;
     _transitionRoot = root;
     phase = MockModePhase.switching;
     fencing = false;
@@ -175,6 +197,7 @@ class MockModeCoordinator extends ChangeNotifier {
       if (!_current(revision, root)) return false;
       if (!departed) {
         await access.resume();
+        if (!_current(revision, root)) return false;
         _transitionRoot = null;
         phase = isMock ? MockModePhase.mock : MockModePhase.normal;
         _emit();
@@ -183,6 +206,7 @@ class MockModeCoordinator extends ChangeNotifier {
       fencing = true;
       _emit();
       await access.suspend();
+      if (!_current(revision, root)) return false;
       final selection = MockSelection(
         rootId: root,
         personaKey: persona.key,
@@ -194,10 +218,14 @@ class MockModeCoordinator extends ChangeNotifier {
       await _save(
         MockModeRecord(active: active, pending: selection, revision: revision),
       );
+      if (!_current(revision, root)) return false;
       return await _complete(selection, revision);
     } catch (error) {
       if (revision == _revision && !_disposed) _failed(error);
       return false;
+    } finally {
+      _pendingOperations--;
+      _emit();
     }
   }
 
@@ -214,11 +242,11 @@ class MockModeCoordinator extends ChangeNotifier {
     }
     await access.activate(candidate);
     if (!_current(revision, selection.rootId)) {
-      await access.suspend();
       await access.retire(selection);
       return false;
     }
     active = selection;
+    requiresNormalLogin = false;
     _transitionRoot = null;
     scopeRevision = revision;
     phase = MockModePhase.mock;
@@ -239,6 +267,7 @@ class MockModeCoordinator extends ChangeNotifier {
       return showProduct;
     }
     final revision = ++_revision;
+    _pendingOperations++;
     phase = MockModePhase.switching;
     fencing = true;
     failure = null;
@@ -251,6 +280,10 @@ class MockModeCoordinator extends ChangeNotifier {
         return false;
       }
       await access.activate(candidate);
+      if (!_current(revision, selection.rootId)) {
+        await access.retire(selection);
+        return false;
+      }
       active = selection;
       scopeRevision = revision;
       phase = MockModePhase.mock;
@@ -259,6 +292,9 @@ class MockModeCoordinator extends ChangeNotifier {
     } catch (error) {
       if (revision == _revision && !_disposed) _failed(error);
       return false;
+    } finally {
+      _pendingOperations--;
+      _emit();
     }
   }
 
@@ -267,14 +303,18 @@ class MockModeCoordinator extends ChangeNotifier {
   }) async {
     if (busy) return false;
     final revision = ++_revision;
+    _pendingOperations++;
     phase = MockModePhase.switching;
     fencing = false;
     _leaving = true;
     failure = null;
     _emit();
     try {
-      if (!await prepareDeparture()) {
+      final departed = await prepareDeparture();
+      if (_disposed || revision != _revision) return false;
+      if (!departed) {
         await access.resume();
+        if (_disposed || revision != _revision) return false;
         phase = isMock ? MockModePhase.mock : MockModePhase.normal;
         _emit();
         return false;
@@ -282,11 +322,18 @@ class MockModeCoordinator extends ChangeNotifier {
       fencing = true;
       _emit();
       await access.suspend();
+      if (_disposed || revision != _revision) return false;
       if (_record.pending case final pending?) await access.retire(pending);
+      if (_disposed || revision != _revision) return false;
+      _returning = true;
       await access.returnToNormal();
       if (_disposed || revision != _revision) return false;
       await _save(MockModeRecord(revision: revision));
+      if (_disposed || revision != _revision) return false;
+      await access.resume();
+      if (_disposed || revision != _revision) return false;
       active = null;
+      requiresNormalLogin = access.controlId == null;
       _transitionRoot = null;
       scopeRevision = revision;
       phase = MockModePhase.normal;
@@ -298,6 +345,9 @@ class MockModeCoordinator extends ChangeNotifier {
       return false;
     } finally {
       _leaving = false;
+      _returning = false;
+      _pendingOperations--;
+      _emit();
     }
   }
 
@@ -320,7 +370,9 @@ class MockModeCoordinator extends ChangeNotifier {
   /// Explicit PLANETS logout may cancel issuance. A late candidate is retired,
   /// and never becomes a hidden login after the normal session was cleared.
   Future<void> fullLogout() async {
+    if (_logout || _disposed) return;
     final revision = ++_revision;
+    _pendingOperations++;
     _logout = true;
     phase = MockModePhase.switching;
     fencing = true;
@@ -332,16 +384,20 @@ class MockModeCoordinator extends ChangeNotifier {
       await access.fullLogout();
       if (_disposed || revision != _revision) return;
       await _save(MockModeRecord(revision: revision));
+      if (_disposed || revision != _revision) return;
       active = null;
       _transitionRoot = null;
       scopeRevision = revision;
       phase = MockModePhase.normal;
       failure = null;
+      requiresNormalLogin = false;
       _emit();
     } catch (error) {
       if (revision == _revision && !_disposed) _failed(error);
     } finally {
       _logout = false;
+      _pendingOperations--;
+      _emit();
     }
   }
 

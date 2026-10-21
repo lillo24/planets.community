@@ -1,5 +1,5 @@
 {
-  "observedAt": "2026-10-21 13:09:16 UTC",
+  "observedAt": "2026-10-21T13:51:27.691Z",
   "sourceBase": "49b6159af0034c5c97317b39b570ea3ea319901d",
   "canonicalSchemaFingerprint": "e01979c9de0bd01a52d76cc4c5244467435077b4eae9953221e97a8ccb6ece88",
   "mock": {
@@ -23,11 +23,15 @@
       "unauthenticatedStatus": 503,
       "error": "unavailable"
     },
-    "controlSourceSha256": "e64f054f8707ad0c0e05623128b04789ef2e583b83e4ce24cfbfb8bb9350700f",
+    "controlSourceSha256": "f8cb7910e2df18c6ad952d224f9619699160f4a5aa2069a7dd29300da42a4642",
     "cancellationTombstoneInstalled": true,
-    "authSettingsVerified": false,
-    "secretsConfigured": false,
-    "hostedAuthenticatedSmokePassed": false
+    "authSettingsVerified": true,
+    "secretsConfigured": true,
+    "hostedAuthenticatedSmokePassed": false,
+    "externalAuthDeliveryDisabled": true,
+    "hostedAuthProbePassed": true,
+    "authConfigSha256": "12f1d82285c9afbdec42cf65f03703316e4ece98bc84d9e24bb7cb9a2072e6d9",
+    "hostedProof": "Auth configuration, standard no-mail session exchange and email denial only; not persona-world or tester-broker readiness"
   },
   "normal": {
     "projectRef": "cllpvruvrrvxczjitlqd",
@@ -63,9 +67,9 @@
     "gapObservedAt": "2026-10-21 13:09:16 UTC"
   },
   "hostedBlockers": [
-    "Approved closed-tester issuer/Auth UUID roster is unavailable.",
-    "Auth settings and broker secret configuration require authenticated dashboard or management-configuration access; in-app browser is signed out.",
-    "Hosted persona seed, full enrollment and smoke verification are not complete."
+    "Approved closed-tester issuer/Auth UUID roster remains unavailable; enrollment coverage is 0 of an unknown approved total.",
+    "A usable session-pooler Postgres credential is unavailable. The passwordless CLI database probes did not establish the persistent connection required by the reviewed seeder; the direct database hostname did not resolve here.",
+    "Hosted canonical persona/content/media seed, full tester enrollment and a normal-login-to-broker native journey remain incomplete."
   ],
   "release": {
     "artifactBuilt": false,

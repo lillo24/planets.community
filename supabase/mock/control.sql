@@ -6,6 +6,17 @@ do $$ begin
   end if;
 end $$;
 
+-- Mock Auth never hands email/SMS to a provider. Admin generate-link plus the
+-- ordinary verify exchange does not send a message and remains the broker path.
+create or replace function mock_control.deny_external_auth_delivery(event jsonb)
+returns jsonb language sql immutable set search_path='' as $$
+  select jsonb_build_object('error',jsonb_build_object(
+    'http_code',403,'message','External Auth delivery is disabled in this mock environment.'))
+$$;
+revoke all on function mock_control.deny_external_auth_delivery(jsonb) from public,anon,authenticated,service_role;
+grant usage on schema mock_control to supabase_auth_admin;
+grant execute on function mock_control.deny_external_auth_delivery(jsonb) to supabase_auth_admin;
+
 create table if not exists mock_control.personas (
   persona_key text primary key check(persona_key ~ '^[a-z]{2,20}$'),
   user_id uuid not null unique references auth.users(id),

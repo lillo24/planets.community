@@ -61,8 +61,10 @@ class FakeAccess implements MockSessionAccess {
   final restored = <bool>[];
   MockSelection? installed;
   Completer<void>? gate;
+  Completer<void>? activationGate;
   MockFailureKind? fail;
   bool blocked = false;
+  bool normalExpired = false;
   @override
   String? get controlId => id;
   @override
@@ -95,6 +97,7 @@ class FakeAccess implements MockSessionAccess {
 
   @override
   Future<void> activate(MockRealmHandle candidate) async {
+    await activationGate?.future;
     installed = candidate.selection;
     blocked = false;
   }
@@ -112,12 +115,16 @@ class FakeAccess implements MockSessionAccess {
   @override
   Future<void> returnToNormal() async {
     installed = null;
-    blocked = false;
+    if (normalExpired) {
+      id = null;
+      controls.add(null);
+    }
   }
 
   @override
   Future<void> retire(MockSelection selection) async {
     retired.add(selection.requestId);
+    if (installed?.requestId == selection.requestId) installed = null;
   }
 
   @override
@@ -181,6 +188,78 @@ void main() {
     expect(store.record.active, isNull);
     expect(access.blocked, isFalse);
   });
+  test(
+    'A B A control recovery waits for originating cleanup before Retry',
+    () async {
+      await coordinator.start();
+      access.gate = Completer<void>();
+      final pending = select();
+      await Future<void>.delayed(Duration.zero);
+      access.id = otherRoot;
+      access.controls.add(otherRoot);
+      access.id = root;
+      access.controls.add(root);
+      expect(coordinator.phase, MockModePhase.recovery);
+      expect(coordinator.busy, isTrue);
+      expect(await coordinator.retry(), isFalse);
+      expect(access.prepared, hasLength(1));
+      access.gate!.complete();
+      expect(await pending, isFalse);
+      expect(access.retired, hasLength(1));
+      expect(coordinator.busy, isFalse);
+      expect(await coordinator.retry(), isTrue);
+      expect(coordinator.phase, MockModePhase.mock);
+    },
+  );
+  test(
+    'cancelled departure after control replacement never resumes old mock',
+    () async {
+      await coordinator.start();
+      await select();
+      final departure = Completer<bool>();
+      final leaving = coordinator.leave(
+        prepareDeparture: () => departure.future,
+      );
+      access.id = otherRoot;
+      access.controls.add(otherRoot);
+      departure.complete(false);
+      expect(await leaving, isFalse);
+      expect(access.blocked, isTrue);
+      expect(coordinator.phase, MockModePhase.recovery);
+      expect(coordinator.showProduct, isFalse);
+    },
+  );
+  for (final retrying in [false, true]) {
+    test(
+      'logout supersedes delayed ${retrying ? 'retry' : 'restore'} activation',
+      () async {
+        await coordinator.start();
+        await select();
+        coordinator.dispose();
+        coordinator = MockModeCoordinator(
+          config: mockConfig(),
+          access: access,
+          store: store,
+        );
+        if (retrying) {
+          access.fail = MockFailureKind.unavailable;
+          await coordinator.start();
+          access.fail = null;
+        }
+        access.activationGate = Completer<void>();
+        final operation = retrying ? coordinator.retry() : coordinator.start();
+        await Future<void>.delayed(Duration.zero);
+        await coordinator.fullLogout();
+        access.activationGate!.complete();
+        await operation;
+        expect(coordinator.phase, MockModePhase.normal);
+        expect(coordinator.active, isNull);
+        expect(access.installed, isNull);
+        expect(store.record.active, isNull);
+        expect(coordinator.busy, isFalse);
+      },
+    );
+  }
   test('guest and denied tester cannot commit Mock mode', () async {
     await coordinator.start();
     access.id = null;
@@ -331,5 +410,17 @@ void main() {
     expect(await select(), isFalse);
     expect(access.installed, isNull);
     expect(coordinator.failure, MockFailureKind.storage);
+  });
+  test('return to expired normal login opens ordinary authentication; full logout still owns Welcome', () async {
+    await coordinator.start();
+    await select();
+    access.normalExpired = true;
+    expect(await coordinator.leave(prepareDeparture: () async => true), isTrue);
+    expect(coordinator.phase, MockModePhase.normal);
+    expect(coordinator.isMock, isFalse);
+    expect(coordinator.requiresNormalLogin, isTrue);
+    expect(store.record.active, isNull);
+    await coordinator.fullLogout();
+    expect(coordinator.requiresNormalLogin, isFalse);
   });
 }

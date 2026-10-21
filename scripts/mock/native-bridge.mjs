@@ -10,6 +10,7 @@ import path from "node:path";
 import os from "node:os";
 import { execFileSync } from "node:child_process";
 import { createRuntime } from "../../supabase/functions/mock-personas/runtime.mjs";
+import { createClient } from "@supabase/supabase-js";
 import { NORMAL_ORIGIN, MOCK_ORIGIN, GENERATION } from "./target.mjs";
 import { PERSONAS } from "./world.mjs";
 
@@ -95,6 +96,7 @@ export async function nativeBridge({
   const calls = [],
     screenshots = [],
     steps = [];
+  const usedMailIds = new Set();
   const sockets = new Set(),
     servers = [];
   let resolveDone, rejectDone;
@@ -265,6 +267,7 @@ export async function nativeBridge({
               )
             ).json();
             for (const message of found.messages ?? []) {
+              if (usedMailIds.has(message.ID)) continue;
               const full = await (
                 await fetch(
                   `${mailbox}/api/v1/message/${encodeURIComponent(message.ID)}`,
@@ -273,7 +276,10 @@ export async function nativeBridge({
               const code = `${full.Text ?? ""} ${full.HTML ?? ""}`.match(
                 /(?:^|\D)(\d{6})(?:\D|$)/,
               )?.[1];
-              if (code) return json(res, { code });
+              if (code) {
+                usedMailIds.add(message.ID);
+                return json(res, { code });
+              }
             }
             return json(res, { error: "not_ready" }, 404);
           }
@@ -282,6 +288,20 @@ export async function nativeBridge({
             assert.ok(["normal", "mock"].includes(value.mode));
             mode = value.mode;
             return json(res, { accepted: true });
+          }
+          if (req.method === "POST" && url.pathname === "/qa/expire-control") {
+            assert.equal(stage, "restart");
+            assert.equal(mode, "mock");
+            // Only the owned synthetic normal sentinel; never accepts an ID or
+            // credential from the app, and never calls a hosted project.
+            const admin = createClient(normal.apiUrl, normal.serviceRoleKey, {
+              auth: { persistSession: false, autoRefreshToken: false },
+            });
+            const revoked = await admin.auth.admin.deleteUser(
+              normalSentinel.id,
+            );
+            assert.equal(revoked.error, null);
+            return json(res, { expired: true });
           }
           if (req.method === "POST" && url.pathname.startsWith("/qa/png/")) {
             const name = url.pathname.substring(8);

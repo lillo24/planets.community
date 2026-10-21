@@ -1426,6 +1426,8 @@ bool _isResourceManagementPath(String destination) {
       (segments.last == 'edit' || segments.last == 'loan-schedule');
 }
 
+final initialAppLocationProvider = Provider<String>((ref) => '/');
+
 final appRouterProvider = Provider<GoRouter>((ref) {
   final startup = ref.read(startupFlowProvider);
   RoutingConfig configuration() => _routingConfig(
@@ -1450,7 +1452,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
   final router = GoRouter.routingConfig(
     routingConfig: routes,
-    initialLocation: '/',
+    initialLocation: ref.read(initialAppLocationProvider),
     errorBuilder: (context, state) => const _UnknownRouteScreen(),
   );
   routes.readIncomingUri = () => router.routeInformationProvider.value.uri;

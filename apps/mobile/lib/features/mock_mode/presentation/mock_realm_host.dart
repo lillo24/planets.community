@@ -7,12 +7,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../app/planets_app.dart';
+import '../../../app/router/app_router.dart';
 import '../../../app/startup/startup_flow.dart';
 import '../../../core/backend/supabase_backend.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/data/auth_gateway.dart';
+import '../../auth/application/auth_routes.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../settings/application/activities_split_preference_controller.dart';
 import '../../settings/application/language_preference_controller.dart';
@@ -120,6 +122,7 @@ class _MockRealmHostState extends State<MockRealmHost>
         [
           MockFailureKind.denied,
           MockFailureKind.controlLoginRequired,
+          MockFailureKind.invalidSession,
         ].contains(coordinator.failure)) {
       _product = null;
       _productRevision = -1;
@@ -167,6 +170,11 @@ class _MockRealmHostState extends State<MockRealmHost>
       key: ValueKey('realm:$namespace:$revision'),
       overrides: [
         appConfigProvider.overrideWithValue(config),
+        initialAppLocationProvider.overrideWithValue(
+          !mock && coordinator?.requiresNormalLogin == true
+              ? AuthRoutes.entry
+              : '/',
+        ),
         supabaseClientProvider.overrideWithValue(client),
         initialLanguagePreferenceProvider.overrideWithValue(_language),
         initialNavigationPreferenceProvider.overrideWithValue(_navigation),

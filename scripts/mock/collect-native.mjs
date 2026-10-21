@@ -67,7 +67,7 @@ if (result !== "0") {
     diagnostics = log
       .split(/\r?\n/)
       .filter((line) =>
-        /\.dart:\d+:\d+: Error:|^FAILURE:|^Error:|^Execution failed for task|^> /.test(
+        /\.(?:dart|java|kt):\d+(?::\d+)?: [Ee]rror:|^\s*(?:symbol|location):|^FAILURE:|^Error:|^Execution failed for task|^> /.test(
           line,
         ),
       )

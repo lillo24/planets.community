@@ -10,12 +10,13 @@ private="$(mktemp -d /tmp/planets-mock-native.XXXXXX)"
 chmod 700 "$private"
 export PATH="$root/node_modules/.bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
 export ANDROID_AVD_HOME="$private/avd"
+export PLANETS_MOCK_RELEASE_QA=1
 mkdir -p "$ANDROID_AVD_HOME"
 phase=setup
 backend_pid=''
 emulator_started=false
 export JAVA_TOOL_OPTIONS='-XX:ActiveProcessorCount=2'
-export GRADLE_OPTS='-Dorg.gradle.jvmargs=-Xmx1536m -Dorg.gradle.workers.max=2'
+export GRADLE_OPTS='-Dorg.gradle.workers.max=2 -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx1536m'
 finish() {
   local result=$?
   trap - EXIT
@@ -47,7 +48,7 @@ done
 export PLANETS_MOCK_QA_PASSWORD="$(openssl rand -hex 32)"
 run signing keytool -genkeypair -keystore "$private/fixture-upload.jks" -alias planets-ci-fixture -keyalg RSA -keysize 2048 -validity 2 -dname 'CN=PLANETS CI Fixture,O=PLANETS,C=IT' -storepass:env PLANETS_MOCK_QA_PASSWORD -keypass:env PLANETS_MOCK_QA_PASSWORD
 printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=planets-ci-fixture\nkeyPassword=%s\n' "$private/fixture-upload.jks" "$PLANETS_MOCK_QA_PASSWORD" "$PLANETS_MOCK_QA_PASSWORD" > apps/mobile/android/key.properties
-run release-build bash -c 'cd apps/mobile && flutter build apk --release --no-pub --build-number=1 --target=integration_test/mock_realm_release_test.dart --dart-define-from-file="$1"' _ "$private/native-defines.json"
+run release-build bash -c 'cd apps/mobile && flutter build apk --release --no-pub --target-platform=android-x64 --build-number=1 --target=integration_test/mock_realm_release_test.dart --dart-define-from-file="$1"' _ "$private/native-defines.json"
 cp apps/mobile/build/app/outputs/flutter-apk/app-release.apk "$private/mock.apk"
 run artifact-scan python3 scripts/mock/scan-native-apk.py "$private/mock.apk" "$private/scan-secrets.json" mock-native-evidence/apk-scan.json
 # No compiler competes with the 2 GiB Android VM.
@@ -64,6 +65,8 @@ for ((attempt=0; attempt<150; attempt++)); do
 done
 [[ "$ready" == true ]]
 adb -s emulator-5554 shell input keyevent KEYCODE_HOME >/dev/null
+adb -s emulator-5554 shell input keyevent 82 >/dev/null
+adb -s emulator-5554 shell wm dismiss-keyguard >/dev/null
 adb -s emulator-5554 shell wm size 640x1520
 adb -s emulator-5554 shell wm density 320
 for port in 57420 57421 57422; do adb -s emulator-5554 reverse "tcp:$port" "tcp:$port"; done
