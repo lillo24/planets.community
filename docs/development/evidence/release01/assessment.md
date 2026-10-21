@@ -96,3 +96,19 @@ a backup for this RELEASE01 reconciliation: “No backup is fine”. The exact h
 and successful populated rehearsal run are pinned in `scripts/release/policy.json`.
 This resolves scope/recovery approval, not proof of execution or CI credentials.
 Hosted writes still wait for final complete CI and a fresh live-history check.
+
+## Main advanced during final validation
+
+PROF01/IMG01 #281 merged as `82ace622331b97ca39dca5876e2dbb12ae92045b`
+after the previous complete Validation passed. Its additional avatar migration
+means current main has 124 canonical files and staging has 27 pending. The
+[addendum](additional-avatar-migration.json) records the exact file/hash and
+separate approval requirement. The original 26-file approval remains valid for
+its unchanged files. No staging writes had occurred at this checkpoint.
+
+The owner then explicitly required stopping before application publication.
+RELEASE01 will prepare staging and the verified signed AAB; no Play upload,
+submission or rollout is authorized. Both release switches are explicitly false.
+Existing owner staging/signing inputs have been provisioned into main-only GitHub
+environments; new Supabase management and Play service-account credentials remain
+unavailable. These facts supersede the initial account-configuration snapshot.

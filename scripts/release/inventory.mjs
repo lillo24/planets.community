@@ -27,6 +27,7 @@ const pending = diff.pending.map((m) => {
     ),
   ].map((r) => r[1]);
   const category = m.name.startsWith("resource_cat01");
+  const avatar = m.name === "profile_avatar_variants";
   const member =
     m.name.startsWith("member_contact") || m.name.startsWith("contact_report");
   return {
@@ -39,15 +40,19 @@ const pending = diff.pending.map((m) => {
       "Conservative canonical release order; not a claim that every immediate predecessor is a direct SQL dependency",
     domain: category
       ? "resource categories/saved searches/maps"
-      : member
-        ? "Group-member personal contact/privacy/reporting"
-        : "Groups/representative contact/discussions/coordination/messages",
+      : avatar
+        ? "Profile photo thumbnail variants"
+        : member
+          ? "Group-member personal contact/privacy/reporting"
+          : "Groups/representative contact/discussions/coordination/messages",
     effects: {
       tables_created: [...new Set(tables)],
       routines_created_or_replaced: [...new Set(routines)],
       security: category
         ? "V2 RPC grants, category constraints/predicates; legacy calls retained; no backfill"
-        : "Private RLS/grants, consent/history/reporting, locking and/or message projections; existing data must be preserved",
+        : avatar
+          ? "Private thumbnail metadata, owner-bound WebP limit, existing full-photo audience/block checks; legacy calls retained; no backfill"
+          : "Private RLS/grants, consent/history/reporting, locking and/or message projections; existing data must be preserved",
     },
     required_for_current_app_release: true,
     rollout_approval: category

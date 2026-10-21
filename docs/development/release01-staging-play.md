@@ -8,7 +8,10 @@ records the blockers; merging release plumbing does not resolve them.
 
 ## First-time owner setup
 
-1. Review the [26-file manifest](evidence/release01/migration-manifest.json).
+1. Review the [original 26-file manifest](evidence/release01/migration-manifest.json)
+   and any subsequent migration addenda. The [avatar addendum](evidence/release01/additional-avatar-migration.json)
+   records IMG01, which merged while RELEASE01 validation was running; current
+   main requires 124 canonical files rather than the initial 123.
    The owner explicitly approved all 26 files on 21 October after reviewing the
    manifest and populated rehearsal. `policy.json` records their exact hashes and
    the explicit task-specific backup waiver, “No backup is fine”. No backup exists
