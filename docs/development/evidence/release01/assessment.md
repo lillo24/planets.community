@@ -100,7 +100,7 @@ Hosted writes still wait for final complete CI and a fresh live-history check.
 ## Main advanced during final validation
 
 PROF01/IMG01 #281 merged as `82ace622331b97ca39dca5876e2dbb12ae92045b`
-after the previous complete Validation passed. Its additional avatar migration
+while RELEASE01 validation was running. Its additional avatar migration
 means current main has 124 canonical files and staging has 27 pending. The
 [addendum](additional-avatar-migration.json) records the exact file/hash and
 separate approval requirement. The original 26-file approval remains valid for

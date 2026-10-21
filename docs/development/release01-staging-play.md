@@ -1,5 +1,7 @@
 # RELEASE01 staging and Google Play closed testing
 
+Current execution and remaining gates: [RELEASE01 status](release01-status.md).
+
 The dedicated [workflow](../../.github/workflows/staging-release.yml) owns SQL
 deployment to `planets-staging` (`cllpvruvrrvxczjitlqd`) and Android delivery to
 the existing `community.planets.app` closed track. Production and iOS distribution
