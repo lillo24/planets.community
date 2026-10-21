@@ -4,5 +4,10 @@
   "SUPABASE_PUBLISHABLE_KEY": "replace-with-staging-publishable-key",
   "SENTRY_DSN": "",
   "ENABLE_DEMO_TOOLS": "false",
+  "ENABLE_CLOSED_TEST_MOCK": "false",
+  "MOCK_SUPABASE_URL": "",
+  "MOCK_SUPABASE_PUBLISHABLE_KEY": "",
+  "MOCK_PERSONA_BROKER_URL": "",
+  "MOCK_FIXTURE_GENERATION": "",
   "GOOGLE_WEB_CLIENT_ID": ""
 }

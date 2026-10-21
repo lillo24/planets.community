@@ -17,7 +17,7 @@ Future<void> runWithOptionalMonitoring(
   SentryRunner sentryRunner = _runWithSentry,
 }) async {
   final dsn = config.sentryDsn;
-  if (dsn == null) {
+  if (!config.monitoringEnabled) {
     await Future<void>.sync(appRunner);
     return;
   }

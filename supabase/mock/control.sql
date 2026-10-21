@@ -89,7 +89,7 @@ begin
     if d.state='issued' and d.expires_at>now() then
       return jsonb_build_object('state','replay','delivery',d.encrypted_delivery);
     end if;
-    return jsonb_build_object('state',case when d.expires_at>now() then 'pending' else 'expired' end);
+    return jsonb_build_object('state',case when d.state='pending' and d.expires_at>now() then 'pending' else 'expired' end);
   end if;
   -- One OTP exchange at a time per shared account: GoTrue's one-time login
   -- tokens are account-scoped. Other testers retry their ORIGINAL operation.
@@ -128,6 +128,18 @@ begin
   if exists(select 1 from mock_control.deliveries where issuer=p_issuer and tester_id=p_tester
     and request_id=p_request and persona_key<>p_persona) then
     raise exception using errcode='PT409',message='Request payload changed'; end if;
+  -- Cancellation can arrive before a delayed issue has claimed its request.
+  -- A bounded tombstone prevents that late call from issuing an orphan session.
+  if not exists(select 1 from mock_control.deliveries where issuer=p_issuer
+      and tester_id=p_tester and request_id=p_request) then
+    if not exists(select 1 from mock_control.personas where persona_key=p_persona)
+      then raise insufficient_privilege; end if;
+    if (select count(*) from mock_control.deliveries where issuer=p_issuer and
+        tester_id=p_tester and created_at>now()-interval '1 minute')>=6
+      then raise exception using errcode='PT429',message='Switch limit reached'; end if;
+    insert into mock_control.deliveries(issuer,tester_id,request_id,persona_key,state)
+      values(p_issuer,p_tester,p_request,p_persona,'retired');
+  end if;
   delete from auth.sessions where id in(select session_id from mock_control.deliveries
     where issuer=p_issuer and tester_id=p_tester and request_id=p_request);
   update mock_control.deliveries set state='retired',encrypted_delivery=null

@@ -29,8 +29,16 @@ only the departing tester's recorded refresh sessions; already issued access
 tokens retain their configured lifetime (at most one hour), which is not instant
 revocation. No paid session-control feature is assumed.
 
-MOCK02 owns confidential device persistence, transactional switching and complete
-provider/router/cache disposal by realm and transition generation. MOCK03 owns
+MOCK02 implements confidential device persistence, transactional switching and
+complete provider/router/cache disposal by realm and transition generation.
+The normal SDK retains sole control-session refresh ownership; mock candidates
+use independent clients and device keys. Root scope replacement includes the
+router, unread frontiers and protected image presentation. Normal product
+transport remains fenced during mock; only narrow normal Auth maintenance and
+fixed-broker authorization use its control token. Unknown writes retain their
+original scoped recovery intent and are never replayed across realms.
+See the [mobile boundary inventory](../../development/mock-mobile-sessions.md).
+MOCK03 owns
 the shared selector, signed/native qualification and cumulative merge. Actual
 hosted and release readiness are separate from local code qualification. See the
 [operator runbook](../../development/mock-environment.md).

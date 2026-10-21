@@ -447,6 +447,17 @@ try {
     "Server rejects fixture MFA enrollment",
   );
   await sql`select public.mock_control_offboard(${issuer},${other.id}::uuid)`;
+  const cancelledIntent = { ...intent, request_id: randomUUID() };
+  equal(
+    (await send(tester, { ...cancelledIntent, action: "retire" })).status,
+    200,
+    "Cancel before server claim leaves a bounded tombstone",
+  );
+  equal(
+    (await send(tester, cancelledIntent)).status,
+    409,
+    "Delayed issue cannot revive a cancelled request",
+  );
   equal(
     (await send(other, { action: "catalog" })).status,
     403,
