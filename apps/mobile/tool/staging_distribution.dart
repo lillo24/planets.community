@@ -1,6 +1,7 @@
 // Distribution preflight owns stricter closed-test rules than runtime config.
 // Never include configuration values in errors: input may contain a secret.
 import 'package:planets_mobile/core/config/google_auth_config.dart';
+import 'package:planets_mobile/core/config/mock_environment_config.dart';
 
 const _allowedKeys = {
   'APP_ENV',
@@ -9,6 +10,11 @@ const _allowedKeys = {
   'SENTRY_DSN',
   'ENABLE_DEMO_TOOLS',
   'GOOGLE_WEB_CLIENT_ID',
+  'ENABLE_CLOSED_TEST_MOCK',
+  'MOCK_SUPABASE_URL',
+  'MOCK_SUPABASE_PUBLISHABLE_KEY',
+  'MOCK_PERSONA_BROKER_URL',
+  'MOCK_FIXTURE_GENERATION',
 };
 
 void validateStagingDistribution(Object? value) {
@@ -47,6 +53,26 @@ void validateStagingDistribution(Object? value) {
     );
   }
   final dsn = value['SENTRY_DSN'];
+  final capability = value['ENABLE_CLOSED_TEST_MOCK'] ?? 'false';
+  if (capability != 'true' && capability != 'false') {
+    throw const FormatException(
+      'ENABLE_CLOSED_TEST_MOCK must be true or false.',
+    );
+  }
+  final mockConfig = MockEnvironmentConfig.parse(
+    local: false,
+    normalOrigin: url,
+    normalKey: value['SUPABASE_PUBLISHABLE_KEY'] as String,
+    mockUrl: value['MOCK_SUPABASE_URL'] as String? ?? '',
+    mockKey: value['MOCK_SUPABASE_PUBLISHABLE_KEY'] as String? ?? '',
+    brokerUrl: value['MOCK_PERSONA_BROKER_URL'] as String? ?? '',
+    generation: value['MOCK_FIXTURE_GENERATION'] as String? ?? '',
+  );
+  if (capability == 'false' && mockConfig != null) {
+    throw const FormatException(
+      'Remove inactive mock endpoints from an ordinary staging build.',
+    );
+  }
   if (dsn == null ||
       (dsn != '' &&
           (dsn != dsn.trim() ||

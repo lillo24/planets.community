@@ -17,6 +17,8 @@ import '../features/settings/domain/language_preference.dart';
 import '../features/settings/application/navigation_preference_controller.dart';
 import '../features/settings/data/navigation_preference_store.dart';
 import '../features/settings/domain/navigation_preference.dart';
+import '../features/mock_mode/presentation/mock_realm_host.dart';
+import '../features/mock_mode/application/mock_mode_coordinator.dart';
 
 typedef AppConfigLoader = AppConfig Function();
 typedef BackendInitializer = Future<void> Function(AppConfig config);
@@ -88,22 +90,35 @@ Future<void> bootstrapApplication({
   await monitoringLauncher(
     config,
     () => applicationLauncher(
-      ProviderScope(
-        overrides: [
-          appConfigProvider.overrideWithValue(config),
-          initialActivitiesSplitPreferenceProvider.overrideWithValue(
-            activitiesSplitPreference,
-          ),
-          initialStartupPreferenceProvider.overrideWithValue(startupPreference),
-          initialLanguagePreferenceProvider.overrideWithValue(
-            languagePreference,
-          ),
-          initialNavigationPreferenceProvider.overrideWithValue(
-            navigationPreference,
-          ),
-        ],
-        child: const PlanetsApp(),
-      ),
+      config.closedTestMockEnabled
+          ? MockRealmHost(
+              config: config,
+              language: languagePreference,
+              navigation: navigationPreference,
+              activitiesSplit: activitiesSplitPreference,
+              startup: startupPreference,
+            )
+          : ProviderScope(
+              overrides: [
+                appConfigProvider.overrideWithValue(config),
+                realmPreferenceNamespaceProvider.overrideWithValue(
+                  'normal:${config.supabaseUrl.origin}:',
+                ),
+                initialActivitiesSplitPreferenceProvider.overrideWithValue(
+                  activitiesSplitPreference,
+                ),
+                initialStartupPreferenceProvider.overrideWithValue(
+                  startupPreference,
+                ),
+                initialLanguagePreferenceProvider.overrideWithValue(
+                  languagePreference,
+                ),
+                initialNavigationPreferenceProvider.overrideWithValue(
+                  navigationPreference,
+                ),
+              ],
+              child: const PlanetsApp(),
+            ),
     ),
   );
 }

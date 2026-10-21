@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/project_workspace_models.dart';
+import '../../mock_mode/application/mock_mode_coordinator.dart';
 
 abstract interface class ProjectWorkspacePendingAddStore {
   Future<WorkspaceLinkDraft?> read(String actorId, String projectId);
@@ -15,6 +16,8 @@ abstract interface class ProjectWorkspacePendingAddStore {
 /// submitted Adds persist; ordinary unsent drafts remain in run memory.
 class SharedPreferencesWorkspacePendingAddStore
     implements ProjectWorkspacePendingAddStore {
+  SharedPreferencesWorkspacePendingAddStore({this.namespace = ''});
+  final String namespace;
   Future<void> _tail = Future<void>.value();
 
   // Serialize reads/writes/removal across stale callbacks. The caller receives
@@ -26,7 +29,39 @@ class SharedPreferencesWorkspacePendingAddStore
   }
 
   String _key(String actor, String project) =>
-      'project_workspace_pending_add_v1:$actor:$project';
+      '${namespace}project_workspace_pending_add_v1:$actor:$project';
+
+  Future<String?> _readRaw(
+    SharedPreferences preferences,
+    String actor,
+    String project,
+  ) async {
+    final key = _key(actor, project);
+    final value = preferences.getString(key);
+    // The pre-realm journal belonged to the recorded normal staging origin.
+    // Never adopt it into mock, another root, or a disposable local backend.
+    if (namespace != 'normal:https://cllpvruvrrvxczjitlqd.supabase.co:') {
+      return value;
+    }
+    final legacyKey = 'project_workspace_pending_add_v1:$actor:$project';
+    final legacy = preferences.getString(legacyKey);
+    if (legacy == null) return value;
+    _parse(legacy, actor, project);
+    if (value != null && value != legacy) {
+      throw StateError('Conflicting normal workspace recovery intents.');
+    }
+    if (value == null &&
+        (!await preferences.setString(key, legacy) ||
+            preferences.getString(key) != legacy)) {
+      throw StateError('Normal workspace recovery migration failed.');
+    }
+    if (!await preferences.remove(legacyKey)) {
+      throw StateError(
+        'Normal workspace recovery migration was not acknowledged.',
+      );
+    }
+    return legacy;
+  }
 
   WorkspaceLinkDraft _parse(String value, String actor, String project) {
     final data = jsonDecode(value);
@@ -67,7 +102,7 @@ class SharedPreferencesWorkspacePendingAddStore
   Future<WorkspaceLinkDraft?> read(String actorId, String projectId) =>
       _enqueue(() async {
         final preferences = await SharedPreferences.getInstance();
-        final value = preferences.getString(_key(actorId, projectId));
+        final value = await _readRaw(preferences, actorId, projectId);
         return value == null ? null : _parse(value, actorId, projectId);
       });
 
@@ -86,8 +121,10 @@ class SharedPreferencesWorkspacePendingAddStore
     });
     _parse(value, draft.actorId, draft.projectId);
     final preferences = await SharedPreferences.getInstance();
-    final previous = preferences.getString(
-      _key(draft.actorId, draft.projectId),
+    final previous = await _readRaw(
+      preferences,
+      draft.actorId,
+      draft.projectId,
     );
     if (previous != null) {
       final pending = _parse(previous, draft.actorId, draft.projectId);
@@ -113,7 +150,7 @@ class SharedPreferencesWorkspacePendingAddStore
   Future<void> clear(WorkspaceLinkDraft draft) => _enqueue(() async {
     final preferences = await SharedPreferences.getInstance();
     final key = _key(draft.actorId, draft.projectId),
-        value = preferences.getString(_key(draft.actorId, draft.projectId));
+        value = await _readRaw(preferences, draft.actorId, draft.projectId);
     if (value == null) return;
     final current = _parse(value, draft.actorId, draft.projectId);
     if (current.requestId != draft.requestId) {
@@ -131,5 +168,7 @@ class SharedPreferencesWorkspacePendingAddStore
 
 final projectWorkspacePendingAddStoreProvider =
     Provider<ProjectWorkspacePendingAddStore>(
-      (ref) => SharedPreferencesWorkspacePendingAddStore(),
+      (ref) => SharedPreferencesWorkspacePendingAddStore(
+        namespace: ref.watch(realmPreferenceNamespaceProvider),
+      ),
     );
