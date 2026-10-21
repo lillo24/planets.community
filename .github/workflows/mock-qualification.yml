@@ -32,5 +32,5 @@ jobs:
       - run: npm ci
       - name: Guard and broker boundary tests
         run: node --test scripts/mock/*.test.mjs supabase/functions/mock-personas/*.test.mjs
-      - name: Genuine Auth, RPC, RLS, Storage and offboarding
+      - name: Genuine Auth, RPC, RLS, Storage, public capabilities and shutdown
         run: node scripts/mock/qualify-local.mjs

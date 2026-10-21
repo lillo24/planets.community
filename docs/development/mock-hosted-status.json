@@ -14,8 +14,6 @@
     "controlInstalled": true,
     "brokerDeployed": true,
     "fixturesSeeded": false,
-    "approvedTesterTotal": null,
-    "enrolledTesterCount": 0,
     "readiness": "not ready",
     "brokerVersion": 1,
     "brokerBundleSha256": "3236fc0823bfc65d77cbfc5cab896ff03c3badc0c7f38b18d31f8b5581bc153b",
@@ -31,7 +29,8 @@
     "externalAuthDeliveryDisabled": true,
     "hostedAuthProbePassed": true,
     "authConfigSha256": "12f1d82285c9afbdec42cf65f03703316e4ece98bc84d9e24bb7cb9a2072e6d9",
-    "hostedProof": "Auth configuration, standard no-mail session exchange and email denial only; not persona-world or tester-broker readiness"
+    "hostedProof": "Auth configuration, standard no-mail session exchange and email denial only; not persona-world or tester-broker readiness",
+    "deployedAccessModel": "disabled legacy broker; public capability correction not yet deployed"
   },
   "normal": {
     "projectRef": "cllpvruvrrvxczjitlqd",
@@ -67,9 +66,8 @@
     "gapObservedAt": "2026-10-21 13:09:16 UTC"
   },
   "hostedBlockers": [
-    "Approved closed-tester issuer/Auth UUID roster remains unavailable; enrollment coverage is 0 of an unknown approved total.",
-    "A usable session-pooler Postgres credential is unavailable. The passwordless CLI database probes did not establish the persistent connection required by the reviewed seeder; the direct database hostname did not resolve here.",
-    "Hosted canonical persona/content/media seed, full tester enrollment and a normal-login-to-broker native journey remain incomplete."
+    "Persistent session-pooler connectivity must be established; a guarded temporary CLI-login runner is prepared.",
+    "Hosted fixture seed, corrected public broker deployment and public guest/client isolation smoke remain incomplete."
   ],
   "release": {
     "artifactBuilt": false,
@@ -89,5 +87,10 @@
     "nodeUnitTestsPassed": 9,
     "genuineTwoRealmChecksPassed": 146,
     "hostedProof": false
+  },
+  "correction": {
+    "sourceImplemented": true,
+    "hostedApplied": false,
+    "qualification": "pending; prior enrollment-based passes do not qualify this revision"
   }
 }

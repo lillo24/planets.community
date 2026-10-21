@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHandler, BrokerFailure } from "./handler.mjs";
-const tester = "10000000-0000-4000-8000-000000000001";
+const client = "10000000-0000-4000-8000-000000000001";
 const persona = {
   key: "giulia",
   user_id: "20000000-0000-4000-8000-000000000001",
@@ -15,16 +15,16 @@ function setup(overrides = {}) {
   const calls = [];
   const handler = createHandler({
     enabled: true,
-    normalOrigin: "https://cllpvruvrrvxczjitlqd.supabase.co",
     mockOrigin: "https://pnolarmzxmmjtguligfc.supabase.co",
-    authenticate: async () => ({ id: tester }),
     rpc: async (name, args) => {
       calls.push({ name, args });
       return name.endsWith("catalog")
-        ? [persona]
+        ? { client_id: client, personas: [persona] }
         : name.endsWith("claim")
           ? { state: "new", user_id: persona.user_id, email: persona.email }
-          : null;
+          : name.endsWith("client")
+            ? client
+            : null;
     },
     issue: async () => ({
       user_id: persona.user_id,
@@ -37,51 +37,68 @@ function setup(overrides = {}) {
     revoke: async () => calls.push({ name: "revoke" }),
     ...overrides,
   });
-  const send = (body, authorization = "Bearer synthetic-normal") =>
+  const send = (body, capability = "a".repeat(64), authorization = null) =>
     handler(
       new Request("https://broker.invalid", {
         method: "POST",
-        headers: { authorization },
+        headers: {
+          ...(capability ? { "x-mock-client": capability } : {}),
+          ...(authorization ? { authorization } : {}),
+        },
         body: JSON.stringify(body),
       }),
     );
   return { calls, send };
 }
-test("unauthenticated, wrong issuer, non-tester and revoked callers cannot reach issuance", async () => {
-  for (const overrides of [
-    { authenticate: async () => null },
-    {
-      authenticate: async () => {
-        throw new BrokerFailure("unauthorized", 401);
-      },
-    },
-    {
-      rpc: async () => {
-        throw new BrokerFailure("denied", 403);
-      },
-    },
-  ]) {
-    let issued = false;
-    const s = setup({
-      ...overrides,
-      issue: async () => {
-        issued = true;
-      },
-    });
-    assert.ok(
-      (
-        await s.send({
-          action: "issue",
-          persona_key: "giulia",
-          request_id: request,
-        })
-      ).status >= 400,
-    );
-    assert.equal(issued, false);
-  }
+test("public bootstrap works without normal identity; disabled and bearer-only clients fail closed", async () => {
   const s = setup();
-  assert.equal((await s.send({ action: "catalog" }, "")).status, 401);
-  assert.equal(s.calls.length, 0);
+  const response = await s.send({ action: "bootstrap" }, null);
+  assert.equal(response.status, 200);
+  const value = await response.json();
+  assert.equal(value.client_id, client);
+  assert.match(value.capability, /^[a-f0-9]{64}$/);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  const missing = setup();
+  assert.equal((await missing.send({ action: "catalog" }, null)).status, 401);
+  assert.equal(
+    (
+      await missing.send(
+        { action: "catalog" },
+        null,
+        "Bearer normal-or-persona-token",
+      )
+    ).status,
+    401,
+  );
+  assert.equal(missing.calls.length, 0);
+  const disabled = setup({ enabled: false });
+  assert.equal(
+    (await disabled.send({ action: "bootstrap" }, null)).status,
+    503,
+  );
+  assert.equal(disabled.calls.length, 0);
+});
+test("unknown client capability never reaches session issuance", async () => {
+  let issued = false;
+  const s = setup({
+    rpc: async () => {
+      throw new BrokerFailure("denied", 403);
+    },
+    issue: async () => {
+      issued = true;
+    },
+  });
+  assert.equal(
+    (
+      await s.send({
+        action: "issue",
+        persona_key: "giulia",
+        request_id: request,
+      })
+    ).status,
+    403,
+  );
+  assert.equal(issued, false);
 });
 test("catalog authorization, no-store, arbitrary personas and destinations", async () => {
   const s = setup();
@@ -107,7 +124,7 @@ test("catalog authorization, no-store, arbitrary personas and destinations", asy
   ])
     assert.ok((await s.send(body)).status >= 400);
 });
-test("delivery commits exact tester/persona/request before exposing session", async () => {
+test("delivery commits exact client/persona/request before exposing session", async () => {
   const s = setup();
   const response = await s.send({
     action: "issue",
@@ -120,15 +137,16 @@ test("delivery commits exact tester/persona/request before exposing session", as
     s.calls.map((x) => x.name),
     ["mock_control_catalog", "mock_control_claim", "mock_control_finish"],
   );
-  assert.equal(s.calls.at(-1).args.p_tester, tester);
+  assert.equal(typeof s.calls.at(-1).args.p_capability, "string");
   assert.equal(s.calls.at(-1).args.p_session, session);
 });
-test("revocation during issuance retires only the candidate and redacts errors", async () => {
+test("shutdown during issuance retires only the candidate and redacts errors", async () => {
   const calls = [];
   const s = setup({
     rpc: async (name) => {
       calls.push(name);
-      if (name.endsWith("catalog")) return [persona];
+      if (name.endsWith("catalog"))
+        return { client_id: client, personas: [persona] };
       if (name.endsWith("claim"))
         return { state: "new", user_id: persona.user_id, email: persona.email };
       if (name.endsWith("finish")) throw new Error("secret admin key");
@@ -150,7 +168,9 @@ test("recovery preserves operation, pending does not reissue", async () => {
     let issued = false;
     const s = setup({
       rpc: async (name) =>
-        name.endsWith("catalog") ? [persona] : { state, delivery: "encrypted" },
+        name.endsWith("catalog")
+          ? { client_id: client, personas: [persona] }
+          : { state, delivery: "encrypted" },
       issue: async () => {
         issued = true;
       },

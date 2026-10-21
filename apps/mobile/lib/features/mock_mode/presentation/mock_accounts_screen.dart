@@ -9,7 +9,7 @@ import '../application/mock_mode_coordinator.dart';
 import '../application/realm_departure.dart';
 import '../domain/mock_models.dart';
 
-/// One authorized selector serves first entry and Help. Scenario suggestions
+/// One fixed-persona selector serves first entry and Help. Scenario suggestions
 /// never assert current powers after shared-world changes.
 class MockAccountsScreen extends ConsumerStatefulWidget {
   const MockAccountsScreen({super.key});
@@ -24,6 +24,7 @@ class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen>
   bool _loading = false;
   int _revision = 0;
   String? _catalogRoot;
+  String? _catalogNormal;
   StreamSubscription<String?>? _controlSubscription;
 
   @override
@@ -33,16 +34,17 @@ class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen>
     _controlSubscription = ref
         .read(mockModeCoordinatorProvider)
         ?.access
-        .controlChanges
+        .normalIdentityChanges
         .listen((id) {
-          if (mounted && _catalogRoot != null && id != _catalogRoot) {
+          if (mounted && id != _catalogNormal) {
             _revision++;
             setState(() {
               _people = null;
               _loading = false;
-              _failure = MockFailureKind.controlLoginRequired;
+              _failure = MockFailureKind.invalidSession;
             });
           }
+          _catalogNormal = id;
         });
     Future<void>.microtask(_load);
   }
@@ -67,7 +69,7 @@ class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen>
     if (_loading) return;
     final revision = ++_revision;
     final controller = ref.read(mockModeCoordinatorProvider);
-    _catalogRoot = controller?.access.controlId;
+    _catalogNormal = controller?.access.normalIdentity;
     setState(() {
       _loading = true;
       _people = null;
@@ -78,6 +80,7 @@ class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen>
         throw const MockFailure(MockFailureKind.unavailable);
       }
       final people = await controller.catalog();
+      _catalogRoot = controller.access.clientId;
       if (mounted && revision == _revision) setState(() => _people = people);
     } catch (error) {
       if (mounted && revision == _revision) {
@@ -119,8 +122,6 @@ class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen>
               Text(
                 _failure == MockFailureKind.denied
                     ? l10n.mockDenied
-                    : _failure == MockFailureKind.controlLoginRequired
-                    ? l10n.mockControlLogin
                     : l10n.mockRecovery,
               ),
               TextButton(onPressed: _load, child: Text(l10n.retryAction)),
@@ -155,7 +156,7 @@ class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen>
                             coordinator == null ||
                                 coordinator.busy ||
                                 coordinator.active?.personaKey == person.key ||
-                                coordinator.access.controlId != _catalogRoot
+                                coordinator.access.clientId != _catalogRoot
                             ? null
                             : () async {
                                 await coordinator.select(

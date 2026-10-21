@@ -4,8 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:planets_mobile/features/mock_mode/data/mock_mode_store.dart';
 import 'package:planets_mobile/features/mock_mode/domain/mock_models.dart';
+import 'package:planets_mobile/core/backend/secure_session_storage.dart';
 
 import 'mock_mode_coordinator_test.dart' as fixtures;
+import 'mock_client_capability_test.dart' as secrets;
 
 class PreferencesSpy implements SharedPreferencesAsync {
   final _values = <String, String>{};
@@ -26,6 +28,11 @@ class PreferencesSpy implements SharedPreferencesAsync {
   }
 
   @override
+  Future<void> remove(String key) async {
+    raw = null;
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
@@ -38,6 +45,34 @@ void main() {
     requestId: '22000000-0000-4000-8000-000000000001',
     revision: 2,
     origin: config.origin.origin,
+  );
+  test(
+    'legacy normal-owned mock metadata deletes only its exact mock credential',
+    () async {
+      final prefs = PreferencesSpy();
+      final credentials = secrets.ClientCredentials();
+      final oldKey = mockSessionKey(
+        config.origin,
+        selection.rootId,
+        selection.requestId,
+      );
+      final normalKey = normalSessionKey(config.normalOrigin);
+      credentials.values[oldKey] = 'old-mock-session';
+      credentials.values[normalKey] = 'retained-normal-session';
+      prefs.raw = jsonEncode({
+        'format': 1,
+        'revision': 2,
+        'active': {...selection.toJson(), 'format': 1},
+      });
+      final store = PreferencesMockModeStore(
+        preferences: prefs,
+        legacyCredentials: credentials,
+      );
+      expect((await store.read(config)).active, isNull);
+      expect(prefs.raw, isNull);
+      expect(credentials.values.containsKey(oldKey), isFalse);
+      expect(credentials.values[normalKey], 'retained-normal-session');
+    },
   );
   test('unknown or corrupt mode defaults No without credentials', () async {
     final prefs = PreferencesSpy(),
@@ -59,7 +94,13 @@ void main() {
     final store = PreferencesMockModeStore(preferences: prefs);
     await store.write(MockModeRecord(active: selection, revision: 2));
     final value = jsonDecode(prefs.raw!) as Map<String, dynamic>;
-    expect(value.keys.toSet(), {'format', 'revision', 'active', 'pending'});
+    expect(value.keys.toSet(), {
+      'format',
+      'revision',
+      'active',
+      'pending',
+      'normalWasSignedIn',
+    });
     expect((value['active'] as Map).keys.toSet(), {
       'format',
       'root',

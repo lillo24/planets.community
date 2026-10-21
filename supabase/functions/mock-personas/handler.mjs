@@ -1,6 +1,5 @@
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const normal = "https://cllpvruvrrvxczjitlqd.supabase.co";
 const mock = "https://pnolarmzxmmjtguligfc.supabase.co";
 const generation = "mock-world-2026-10-21-v1";
 
@@ -14,9 +13,7 @@ export class BrokerFailure extends Error {
 
 export function createHandler({
   enabled,
-  normalOrigin,
   mockOrigin,
-  authenticate,
   rpc,
   issue,
   seal,
@@ -34,18 +31,14 @@ export function createHandler({
     });
   return async (request) => {
     try {
-      if (!enabled || normalOrigin !== normal || mockOrigin !== mock)
+      if (!enabled || mockOrigin !== mock)
         throw new BrokerFailure("unavailable");
       if (request.method !== "POST")
         return reply(405, { error: "method_not_allowed" });
-      const authorization = request.headers.get("authorization");
-      if (!authorization?.startsWith("Bearer ") || authorization.length > 8192)
-        throw new BrokerFailure("unauthorized", 401);
-      // Auth /user on the fixed NORMAL origin validates the signature and current
-      // user. Decoded client claims are never an entitlement source.
-      const tester = await authenticate(authorization);
-      if (!tester || !uuid.test(tester.id))
-        throw new BrokerFailure("unauthorized", 401);
+      // This is a deliberately public demo endpoint. Neither a normal nor a
+      // persona bearer token is a client capability or an eligibility source.
+      if (request.headers.has("authorization"))
+        throw new BrokerFailure("invalid_client", 401);
       const text = await boundedText(request, 1024);
       let body;
       try {
@@ -55,15 +48,41 @@ export function createHandler({
       }
       if (!body || Array.isArray(body) || typeof body !== "object")
         throw new BrokerFailure("invalid_request", 400);
-      const issuer = `${normal}/auth/v1`;
-      // Every action, including recovery/retirement, checks current enrollment.
-      const catalog = await rpc("mock_control_catalog", {
-        p_issuer: issuer,
-        p_tester: tester.id,
-      });
-      if (!Array.isArray(catalog) || catalog.length > 12)
-        throw new BrokerFailure("unavailable");
       const context = { project_ref: "pnolarmzxmmjtguligfc", generation };
+      const digest = async (value) =>
+        Array.from(
+          new Uint8Array(
+            await crypto.subtle.digest(
+              "SHA-256",
+              new TextEncoder().encode(value),
+            ),
+          ),
+          (v) => v.toString(16).padStart(2, "0"),
+        ).join("");
+      if (body.action === "bootstrap" && Object.keys(body).length === 1) {
+        const capability = Array.from(
+          crypto.getRandomValues(new Uint8Array(32)),
+          (v) => v.toString(16).padStart(2, "0"),
+        ).join("");
+        const id = await rpc("mock_control_client", {
+          p_capability: await digest(capability),
+        });
+        if (!uuid.test(id)) throw new BrokerFailure("unavailable");
+        return reply(200, { ...context, client_id: id, capability });
+      }
+      const capability = request.headers.get("x-mock-client");
+      if (!capability || !/^[a-f0-9]{64}$/.test(capability))
+        throw new BrokerFailure("invalid_client", 401);
+      const hash = await digest(capability);
+      const result = await rpc("mock_control_catalog", { p_capability: hash });
+      const catalog = result?.personas;
+      if (
+        !uuid.test(result?.client_id) ||
+        !Array.isArray(catalog) ||
+        catalog.length > 12
+      )
+        throw new BrokerFailure("unavailable");
+      context.client_id = result.client_id;
       if (body.action === "catalog" && Object.keys(body).length === 1) {
         return reply(200, { ...context, personas: catalog });
       }
@@ -78,8 +97,7 @@ export function createHandler({
         throw new BrokerFailure("invalid_request", 400);
       }
       const args = {
-        p_issuer: issuer,
-        p_tester: tester.id,
+        p_capability: hash,
         p_request: body.request_id,
       };
       if (body.action === "retire") {
@@ -100,7 +118,7 @@ export function createHandler({
           200,
           await open(
             claim.delivery,
-            `${tester.id}/${body.request_id}/${persona.key}`,
+            `${mock}/${generation}/${hash}/${body.request_id}/${persona.key}`,
           ),
         );
       if (claim.state !== "new")
@@ -128,10 +146,10 @@ export function createHandler({
         };
         const encrypted = await seal(
           delivery,
-          `${tester.id}/${body.request_id}/${persona.key}`,
+          `${mock}/${generation}/${hash}/${body.request_id}/${persona.key}`,
         );
-        // Record before returning secrets. Offboard and finish serialize on the
-        // tester row; a revoked tester can never complete a delivery.
+        // Record before returning secrets. Finish and shutdown serialize on the
+        // environment row; a disabled service cannot complete a fresh delivery.
         await rpc("mock_control_finish", {
           ...args,
           p_session: session.session_id,

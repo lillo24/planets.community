@@ -4,7 +4,7 @@ This package owns explicitly invoked mock-only operations. It never imports the
 local demo seeder and never removes its loopback guard.
 
 - `target.mjs` owns the exact project allowlist and canonical migration digest.
-- `operator.mjs` owns dry-run inventory, setup, enrollment and offboarding.
+- `operator.mjs` owns dry-run inventory, setup, maintenance and mock-only shutdown.
 - `hosted-setup.mjs` runs the same seed/verifier on an explicitly selected owned CI
   host, using a short-lived platform CLI login for the disabled mock target only.
 - `world.mjs` owns non-destructive ordinary-persona fixture operations.

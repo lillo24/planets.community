@@ -1,44 +1,47 @@
-# ADR 0008: Independent mock data realm and normal control identity
+# ADR 0008: Independent mock realm and anonymous client capability
 
-Status: Accepted for the MOCK01–MOCK03 closed-test implementation, 2026-10-21.
+Status: Accepted, amended 2026-10-21 by
+`00_MOCK_ACCESS_CORRECTION_Open_Test_App.md`. This supersedes the original normal
+control identity / human enrollment requirement in this ADR and the MOCK prompts.
 
-Closed-test Mock Mode uses a dedicated Supabase project, `planets-mock`
-(`pnolarmzxmmjtguligfc`). Normal `planets-staging`
-(`cllpvruvrrvxczjitlqd`) remains a protected independent realm. Each owns its
-Auth, signing keys, product database, Storage and Realtime. Product migrations
-and domain/RLS rules remain canonical and shared as source, never as data.
+The dedicated mock project is `pnolarmzxmmjtguligfc`; protected normal staging is
+`cllpvruvrrvxczjitlqd`. Auth/signing keys, product data, Storage and Realtime are
+independent. Canonical migrations/domain/RLS remain shared source, never data.
 
-The ordinary verified normal user is the control identity. An operator-managed
-issuer/UUID roster authorizes a narrow broker catalog and persona-session
-issuance. A shared persona's ordinary session authorizes only mock product
-operations. It cannot enroll testers, browse Auth or issue another session.
-No normal administrator secret is required for token verification. Backend flags,
-the APK capability, fictional email suffixes and user metadata grant no access.
+Anyone, including a signed-out guest, may use the public fixed-persona demo
+broker while enabled. No normal login, tester identities or installation proof
+is required. Production builds keep this explicit test capability off. The
+endpoint itself is public; the flag is not a secret or backend entitlement.
 
-Mock controls, fixture registration and seeding live outside product migrations.
-Every hosted operator operation requires an independent project marker and
-reviewed migration digest. Seed receipts preserve deliberate tester changes;
-there is no automatic reseed or hosted reset. The environment and broker start
-disabled. Missing enrollment/configuration must remain visibly unavailable.
+A server-generated 256-bit random client capability isolates pending issuance,
+encrypted recovery and local retirement. It is unrelated to human identity or a
+hardware/email identifier. The server stores only its hash; the app uses platform
+confidential storage. Only the public client UUID enters version-2 mode metadata.
+Existing normal Auth is retained separately and never used for broker access.
 
-The broker uses server-only one-time login generation and ordinary verification,
-with no mail. Request-bound AES-GCM deliveries are recoverable for two minutes;
-changing a request's persona conflicts. One OTP exchange runs per persona at a
-time. Shared accounts permit independent tester sessions. Offboarding removes
-only the departing tester's recorded refresh sessions; already issued access
-tokens retain their configured lifetime (at most one hour), which is not instant
-revocation. No paid session-control feature is assumed.
+Only registered fictional ordinary accounts can be selected. Secrets and one-time
+Auth generation remain server-side, followed by standard session verification.
+Two-minute AES-GCM delivery binds mock origin, generation, capability, request
+and persona. Shared personas retain independent client sessions. Global ceilings
+bound resource use even when callers create new capabilities. No paid identity
+or attestation provider, new PII collection or enrollment surrogate is introduced.
 
-MOCK02 implements confidential device persistence, transactional switching and
-complete provider/router/cache disposal by realm and transition generation.
-The normal SDK retains sole control-session refresh ownership; mock candidates
-use independent clients and device keys. Root scope replacement includes the
-router, unread frontiers and protected image presentation. Normal product
-transport remains fenced during mock; only narrow normal Auth maintenance and
-fixed-broker authorization use its control token. Unknown writes retain their
-original scoped recovery intent and are never replayed across realms.
-See the [mobile boundary inventory](../../development/mock-mobile-sessions.md).
-MOCK03 owns
-the shared selector, signed/native qualification and cumulative merge. Actual
-hosted and release readiness are separate from local code qualification. See the
-[operator runbook](../../development/mock-environment.md).
+Every operator mutation verifies the exact mock marker and canonical digest.
+Controls are outside canonical migrations; non-destructive fixture receipts
+preserve shared world edits. Upgrading disabled legacy controls revokes only
+their recorded mock sessions and removes obsolete ownership tables/functions.
+Version-1 device metadata is never adopted; bounded legacy mock credential keys
+are deleted while normal credentials remain untouched.
+
+The coordinator replaces the complete provider/router/image scope on commit.
+Monotone revisions fence stale operation/account/mode ABA results. Normal account
+changes fence in-flight transitions; normal Auth expiry does not remove stable
+mock eligibility. No product traffic crosses realms. Guest No returns guest Home;
+retained valid normal accounts restore; genuinely expired retained accounts use
+ordinary honest sign-in recovery. Logout retires only this client's mock session.
+
+Shutdown disables issuance and revokes registered mock-persona refresh sessions,
+preserving the world and all normal sessions. Existing bearer tokens expire within
+the configured maximum one hour. Hiding production UI alone is not shutdown.
+Code qualification, hosted public-mock readiness and release artifacts are
+reported independently. See the operator runbook and mobile boundary inventory.

@@ -105,41 +105,10 @@ export async function setup(context) {
   await sql.unsafe(await readFile("supabase/mock/control.sql", "utf8"));
 }
 
-const issuer = `${NORMAL_ORIGIN}/auth/v1`;
-export async function enroll(context, rosterPath) {
-  const roster = JSON.parse(await readFile(rosterPath, "utf8"));
-  if (
-    !Array.isArray(roster) ||
-    roster.length === 0 ||
-    roster.length > 500 ||
-    roster.some(
-      (r) =>
-        Object.keys(r).sort().join(",") !== "issuer,user_id" ||
-        r.issuer !== issuer ||
-        !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-          r.user_id,
-        ),
-    ) ||
-    new Set(roster.map((r) => r.user_id)).size !== roster.length
-  )
-    throw new Error(
-      "Approved roster must contain 1–500 distinct verified issuer/user_id pairs.",
-    );
+export async function shutdown(context) {
   await context.sql.begin(async (tx) => {
     await context.guard(tx);
-    for (const row of roster)
-      await tx`insert into mock_control.testers(issuer,user_id) values(${issuer},${row.user_id}::uuid)
-      on conflict(issuer,user_id) do update set enrolled=true`;
-  });
-  return { enrolled: roster.length };
-}
-
-export async function offboard(context, id) {
-  if (!/^[0-9a-f-]{36}$/i.test(id))
-    throw new Error("Expected exact tester UUID.");
-  await context.sql.begin(async (tx) => {
-    await context.guard(tx);
-    await tx`select public.mock_control_offboard(${issuer},${id}::uuid)`;
+    await tx`select public.mock_control_shutdown()`;
   });
 }
 
@@ -147,15 +116,14 @@ export async function maintenance(context) {
   await context.sql.begin(async (tx) => {
     await context.guard(tx);
     // Delivery ciphertext lasts 2 minutes; audit bindings last seven days.
-    await tx`update mock_control.deliveries set encrypted_delivery=null where expires_at<=now()`;
-    await tx`delete from mock_control.deliveries where state='retired' and created_at<now()-interval '7 days'`;
-    await tx`delete from mock_control.catalog_rate where window_start<now()-interval '7 days'`;
+    await tx`update mock_control.client_deliveries set encrypted_delivery=null where expires_at<=now()`;
+    await tx`delete from mock_control.client_deliveries where state='retired' and created_at<now()-interval '7 days'`;
   });
 }
 
 if (process.argv[1]?.replaceAll("\\", "/").endsWith("/mock/operator.mjs")) {
   try {
-    const [action, configPath, extra] = process.argv.slice(2);
+    const [action, configPath] = process.argv.slice(2);
     if (action === "inventory" && !configPath) {
       const { fingerprint, migrations } = await migrationInventory();
       console.log(
@@ -168,19 +136,16 @@ if (process.argv[1]?.replaceAll("\\", "/").endsWith("/mock/operator.mjs")) {
       );
     } else {
       if (
-        !["dry-run", "setup", "enroll", "offboard", "maintenance"].includes(
-          action,
-        ) ||
+        !["dry-run", "setup", "shutdown", "maintenance"].includes(action) ||
         !configPath
       )
         throw new Error(
-          "Use inventory | dry-run/setup/enroll/offboard/maintenance <private-config> [roster/UUID].",
+          "Use inventory | dry-run/setup/shutdown/maintenance <private-config>.",
         );
       const context = await operator(configPath);
       try {
         if (action === "setup") await setup(context);
-        if (action === "enroll") await enroll(context, extra);
-        if (action === "offboard") await offboard(context, extra);
+        if (action === "shutdown") await shutdown(context);
         if (action === "maintenance") await maintenance(context);
         console.log(
           JSON.stringify({

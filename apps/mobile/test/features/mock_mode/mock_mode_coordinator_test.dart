@@ -69,9 +69,11 @@ class FakeAccess implements MockSessionAccess {
   bool blocked = false;
   bool normalExpired = false;
   @override
-  String? get controlId => id;
+  String? get clientId => root;
   @override
-  Stream<String?> get controlChanges => controls.stream;
+  String? get normalIdentity => id;
+  @override
+  Stream<String?> get normalIdentityChanges => controls.stream;
   @override
   Stream<void> get dataInvalidations => invalidations.stream;
   @override
@@ -79,8 +81,8 @@ class FakeAccess implements MockSessionAccess {
     final failure = catalogFailure;
     await delayedCatalogGate?.future;
     if (failure != null) throw MockFailure(failure);
-    if (id == null || (expectedRoot != null && id != expectedRoot)) {
-      throw const MockFailure(MockFailureKind.controlLoginRequired);
+    if (expectedRoot != null && root != expectedRoot) {
+      throw const MockFailure(MockFailureKind.invalidSession);
     }
     if (fail case final value?) throw MockFailure(value);
     return [giulia, marco];
@@ -95,8 +97,8 @@ class FakeAccess implements MockSessionAccess {
     restored.add(storedOnly);
     await gate?.future;
     if (fail case final value?) throw MockFailure(value);
-    if (id != selection.rootId) {
-      throw const MockFailure(MockFailureKind.controlLoginRequired);
+    if (root != selection.rootId) {
+      throw const MockFailure(MockFailureKind.invalidSession);
     }
     return Handle(selection);
   }
@@ -267,7 +269,7 @@ void main() {
       },
     );
   }
-  test('a delayed catalog denial cannot clear a subsequently committed tester realm', () async {
+  test('a delayed catalog denial cannot clear a subsequently committed client realm', () async {
     await coordinator.start();
     await select();
     final gate = Completer<void>();
@@ -287,7 +289,8 @@ void main() {
     gate.complete();
     await delayed;
     expect(coordinator.phase, MockModePhase.mock);
-    expect(coordinator.active?.rootId, otherRoot);
+    expect(coordinator.active?.rootId, root);
+    expect(access.normalIdentity, otherRoot);
     expect(access.blocked, isFalse);
   });
   test(
@@ -314,19 +317,34 @@ void main() {
       access.controls.add(otherRoot);
       access.suspendGate!.complete();
       await logout;
-      expect(access.controlId, otherRoot);
+      expect(access.normalIdentity, otherRoot);
       expect(coordinator.phase, MockModePhase.recovery);
       expect(await coordinator.retry(), isTrue);
       expect(coordinator.phase, MockModePhase.normal);
       expect(access.blocked, isFalse);
     },
   );
-  test('guest and denied tester cannot commit Mock mode', () async {
+  test(
+    'guest can enter, switch and return to normal guest without sign-in',
+    () async {
+      access.id = null;
+      await coordinator.start();
+      expect(await select(), isTrue);
+      expect(coordinator.phase, MockModePhase.mock);
+      expect(store.record.normalWasSignedIn, isFalse);
+      expect(await select(marco), isTrue);
+      expect(coordinator.active?.personaKey, 'marco');
+      expect(
+        await coordinator.leave(prepareDeparture: () async => true),
+        isTrue,
+      );
+      expect(coordinator.requiresNormalLogin, isFalse);
+      expect(access.normalIdentity, isNull);
+      expect(coordinator.phase, MockModePhase.normal);
+    },
+  );
+  test('unavailable persona or service cannot commit mock mode', () async {
     await coordinator.start();
-    access.id = null;
-    expect(await select(), isFalse);
-    expect(coordinator.isMock, isFalse);
-    access.id = root;
     access.fail = MockFailureKind.denied;
     expect(await select(), isFalse);
     expect(coordinator.phase, MockModePhase.recovery);
@@ -338,7 +356,7 @@ void main() {
     () async {
       await coordinator.start();
       expect(await select(), isTrue);
-      expect(access.installed?.userId, access.controlId);
+      expect(access.installed?.userId, access.clientId);
       expect(coordinator.active?.origin, mockConfig().origin.origin);
       expect(coordinator.phase, MockModePhase.mock);
       expect(store.record.pending, isNull);
@@ -429,16 +447,23 @@ void main() {
     },
   );
   test(
-    'replacement normal account loses active mock scope immediately',
+    'normal Auth expiry or account change is independent of stable mock access',
     () async {
       await coordinator.start();
       await select();
+      access.id = null;
+      access.controls.add(null);
+      expect(coordinator.phase, MockModePhase.mock);
+      expect(coordinator.showProduct, isTrue);
       access.id = otherRoot;
       access.controls.add(otherRoot);
-      expect(coordinator.phase, MockModePhase.recovery);
-      expect(access.blocked, isTrue);
-      expect(await coordinator.retry(), isFalse);
-      expect(coordinator.showProduct, isFalse);
+      expect(coordinator.phase, MockModePhase.mock);
+      expect(coordinator.active?.rootId, root);
+      expect(
+        await coordinator.leave(prepareDeparture: () async => true),
+        isTrue,
+      );
+      expect(access.normalIdentity, otherRoot);
     },
   );
   test(
@@ -463,7 +488,7 @@ void main() {
     expect(await coordinator.leave(prepareDeparture: () async => true), isTrue);
     expect(coordinator.isMock, isFalse);
     expect(store.record.active, isNull);
-    expect(access.controlId, root);
+    expect(access.clientId, root);
   });
   test('storage failure keeps recovery and never activates an uncommitted candidate', () async {
     await coordinator.start();

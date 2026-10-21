@@ -5,8 +5,9 @@ abstract interface class MockRealmHandle {
 }
 
 abstract interface class MockSessionAccess {
-  String? get controlId;
-  Stream<String?> get controlChanges;
+  String? get clientId;
+  String? get normalIdentity;
+  Stream<String?> get normalIdentityChanges;
   Stream<void> get dataInvalidations;
   Future<List<MockPersona>> catalog({String? expectedRoot});
   Future<MockRealmHandle> prepare(

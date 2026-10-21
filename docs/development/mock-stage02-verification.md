@@ -1,3 +1,5 @@
+> Historical MOCK02 evidence: superseded access policy. These passes do not qualify the open-access correction.
+
 # MOCK02 stage qualification
 
 This draft stage is stacked on MOCK01 commit

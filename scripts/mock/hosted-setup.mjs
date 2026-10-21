@@ -2,7 +2,7 @@
 // No management token, permanent password, roster or normal credential is used.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtemp, writeFile, rm, mkdir } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, rm, mkdir } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { operator } from "./operator.mjs";
@@ -72,6 +72,12 @@ try {
     applied.map((r) => ({ ...r })),
     context.inventory.migrations.map(({ name, sha256 }) => ({ name, sha256 })),
   );
+  phase = "mock-control-upgrade";
+  await context.sql.begin(async (tx) => {
+    await context.guard(tx);
+    await tx`select singleton from mock_control.environment where not enabled for update`;
+    await tx.unsafe(await readFile("supabase/mock/control.sql", "utf8"));
+  });
   phase = "seed";
   await seed(context);
   phase = "read-only-verification";
@@ -82,7 +88,7 @@ try {
     "Access changed during setup",
   );
   const [counts] =
-    await context.sql`select (select count(*)::int from mock_control.personas) personas,(select count(*)::int from mock_control.testers where enrolled) enrolled`;
+    await context.sql`select (select count(*)::int from mock_control.personas) personas`;
   result = {
     success: true,
     source,
@@ -94,8 +100,8 @@ try {
     ...verified,
     ...counts,
     enabled: false,
-    enrollmentComplete: false,
-    hostedTesterBrokerSmoke: false,
+    accessModel: "public fixed-persona demo",
+    hostedPublicBrokerSmoke: false,
   };
 } catch (error) {
   // Never export error messages, SQL text, connection strings or stack traces.

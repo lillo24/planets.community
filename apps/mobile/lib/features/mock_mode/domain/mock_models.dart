@@ -3,7 +3,6 @@ import '../../../core/config/mock_environment_config.dart';
 enum MockFailureKind {
   unavailable,
   denied,
-  controlLoginRequired,
   pending,
   expired,
   invalidSession,
@@ -75,7 +74,7 @@ class MockSelection {
   final String rootId, personaKey, userId, requestId, origin;
   final int revision;
   Map<String, Object> toJson() => {
-    'format': 1,
+    'format': 2,
     'root': rootId,
     'persona': personaKey,
     'user': userId,
@@ -93,7 +92,7 @@ class MockSelection {
         user = value['user'],
         request = value['request'],
         revision = value['revision'];
-    if (value['format'] != 1 ||
+    if (value['format'] != 2 ||
         value['generation'] != MockEnvironmentConfig.fixtureGeneration ||
         value['origin'] != config.origin.origin ||
         root is! String ||

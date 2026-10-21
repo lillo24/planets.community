@@ -9,6 +9,7 @@ import '../../../core/backend/secure_session_storage.dart';
 import '../../../core/config/mock_environment_config.dart';
 import '../domain/mock_models.dart';
 import '../domain/mock_session_access.dart';
+import 'mock_client_capability.dart';
 
 class SupabaseMockRealm implements MockRealmHandle {
   SupabaseMockRealm(
@@ -136,44 +137,30 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
   RealmTransport get activeTransport =>
       _active?.retired == false ? _active!.transport : normalTransport;
   @override
-  String? get controlId => normal.auth.currentUser?.id;
+  String? get clientId => _capabilities.id;
   @override
-  Stream<String?> get controlChanges =>
-      normal.auth.onAuthStateChange.map((event) => event.session?.user.id);
+  String? get normalIdentity => normal.auth.currentUser?.id;
+  late final _capabilities = MockClientCapabilityStore(
+    config: config,
+    credentials: credentials,
+    bootstrap: () => _call({'action': 'bootstrap'}, null),
+  );
+  @override
+  Stream<String?> get normalIdentityChanges => normal.auth.onAuthStateChange
+      .where((event) => event.event != AuthChangeEvent.initialSession)
+      .map((event) => event.session?.user.id);
 
-  Future<String> _control(String? expected) async {
-    if (normal.auth.currentSession == null) {
-      throw const MockFailure(MockFailureKind.controlLoginRequired);
-    }
-    try {
-      if (normal.auth.currentSession!.isExpired) {
-        await normal.auth.refreshSession().timeout(const Duration(seconds: 12));
-      }
-      final result = await normal.auth.getUser().timeout(
-        const Duration(seconds: 12),
-      );
-      final id = result.user?.id;
-      if (id == null ||
-          id != controlId ||
-          (expected != null && id != expected)) {
-        throw const MockFailure(MockFailureKind.controlLoginRequired);
-      }
-      return normal.auth.currentSession!.accessToken;
-    } on AuthRetryableFetchException {
-      throw const MockFailure(MockFailureKind.unavailable);
-    } on AuthException {
-      throw const MockFailure(MockFailureKind.controlLoginRequired);
-    }
-  }
+  Future<String> _capability(String? expected) async =>
+      (await _capabilities.obtain(expectedId: expected)).secret;
 
   Future<Map<String, dynamic>> _call(
     Map<String, Object> body,
-    String token,
+    String? token,
   ) async {
     final request = http.Request('POST', config.broker)
       ..followRedirects = false
       ..headers.addAll({
-        'Authorization': 'Bearer $token',
+        'X-Mock-Client': ?token,
         'Content-Type': 'application/json',
         'Cache-Control': 'no-store',
       })
@@ -197,7 +184,7 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
       }
       if (response.statusCode != 200) {
         throw MockFailure(switch (response.statusCode) {
-          401 => MockFailureKind.controlLoginRequired,
+          401 => MockFailureKind.invalidSession,
           403 => MockFailureKind.denied,
           409 =>
             value['error'] == 'pending'
@@ -218,12 +205,13 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
 
   @override
   Future<List<MockPersona>> catalog({String? expectedRoot}) async {
-    final token = await _control(expectedRoot);
-    final root = controlId;
+    final token = await _capability(expectedRoot);
+    final root = clientId;
     final value = await _call({'action': 'catalog'}, token);
-    if (controlId != root ||
+    if (clientId != root ||
         value['project_ref'] != MockEnvironmentConfig.projectRef ||
         value['generation'] != MockEnvironmentConfig.fixtureGeneration ||
+        value['client_id'] != root ||
         value['personas'] is! List) {
       throw const MockFailure(MockFailureKind.denied);
     }
@@ -294,7 +282,7 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
           if (storedOnly) {
             throw const MockFailure(MockFailureKind.invalidSession);
           }
-          final token = await _control(selection.rootId);
+          final token = await _capability(selection.rootId);
           _operationTokens[selection.requestId] = token;
           final value = await _call({
             'action': 'issue',
@@ -303,6 +291,7 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
           }, token);
           if (value['project_ref'] != MockEnvironmentConfig.projectRef ||
               value['generation'] != MockEnvironmentConfig.fixtureGeneration ||
+              value['client_id'] != selection.rootId ||
               value['request_id'] != selection.requestId ||
               value['persona_key'] != selection.personaKey ||
               value['user_id'] != selection.userId ||
@@ -316,7 +305,7 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
           }
           if (candidate.retired || candidate._retiring) {
             // Logout may have overtaken a delayed successful broker response.
-            // Retire using the captured original control token, never install it.
+            // Retire using the captured original client capability, never install it.
             await _call({
               'action': 'retire',
               'persona_key': selection.personaKey,
@@ -355,7 +344,7 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
       throw const MockFailure(MockFailureKind.invalidSession);
     }
     await candidate.flush();
-    // Eligibility/registry changes during slow session/profile reads invalidate
+    // Capability/registry changes during slow session/profile reads invalidate
     // the already-open action before it can commit an active realm.
     final current = await catalog(expectedRoot: selection.rootId);
     if (!current.any(
@@ -387,7 +376,7 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
     if (candidate is! SupabaseMockRealm ||
         candidate.retired ||
         candidate._retiring ||
-        candidate.selection.rootId != controlId) {
+        candidate.selection.rootId != clientId) {
       throw const MockFailure(MockFailureKind.invalidSession);
     }
     final previous = _active;
@@ -401,7 +390,7 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
     }
     if (candidate.retired ||
         candidate._retiring ||
-        candidate.selection.rootId != controlId) {
+        candidate.selection.rootId != clientId) {
       throw const MockFailure(MockFailureKind.invalidSession);
     }
     _active = candidate;
@@ -429,21 +418,21 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
     }
     if (normal.auth.currentSession != null) {
       final checkedToken = normal.auth.currentSession!.accessToken;
-      final checkedId = controlId;
+      final checkedId = normalIdentity;
       try {
         final result = await normal.auth.getUser().timeout(
           const Duration(seconds: 12),
         );
         if (normal.auth.currentSession?.accessToken != checkedToken ||
             result.user?.id != checkedId) {
-          throw const MockFailure(MockFailureKind.controlLoginRequired);
+          throw const MockFailure(MockFailureKind.invalidSession);
         }
       } on AuthRetryableFetchException {
         rethrow;
       } on AuthException catch (error) {
         if (normal.auth.currentSession != null &&
             normal.auth.currentSession!.accessToken != checkedToken) {
-          throw const MockFailure(MockFailureKind.controlLoginRequired);
+          throw const MockFailure(MockFailureKind.invalidSession);
         }
         if (!{'401', '403', '404'}.contains(error.statusCode)) rethrow;
         // Actual normal Auth authority was lost while its data scope was absent.
@@ -464,8 +453,8 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
     _candidates.remove(selection.requestId);
     final token =
         _operationTokens.remove(selection.requestId) ??
-        (controlId == selection.rootId
-            ? await _control(selection.rootId)
+        (clientId == selection.rootId
+            ? await _capability(selection.rootId)
             : null);
     if (token != null) {
       await _call({
@@ -482,15 +471,15 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
 
   @override
   Future<void> fullLogout() async {
-    final root = controlId;
+    final root = normalIdentity;
     for (final candidate in _candidates.values.toList()) {
       await candidate.retire();
     }
     _candidates.clear();
     _active = null;
     _operationTokens.clear();
-    if (controlId != root) {
-      throw const MockFailure(MockFailureKind.controlLoginRequired);
+    if (normalIdentity != root) {
+      throw const MockFailure(MockFailureKind.invalidSession);
     }
     // Coalesce any outstanding SDK refresh before clearing the normal session.
     if (normal.auth.currentSession != null) {
@@ -500,8 +489,8 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
         /* sign-out still owns cleanup below */
       }
     }
-    if (controlId != null && controlId != root) {
-      throw const MockFailure(MockFailureKind.controlLoginRequired);
+    if (normalIdentity != null && normalIdentity != root) {
+      throw const MockFailure(MockFailureKind.invalidSession);
     }
     normal.auth.stopAutoRefresh();
     await normal.auth.signOut();

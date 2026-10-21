@@ -47,7 +47,6 @@ export async function nativeBridge({
     p_bundle_version: "POLICY01-2026-10-08-v1",
   });
   assert.equal(accepted.error, null);
-  await sql`insert into mock_control.testers(issuer,user_id) values(${NORMAL_ORIGIN + "/auth/v1"},${normalSentinel.id}::uuid)`;
   const receipts =
     await sql`select fixture_key,receipt from mock_control.fixtures where fixture_key in ('group:garden','group:workshop','idea:garden','contact:groups:accept','contact:members:accept','listing:donation')`;
   const receipt = Object.fromEntries(
@@ -112,17 +111,11 @@ export async function nativeBridge({
   );
   const handler = createRuntime({
     enabled: true,
-    normalOrigin: NORMAL_ORIGIN,
     mockOrigin: MOCK_ORIGIN,
-    normalKey: normal.publishableKey,
     service: mock.serviceRoleKey,
     deliveryKey: randomBytes(32).toString("base64"),
     fetcher: (url, init) => {
       const u = new URL(url);
-      if (u.origin === NORMAL_ORIGIN) {
-        assert.equal(u.pathname, "/auth/v1/user");
-        return fetch(url.replace(NORMAL_ORIGIN, normal.apiUrl), init);
-      }
       assert.equal(u.origin, MOCK_ORIGIN);
       return fetch(url.replace(MOCK_ORIGIN, mock.apiUrl), init);
     },

@@ -3,35 +3,32 @@ import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { createRuntime } from "./runtime.mjs";
 
-test("wrong-project Auth rejection remains an authoritative denial before control RPCs", async () => {
+test("normal and persona bearer tokens grant no broker authority or normal Auth traffic", async () => {
   let calls = 0;
   const handler = createRuntime({
     enabled: true,
-    normalOrigin: "https://cllpvruvrrvxczjitlqd.supabase.co",
     mockOrigin: "https://pnolarmzxmmjtguligfc.supabase.co",
     service: "synthetic-server-key",
-    normalKey: "sb_publishable_" + "a".repeat(30),
     deliveryKey: randomBytes(32).toString("base64"),
-    fetcher: async (url) => {
+    fetcher: async () => {
       calls++;
-      assert.equal(new URL(url).host, "cllpvruvrrvxczjitlqd.supabase.co");
-      return new Response(JSON.stringify({ code: "bad_jwt" }), { status: 403 });
+      throw Error("unexpected");
     },
   });
-  const response = await handler(
-    new Request("https://broker.invalid", {
-      method: "POST",
-      headers: { authorization: "Bearer wrong-project-token" },
-      body: '{"action":"catalog"}',
-    }),
-  );
-  assert.equal(response.status, 403);
-  assert.equal(calls, 1);
-  assert.deepEqual(await response.json(), { error: "denied" });
+  for (const token of ["normal-token", "persona-token"]) {
+    const response = await handler(
+      new Request("https://broker.invalid", {
+        method: "POST",
+        headers: { authorization: `Bearer ${token}` },
+        body: '{"action":"catalog"}',
+      }),
+    );
+    assert.equal(response.status, 401);
+  }
+  assert.equal(calls, 0);
 });
-
 test("standard Auth exchange accepts void RPC completion and recovers encrypted delivery", async () => {
-  const tester = "10000000-0000-4000-8000-000000000001";
+  const client = "10000000-0000-4000-8000-000000000001";
   const user = "20000000-0000-4000-8000-000000000001";
   const request = "30000000-0000-4000-8000-000000000001";
   const session = "40000000-0000-4000-8000-000000000001";
@@ -52,20 +49,15 @@ test("standard Auth exchange accepts void RPC completion and recovers encrypted 
     });
   const handler = createRuntime({
     enabled: true,
-    normalOrigin: "https://cllpvruvrrvxczjitlqd.supabase.co",
     mockOrigin: "https://pnolarmzxmmjtguligfc.supabase.co",
     service: "synthetic-server-key",
-    normalKey: "sb_publishable_" + "a".repeat(30),
     deliveryKey: randomBytes(32).toString("base64"),
     fetcher: async (url, init) => {
       const target = new URL(url);
-      if (target.host.startsWith("cllpv")) {
-        assert.equal(target.pathname, "/auth/v1/user");
-        return json({ id: tester });
-      }
+      assert.equal(target.host, "pnolarmzxmmjtguligfc.supabase.co");
       const body = init.body ? JSON.parse(init.body) : null;
       if (target.pathname.endsWith("/mock_control_catalog"))
-        return json([persona]);
+        return json({ client_id: client, personas: [persona] });
       if (target.pathname.endsWith("/mock_control_claim"))
         return json(
           encrypted
@@ -94,11 +86,11 @@ test("standard Auth exchange accepts void RPC completion and recovers encrypted 
       throw new Error("Unexpected server request");
     },
   });
-  const send = () =>
+  const send = (capability = "a".repeat(64)) =>
     handler(
       new Request("https://broker.invalid", {
         method: "POST",
-        headers: { authorization: "Bearer synthetic-normal" },
+        headers: { "x-mock-client": capability },
         body: JSON.stringify({
           action: "issue",
           persona_key: "giulia",
@@ -116,4 +108,14 @@ test("standard Auth exchange accepts void RPC completion and recovers encrypted 
   assert.equal(second.status, 200);
   assert.deepEqual(await second.json(), delivered);
   assert.equal(generations, 1);
+  const stolenReplay = await send("b".repeat(64));
+  assert.equal(
+    stolenReplay.status,
+    503,
+    "Another client cannot decrypt a known request delivery",
+  );
+  assert.equal(
+    (await stolenReplay.text()).includes("synthetic-refresh"),
+    false,
+  );
 });

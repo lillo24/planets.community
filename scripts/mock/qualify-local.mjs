@@ -19,7 +19,7 @@ import {
   NORMAL_ORIGIN,
   MOCK_ORIGIN,
 } from "./target.mjs";
-import { seed, PERSONAS } from "./world.mjs";
+import { seed, PERSONAS, personaSessions } from "./world.mjs";
 import { verify } from "./verify.mjs";
 import { createRuntime } from "../../supabase/functions/mock-personas/runtime.mjs";
 
@@ -272,25 +272,44 @@ try {
   }
   console.log("Checking populated control replay and repeat seed.");
   const before = await snapshot();
+  // Rehearse retirement of populated legacy ownership controls with a genuine
+  // ordinary persona session. These temporary historical tables are QA only.
+  const legacyPeople = await personaSessions(context);
+  const legacyAuth = await legacyPeople.giulia.client.auth.getSession();
+  assert.equal(legacyAuth.error, null);
+  assert.ok(legacyAuth.data.session);
+  const legacySession = JSON.parse(
+    Buffer.from(
+      legacyAuth.data.session.access_token.split(".")[1],
+      "base64url",
+    ).toString(),
+  ).session_id;
+  await sql.unsafe(`create table mock_control.testers(issuer text,user_id uuid,enrolled boolean default true,primary key(issuer,user_id));
+    create table mock_control.deliveries(issuer text,tester_id uuid,request_id uuid,session_id uuid,foreign key(issuer,tester_id) references mock_control.testers(issuer,user_id));
+    create table mock_control.catalog_rate(issuer text,tester_id uuid,window_start timestamptz,requests integer);`);
+  const legacyOwner = randomUUID();
+  await sql`insert into mock_control.testers values('retired-fixture-issuer',${legacyOwner}::uuid,true)`;
+  await sql`insert into mock_control.deliveries values('retired-fixture-issuer',${legacyOwner}::uuid,${randomUUID()}::uuid,${legacySession}::uuid)`;
   // Populate -> reinstall mock control -> repeat seed, preserving every product
   // row and every deliberately changed profile field.
   await sql.unsafe(await readFile("supabase/mock/control.sql", "utf8"));
+  equal(
+    Boolean((await legacyPeople.giulia.client.auth.refreshSession()).error),
+    true,
+    "Legacy mock ownership upgrade revokes its recorded session",
+  );
+  equal(
+    (await sql`select to_regclass('mock_control.testers') as legacy`)[0].legacy,
+    null,
+    "Retired enrollment tables are absent",
+  );
+  for (const person of Object.values(legacyPeople))
+    await person.client.auth.signOut({ scope: "local" });
   await seed(context);
   equal(
     await snapshot(),
     before,
     "Populated mock control upgrade and non-destructive repeat seed",
-  );
-  const tester = await login(
-    normal,
-    randomUUID(),
-    "tester-one@planets.invalid",
-  );
-  const other = await login(normal, randomUUID(), "tester-two@planets.invalid");
-  const outsider = await login(
-    normal,
-    randomUUID(),
-    "not-enrolled@planets.invalid",
   );
   const normalSentinel = await login(
     normal,
@@ -311,66 +330,76 @@ try {
     },
   );
   equal(updated.error, null, "Normal-only sentinel");
-  const issuer = `${NORMAL_ORIGIN}/auth/v1`;
-  for (const person of [tester, other])
-    await sql`insert into mock_control.testers(issuer,user_id) values(${issuer},${person.id}::uuid)`;
   await sql`update mock_control.environment set enabled=true`;
   const network = [];
   const handler = createRuntime({
     enabled: true,
-    normalOrigin: NORMAL_ORIGIN,
     mockOrigin: MOCK_ORIGIN,
-    normalKey: normal.publishableKey,
     service: mock.serviceRoleKey,
     deliveryKey: randomBytes(32).toString("base64"),
     fetcher: (url, init) => {
       const target = new URL(url);
       network.push({ origin: target.origin, path: target.pathname });
-      if (target.origin === NORMAL_ORIGIN) {
-        assert.equal(
-          target.pathname,
-          "/auth/v1/user",
-          "Only normal Auth control verification",
-        );
-        return fetch(url.replace(NORMAL_ORIGIN, normal.apiUrl), init);
-      }
       assert.equal(target.origin, MOCK_ORIGIN, "No arbitrary destination");
       return fetch(url.replace(MOCK_ORIGIN, mock.apiUrl), init);
     },
   });
-  const send = (person, body, token = person?.session.access_token) =>
+  const send = (capability, body, authorization = null) =>
     handler(
       new Request("http://localhost/ignored", {
         method: "POST",
-        headers: { authorization: token ? `Bearer ${token}` : "" },
+        headers: {
+          ...(capability ? { "x-mock-client": capability } : {}),
+          ...(authorization
+            ? { authorization: `Bearer ${authorization}` }
+            : {}),
+        },
         body: JSON.stringify(body),
       }),
     );
+  async function bootstrap() {
+    const response = await send(null, { action: "bootstrap" });
+    equal(response.status, 200, "Guest bootstrap requires no normal identity");
+    const value = await response.json();
+    equal(
+      /^[a-f0-9]{64}$/.test(value.capability),
+      true,
+      "Opaque random client capability",
+    );
+    return value.capability;
+  }
+  const clientOne = await bootstrap(),
+    clientTwo = await bootstrap();
+  equal(
+    clientOne !== clientTwo,
+    true,
+    "Independent clients never share capabilities",
+  );
   equal(
     (await send(null, { action: "catalog" })).status,
     401,
-    "No Auth denied",
+    "Request identity alone grants no recovery authority",
   );
   equal(
-    (await send(outsider, { action: "catalog" })).status,
+    (await send("f".repeat(64), { action: "catalog" })).status,
     403,
-    "Non-tester denied",
+    "Unregistered capability denied",
   );
   equal(
-    (await send(tester, { action: "catalog" })).status,
+    (await send(clientOne, { action: "catalog" })).status,
     200,
-    "Enrolled catalog",
+    "Guest catalog available",
   );
   const intent = {
     action: "issue",
     persona_key: "giulia",
     request_id: randomUUID(),
   };
-  const response = await send(tester, intent);
+  const response = await send(clientOne, intent);
   equal(response.status, 200, "Real broker issuance");
   const delivery = await response.json();
   equal(delivery.user_id, PERSONAS[0].id, "Exact persona account");
-  const recovered = await send(tester, intent);
+  const recovered = await send(clientOne, intent);
   equal(recovered.status, 200, "Lost-response recovery");
   equal(
     (await recovered.json()).refresh_token === delivery.refresh_token,
@@ -404,7 +433,7 @@ try {
   );
   const wrongMock = createClient(mock.apiUrl, mock.publishableKey, {
     ...options,
-    accessToken: async () => tester.session.access_token,
+    accessToken: async () => normalSentinel.session.access_token,
   });
   equal(
     Boolean((await wrongMock.from("profiles").select("id")).error),
@@ -412,17 +441,18 @@ try {
     "Normal bearer rejected by mock data API",
   );
   equal(
-    (await send(tester, { action: "catalog" }, delivery.access_token)).status,
-    403,
-    "Persona cannot act as normal tester",
+    (await send(clientOne, { action: "catalog" }, delivery.access_token))
+      .status,
+    401,
+    "A persona bearer is not a client capability",
   );
   equal(
-    (await send(tester, { ...intent, persona_key: "staff" })).status,
+    (await send(clientOne, { ...intent, persona_key: "staff" })).status,
     403,
     "Unregistered staff persona denied",
   );
   equal(
-    (await send(tester, { ...intent, persona_key: "marco" })).status,
+    (await send(clientOne, { ...intent, persona_key: "marco" })).status,
     409,
     "Changed payload cannot reuse request",
   );
@@ -431,19 +461,19 @@ try {
     { ...intent, request_id: randomUUID() },
   ];
   const concurrentResponses = await Promise.all([
-    send(tester, concurrentIntents[0]),
-    send(other, concurrentIntents[1]),
+    send(clientOne, concurrentIntents[0]),
+    send(clientTwo, concurrentIntents[1]),
   ]);
   for (let i = 0; i < 2; i++) {
     if (concurrentResponses[i].status === 409)
       concurrentResponses[i] = await send(
-        i === 0 ? tester : other,
+        i === 0 ? clientOne : clientTwo,
         concurrentIntents[i],
       );
     equal(
       concurrentResponses[i].status,
       200,
-      "Simultaneous testers recover independent same-persona sessions",
+      "Simultaneous clients recover independent same-persona sessions",
     );
   }
   const deliveryA = await concurrentResponses[0].json();
@@ -468,7 +498,7 @@ try {
   equal(
     (await otherPersona.auth.refreshSession()).error,
     null,
-    "One tester local logout preserves other tester",
+    "One client local logout preserves another client",
   );
   equal(
     Boolean(
@@ -501,27 +531,81 @@ try {
     true,
     "Server rejects fixture MFA enrollment",
   );
-  await sql`select public.mock_control_offboard(${issuer},${other.id}::uuid)`;
   const cancelledIntent = { ...intent, request_id: randomUUID() };
   equal(
-    (await send(tester, { ...cancelledIntent, action: "retire" })).status,
+    (await send(clientOne, { ...cancelledIntent, action: "retire" })).status,
     200,
     "Cancel before server claim leaves a bounded tombstone",
   );
   equal(
-    (await send(tester, cancelledIntent)).status,
+    (await send(clientOne, cancelledIntent)).status,
     409,
     "Delayed issue cannot revive a cancelled request",
   );
+  // Guessing another client's request can retire only the attacker's own
+  // binding. It cannot retrieve or revoke the original client's delivery.
   equal(
-    (await send(other, { action: "catalog" })).status,
+    (await send(clientTwo, { ...intent, action: "retire" })).status,
+    200,
+    "Guessed request retirement is client-local",
+  );
+  const retained = await send(clientOne, intent);
+  equal(retained.status, 200, "Original client retains its encrypted response");
+  equal(
+    (await retained.json()).refresh_token,
+    delivery.refresh_token,
+    "Guess cannot replace original delivery",
+  );
+  equal(
+    (await send(clientOne, { ...concurrentIntents[1], action: "retire" }))
+      .status,
+    200,
+    "Guessed live request retires only the caller binding",
+  );
+  equal(
+    (await otherPersona.auth.refreshSession()).error,
+    null,
+    "Guessing a live request cannot revoke the other client session",
+  );
+  await sql`insert into mock_control.global_rate values('bootstrap',date_trunc('minute',now()),60)
+    on conflict(kind) do update set window_start=excluded.window_start,requests=excluded.requests`;
+  equal(
+    (await send(null, { action: "bootstrap" })).status,
+    429,
+    "New capabilities cannot evade global limits",
+  );
+  await sql`delete from mock_control.global_rate where kind='bootstrap'`;
+  await sql`select public.mock_control_shutdown()`;
+  equal(
+    (await send(null, { action: "bootstrap" })).status,
     403,
-    "Revoked tester loses cached catalog authority",
+    "Shutdown denies old clients fresh capability issuance",
+  );
+  equal(
+    (
+      await send(clientTwo, {
+        action: "issue",
+        persona_key: "giulia",
+        request_id: randomUUID(),
+      })
+    ).status,
+    403,
+    "Shutdown denies fresh persona sessions",
   );
   equal(
     Boolean((await otherPersona.auth.refreshSession()).error),
     true,
-    "Offboarding revokes only issued refresh session",
+    "Shutdown revokes mock refresh sessions",
+  );
+  equal(
+    (await normalSentinel.client.auth.refreshSession()).error,
+    null,
+    "Mock shutdown preserves normal account session",
+  );
+  equal(
+    network.filter((n) => n.origin === NORMAL_ORIGIN).length,
+    0,
+    "Public broker never contacts normal Auth or product data",
   );
   console.log(
     JSON.stringify({
@@ -533,6 +617,7 @@ try {
     }),
   );
   if (process.argv[2] === "--native") {
+    await sql`update mock_control.environment set enabled=true`;
     const { nativeBridge } = await import("./native-bridge.mjs");
     await nativeBridge({
       directory: process.argv[3],

@@ -2,8 +2,7 @@
 
 `ENABLE_CLOSED_TEST_MOCK=true` enables the native staging/loopback Sandbox
 control. It defaults false and is suppressed in production and web.
-`ENABLE_DEMO_TOOLS=false` remains required. APK possession grants no entitlement;
-the broker's private issuer/UUID tester roster remains authoritative.
+`ENABLE_DEMO_TOOLS=false` remains required. This is an explicit test-app capability; the public fixed-persona demo also accepts signed-out guests. The build flag is not a secret or proof of installation.
 
 The exact string keys accepted by the staging validator are
 `MOCK_SUPABASE_URL=https://pnolarmzxmmjtguligfc.supabase.co`, its client-safe
@@ -43,8 +42,7 @@ and its default provider. No mobile push registration or separate analytics
 client currently exists. Mock delivery workers are not deployed.
 
 Normal product requests and Realtime are fenced/disconnected during mock; only
-GET Auth user, refresh-token grant and logout remain permitted. Normal tokens
-are sent outside normal Auth only to the exact trusted broker. In-flight work
+GET Auth user, refresh-token grant and logout remain permitted. Normal tokens are never sent to the broker. Its automatically established random client capability has no normal-account authority. In-flight work
 keeps its original destination; completed responses cannot populate a new scope.
 Draft departure uses Save/Discard/Stay. Unknown writes require Stay or explicit
 retention in the original realm; the receipt contains operation names only, no
@@ -71,24 +69,24 @@ generation metadata only. Installation language, navigation, Activities Split
 and tutorial preferences remain independent.
 
 Preparing mock clients have automatic refresh off. Only the active mock client
-starts refresh after commit, stops on pause/departure and revalidates entitlement
+starts refresh after commit, stops on pause/departure and revalidates the client capability, registry and kill switch
 on resume. Restored pending issuance enters recovery and retries its original
 request/persona. Restored Yes validates its confidential session and registry;
 it does not silently issue a new session or send OTP.
 Recovery keeps conflicting actions disabled until the originating operation has
-settled and completed scoped cleanup, even after control-account A/B/A changes.
+settled and completed scoped cleanup, even after normal-account A/B/A changes.
 Retirement coalesces concurrent callers; failed secure deletion remains retryable.
 Normal product transport resumes only after No is persisted and its revision is
 still current. A superseded activation cannot install a retired candidate.
 Catalog denial and channel cleanup retain their originating revision/client;
-late work cannot clear or disconnect a subsequently committed tester realm.
+late work cannot clear or disconnect a subsequently committed client realm.
 Changed configuration,
-control account replacement, denial, mock Auth loss and downtime show isolated
+in-flight normal account replacement, denial, mock Auth loss and downtime show isolated
 recovery instead of normal content. No/persona change retires only the current
 mock session; explicit PLANETS logout clears retained normal and local mock
 access and metadata. Failure remains recovery rather than a success message.
 Returning to normal revalidates its retained Auth authority before product reads
-resume. A lost/expired normal session opens ordinary sign-in with Mock Mode off;
+resume. A guest returns to guest Home. A genuinely lost/expired retained normal session opens ordinary sign-in with Mock Mode off;
 explicit PLANETS logout still owns the Welcome transition. A delayed validation
 cannot sign out a newer normal token/account. Authoritative mock Auth loss
 disposes protected presentation rather than retaining its hidden product scope.

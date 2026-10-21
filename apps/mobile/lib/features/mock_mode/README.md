@@ -6,9 +6,10 @@ domain behavior through the active Supabase client.
 
 - `domain/mock_models.dart`: bounded broker catalog and public operation bindings;
   token bootstraps deliberately redact their string representation.
+- `data/mock_client_capability.dart`: private random capability persistence and lazy guest bootstrap; no normal Auth dependency.
 - `data/mock_mode_store.dart`: one atomic installation preference record containing
-  mode and root/persona/realm/request/revision metadata, never credentials.
-- `data/mock_session_access.dart`: normal control Auth, fixed broker calls and
+  version-2 mode/client/persona/realm/request/revision metadata and retained-account presence, never credentials. Legacy mock keys retire without clearing normal sessions.
+- `data/mock_session_access.dart`: public client-capability broker calls and
   real candidate-session/profile validation on a non-active mock client.
 - `application/mock_mode_coordinator.dart`: one serialized switching owner and
   recovery state; a monotone revision fences late/ABA completions.

@@ -1,12 +1,9 @@
 import { BrokerFailure, boundedText, createHandler } from "./handler.mjs";
-const normal = "https://cllpvruvrrvxczjitlqd.supabase.co";
 const mock = "https://pnolarmzxmmjtguligfc.supabase.co";
 export function createRuntime({
   service,
-  normalKey,
   deliveryKey,
   enabled,
-  normalOrigin,
   mockOrigin,
   fetcher = fetch,
 }) {
@@ -65,14 +62,8 @@ export function createRuntime({
 
   return createHandler({
     enabled:
-      enabled &&
-      Boolean(service) &&
-      /^sb_publishable_[A-Za-z0-9_-]{20,}$/.test(normalKey) &&
-      /^[A-Za-z0-9+/]{43}=$/.test(deliveryKey),
-    normalOrigin,
+      enabled && Boolean(service) && /^[A-Za-z0-9+/]{43}=$/.test(deliveryKey),
     mockOrigin,
-    authenticate: (authorization) =>
-      json(`${normal}/auth/v1/user`, normalKey, authorization),
     rpc,
     issue: async (persona) => {
       // Independent request-scoped REST calls have no shared mutable Auth client.

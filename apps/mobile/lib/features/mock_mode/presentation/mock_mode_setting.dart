@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
-import '../../auth/application/auth_routes.dart';
 import '../application/mock_mode_coordinator.dart';
 import '../application/realm_departure.dart';
 import 'mock_mode_routes.dart';
@@ -43,15 +42,6 @@ class MockModeSetting extends ConsumerWidget {
                         await coordinator.leave(
                           prepareDeparture: () =>
                               prepareRealmDeparture(context, ref),
-                        );
-                        return;
-                      }
-                      if (coordinator.access.controlId == null) {
-                        context.push(
-                          Uri(
-                            path: AuthRoutes.entry,
-                            queryParameters: {'returnTo': '/settings'},
-                          ).toString(),
                         );
                         return;
                       }

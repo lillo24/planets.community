@@ -116,7 +116,7 @@ void main() {
       access.fail = MockFailureKind.denied;
       await tester.tap(find.byType(TextButton));
       await tester.pumpAndSettle();
-      expect(find.textContaining('enrollment'), findsOneWidget);
+      expect(find.textContaining('service or persona'), findsOneWidget);
       expect(find.byKey(const Key('mock-login-giulia')), findsNothing);
       expect(access.prepared, isEmpty);
     },
@@ -131,7 +131,10 @@ void main() {
       access.catalogGate!.complete();
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('mock-login-giulia')), findsNothing);
-      expect(find.textContaining('normal PLANETS account'), findsOneWidget);
+      expect(
+        find.textContaining('account change could not be completed'),
+        findsOneWidget,
+      );
     },
   );
   testWidgets(

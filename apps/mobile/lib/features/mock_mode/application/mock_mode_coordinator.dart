@@ -19,7 +19,8 @@ class MockModeCoordinator extends ChangeNotifier {
     required this.store,
     String Function()? requestId,
   }) : _requestId = requestId ?? const Uuid().v4 {
-    _controlSubscription = access.controlChanges.listen(_controlChanged);
+    _normalIdentity = access.normalIdentity;
+    _controlSubscription = access.normalIdentityChanges.listen(_controlChanged);
     _dataSubscription = access.dataInvalidations.listen((_) {
       if (_disposed || !isMock || _leaving || _logout) return;
       _revision++;
@@ -45,10 +46,10 @@ class MockModeCoordinator extends ChangeNotifier {
   bool _logout = false;
   bool _leaving = false;
   bool _returning = false;
+  String? _normalIdentity;
   // Recovery can replace the visible phase while an older request still owns
   // cleanup. Do not let Retry reuse that request until its Future has settled.
   int _pendingOperations = 0;
-  String? _transitionRoot;
   bool selectionRequested = false;
   bool requiresNormalLogin = false;
   bool fencing = false;
@@ -65,7 +66,7 @@ class MockModeCoordinator extends ChangeNotifier {
   }
 
   bool _current(int revision, String root) =>
-      !_disposed && revision == _revision && access.controlId == root;
+      !_disposed && revision == _revision && access.clientId == root;
   Future<void> _save(MockModeRecord next) async {
     try {
       await store.write(next);
@@ -83,15 +84,22 @@ class MockModeCoordinator extends ChangeNotifier {
   }
 
   void _controlChanged(String? id) {
-    if (_disposed || ((_logout || _returning) && id == null)) return;
-    final expected =
-        _transitionRoot ?? _record.pending?.rootId ?? active?.rootId;
-    if (expected != null && id != expected) {
+    if (_disposed || id == _normalIdentity) return;
+    _normalIdentity = id;
+    if ((_logout || _returning) && id == null) return;
+    // A real account change fences in-flight work, but it is never a mock
+    // entitlement check. Stable guest/persona use survives normal Auth expiry.
+    if ((active != null ||
+            _record.pending != null ||
+            selectionRequested ||
+            _logout ||
+            _leaving) &&
+        (busy || selectionRequested || _record.pending != null)) {
       _revision++;
       scopeRevision++;
       selectionRequested = false;
       unawaited(access.suspend().catchError((Object _) {}));
-      _failed(const MockFailure(MockFailureKind.controlLoginRequired));
+      _failed(const MockFailure(MockFailureKind.invalidSession));
     }
   }
 
@@ -114,7 +122,7 @@ class MockModeCoordinator extends ChangeNotifier {
       }
       if (active case final selection?) {
         await access.suspend();
-        if (!_current(revision, selection.rootId)) return;
+        if (_disposed || revision != _revision) return;
         final candidate = await access.prepare(selection, storedOnly: true);
         if (!_current(revision, selection.rootId)) {
           await access.retire(selection);
@@ -128,7 +136,6 @@ class MockModeCoordinator extends ChangeNotifier {
         scopeRevision = revision;
         phase = MockModePhase.mock;
       } else {
-        _transitionRoot = null;
         await access.resume();
         if (_disposed || revision != _revision) return;
         phase = MockModePhase.normal;
@@ -160,16 +167,16 @@ class MockModeCoordinator extends ChangeNotifier {
       throw const MockFailure(MockFailureKind.denied);
     }
     final revision = _revision;
-    final root = access.controlId;
+    final root = access.clientId;
     bool current() =>
-        !_disposed && revision == _revision && access.controlId == root;
+        !_disposed && revision == _revision && access.clientId == root;
     try {
       return await access.catalog(expectedRoot: active?.rootId);
     } on MockFailure catch (error) {
       if (current() &&
           isMock &&
           (error.kind == MockFailureKind.denied ||
-              error.kind == MockFailureKind.controlLoginRequired)) {
+              error.kind == MockFailureKind.invalidSession)) {
         await access.suspend();
         if (!current()) rethrow;
         scopeRevision++;
@@ -188,15 +195,14 @@ class MockModeCoordinator extends ChangeNotifier {
         (!selectionRequested && !isMock)) {
       return false;
     }
-    final root = access.controlId;
+    final root = access.clientId;
     if (root == null) {
-      failure = MockFailureKind.controlLoginRequired;
+      failure = MockFailureKind.invalidSession;
       _emit();
       return false;
     }
     final revision = ++_revision;
     _pendingOperations++;
-    _transitionRoot = root;
     phase = MockModePhase.switching;
     fencing = false;
     failure = null;
@@ -207,7 +213,6 @@ class MockModeCoordinator extends ChangeNotifier {
       if (!departed) {
         await access.resume();
         if (!_current(revision, root)) return false;
-        _transitionRoot = null;
         phase = isMock ? MockModePhase.mock : MockModePhase.normal;
         _emit();
         return false;
@@ -225,7 +230,14 @@ class MockModeCoordinator extends ChangeNotifier {
         origin: config.origin.origin,
       );
       await _save(
-        MockModeRecord(active: active, pending: selection, revision: revision),
+        MockModeRecord(
+          active: active,
+          pending: selection,
+          revision: revision,
+          normalWasSignedIn: active == null
+              ? access.normalIdentity != null
+              : _record.normalWasSignedIn,
+        ),
       );
       if (!_current(revision, root)) return false;
       return await _complete(selection, revision);
@@ -244,7 +256,13 @@ class MockModeCoordinator extends ChangeNotifier {
       await access.retire(selection);
       return false;
     }
-    await _save(MockModeRecord(active: selection, revision: revision));
+    await _save(
+      MockModeRecord(
+        active: selection,
+        revision: revision,
+        normalWasSignedIn: _record.normalWasSignedIn,
+      ),
+    );
     if (!_current(revision, selection.rootId)) {
       await access.retire(selection);
       return false;
@@ -256,7 +274,6 @@ class MockModeCoordinator extends ChangeNotifier {
     }
     active = selection;
     requiresNormalLogin = false;
-    _transitionRoot = null;
     scopeRevision = revision;
     phase = MockModePhase.mock;
     selectionRequested = false;
@@ -335,6 +352,7 @@ class MockModeCoordinator extends ChangeNotifier {
       if (_record.pending case final pending?) await access.retire(pending);
       if (_disposed || revision != _revision) return false;
       _returning = true;
+      final returningAccount = _record.normalWasSignedIn;
       await access.returnToNormal();
       if (_disposed || revision != _revision) return false;
       await _save(MockModeRecord(revision: revision));
@@ -342,8 +360,7 @@ class MockModeCoordinator extends ChangeNotifier {
       await access.resume();
       if (_disposed || revision != _revision) return false;
       active = null;
-      requiresNormalLogin = access.controlId == null;
-      _transitionRoot = null;
+      requiresNormalLogin = returningAccount && access.normalIdentity == null;
       scopeRevision = revision;
       phase = MockModePhase.normal;
       selectionRequested = false;
@@ -384,7 +401,6 @@ class MockModeCoordinator extends ChangeNotifier {
     final revision = ++_revision;
     _pendingOperations++;
     _logout = true;
-    _transitionRoot = access.controlId;
     phase = MockModePhase.switching;
     fencing = true;
     selectionRequested = false;
@@ -399,7 +415,6 @@ class MockModeCoordinator extends ChangeNotifier {
       await _save(MockModeRecord(revision: revision));
       if (_disposed || revision != _revision) return;
       active = null;
-      _transitionRoot = null;
       scopeRevision = revision;
       phase = MockModePhase.normal;
       failure = null;

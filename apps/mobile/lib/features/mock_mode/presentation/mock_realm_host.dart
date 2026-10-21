@@ -62,7 +62,9 @@ class _MockRealmHostState extends State<MockRealmHost>
   late NavigationPreferenceState _navigation = widget.navigation;
   late ActivitiesSplitPreferenceState _split = widget.activitiesSplit;
   late StartupPreference _startup = widget.startup;
-  final _store = PreferencesMockModeStore();
+  final _store = PreferencesMockModeStore(
+    legacyCredentials: normalBackendRuntime.credentials,
+  );
 
   @override
   void initState() {
@@ -95,7 +97,7 @@ class _MockRealmHostState extends State<MockRealmHost>
       );
       if (raw != null) {
         final value = jsonDecode(raw);
-        if (value is Map<String, dynamic> && value['format'] == 1) {
+        if (value is Map<String, dynamic> && value['format'] == 2) {
           _unconfiguredRecovery =
               value['active'] != null || value['pending'] != null;
           if (value['revision'] is int) {
@@ -121,7 +123,6 @@ class _MockRealmHostState extends State<MockRealmHost>
     if (coordinator.phase == MockModePhase.recovery &&
         [
           MockFailureKind.denied,
-          MockFailureKind.controlLoginRequired,
           MockFailureKind.invalidSession,
         ].contains(coordinator.failure)) {
       _product = null;
@@ -356,7 +357,7 @@ class _RealmAuthGateway extends SupabaseAuthGateway {
   Future<void> signOut() async {
     await coordinator.fullLogout();
     if (coordinator.phase != MockModePhase.normal ||
-        coordinator.access.controlId != null) {
+        coordinator.access.clientId != null) {
       throw const AuthException('Sign-out could not be completed.');
     }
   }
