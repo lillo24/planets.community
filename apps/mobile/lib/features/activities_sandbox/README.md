@@ -36,3 +36,7 @@ the baseline Home/list presentation in either mode without saving a preference.
 See [the experiment record](../../../../../docs/development/actsplit01-activities-sandbox.md)
 for activation, validation, rendered evidence and limitations. No migration,
 ingestion service, production source integration or real submission flow exists.
+
+ACTAPI01's [source checkpoint](../../../../../docs/development/actapi01-source-checkpoint.md)
+records the live official API evidence and unresolved reuse-permission gate.
+It adds no real catalogue or source parser; this folder still owns examples only.

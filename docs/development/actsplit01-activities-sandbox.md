@@ -73,3 +73,8 @@ not converted into example “results.”
 A future ingestion plan needs permitted sources and explicit reuse rights,
 freshness/availability semantics and real organizer/submission decisions. No
 external account, credential or source is required to evaluate this experiment.
+
+ACTAPI01's [source checkpoint](actapi01-source-checkpoint.md) verified live
+official municipal JSON on 2026-10-21 but stopped on unresolved event-text reuse
+permission. The real-catalogue pipeline is not implemented; these examples
+remain fictional and must not be described as imported results.
