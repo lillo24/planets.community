@@ -53,11 +53,13 @@ class ActivityCard extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.5;
+              final thumbnailWidth = constraints.maxWidth < 320 ? 84.0 : 96.0;
+              final textWidth = constraints.maxWidth - thumbnailWidth - 12;
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
-                    width: constraints.maxWidth < 320 ? 84 : 96,
+                    width: thumbnailWidth,
                     child: CoverImage(
                       title: title,
                       objectPath: coverObjectPath,
@@ -70,6 +72,7 @@ class ActivityCard extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // At large text the badge gets its own top-right line;
@@ -92,7 +95,12 @@ class ActivityCard extends StatelessWidget {
                             ),
                             if (!largeText) ...[
                               const SizedBox(width: 8),
-                              Flexible(child: _StatusBadge(status)),
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: textWidth / 2,
+                                ),
+                                child: _StatusBadge(status),
+                              ),
                             ],
                           ],
                         ),

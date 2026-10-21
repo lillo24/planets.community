@@ -657,6 +657,14 @@ void main() {
           );
           final card = find.byType(ActivityCard).first;
           expect(tester.getSize(card).height, lessThan(narrow ? 260 : 140));
+          final badge = find.descendant(
+            of: card,
+            matching: find.text(locale == 'it' ? 'Pubblicato' : 'Published'),
+          );
+          expect(
+            tester.getTopRight(badge).dx,
+            closeTo(tester.getTopRight(card).dx - 14, 1),
+          );
           final aspect = find
               .descendant(of: card, matching: find.byType(AspectRatio))
               .first;
