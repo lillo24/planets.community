@@ -3190,5 +3190,13 @@
     }
   },
   "eventScheduleZone": "Times shown in {zone}",
-  "@eventScheduleZone": { "placeholders": { "zone": { "type": "String" } } }
+  "@eventScheduleZone": { "placeholders": { "zone": { "type": "String" } } },
+  "personPreviewTitle": "Profile",
+  "personPreviewPhoto": "Profile photo",
+  "personPreviewNoPhoto": "No visible profile photo",
+  "personPreviewPhotoError": "Could not load this photo.",
+  "personPreviewAnonymous": "PLANETS member",
+  "personPreviewNoDetails": "No further public profile details are available.",
+  "personPreviewReadError": "Could not load this profile.",
+  "personPreviewBlocked": "You have blocked this person."
 }

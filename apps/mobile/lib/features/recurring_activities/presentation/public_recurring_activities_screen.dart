@@ -1,3 +1,4 @@
+import '../../profile/presentation/person_preview_sheet.dart';
 import '../../group_discussions/presentation/discussion_group_conversations.dart';
 import '../../settings/application/activities_split_preference_controller.dart';
 import '../../group_projects/presentation/group_project_widgets.dart';
@@ -30,7 +31,6 @@ import '../../auth/application/auth_session_controller.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../drafts/domain/draft_entry.dart';
-import '../../blocking/presentation/blocking_action.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../../participation/application/participation_controllers.dart';
 import '../../participation/domain/participation_models.dart';
@@ -464,6 +464,10 @@ class _PublicRecurringActivityDetailScreenState
                       resolvedDetail.schedule.durationMinutes,
                     ),
                   ),
+                  Text(
+                    l10n.tavoliTimezone(resolvedDetail.schedule.eventTimezone),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ),
             ),
@@ -506,6 +510,29 @@ class _PublicRecurringActivityDetailScreenState
             const SizedBox(height: AppSpacing.large),
             ListTile(
               key: const Key('tavoli-organizer-identity'),
+              onTap: () => showPersonPreviewSheet(
+                context,
+                projectId: resolvedDetail.id,
+
+                profileId: resolvedDetail.creatorProfileId,
+                contextDisplayName: resolvedDetail.creatorDisplayName,
+                blockingKey: const Key('tavoli-blocking-action'),
+                onChanged: (_) async {
+                  ref
+                      .read(projectCreatorPhotoProvider.notifier)
+                      .invalidate(resolvedDetail.id);
+                  await Future.wait([
+                    ref
+                        .read(projectCreatorPhotoProvider.notifier)
+                        .load(resolvedDetail.id, force: true),
+                    if (ref.read(authSessionProvider).identity?.id
+                        case final profileId?)
+                      ref
+                          .read(ownParticipationProvider.notifier)
+                          .load(profileId),
+                  ]);
+                },
+              ),
               contentPadding: EdgeInsets.zero,
               leading: VisibleProfilePhotoAvatar(
                 entry: organizerPhoto,
@@ -524,27 +551,6 @@ class _PublicRecurringActivityDetailScreenState
                     AuthSessionPhase.ready &&
                 ref.watch(authSessionProvider).identity?.id !=
                     resolvedDetail.creatorProfileId) ...[
-              const SizedBox(height: AppSpacing.small),
-              BlockingActionButton(
-                targetProfileId: resolvedDetail.creatorProfileId,
-                targetDisplayName: resolvedDetail.creatorDisplayName,
-                buttonKey: const Key('tavoli-blocking-action'),
-                onChanged: (_) async {
-                  ref
-                      .read(projectCreatorPhotoProvider.notifier)
-                      .invalidate(resolvedDetail.id);
-                  await Future.wait([
-                    ref
-                        .read(projectCreatorPhotoProvider.notifier)
-                        .load(resolvedDetail.id, force: true),
-                    if (ref.read(authSessionProvider).identity?.id
-                        case final profileId?)
-                      ref
-                          .read(ownParticipationProvider.notifier)
-                          .load(profileId),
-                  ]);
-                },
-              ),
               const SizedBox(height: AppSpacing.small),
               OutlinedButton.icon(
                 key: const Key('tavoli-report-action'),

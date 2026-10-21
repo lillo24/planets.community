@@ -104,3 +104,27 @@ The dedicated visibility edit route retains Edit Profile's Terms/Rules
 acceptance guard. Settings itself, legal documents, reporting/blocking and
 sign-out keep their existing pre-acceptance access. Relocation never records
 consent automatically; only the explicit policy acceptance flow opens editing.
+
+
+## PROF01 person previews
+
+`domain/public_profile.dart` and `data/public_profile_gateway.dart` read only
+`get_public_profile(profile_id)`: nullable sanitized name/bio and controlled
+public skills. They never read another person's owner tables. The auto-disposed
+providers in `application/person_preview_controller.dart` rebind to the current
+viewer; `presentation/person_preview_sheet.dart` renders a scrollable, dismissible
+read-only sheet. A source-authorized display name may remain local to that sheet;
+it is never written into the generic public projection. No contact details or
+unsolicited private-message action are added.
+
+Entry points are Proposal/Tavolo organizer rows, Project People current/history
+action sheets, Group People member actions, Resource listing owner identity,
+and Project-request/Resource direct chat identity headers. Existing Group contact
+consent, participation actions, reports and Settings > Blocked Users remain.
+Project/Tavolo standalone organizer Block buttons move into the preview. Profile
+photos use their original generic, Project-creator or Resource-owner authorization
+context. Full bytes are fetched only while the preview is open, then discarded;
+identity changes close it, and resume/retry reauthorizes. Block confirmations and
+context callbacks use the existing blocking feature; a block does not grant or
+remove Project membership. The sheet shows an explicit error and retry if a
+profile/photo operation fails, and a distinct successful empty/denied state.

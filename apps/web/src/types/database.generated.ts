@@ -2870,6 +2870,10 @@ export type Database = {
         Args: { p_object_path: string }
         Returns: boolean
       }
+      can_read_profile_photo_thumbnail_object: {
+        Args: { p_object_path: string }
+        Returns: boolean
+      }
       can_read_public_cover_image_object: {
         Args: { p_object_path: string }
         Returns: boolean
@@ -4072,6 +4076,17 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_own_profile_photo_v2: {
+        Args: { p_expected_profile_id: string }
+        Returns: {
+          audience: string
+          created_at: string
+          object_path: string
+          profile_id: string
+          thumbnail_object_path: string | null
+          updated_at: string
+        }[]
+      }
       get_own_project_cover: {
         Args: { p_expected_creator_profile_id: string; p_project_id: string }
         Returns: {
@@ -4448,6 +4463,15 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_profile_photo_for_viewer_v2: {
+        Args: { p_profile_id: string }
+        Returns: {
+          object_path: string
+          profile_id: string
+          thumbnail_object_path: string | null
+          updated_at: string
+        }[]
+      }
       get_project_capacity_for_manager: {
         Args: { p_expected_manager_profile_id: string; p_project_id: string }
         Returns: {
@@ -4468,6 +4492,15 @@ export type Database = {
         Returns: {
           object_path: string
           profile_id: string
+          updated_at: string
+        }[]
+      }
+      get_project_creator_profile_photo_for_viewer_v2: {
+        Args: { p_project_id: string }
+        Returns: {
+          object_path: string
+          profile_id: string
+          thumbnail_object_path: string | null
           updated_at: string
         }[]
       }
@@ -4738,6 +4771,15 @@ export type Database = {
         Returns: {
           object_path: string
           profile_id: string
+          updated_at: string
+        }[]
+      }
+      get_resource_listing_owner_profile_photo_for_viewer_v2: {
+        Args: { p_listing_id: string }
+        Returns: {
+          object_path: string
+          profile_id: string
+          thumbnail_object_path: string | null
           updated_at: string
         }[]
       }
@@ -6277,6 +6319,15 @@ export type Database = {
           updated_at: string
         }[]
       }
+      list_profile_photos_for_viewer_v2: {
+        Args: { p_profile_ids: string[] }
+        Returns: {
+          object_path: string
+          profile_id: string
+          thumbnail_object_path: string | null
+          updated_at: string
+        }[]
+      }
       list_project_capacity_statuses_for_structural_actor: {
         Args: { p_expected_profile_id: string; p_project_ids: string[] }
         Returns: {
@@ -7638,6 +7689,21 @@ export type Database = {
           audience: string
           object_path: string
           profile_id: string
+          updated_at: string
+        }[]
+      }
+      set_own_profile_photo_v2: {
+        Args: {
+          p_audience: string
+          p_expected_profile_id: string
+          p_object_path: string
+          p_thumbnail_object_path: string
+        }
+        Returns: {
+          audience: string
+          current_object_path: string
+          previous_object_path: string | null
+          previous_thumbnail_object_path: string | null
           updated_at: string
         }[]
       }
