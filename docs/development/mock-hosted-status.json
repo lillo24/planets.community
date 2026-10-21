@@ -1,36 +1,68 @@
 {
-  "observedAt": "2026-10-21T13:51:27.691Z",
-  "sourceBase": "49b6159af0034c5c97317b39b570ea3ea319901d",
-  "canonicalSchemaFingerprint": "e01979c9de0bd01a52d76cc4c5244467435077b4eae9953221e97a8ccb6ece88",
+  "observedAt": "2026-10-21T18:53:25.072317+00:00",
+  "sourceBase": "0d8348357c111e7933e6006e860e6236dd98a47d",
+  "qualifiedHostedSource": "4f9bc32648b88aa7baa552d4a7a9afc7a6b7a943",
+  "canonicalSchemaFingerprint": "df1246de922ed3289857c9904af4191ac4da45a76139cd8aa8c9165ce6047d5b",
+  "generation": "mock-world-2026-10-21-v1",
   "mock": {
     "name": "planets-mock",
     "projectRef": "pnolarmzxmmjtguligfc",
     "region": "eu-west-1",
     "creationCostQuotedMonthly": 0,
-    "canonicalMigrationsApplied": 122,
-    "activationEnabled": false,
-    "authUsers": 0,
-    "profiles": 0,
+    "canonicalMigrationsApplied": 123,
+    "activationEnabled": true,
+    "authUsers": 5,
+    "profiles": 5,
+    "fixtureReceipts": 55,
     "controlInstalled": true,
     "brokerDeployed": true,
-    "fixturesSeeded": false,
-    "readiness": "not ready",
-    "brokerVersion": 1,
-    "brokerBundleSha256": "3236fc0823bfc65d77cbfc5cab896ff03c3badc0c7f38b18d31f8b5581bc153b",
-    "brokerSmoke": {
-      "unauthenticatedStatus": 503,
-      "error": "unavailable"
+    "brokerVersion": 3,
+    "brokerBundleSha256": "77294502aec157ee4fda50899e1316fe99aa65eec60c6231e27353c67147259c",
+    "brokerRuntimeSource": "ce5a519e9cad22a58a7614126ca0134f62741455",
+    "brokerRuntimeUnchangedAtQualifiedSource": true,
+    "controlSourceSha256": "009734ddc55453e41a2fbec5be70bdef74eab898f9cdebf057d6298bb77d1dde",
+    "deployedAccessModel": "Public fixed fictional personas, including signed-out guests; private per-client capability",
+    "hostedSeedVerification": {
+      "run": "https://github.com/lillo24/planets.community/actions/runs/39651945003",
+      "checks": 42,
+      "success": true
     },
-    "controlSourceSha256": "f8cb7910e2df18c6ad952d224f9619699160f4a5aa2069a7dd29300da42a4642",
-    "cancellationTombstoneInstalled": true,
+    "hostedPublicSmoke": {
+      "observedAt": "2026-10-21T18:23:18.574Z",
+      "checks": 92,
+      "success": true,
+      "independentSamePersonaSessions": true,
+      "clientBoundRecovery": true,
+      "requestGuessingCannotRetireOtherClient": true,
+      "ordinaryAuthRpcStorage": true,
+      "mockBearerRejectedByNormalDataApi": true
+    },
+    "hostedInteraction": {
+      "observedAt": "2026-10-21T18:17:35.139Z",
+      "checks": 11,
+      "success": true,
+      "method": "Public broker plus canonical Project chat send/read as Giulia and Sara",
+      "persistedMessages": 2
+    },
+    "shutdownRehearsal": {
+      "observedAt": "2026-10-21T18:16:49.433Z",
+      "databaseFreshIssuanceDenied": true,
+      "mockRefreshRevoked": true,
+      "serverFreshIssuanceDenied": true,
+      "worldPreserved": true,
+      "normalProjectMutated": false,
+      "bearerResidualLifetimeSeconds": 3600
+    },
     "authSettingsVerified": true,
-    "secretsConfigured": true,
-    "hostedAuthenticatedSmokePassed": false,
     "externalAuthDeliveryDisabled": true,
-    "hostedAuthProbePassed": true,
     "authConfigSha256": "12f1d82285c9afbdec42cf65f03703316e4ece98bc84d9e24bb7cb9a2072e6d9",
-    "hostedProof": "Auth configuration, standard no-mail session exchange and email denial only; not persona-world or tester-broker readiness",
-    "deployedAccessModel": "disabled legacy broker; public capability correction not yet deployed"
+    "configuredBrokerSecrets": ["MOCK_BROKER_ENABLED", "MOCK_DELIVERY_KEY"],
+    "obsoleteNormalAuthBrokerSecretsRemoved": true,
+    "permanentPasswordRotated": false,
+    "temporaryGithubOperatorSecretRemoved": true,
+    "hostedPublicApiReady": true,
+    "hostedNativeEndToEndRun": false,
+    "readiness": "Hosted public API verified; hosted native end-to-end journey remains unrun"
   },
   "normal": {
     "projectRef": "cllpvruvrrvxczjitlqd",
@@ -60,37 +92,40 @@
       "20261015114510_member_contact_block_lock_order.sql",
       "20261019073011_contact_report_erased_subject_provenance.sql",
       "20261020123403_group_idea_invitation_context.sql",
-      "20261020144145_contact_discussion_integration.sql"
+      "20261020144145_contact_discussion_integration.sql",
+      "20261021155653_resource_cat01_categories.sql"
     ],
     "mutated": false,
-    "gapObservedAt": "2026-10-21 13:09:16 UTC"
+    "gapObservedAt": "2026-10-21T18:25:00Z"
   },
-  "hostedBlockers": [
-    "Persistent session-pooler connectivity must be established; a guarded temporary CLI-login runner is prepared.",
-    "Hosted fixture seed, corrected public broker deployment and public guest/client isolation smoke remain incomplete."
-  ],
+  "hostedBlockers": [],
+  "codeQualification": {
+    "publicAccessCorrectionImplemented": true,
+    "requiredCumulativeChecks": "https://github.com/lillo24/planets.community/pull/278/checks",
+    "nativeEvidenceSource": "71f3b8dc866a49e079b56e321ca3bb83d1d298bb",
+    "nativeEvidenceRun": "https://github.com/lillo24/planets.community/actions/runs/39655688024",
+    "evidenceBoundary": "Read actual run conclusion; local/CI evidence is not a hosted native journey."
+  },
   "release": {
-    "artifactBuilt": false,
-    "status": "not yet qualified"
-  },
-  "stage01Qualification": {
-    "source": "6dbc725ae87b77168fb186ab7eda6bd1e4a2cda8",
-    "run": "https://github.com/lillo24/planets.community/actions/runs/39595113413",
-    "boundaryTests": 9,
-    "genuineTwoRealmChecks": 144,
-    "result": "passed"
-  },
-  "stage02BackendProof": {
-    "sourceHead": "343792529a382d6b21b25feb2f20057cf238537d",
-    "formatOnlyHead": "6720c6c453c8ee77f502a59e8cb69dc578c7fbff",
-    "workflowRun": 39601559321,
-    "nodeUnitTestsPassed": 9,
-    "genuineTwoRealmChecksPassed": 146,
-    "hostedProof": false
-  },
-  "correction": {
-    "sourceImplemented": true,
-    "hostedApplied": false,
-    "qualification": "pending; prior enrollment-based passes do not qualify this revision"
+    "artifactBuilt": true,
+    "version": "0.1.9+13",
+    "buildSource": "71f3b8dc866a49e079b56e321ca3bb83d1d298bb",
+    "sha256": "eab670b6d24d95d9d0f9e19a0fc9a8c6387b09bf6dccb3ef2763d917093cbd3d",
+    "bytes": 85497215,
+    "configSha256": "9ac9ed9b44aa27802ab078b78489f5a25ef87b7edcd2d5a7b860d6d574212459",
+    "existingUploadCertificateSha256": "f9362ed9f6f7be7c59a6eacfd8aae99426af98935ff1197f65e8207cc0fd22c0",
+    "package": "community.planets.app",
+    "targetSdk": 36,
+    "bundletoolValidation": true,
+    "all440PayloadEntriesSigned": true,
+    "entriesScanned": 443,
+    "privilegedValuesFound": 0,
+    "embeddedSessionsFound": 0,
+    "highestUploadedPlayVersionCodeObserved": 12,
+    "playObservationDate": "2026-10-21",
+    "publicationReady": false,
+    "uploadPerformed": false,
+    "status": "Signed closed-test candidate built and validated; hosted native/external OTP/device QA and normal staging parity remain separate.",
+    "productionMockCapability": false
   }
 }

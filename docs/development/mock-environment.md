@@ -23,6 +23,13 @@ The ignored private JSON operator config contains `projectRef`, `apiUrl`,
 `MOCK_DATABASE_URL` and `MOCK_SERVICE_ROLE_KEY` are private process inputs, never
 mobile defines, command arguments or reports. No human access list is needed.
 
+For an existing environment whose canonical inventory changes, keep issuance
+disabled and compare every existing migration receipt with the previous reviewed
+inventory. Apply only the missing canonical migrations to the mock target, then
+record their hashes and the new marker fingerprint atomically. A changed marker
+alone does not prove a schema upgrade. Re-run seed and read-only verification;
+existing fixture receipts preserve shared edits. Do not change the normal target.
+
 1. Verify the mock project, zero cost and independently confirmed marker.
 2. Run `node scripts/mock/operator.mjs dry-run <private-config>`.
 3. Run `node scripts/mock/operator.mjs setup <private-config>` for missing,

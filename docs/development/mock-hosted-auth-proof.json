@@ -1,5 +1,6 @@
 {
   "projectRef": "pnolarmzxmmjtguligfc",
+  "scope": "Historical Auth-only probe; current public broker readiness is recorded in mock-hosted-status.json",
   "observedAt": "2026-10-21T13:51:27.691Z",
   "publicSignupDisabled": true,
   "phoneProviderDisabled": true,
@@ -12,15 +13,6 @@
   "emailDenialCode": "email_provider_disabled",
   "emailProviderDisabled": true,
   "probeRemoved": true,
-  "brokerEnabled": false,
-  "hostedMockReady": false,
   "authConfigSha256": "12f1d82285c9afbdec42cf65f03703316e4ece98bc84d9e24bb7cb9a2072e6d9",
-  "configuredBrokerSecrets": [
-    "MOCK_BROKER_ENABLED",
-    "MOCK_NORMAL_ORIGIN",
-    "MOCK_NORMAL_PUBLISHABLE_KEY",
-    "MOCK_DELIVERY_KEY"
-  ],
-  "brokerSecretDigestsMatched": true,
-  "publicAccessCorrectionQualified": false
+  "currentPublicAccessProof": "mock-hosted-status.json"
 }

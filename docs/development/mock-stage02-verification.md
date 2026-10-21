@@ -35,7 +35,8 @@ runtime-equal head (`39595113413`: 9 unit tests and 144 real checks). Those
 results do not qualify the changed MOCK02 source; its own draft CI and the final
 cumulative MOCK03 gate supply that evidence.
 
-Native release-mode, full final-source mobile/web/database, artifact scans and
-the complete account selector remain MOCK03 gates. Hosted Auth settings, secrets,
-approved issuer/UUID tester roster, seed/media and hosted smoke remain pending;
-ordinary staging and the protected physical device were not modified.
+At this historical stage, native release-mode, final-source CI, artifact scans,
+the complete selector and hosted seed/smoke were pending MOCK03 gates. The public
+access correction removes all human enrollment inputs. Current results belong in
+`mock-hosted-status.json` and the cumulative verification report. Ordinary staging
+and the protected physical device were not modified by this stage.

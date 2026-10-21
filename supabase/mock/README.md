@@ -4,7 +4,7 @@ This folder is deliberately outside canonical product migrations.
 
 - `marker.sql` creates an unacknowledged target marker; the operator must verify
   the exact independent mock project and reviewed source hash before acknowledging it.
-- `control.sql` installs the private roster/registry/receipts, narrow service-only
+- `control.sql` installs the private client capabilities, persona registry and receipts, narrow service-only
   broker functions and mock-only Auth credential guards. Its delivery hook rejects
   external Auth email/SMS while preserving admin link generation and ordinary verification.
 - `auth-config.toml` declares only the reviewed hosted Auth changes. Preview its
