@@ -219,6 +219,7 @@ void main() {
         );
         expect(() => old.read(appConfigProvider), throwsStateError);
         await request('/qa/mode', {'mode': 'mock'});
+        await capture('home-$key-$stage');
         steps.add('persona-$key-home');
       }
 
@@ -313,6 +314,32 @@ void main() {
             Brightness.light;
         await asPerson('giulia', giulia);
         expect(control, giulia, reason: 'Deliberate equal normal/mock UUID');
+        for (final language in [
+          LanguagePreference.english,
+          LanguagePreference.italian,
+        ]) {
+          await scope()
+              .read(languagePreferenceProvider.notifier)
+              .select(language);
+          for (final brightness in [Brightness.light, Brightness.dark]) {
+            tester.platformDispatcher.platformBrightnessTestValue = brightness;
+            await navigate('/settings');
+            await reveal(setting);
+            await capture(
+              'settings-${language.name}-${brightness.name}-320-2x',
+            );
+            await navigate('/help');
+            await reveal(find.byKey(const Key('help-mock-accounts-action')));
+            await capture('help-${language.name}-${brightness.name}-320-2x');
+            await navigate('/');
+            await capture('home-${language.name}-${brightness.name}-320-2x');
+          }
+        }
+        await scope()
+            .read(languagePreferenceProvider.notifier)
+            .select(LanguagePreference.english);
+        tester.platformDispatcher.platformBrightnessTestValue =
+            Brightness.light;
         await profile('Giulia');
         await navigate(
           '/proposals/${const String.fromEnvironment('MOCK_QA_PROJECT')}',
