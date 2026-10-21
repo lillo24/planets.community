@@ -1,3 +1,4 @@
+import 'package:planets_mobile/features/settings/data/co_creation_preference_store.dart';
 import 'package:planets_mobile/features/settings/data/activities_split_preference_store.dart';
 import 'package:planets_mobile/features/settings/data/language_preference_store.dart';
 import 'package:planets_mobile/features/settings/data/navigation_preference_store.dart';
@@ -51,6 +52,30 @@ class FakeNavigationPreferenceStore implements NavigationPreferenceStore {
 class FakeActivitiesSplitPreferenceStore
     implements ActivitiesSplitPreferenceStore {
   FakeActivitiesSplitPreferenceStore({this.value});
+
+  String? value;
+  Object? readError;
+  Object? writeError;
+  Future<void>? writeDelay;
+  final List<String> writes = [];
+
+  @override
+  Future<String?> read() async {
+    if (readError case final error?) throw error;
+    return value;
+  }
+
+  @override
+  Future<void> write(String value) async {
+    writes.add(value);
+    if (writeDelay case final delay?) await delay;
+    if (writeError case final error?) throw error;
+    this.value = value;
+  }
+}
+
+class FakeCoCreationPreferenceStore implements CoCreationPreferenceStore {
+  FakeCoCreationPreferenceStore({this.value});
 
   String? value;
   Object? readError;

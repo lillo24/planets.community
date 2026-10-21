@@ -119,6 +119,9 @@ import 'app_navigation_shell.dart';
 import 'native_project_links.dart';
 import 'draft_departure_coordinator.dart';
 
+import '../../features/settings/application/co_creation_preference_controller.dart';
+import '../../features/co_creation/presentation/co_creation_demo_screens.dart';
+
 typedef AuthSessionReader = AuthSessionState Function();
 typedef PendingEmailOtpReader = PendingEmailOtp? Function();
 
@@ -130,6 +133,7 @@ GoRouter createAppRouter({
   StartupFlow? startupFlow,
   bool Function()? readPolicyAccepted,
   bool Function()? readActivitiesSplit,
+  bool Function()? readCoCreation,
 }) {
   final configuration = _NativeRoutingConfig(
     _routingConfig(
@@ -140,6 +144,7 @@ GoRouter createAppRouter({
       startupFlow,
       readPolicyAccepted,
       readActivitiesSplit,
+      readCoCreation,
     ),
     draftDeparture,
   );
@@ -161,6 +166,7 @@ RoutingConfig _routingConfig(
   StartupFlow? startupFlow,
   bool Function()? readPolicyAccepted,
   bool Function()? readActivitiesSplit,
+  bool Function()? readCoCreation,
 ]) {
   final sessionReader =
       readAuthSession ?? () => const AuthSessionState.signedOut();
@@ -220,6 +226,10 @@ RoutingConfig _routingConfig(
       final session = sessionReader();
       final pending = pendingReader();
       final path = state.uri.path;
+      if ((path == '/people' || path.startsWith('/people/')) &&
+          !(readCoCreation?.call() ?? false)) {
+        return '/proposals';
+      }
       if ((path == '/activities' || path.startsWith('/activities/')) &&
           !(readActivitiesSplit?.call() ?? false)) {
         return '/proposals';
@@ -1210,6 +1220,48 @@ RoutingConfig _routingConfig(
                 ],
               ),
               GoRoute(
+                path: '/people',
+                pageBuilder: (context, state) => NoTransitionPage<void>(
+                  key: state.pageKey,
+                  child: const CoCreationDemoBrowseScreen(),
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'demo/compose',
+                    builder: (_, _) => const CoCreationDemoComposer(),
+                  ),
+                  GoRoute(
+                    path: 'demo/posts/:id',
+                    builder: (_, state) => CoCreationDemoPostScreen(
+                      id: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'demo/hubs/:id',
+                    builder: (_, state) => CoCreationDemoHubScreen(
+                      id: state.pathParameters['id']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'general',
+                        builder: (_, state) => CoCreationDemoRoomScreen(
+                          hubId: state.pathParameters['id']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'groups/:number',
+                        builder: (_, state) => CoCreationDemoRoomScreen(
+                          hubId: state.pathParameters['id']!,
+                          number:
+                              int.tryParse(state.pathParameters['number']!) ??
+                              -1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              GoRoute(
                 path: '/activities',
                 pageBuilder: (context, state) => NoTransitionPage<void>(
                   key: state.pageKey,
@@ -1388,76 +1440,85 @@ bool _isResourceManagementPath(String destination) {
       (segments.last == 'edit' || segments.last == 'loan-schedule');
 }
 
-final appRouterProvider = Provider<GoRouter>((ref) {
-  final startup = ref.read(startupFlowProvider);
-  RoutingConfig configuration() => _routingConfig(
-    () => ref.read(authSessionProvider),
-    () => ref.read(pendingEmailOtpProvider),
-    ref.read(draftDepartureProvider),
-    () => ref.read(authCommandProvider.notifier).cancelFlow(),
-    startup,
-    () => ref
-        .read(policyAcceptanceProvider)
-        .allows(
-          ref.read(authSessionProvider).identity?.id,
-          ref.read(policyVersionProvider),
-        ),
-    () => ref.read(activitiesSplitPreferenceProvider).enabled,
-  );
-  final routes = _NativeRoutingConfig(
-    configuration(),
-    ref.read(draftDepartureProvider),
-  );
-  final router = GoRouter.routingConfig(
-    routingConfig: routes,
-    initialLocation: '/',
-    errorBuilder: (context, state) => const _UnknownRouteScreen(),
-  );
-  routes.readIncomingUri = () => router.routeInformationProvider.value.uri;
-  ref.listen(authSessionProvider, (previous, next) {
-    if (next.identity != null) startup.enter();
-    if (previous?.identity?.id != next.identity?.id &&
-        router.routerDelegate.currentConfiguration.uri.path.isNotEmpty) {
-      // Native entry may still be parsing when restored Auth arrives. There are
-      // no retained stacks yet, and GoRouter cannot reparse its initial empty URI.
-      // New shell/branch keys discard all retained forms and private stacks.
-      // Reparse the current URL instead of losing an in-flight OTP returnTo.
-      routes.value = configuration();
-    }
-    router.refresh();
-  });
-  ref.listen(policyAcceptanceProvider, (_, _) {
-    // Identity/version rebuilding may be observed while redirect is building
-    // Router. Refresh after that frame, while still denying writes immediately.
-    if (SchedulerBinding.instance.schedulerPhase ==
-        SchedulerPhase.persistentCallbacks) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (ref.mounted) {
-          router.refresh();
-        }
-      });
-    } else {
+final appRouterProvider = Provider<GoRouter>(
+  (ref) {
+    final startup = ref.read(startupFlowProvider);
+    RoutingConfig configuration() => _routingConfig(
+      () => ref.read(authSessionProvider),
+      () => ref.read(pendingEmailOtpProvider),
+      ref.read(draftDepartureProvider),
+      () => ref.read(authCommandProvider.notifier).cancelFlow(),
+      startup,
+      () => ref
+          .read(policyAcceptanceProvider)
+          .allows(
+            ref.read(authSessionProvider).identity?.id,
+            ref.read(policyVersionProvider),
+          ),
+      () => ref.read(activitiesSplitPreferenceProvider).enabled,
+      () => ref.read(coCreationPreferenceProvider).enabled,
+    );
+    final routes = _NativeRoutingConfig(
+      configuration(),
+      ref.read(draftDepartureProvider),
+    );
+    final router = GoRouter.routingConfig(
+      routingConfig: routes,
+      initialLocation: '/',
+      errorBuilder: (context, state) => const _UnknownRouteScreen(),
+    );
+    routes.readIncomingUri = () => router.routeInformationProvider.value.uri;
+    ref.listen(authSessionProvider, (previous, next) {
+      if (next.identity != null) startup.enter();
+      if (previous?.identity?.id != next.identity?.id &&
+          router.routerDelegate.currentConfiguration.uri.path.isNotEmpty) {
+        // Native entry may still be parsing when restored Auth arrives. There are
+        // no retained stacks yet, and GoRouter cannot reparse its initial empty URI.
+        // New shell/branch keys discard all retained forms and private stacks.
+        // Reparse the current URL instead of losing an in-flight OTP returnTo.
+        routes.value = configuration();
+      }
       router.refresh();
-    }
-  });
-  // Refresh the gate in place: changing this local experiment must not replace
-  // branch keys, the Router, protected forms, or retained domain state.
-  ref.listen(activitiesSplitPreferenceProvider, (_, _) => router.refresh());
-  ref.listen(pendingEmailOtpProvider, (_, _) => router.refresh());
-  ref.listen(authCommandProvider, (previous, next) {
-    if (next.didSignOut &&
-        previous?.didSignOut != true &&
-        ref.read(authSessionProvider).phase == AuthSessionPhase.signedOut) {
-      startup.returnToWelcomeAfterSignOut();
-      router.go('/welcome');
-    }
-  });
-  startup.addListener(router.refresh);
-  ref.onDispose(() => startup.removeListener(router.refresh));
-  ref.onDispose(router.dispose);
-  ref.onDispose(routes.dispose);
-  return router;
-}, dependencies: [startupFlowProvider, activitiesSplitPreferenceProvider]);
+    });
+    ref.listen(policyAcceptanceProvider, (_, _) {
+      // Identity/version rebuilding may be observed while redirect is building
+      // Router. Refresh after that frame, while still denying writes immediately.
+      if (SchedulerBinding.instance.schedulerPhase ==
+          SchedulerPhase.persistentCallbacks) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (ref.mounted) {
+            router.refresh();
+          }
+        });
+      } else {
+        router.refresh();
+      }
+    });
+    // Refresh the gate in place: changing this local experiment must not replace
+    // branch keys, the Router, protected forms, or retained domain state.
+    ref.listen(activitiesSplitPreferenceProvider, (_, _) => router.refresh());
+    ref.listen(coCreationPreferenceProvider, (_, _) => router.refresh());
+    ref.listen(pendingEmailOtpProvider, (_, _) => router.refresh());
+    ref.listen(authCommandProvider, (previous, next) {
+      if (next.didSignOut &&
+          previous?.didSignOut != true &&
+          ref.read(authSessionProvider).phase == AuthSessionPhase.signedOut) {
+        startup.returnToWelcomeAfterSignOut();
+        router.go('/welcome');
+      }
+    });
+    startup.addListener(router.refresh);
+    ref.onDispose(() => startup.removeListener(router.refresh));
+    ref.onDispose(router.dispose);
+    ref.onDispose(routes.dispose);
+    return router;
+  },
+  dependencies: [
+    startupFlowProvider,
+    activitiesSplitPreferenceProvider,
+    coCreationPreferenceProvider,
+  ],
+);
 
 /// External deliveries compose native validation with draft departure. Ordinary
 /// routes retain the draft hook while an editor owns it; startup without an

@@ -16,6 +16,7 @@ import '../../auth/presentation/account_sign_out_action.dart';
 import '../../policies/application/policy_documents.dart';
 import '../../policies/presentation/policy_link_action.dart';
 import 'activities_split_setting.dart';
+import 'co_creation_setting.dart';
 import '../application/language_preference_controller.dart';
 import '../application/navigation_preference_controller.dart';
 import '../domain/language_preference.dart';
@@ -134,6 +135,7 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ),
                   const ActivitiesSplitSetting(),
+                  const CoCreationSetting(),
                   if (kDebugMode)
                     TextButton(
                       key: const Key('startup-development-reset'),

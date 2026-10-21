@@ -1,0 +1,64 @@
+# COCREATE-RUNALL progress
+
+Authority: [RUNALL pack](../../history-implementations/PLANETS_COCREATE_RUNALL_autonomous_implementation.md).
+Base: `675bc592` (latest origin/main fetched 2026-10-21).
+Integration branch: `codex/cocreate-runall`. Managed worktree:
+`C:/Users/utente/.codex/worktrees/cocreate-runall/planets.community`.
+One cumulative draft PR; automatic merge prohibited. No hosted migration,
+deployment, store upload or external delivery authorized/performed.
+
+## Stage ledger
+
+| Stage | State                  | Dependency      | Evidence / next action                                                                                                                                                  |
+| ----- | ---------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A00   | implemented_unverified | base            | Implemented and inspected. 287 affected tests pass, eight rendered combinations pass, Flutter analysis and all-file formatting pass. Android debug build still running. |
+| A01   | in_progress            | A00             | Experimental contract, strict typed identities and default-OFF private server gate added. Local stack startup/DB replay and gate tests pending.                         |
+| B01   | pending                | A01             | Posts, consent/contact backend and negative/concurrency qualification.                                                                                                  |
+| B02   | pending                | B01             | Live mobile Posts/Requests/accepted-contact Messages.                                                                                                                   |
+| C01   | pending                | A01             | Independent hub membership and General backend.                                                                                                                         |
+| C02   | pending                | C01             | Live communities and General UI.                                                                                                                                        |
+| C03   | pending                | C01             | Atomic numbered groups, history, hub-exit cascade.                                                                                                                      |
+| C04   | pending                | C02/C03         | Live numbered groups and Messages integration.                                                                                                                          |
+| D01   | pending                | C03/C04         | Canonical capacity-aware recruitment.                                                                                                                                   |
+| D02   | pending                | B/C             | Explicit source links and native Project drafts.                                                                                                                        |
+| D03   | pending                | B/C             | Ordinary deterministic filters. Provider part conditional on merged ACTAPI01.                                                                                           |
+| Q00   | pending                | eligible stages | Full synthetic programme journey, fresh/upgrade DB and regression qualification.                                                                                        |
+
+## Isolation and evidence
+
+- Primary checkout was clean on local main `b313b48f`; fetch updated only
+  origin/main. No checkout reset, stash, deletion or other worktree mutation.
+- Existing ACTAPI01 (`codex/actapi01-official-activities`), ACTMET01
+  (`codex/actmet01-activity-interest`), MYHUB01 and TUT07 worktrees preserved.
+- Open PRs inspected. ACTAPI01 #274 is a source-rights checkpoint, not an
+  implemented model/routes integration. Its optional D03 handoff is unavailable
+  on this base; core discovery remains eligible.
+- Pinned `npm ci --ignore-scripts` and `flutter pub get` succeeded; no dependency
+  upgrade. Flutter analysis initially found four interpolation lint infos;
+  implementation repaired; rerun pending.
+- Initial A00 run passed preference, composer account clearing, Home precedence
+  and setting failure/retry tests. Eight rendered journey cases failed because
+  the test selected multiple Scrollables; fix uses the active ListView only.
+  This is not a live backend test.
+- Existing three Podman machines are stopped and untouched. Creating an owned
+  `planets-cocreate-qa` machine for disposable local testing; never reset an
+  existing PLANETS database or use hosted credentials.
+
+## Resumable checkpoint
+
+Current action: rerun corrected A00 tests; extend actual-router/bootstrap
+coverage, inspect EN/IT 320dp 2x captures, run analysis/build and inspect diff.
+Then commit A00 and its ledger evidence, push and open cumulative draft PR.
+Continue A01 → B01 → B02 → C01 → C02 → C03 → C04 → D01 → D02 → D03 → Q00.
+Do not stop at A00. Preserve the explicit experimental defaults in RUNALL;
+unimplemented live features must never be reported as verified.
+
+## A00 qualification checkpoint
+
+- Passed: flutter gen-l10n; flutter analyze --no-pub (no issues); dart format --output=none --set-exit-if-changed lib test test_support (838 files unchanged).
+- Passed: flutter test --no-pub --concurrency=1 test/features/co_creation test/features/settings test/bootstrap test/app/router test/app/startup test/features/activities_sandbox: **287 tests**. Includes actual router/native routes, startup/tutorial/deep-link/protected-draft regressions and new mode tests.
+- Separately passed: eight EN/IT, light/dark, 320dp 1x/2x rendered navigation cases plus composer account invalidation, precedence and save/retry (11 tests). Captures: .local/cocreate-renders/. Italian hub and English dark Posts 2x visually inspected. Native-device review unrun.
+- Running: flutter build apk --debug --no-pub. Do not claim build success until completion.
+- Tooling limitation: documented Dart/Flutter marketplace add reports an existing marketplace from another source; plugin add says plugin not found. Existing marketplace preserved. Installed Flutter/Dart CLI tests and analysis work.
+- Local DB startup: first attempt followed the unrelated default Podman connection despite DOCKER_HOST; inspection failed without mutation. Retried with process-only CONTAINER_CONNECTION=planets-cocreate-qa-root and owned pipe. Images downloading; no existing machine/database reset or global default change.
+- Next: commit tested A00, push cumulative draft PR; finish A01 gate replay/tests then continue B01 and independent C01. A00-only stop restriction is superseded.

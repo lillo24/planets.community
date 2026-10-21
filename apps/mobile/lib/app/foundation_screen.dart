@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/settings/application/activities_split_preference_controller.dart';
+import '../features/settings/application/co_creation_preference_controller.dart';
 
 import '../core/widgets/page_app_bar.dart';
 import '../core/theme/app_tokens.dart';
@@ -20,9 +21,14 @@ class FoundationScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // A tutorial baseline override suppresses both experimental presentations.
+    final coCreation =
+        activitiesSplitPreview == null &&
+        ref.watch(coCreationPreferenceProvider).enabled;
     final split =
-        activitiesSplitPreview ??
-        ref.watch(activitiesSplitPreferenceProvider).enabled;
+        !coCreation &&
+        (activitiesSplitPreview ??
+            ref.watch(activitiesSplitPreferenceProvider).enabled);
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
@@ -137,13 +143,23 @@ class FoundationScreen extends ConsumerWidget {
                                 key: const Key('home-artwork-gap'),
                                 height: artworkGap,
                               ),
+                              if (coCreation) ...[
+                                _HomePillarCard(
+                                  key: const Key('browse-people-button'),
+                                  icon: Icons.people_outline,
+                                  title: l10n.coCreationTitle,
+                                  message: l10n.coCreationHomeMessage,
+                                  onTap: () => context.go('/people'),
+                                ),
+                                const SizedBox(height: AppSpacing.small),
+                              ],
                               _HomePillarCard(
                                 key: const Key('browse-proposals-button'),
                                 icon: Icons.explore_outlined,
-                                title: split
+                                title: (split || coCreation)
                                     ? l10n.browseProposalsChoice
                                     : l10n.homeProjectsTitle,
-                                message: split
+                                message: (split || coCreation)
                                     ? l10n.activitiesProjectsMessage
                                     : l10n.homeProjectsMessage,
                                 onTap: () => context.go('/proposals'),

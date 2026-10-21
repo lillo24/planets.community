@@ -3153,5 +3153,52 @@
     }
   },
   "eventScheduleZone": "Times shown in {zone}",
-  "@eventScheduleZone": { "placeholders": { "zone": { "type": "String" } } }
+  "@eventScheduleZone": { "placeholders": { "zone": { "type": "String" } } },
+  "coCreationSetting": "Co-Creation Mode",
+  "coCreationHelp": "Preview Find people on Home. Takes precedence over Activities Split Mode without changing its saved choice. Presentation only.",
+  "coCreationSaveError": "Could not save. The previous choice remains active.",
+  "coCreationRestoreError": "Could not restore Co-Creation Mode. It is OFF; save a choice to recover.",
+  "coCreationTitle": "Find people",
+  "coCreationHomeMessage": "People seeking company, topic communities and small groups.",
+  "coCreationDemo": "Demo · fictional examples",
+  "coCreationDemoNotice": "Preview only. Nothing is published, joined or sent. Examples never enter Messages.",
+  "coCreationPosts": "Posts",
+  "coCreationHubs": "Communities",
+  "coCreationSearch": "Search examples",
+  "coCreationAllTopics": "All topics",
+  "coCreationEmpty": "No matching examples. Change the search or topic.",
+  "coCreationCompose": "Compose a demo post",
+  "coCreationPostTitle": "Title",
+  "coCreationPostBody": "Who would you like to meet?",
+  "coCreationLocality": "Broad locality",
+  "coCreationGuidance": "Use a broad locality. Do not include personal addresses, phone numbers or private contact details.",
+  "coCreationPreview": "Preview demo",
+  "coCreationNotPublished": "Local preview · not published",
+  "coCreationRequired": "Add a title, description and broad locality.",
+  "coCreationGeneral": "General chat preview",
+  "coCreationGroup": "Group {number}",
+  "coCreationSeats": "Illustrative seats: {occupied}/{capacity}",
+  "coCreationFull": "Full · example",
+  "coCreationOneSeat": "One seat remaining · example",
+  "coCreationHubNotice": "A community has a topic and locality. General and each numbered group have separate access. Joining requires deliberate actions.",
+  "coCreationRoomNotice": "Preview of a separate member chat. In the live experiment, admission exposes earlier history in this room; leaving stops later access. No admission happens here.",
+  "coCreationMessagesNotice": "An actually joined group would appear in Messages with its community context.",
+  "coCreationUnknown": "This demo example is unavailable.",
+  "@coCreationGroup": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "@coCreationSeats": {
+    "placeholders": {
+      "occupied": {
+        "type": "int"
+      },
+      "capacity": {
+        "type": "int"
+      }
+    }
+  }
 }

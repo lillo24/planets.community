@@ -72,3 +72,11 @@ presentation. It survives restart/sign-out without syncing accounts. The existin
 `planets.navigation.bottomRight` key and values remain independent and unchanged.
 See [Activities sandbox](../activities_sandbox/README.md) for navigation,
 fixture boundaries and rollback. Turning the mode off restores normal discovery.
+
+COCREATE A00 adds the parallel `co_creation_preference` model/store/controller
+and `co_creation_setting.dart`, using `planets.sandbox.coCreation` with the same
+default-off, bootstrap restoration and recoverable-write semantics.
+It takes Home precedence over Activities Split without writing that preference.
+This device setting survives account changes but grants no backend authority.
+See [Co-creation](../co_creation/README.md) and the
+[progress record](../../../../../docs/development/cocreate-progress.md).
