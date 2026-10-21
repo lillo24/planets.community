@@ -16,7 +16,6 @@
     "fixtureReceipts": 55,
     "controlInstalled": true,
     "brokerDeployed": true,
-    "brokerVersion": 3,
     "brokerBundleSha256": "77294502aec157ee4fda50899e1316fe99aa65eec60c6231e27353c67147259c",
     "brokerRuntimeSource": "ce5a519e9cad22a58a7614126ca0134f62741455",
     "brokerRuntimeUnchangedAtQualifiedSource": true,

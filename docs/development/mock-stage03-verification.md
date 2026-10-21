@@ -92,7 +92,7 @@ The preceding seed-and-verify attempt failed during verification with no
 actionable Auth code; its result is retained as a failure, not relabelled.
 The new verify-only operator avoids redundant seeding/session preparation and
 exports bounded Auth failure codes for future diagnosis.
-The unchanged broker runtime is deployed as version 3. Actual public requests
+The unchanged broker bundle is deployed and active; its digest is recorded in the status. Actual public requests
 passed **92 access/Auth/RPC/Storage/recovery/isolation checks** again after the
 124-migration upgrade; Giulia and Sara
 exchanged two persisted Project chat messages through canonical RPCs (**11 checks**).
