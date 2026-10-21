@@ -2,6 +2,12 @@
 
 This feature owns the typed public map-search contract and reusable List/Map UI.
 
+CAT01 snapshots the Resource category alongside mode, keyword and locality from
+Browse. `resource_category_slug` is omitted when unset and sent for Resource or
+mixed All searches only; Project/Tavolo searches omit it. The server applies it
+before Resource pagination while retaining other families. List return preserves
+the Browse tuple. See the [CAT01 contract](../../../../../docs/development/resource-cat01-categories.md).
+
 MAP-COST01 adds an explicitly selected public-only path:
 `domain/basemap_fallback.dart` owns fixed Trento/source-frame identities;
 `data/budget_basemap_gateway.dart` validates v2 source/expiry/reset responses;

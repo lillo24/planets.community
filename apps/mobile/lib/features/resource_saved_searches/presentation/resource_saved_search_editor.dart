@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../resource_listings/domain/resource_listing_models.dart';
+import '../../resource_listings/presentation/resource_category_field.dart';
 import '../application/resource_saved_search_controller.dart';
 import '../domain/resource_saved_search_models.dart';
 
@@ -43,10 +44,12 @@ class _ResourceSavedSearchEditorState
   late final TextEditingController _localityController;
   late ResourceSavedSearchModeChoice _modeChoice;
   String? _error;
+  ResourceCategory? _category;
 
   @override
   void initState() {
     super.initState();
+    _category = widget.savedSearch.category;
     _queryController = TextEditingController(text: widget.savedSearch.query);
     _localityController = TextEditingController(
       text: widget.savedSearch.locality,
@@ -102,6 +105,17 @@ class _ResourceSavedSearchEditorState
                       _modeChoice = selection.single;
                       _error = null;
                     }),
+            ),
+            const SizedBox(height: 16),
+            ResourceCategoryField(
+              key: const Key('saved-search-editor-category'),
+              category: _category,
+              showAll: true,
+              enabled: !isSaving,
+              onChanged: (category) => setState(() {
+                _category = category;
+                _error = null;
+              }),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -163,6 +177,7 @@ class _ResourceSavedSearchEditorState
         ResourceSavedSearchModeChoice.exchange => ResourceListingMode.exchange,
       },
       locality: _localityController.text,
+      category: _category,
     );
     if (!input.isValid) {
       setState(() => _error = l10n.resourceSavedSearchAtLeastOneFilter);

@@ -2386,5 +2386,26 @@
   "discussionPersonInviteHelp": "Invia un invito all'Idea scelta. La persona deve accettare prima di entrare.",
   "discussionPersonInviteGroupAudience": "Idea visibile al Gruppo. Le persone attuali del Gruppo possono partecipare.",
   "discussionPersonInviteRestrictedAudience": "Idea su invito. I gestori attuali del Gruppo possono leggerla.",
-  "discussionPersonInvited": "Invito inviato. È ancora necessaria l'accettazione."
+  "discussionPersonInvited": "Invito inviato. È ancora necessaria l'accettazione.",
+  "resourceCategoryField": "Categoria",
+  "resourceCategoryAll": "Tutte",
+  "resourceCategoryUnset": "Non categorizzato",
+  "resourceCategoryRequired": "Scegli una categoria prima di pubblicare.",
+  "resourceCategoryToolsDiy": "Attrezzi e fai-da-te",
+  "resourceCategoryGardenOutdoors": "Giardinaggio ed esterni",
+  "resourceCategoryHomeFurniture": "Casa e arredamento",
+  "resourceCategoryElectronics": "Elettronica",
+  "resourceCategoryClothingAccessories": "Abbigliamento e accessori",
+  "resourceCategoryBooksLearning": "Libri e materiali didattici",
+  "resourceCategorySportsHobbies": "Sport, hobby e giochi",
+  "resourceCategoryMaterials": "Materiali e forniture",
+  "resourceCategoryOther": "Altro",
+  "resourceSavedSearchCategoryFilter": "Categoria: {category}",
+  "@resourceSavedSearchCategoryFilter": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  }
 }

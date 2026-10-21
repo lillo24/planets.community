@@ -1,4 +1,7 @@
 import '../../cover_media/domain/cover_media_models.dart';
+import 'resource_category.dart';
+
+export 'resource_category.dart';
 
 enum ResourceListingMode {
   donate('donate'),
@@ -52,10 +55,12 @@ class PublicResourceListingSummary {
     required this.publishedAt,
     required this.activeRequestCount,
     this.coverObjectPath,
+    this.category,
   });
 
   final String id;
   final ResourceListingMode mode;
+  final ResourceCategory? category;
   final String title;
   final String description;
   final String countryCode;
@@ -99,11 +104,13 @@ class OwnResourceListing {
     required this.publishedAt,
     required this.closedAt,
     this.coverObjectPath,
+    this.category,
   });
 
   final String id;
   final String ownerProfileId;
   final ResourceListingMode mode;
+  final ResourceCategory? category;
   final ResourceListingLifecycle lifecycle;
   final String? title;
   final String? description;
@@ -129,9 +136,11 @@ class ResourceListingInput {
     required this.locality,
     required this.administrativeArea,
     required this.publicLocationLabel,
+    this.category,
   });
 
   final ResourceListingMode mode;
+  final ResourceCategory? category;
   final String title;
   final String description;
   final String countryCode;
@@ -180,6 +189,7 @@ class PublicResourceListingsState {
     this.phase = ResourceListingLoadPhase.idle,
     this.items = const [],
     this.modeFilter,
+    this.categoryFilter,
     this.locality = '',
     this.query = '',
     this.cursor,
@@ -193,6 +203,7 @@ class PublicResourceListingsState {
   final ResourceListingLoadPhase phase;
   final List<PublicResourceListingSummary> items;
   final ResourceListingMode? modeFilter;
+  final ResourceCategory? categoryFilter;
   final String locality;
   final String query;
   final ResourceListingCursor? cursor;
@@ -204,7 +215,10 @@ class PublicResourceListingsState {
       phase == ResourceListingLoadPhase.loadingMore;
 
   bool get hasFilters =>
-      modeFilter != null || locality.isNotEmpty || query.isNotEmpty;
+      modeFilter != null ||
+      categoryFilter != null ||
+      locality.isNotEmpty ||
+      query.isNotEmpty;
 }
 
 class PublicResourceListingDetailState {

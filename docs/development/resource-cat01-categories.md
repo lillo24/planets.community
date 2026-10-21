@@ -73,6 +73,22 @@ and paging; mixed All retains Projects and Tavoli. NULL/absent category is strip
 from the normalized query so legacy map cursor identity is preserved. The map
 response shape remains unchanged.
 
+## Mobile ownership
+
+`resource_category.dart` owns stable wire values; `resource_category_field.dart`
+owns localized labels, metadata and the shared nullable single-select. The
+dropdown menu wraps full labels, while selected labels stay compact with
+ellipsis at narrow widths and large text. Browse places category between mode
+and locality inside the existing disclosure. Its badge includes category but
+excludes the always-visible keyword. Category changes flush pending text once;
+disclosure, retry, pagination, stale-response checks and saved-search Open retain
+the whole tuple. Public card/detail and owner history omit category for NULL.
+
+The editor keeps an unset draft option and validates category on the first new
+Publish attempt, before the photo gate or draft creation. Existing published
+legacy edits remain valid. Saved-search Edit and summary support category-only
+definitions. Map snapshots apply it only when Resource is an active family.
+
 ## Verification
 
 `148_resource_categories.test.sql` covers constraints, grants, legacy and V2
@@ -85,3 +101,9 @@ synthetic OTP identities and closes/deletes its extra public/search fixtures.
 
 Run SQL checks only against a disposable QA stack. Regenerate database types
 with the repository's `npm run db:types`; never hand-edit generated contracts.
+The existing tested generator nullability registry marks `category_slug` nullable
+on the six V2 readers because pg-meta cannot infer `RETURNS TABLE` nullability.
+Flutter tests cover parsers/transport, category-only Save/Edit/Open, stale fetches,
+retry and identity reset, first-publication/legacy editing, List/Map family scope,
+and EN/IT light/dark selectors at 320 logical pixels with 1x/2x text. The real-font
+rendered fixtures accept `--dart-define=UI_POLISH_CAPTURE_DIR=<absolute-folder>`.

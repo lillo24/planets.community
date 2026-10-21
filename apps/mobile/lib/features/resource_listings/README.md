@@ -16,8 +16,11 @@ Participation, and Project resources.
 
 - `domain/resource_listing_models.dart` owns strict listing modes,
   lifecycles, public/owner shapes, cursors, inputs, and client-side validation.
+- `domain/resource_category.dart` owns the nine provisional category slugs,
+  independently of mode and permitted-goods policy.
 - `data/resource_listing_gateway.dart` is the only backend adapter. It calls
-  the eight canonical 04C1 RPCs and parses their narrow payloads; it never
+  category-aware V2 content/read RPCs plus existing publish/close/recovery RPCs;
+  it parses their narrow payloads and never
   accesses `resource_listings` directly.
 - `application/resource_listing_controllers.dart` owns public pagination and
   filters, public detail, identity-bound owner history, editor lifecycle, stale
@@ -37,13 +40,15 @@ Participation, and Project resources.
   and terminal close flow.
 - `presentation/resource_listing_widgets.dart` owns shared mode/lifecycle,
   location, date, cover-aware public card, and safe-error presentation.
+- `presentation/resource_category_field.dart` owns localized category labels,
+  metadata and the single-select shared by Browse, listings and saved searches.
 
 Opening Create keeps the form local and does not create a row. A new Publish
 creates one draft and then publishes that exact ID; if publication fails, the
 controller retains the ID so a retry cannot create a second draft. Public
-discovery uses backend mode/locality/literal-keyword filters and paired
+discovery uses backend mode/category/locality/literal-keyword filters and paired
 `published_at + listing_id` keyset pagination. Query and locality changes share
-a 350-millisecond debounce, submit and mode changes flush immediately, and the
+a 350-millisecond debounce, submit and mode/category changes flush immediately, and the
 controller retains current cards with a subtle progress indicator while a
 replacement page loads. Revision checks ignore late responses from an older
 filter set; no speculative local filtering is applied.
@@ -51,8 +56,8 @@ filter set; no speculative local filtering is applied.
 Browse keeps the thin keyword field, authenticated Save search icon, and shared
 `BrowseFilterButton` in one toolbar row. The localized Save search tooltip also
 labels the accessible action; signed-out discovery leaves no empty icon slot.
-Dona/Scambia and locality are collapsed together by default, with mode before
-locality. The disclosure badge indicates an applied mode or locality even while
+Dona/Scambia, category and locality are collapsed together by default, in that
+order. The disclosure badge indicates an applied mode, category or locality even while
 hidden; visible keyword text does not contribute to that badge. Disclosure
 preserves the controls and never applies or clears filters. There is no separate
 Search button. Both text fields share the debounce; keyboard submit applies
@@ -63,6 +68,11 @@ The two checked mode segments allow Donate only (`donate`), Exchange only
 (`exchange`), or both (the existing unrestricted `null`). Tapping the only
 selected mode switches to the other, so neither UI nor backend sees an empty
 mode selection. Saved-search create/restore uses the same nullable mode tuple.
+Category is independent: All is NULL, specific categories exclude unclassified
+legacy rows, and category alone is a valid saved search. Cards/detail/history
+show only explicit categories. New publication requires an explicit category;
+drafts and edits of already-published legacy listings can stay unset. See the
+[CAT01 compatibility contract](../../../../../docs/development/resource-cat01-categories.md).
 
 Cards place relative publication age at top-right, keep mode as secondary
 metadata, and wrap intrinsic icon/text groups for interest and location at the
@@ -109,7 +119,7 @@ The listing feature does not own private request state. It renders only the
 backend-derived active-interest count and delegates Request/Withdraw/View to
 `resource_requests/`, whose identity-bound history determines the action. It
 still has no reservation, handoff, lending, barter, payment, quantity,
-taxonomy, Project linkage, or notification UX. Cover display in matching
+taxonomy administration, Project linkage, or notification UX. Cover display in matching
 results is inherited through the shared public Resource card and does not
 change matching semantics. Personal saved
 search definitions are independently owned by `resource_saved_searches/`; Open
