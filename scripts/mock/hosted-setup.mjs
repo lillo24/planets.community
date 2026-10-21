@@ -25,6 +25,9 @@ const source = execFileSync("git", ["rev-parse", "HEAD"], {
 }).trim();
 const input = JSON.parse(process.env.PLANETS_MOCK_OPERATOR ?? "null");
 assert.equal(input?.source, source);
+assert.ok(
+  input.verifyOnly === undefined || typeof input.verifyOnly === "boolean",
+);
 assert.equal(databaseTarget(input.databaseUrl).temporary, true);
 assert.ok(
   Date.parse(input.expiresAt) > Date.now() + 30_000,
@@ -72,14 +75,16 @@ try {
     applied.map((r) => ({ ...r })),
     context.inventory.migrations.map(({ name, sha256 }) => ({ name, sha256 })),
   );
-  phase = "mock-control-upgrade";
-  await context.sql.begin(async (tx) => {
-    await context.guard(tx);
-    await tx`select singleton from mock_control.environment where not enabled for update`;
-    await tx.unsafe(await readFile("supabase/mock/control.sql", "utf8"));
-  });
-  phase = "seed";
-  await seed(context);
+  if (input.verifyOnly !== true) {
+    phase = "mock-control-upgrade";
+    await context.sql.begin(async (tx) => {
+      await context.guard(tx);
+      await tx`select singleton from mock_control.environment where not enabled for update`;
+      await tx.unsafe(await readFile("supabase/mock/control.sql", "utf8"));
+    });
+    phase = "seed";
+    await seed(context);
+  }
   phase = "read-only-verification";
   const verified = await verify(context);
   assert.equal(
@@ -101,6 +106,7 @@ try {
     ...counts,
     enabled: false,
     accessModel: "public fixed-persona demo",
+    operation: input.verifyOnly === true ? "verify-only" : "seed-and-verify",
     hostedPublicBrokerSmoke: false,
   };
 } catch (error) {
@@ -112,6 +118,8 @@ try {
     projectRef: MOCK_REF,
     phase,
     code: /^[A-Z0-9_]{2,32}$/.test(error.code ?? "") ? error.code : null,
+    authCode: error.authCode ?? null,
+    authStatus: error.authStatus ?? null,
     fixtureFailure: /^Mock fixture [a-z_]+ failed \([A-Z0-9_]+\)\.$/.test(
       error.message ?? "",
     )

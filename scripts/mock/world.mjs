@@ -61,6 +61,14 @@ export async function rpc(person, name, args = {}) {
 }
 const expected = (p) => ({ p_expected_profile_id: p.id });
 
+function authFailure(message, code, error) {
+  return Object.assign(new Error(message), {
+    code,
+    authCode: /^[a-z_]{1,40}$/.test(error?.code ?? "") ? error.code : null,
+    authStatus: Number.isInteger(error?.status) ? error.status : null,
+  });
+}
+
 export async function personaSessions(context, { provision = false } = {}) {
   const people = {};
   const admin = context.admin();
@@ -72,8 +80,10 @@ export async function personaSessions(context, { provision = false } = {}) {
     let user = data?.user;
     if (!user) {
       if (!provision || registered || error?.status !== 404)
-        throw new Error(
+        throw authFailure(
           "Registered mock Auth user missing; manual recovery required.",
+          "MOCK_AUTH_LOOKUP_FAILED",
+          error,
         );
       const created = await admin.auth.admin.createUser({
         id: definition.id,
@@ -81,7 +91,11 @@ export async function personaSessions(context, { provision = false } = {}) {
         email_confirm: true,
       });
       if (created.error || created.data.user?.id !== definition.id)
-        throw new Error("Exact synthetic Auth provisioning failed.");
+        throw authFailure(
+          "Exact synthetic Auth provisioning failed.",
+          "MOCK_AUTH_CREATE_FAILED",
+          created.error,
+        );
       user = created.data.user;
     }
     if (
@@ -91,21 +105,32 @@ export async function personaSessions(context, { provision = false } = {}) {
         (registered.user_id !== definition.id ||
           registered.email !== definition.email))
     )
-      throw new Error("Persona registry drift; no account adoption allowed.");
+      throw authFailure(
+        "Persona registry drift; no account adoption allowed.",
+        "MOCK_AUTH_IDENTITY_DRIFT",
+      );
     // Standard one-time Auth exchange, no reusable password or real email.
     const link = await admin.auth.admin.generateLink({
       type: "magiclink",
       email: definition.email,
     });
     if (link.error || link.data.user.id !== definition.id)
-      throw new Error("Mock one-time login preparation failed.");
+      throw authFailure(
+        "Mock one-time login preparation failed.",
+        "MOCK_AUTH_LINK_FAILED",
+        link.error,
+      );
     const client = context.client();
     const login = await client.auth.verifyOtp({
       type: "magiclink",
       token_hash: link.data.properties.hashed_token,
     });
     if (login.error || login.data.user?.id !== definition.id)
-      throw new Error("Mock standard Auth exchange failed.");
+      throw authFailure(
+        "Mock standard Auth exchange failed.",
+        "MOCK_AUTH_VERIFY_FAILED",
+        login.error,
+      );
     people[definition.key] = { ...definition, client };
   }
   return people;
