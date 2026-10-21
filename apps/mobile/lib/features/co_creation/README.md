@@ -26,3 +26,10 @@ PostId, HubId and NumberedGroupId UUID wrappers and domain route builders.
 These are not Demo IDs; live routes are registered by their later UI stages.
 The server gate and access matrix are documented in
 [the experimental contract](../../../../../docs/development/cocreate-experimental-contract.md).
+
+B02's independently testable read foundation adds `domain/people_post.dart`
+and `data/people_posts_gateway.dart`: strict public allow-list parsing, absolute
+timestamps, typed topic IDs, deterministic paired cursors and explicit
+availability. Errors propagate; no failed read becomes empty content or Demo.
+This gateway is not wired to a live screen yet. The composer and all currently
+registered Trova persone routes still belong to the explicit A00 Demo tree.

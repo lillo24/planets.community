@@ -16,6 +16,10 @@ extension type HubId._(String value) {
   factory HubId.parse(Object? value) => HubId._(_uuid(value));
 }
 
+extension type TopicId._(String value) {
+  factory TopicId.parse(Object? value) => TopicId._(_uuid(value));
+}
+
 extension type NumberedGroupId._(String value) {
   factory NumberedGroupId.parse(Object? value) =>
       NumberedGroupId._(_uuid(value));
