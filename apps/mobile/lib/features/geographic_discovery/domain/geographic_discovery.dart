@@ -1,5 +1,6 @@
 import '../../../core/backend/cover_media_path.dart';
 import '../../proposals/domain/proposal_time.dart';
+import '../../resource_listings/domain/resource_category.dart';
 
 enum GeoKind {
   oneTime('one_time'),
@@ -91,6 +92,7 @@ class GeoQuery {
     this.resourceKeyword,
     this.resourceLocality,
     this.resourceMode,
+    this.resourceCategory,
     this.referenceTime,
   }) : kinds = Set.unmodifiable(kinds ?? GeoKind.values.toSet()),
        proposalSkillIds = List.unmodifiable(proposalSkillIds);
@@ -103,6 +105,7 @@ class GeoQuery {
       resourceLocality;
   final List<String> proposalSkillIds;
   final GeoResourceMode? resourceMode;
+  final ResourceCategory? resourceCategory;
   final DateTime? referenceTime;
   Map<String, dynamic> toJson() {
     if (kinds.isEmpty || proposalSkillIds.length > 20) {
@@ -116,6 +119,8 @@ class GeoQuery {
       'kinds': (kinds.map((e) => e.wire).toList()..sort()),
       'proposal_skill_ids': (proposalSkillIds.toSet().toList()..sort()),
       if (resourceMode != null) 'resource_mode': resourceMode!.name,
+      if (resourceCategory != null)
+        'resource_category_slug': resourceCategory!.wireValue,
       if (referenceTime != null)
         'reference_time': referenceTime!.toUtc().toIso8601String(),
     };

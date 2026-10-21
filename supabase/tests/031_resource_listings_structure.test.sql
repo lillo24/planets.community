@@ -28,9 +28,10 @@ select columns_are(
     'closed_at',
     'selected_public_place',
     'location_revision',
-    'public_location'
+    'public_location',
+    'category_slug'
   ],
-  'listing rows contain only owner, discovery intent, lifecycle, content, and rough location'
+  'listing rows contain owner, discovery intent, lifecycle, content, rough location, and optional classification'
 );
 
 select col_is_pk(
