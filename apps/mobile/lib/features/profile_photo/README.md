@@ -155,6 +155,8 @@ permissions, Project/Tavolo context, Block, legacy replacement/removal and the
 32768-byte ceiling through `scripts/lib/profile-avatar-variant-verifier.mjs`.
 `supabase test db --local` includes `148_profile_avatar_variants.test.sql`.
 The deterministic textured 900x700 input measured 23538 full bytes at 512x512
-and 2164 small bytes at 160x160, quality 82. Test input is synthetic; no personal
-photo is archived. Physical Android/iOS gallery, pixel-density, VoiceOver and
+and 2164 small bytes at 160x160, quality 82. The repository's garden tutorial
+photo measured 48702 full bytes at 512x512 and 8220 small bytes at 160x160,
+quality 82; both outputs were visually inspected. No personal photo is archived.
+Physical Android/iOS gallery, pixel-density, VoiceOver and
 TalkBack review remain separate native QA.

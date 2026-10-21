@@ -8,6 +8,7 @@ export async function verifyProfileAvatarVariants({
   anonymous,
   projectId,
   tavoloId,
+  listingId,
   fullPath,
   bytes,
 }) {
@@ -105,6 +106,17 @@ export async function verifyProfileAvatarVariants({
       assert.equal(visible.object_path, fullPath);
       assert.equal(visible.thumbnail_object_path, small);
     }
+    const resource = (
+      await rpc(
+        anonymous,
+        "get_resource_listing_owner_profile_photo_for_viewer_v2",
+        {
+          p_listing_id: listingId,
+        },
+      )
+    )[0];
+    assert.equal(resource.object_path, fullPath);
+    assert.equal(resource.thumbnail_object_path, small);
     assert.equal(
       (await download(anonymous, small)).error,
       null,
@@ -116,6 +128,19 @@ export async function verifyProfileAvatarVariants({
       "IMG01 context-authorized full bytes",
     );
     await rpc(viewer.client, "block_user", blockParams);
+    assert.equal(
+      (
+        await rpc(
+          viewer.client,
+          "get_resource_listing_owner_profile_photo_for_viewer_v2",
+          {
+            p_listing_id: listingId,
+          },
+        )
+      ).length,
+      0,
+      "IMG01 Block denies Resource-context metadata",
+    );
     assert.equal(
       (
         await rpc(
@@ -189,7 +214,7 @@ export async function verifyProfileAvatarVariants({
       "IMG01 removal revokes small bytes",
     );
     console.log(
-      "IMG01: real Auth/Storage variants, private/public audiences, Project/Tavolo contexts, Block, replacement, removal, ceiling and legacy contracts passed.",
+      "IMG01: real Auth/Storage variants, private/public audiences, Project/Tavolo/Resource contexts, Block, replacement, removal, ceiling and legacy contracts passed.",
     );
   } finally {
     await rpc(viewer.client, "unblock_user", blockParams);

@@ -55,15 +55,6 @@ async function verifyProfilePhotoViewers() {
   try {
     const proposalId = await createProposal(organizer);
     const tavoloId = await createTavolo(organizer);
-    await verifyProfileAvatarVariants({
-      owner: organizer,
-      viewer: unrelated,
-      anonymous,
-      projectId: proposalId,
-      tavoloId,
-      fullPath: organizerPhoto.object_path,
-      bytes: tinyWebp,
-    });
     const draftProposalId = await createProposal(organizer, {
       publish: false,
       title: "Private photo verifier draft",
@@ -208,6 +199,16 @@ async function verifyProfilePhotoViewers() {
 
     const listingId = await createPublishedResourceListing(organizer);
     resourceListingId = listingId;
+    await verifyProfileAvatarVariants({
+      owner: organizer,
+      viewer: unrelated,
+      anonymous,
+      projectId: proposalId,
+      tavoloId,
+      listingId,
+      fullPath: organizerPhoto.object_path,
+      bytes: tinyWebp,
+    });
     await expectResourceOwnerVisible(
       anonymous,
       listingId,

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -93,6 +94,36 @@ void main() {
       print(
         'IMG01 textured source: full=${result.byteLength} bytes ${result.width}x${result.height}; small=${result.thumbnailBytes.length} bytes 160x160',
       );
+    });
+
+    test('repository tutorial artwork measures real small/full dimensions and quality', () async {
+      // Repository-owned artwork only; no personal gallery image is copied.
+      final result = processProfilePhoto(
+        await File('assets/tutorial/garden-tools.webp').readAsBytes(),
+      );
+      final full = image.decodeWebP(result.bytes)!;
+      final small = image.decodeWebP(result.thumbnailBytes)!;
+      expect(full.width, 512);
+      expect(full.height, 512);
+      expect(small.width, 160);
+      expect(small.height, 160);
+      expect(result.bytes.length, lessThanOrEqualTo(profilePhotoMaxBytes));
+      expect(
+        result.thumbnailBytes.length,
+        lessThanOrEqualTo(profilePhotoThumbnailMaxBytes),
+      );
+      // ignore: avoid_print
+      print(
+        'IMG01 garden artwork: full=${result.byteLength} bytes, small=${result.thumbnailBytes.length} bytes, quality=${result.quality}',
+      );
+      const output = String.fromEnvironment('AVATAR_VARIANT_CAPTURE_DIR');
+      if (output.isNotEmpty) {
+        await Directory(output).create(recursive: true);
+        await File('$output/garden-avatar-full.webp')
+            .writeAsBytes(result.bytes);
+        await File('$output/garden-avatar-small.webp')
+            .writeAsBytes(result.thumbnailBytes);
+      }
     });
 
     test('corrupt input fails with a safe processing exception', () {
