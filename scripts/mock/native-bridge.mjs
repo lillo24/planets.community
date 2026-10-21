@@ -338,12 +338,22 @@ export async function nativeBridge({
                     typeof s === "string" && /^[a-zA-Z0-9 _-]{2,70}$/.test(s),
                 ),
               );
+              assert.ok(
+                Array.isArray(value.errors) && value.errors.length <= 4,
+              );
+              assert.ok(
+                value.errors.every(
+                  (s) =>
+                    typeof s === "string" && /^[a-zA-Z0-9 /_-]{2,400}$/.test(s),
+                ),
+              );
               await writeFile(
                 path.join(directory, "native-failure.json"),
                 JSON.stringify({
                   stage,
                   steps: value.steps,
                   failures: value.failures,
+                  errors: value.errors,
                 }),
               );
             }

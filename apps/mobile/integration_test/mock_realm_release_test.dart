@@ -29,6 +29,28 @@ void main() {
   binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.fullyLive;
   final steps = <String>[];
   var stage = 'unknown';
+  var operation = 'bootstrap';
+  final errors = <String>[];
+  final originalReporter = reportTestException;
+  reportTestException = (details, description) {
+    // Flutter's release-mode details.toString() omits assertion context. Keep a
+    // bounded, redacted summary from this synthetic fixture, never a raw log.
+    var summary = details
+        .exceptionAsString()
+        .replaceAll(
+          RegExp(
+            r'sb_(?:secret|publishable)_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+|Bearer\s+\S+',
+          ),
+          'redacted',
+        )
+        .replaceAll(RegExp(r'\b\d{6}\b'), 'redacted-code')
+        .replaceAll(RegExp(r'[^a-zA-Z0-9 _-]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (summary.length > 280) summary = summary.substring(0, 280);
+    if (errors.length < 4) errors.add('$operation $summary');
+    originalReporter(details, description);
+  };
   final qa = HttpClient()..connectionTimeout = const Duration(seconds: 10);
   Future<Map<String, dynamic>> request(
     String path, [
@@ -70,6 +92,7 @@ void main() {
         'stage': stage,
         'steps': steps,
         'failures': labels,
+        'errors': errors,
       });
       qa.close(force: true);
     }),
@@ -114,6 +137,7 @@ void main() {
         'product root',
       );
       Future<void> navigate(String destination) async {
+        operation = 'navigate-${Uri.parse(destination).path}';
         scope().read(appRouterProvider).go(destination);
         await tester.pump(const Duration(milliseconds: 800));
       }
@@ -238,17 +262,22 @@ void main() {
       const chat = String.fromEnvironment('MOCK_QA_CHAT');
       Future<void> normalLogin() async {
         await navigate('/auth/email?returnTo=%2Fsettings');
+        operation = 'normal-email-field';
         await tap(find.byKey(const Key('auth-email-field')));
+        operation = 'normal-email-input';
         await tester.enterText(
           find.byKey(const Key('auth-email-field')),
           'normal-sentinel@planets.invalid',
         );
+        operation = 'normal-request-code';
         await tap(find.byKey(const Key('auth-request-button')));
+        operation = 'normal-await-code-form';
         await wait(
           () => find.byKey(const Key('auth-code-field')).evaluate().isNotEmpty,
           'ordinary OTP requested',
         );
         String? code;
+        operation = 'normal-read-private-mailpit';
         for (var i = 0; i < 30 && code == null; i++) {
           code = (await request('/qa/otp'))['code'] as String?;
           if (code == null) {
@@ -260,8 +289,11 @@ void main() {
           isTrue,
           reason: 'Mailpit captured ordinary local OTP',
         );
+        operation = 'normal-code-input';
         await tester.enterText(find.byKey(const Key('auth-code-field')), code!);
+        operation = 'normal-verify-code';
         await tap(find.byKey(const Key('auth-verify-button')));
+        operation = 'normal-ready';
         await ready(control);
       }
 

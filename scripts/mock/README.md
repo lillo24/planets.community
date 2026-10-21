@@ -17,6 +17,8 @@ local demo seeder and never removes its loopback guard.
   and embedded session JWTs, exporting counts and an APK hash only.
 - `collect-native.mjs` exports allowlisted evidence and source provenance. Private
   defines, signing inputs, raw runtime logs and APKs never become artifacts.
+  A failed synthetic native test includes at most four redacted assertion summaries
+  with its current operation; release-mode Flutter omits those details by default.
 
 The operator configuration is an ignored JSON file outside source control. See
 `docs/development/mock-environment.md`. Secrets are environment variables, never
