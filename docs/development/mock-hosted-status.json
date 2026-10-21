@@ -1,6 +1,6 @@
 {
   "observedAt": "2026-10-21T18:53:25.072317+00:00",
-  "sourceBase": "0d8348357c111e7933e6006e860e6236dd98a47d",
+  "sourceBase": "62781c91323836807dad7ac4c014adac253c71e2",
   "qualifiedHostedSource": "4f9bc32648b88aa7baa552d4a7a9afc7a6b7a943",
   "canonicalSchemaFingerprint": "df1246de922ed3289857c9904af4191ac4da45a76139cd8aa8c9165ce6047d5b",
   "generation": "mock-world-2026-10-21-v1",
@@ -102,9 +102,12 @@
   "codeQualification": {
     "publicAccessCorrectionImplemented": true,
     "requiredCumulativeChecks": "https://github.com/lillo24/planets.community/pull/278/checks",
-    "nativeEvidenceSource": "71f3b8dc866a49e079b56e321ca3bb83d1d298bb",
-    "nativeEvidenceRun": "https://github.com/lillo24/planets.community/actions/runs/39655688024",
-    "evidenceBoundary": "Read actual run conclusion; local/CI evidence is not a hosted native journey."
+    "partialNativeEvidence": {
+      "source": "71f3b8dc866a49e079b56e321ca3bb83d1d298bb",
+      "run": "https://github.com/lillo24/planets.community/actions/runs/39655688024",
+      "result": "failed in final revocation fixture after 34 screenshots; not a native gate pass"
+    },
+    "evidenceBoundary": "Read actual final PR check conclusions and artifacts. Local/CI evidence is not a hosted native journey."
   },
   "release": {
     "artifactBuilt": true,

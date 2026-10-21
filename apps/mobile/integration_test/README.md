@@ -30,7 +30,7 @@ Flutter 3.47 excludes native development plugins from release variants. The
 plugin for this exact target, checks GitHub-hosted Linux ownership and retains
 the normal upload-signing validation. The CI fixture targets Android x64 only;
 ordinary release builds do not enable this path. The final revocation case
-deletes only its owned synthetic normal sentinel through real Auth admin, then
+revokes only its owned synthetic normal sentinel's sessions through real Auth, then
 requires the ordinary sign-in screen. No hosted account is involved.
 
 ## Representative contact and coordination

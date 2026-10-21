@@ -11,14 +11,15 @@ No normal login, human roster or shared APK credential is required.
 - Cumulative integration: [PR #278](https://github.com/lillo24/planets.community/pull/278).
   Both draft stage heads are ancestors; they are not separate feature merges.
 - Public guest/capability correction: `bc87af25d01baab1bfd486047148d679df56b6a6`.
-- Native/build source: `71f3b8dc866a49e079b56e321ca3bb83d1d298bb`, incorporating
+- App/AAB source: `71f3b8dc866a49e079b56e321ca3bb83d1d298bb`, incorporating
   main `0d8348357c111e7933e6006e860e6236dd98a47d`, including Scambio categories,
   combined participation totals and compact calendars. Subsequent report-only
   commits may reuse evidence only after comparing the runtime objects.
 
 Actual cumulative CI conclusions belong to the [PR checks](https://github.com/lillo24/planets.community/pull/278/checks).
-The [release native gate](https://github.com/lillo24/planets.community/actions/runs/39655688024)
-retains its own source SHA, result, unique PNG names/hashes and network metadata.
+The native gate linked from those checks retains its own harness source SHA,
+result, unique PNG names/hashes and network metadata. A later harness-only repair
+does not relabel the earlier app/build source.
 Neither a workflow link nor a prior passing stage implies a successful result.
 The final task delivery report records the actual conclusions and inspected PNGs.
 
@@ -47,6 +48,14 @@ client ID -1; release mode ignores it. The current integration fixture registers
 the test input driver and asserts field contents before product actions. It
 changes no Auth, message-validation or domain gateway behavior and supplies no
 physical IME evidence.
+
+Run `39655688024` reached all five personas, persisted cross-person messages,
+restart, guest No, normal-account restoration and logout, retaining 34 PNGs. It
+failed in the final revocation fixture and is not a native pass. That fixture now
+uses real Auth session revocation while preserving its account/profile/policy
+records; deleting an account is not session expiry. Bounded bridge-action
+diagnostics are retained on failure. App Auth/domain code is unchanged by this
+harness repair.
 
 Full Validation run `39651912223` passed Mobile (3,902 tests, two skips), Web
 and Site, but failed Database's exact notification projector count assertion

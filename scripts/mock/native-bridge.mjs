@@ -307,14 +307,39 @@ export async function nativeBridge({
           if (req.method === "POST" && url.pathname === "/qa/expire-normal") {
             assert.equal(stage, "restart");
             assert.equal(mode, "mock");
-            // Only the owned synthetic normal sentinel; never accepts an ID or
-            // credential from the app, and never calls a hosted project.
+            // Revoke real sessions of only the owned synthetic normal sentinel.
+            // Keep its canonical profile/policy data: account deletion is not
+            // session expiry and can be blocked by legitimate retention FKs.
+            // No account ID or credential is accepted from the app.
             const admin = createClient(normal.apiUrl, normal.serviceRoleKey, {
               auth: { persistSession: false, autoRefreshToken: false },
             });
-            const revoked = await admin.auth.admin.deleteUser(
+            const fixture = await admin.auth.admin.getUserById(
               normalSentinel.id,
             );
+            assert.equal(fixture.error, null);
+            assert.equal(fixture.data.user?.email, email);
+            // The app's earlier explicit logout legitimately revoked the
+            // operator's initial session too. Mint a fresh no-mail session of
+            // this same verified fixture solely to revoke all its sessions.
+            const link = await admin.auth.admin.generateLink({
+              type: "magiclink",
+              email,
+            });
+            assert.equal(link.error, null);
+            assert.equal(link.data.user.id, normalSentinel.id);
+            const revoker = createClient(normal.apiUrl, normal.publishableKey, {
+              auth: { persistSession: false, autoRefreshToken: false },
+            });
+            const verified = await revoker.auth.verifyOtp({
+              type: "magiclink",
+              token_hash: link.data.properties.hashed_token,
+            });
+            assert.equal(verified.error, null);
+            assert.equal(verified.data.user?.id, normalSentinel.id);
+            const jwt = verified.data.session?.access_token;
+            assert.ok(jwt);
+            const revoked = await admin.auth.admin.signOut(jwt, "global");
             assert.equal(revoked.error, null);
             return json(res, { expired: true });
           }
@@ -415,7 +440,36 @@ export async function nativeBridge({
             return;
           }
           return json(res, { error: "unknown_qa_path" }, 404);
-        } catch {
+        } catch (error) {
+          const diagnostic = path.join(directory, "native-failure.json");
+          try {
+            await readFile(diagnostic);
+          } catch (readError) {
+            if (readError.code !== "ENOENT") throw readError;
+            const action = req.url?.split("?")[0];
+            await writeFile(
+              diagnostic,
+              JSON.stringify({
+                stage,
+                bridgeAction: [
+                  "/qa/expire-normal",
+                  "/qa/result",
+                  "/qa/mode",
+                  "/qa/otp",
+                  "/qa/stage",
+                ].includes(action)
+                  ? action
+                  : "other",
+                failureKind:
+                  error instanceof assert.AssertionError
+                    ? "assertion"
+                    : "request",
+                code: /^[A-Z0-9_]{2,40}$/i.test(error.code ?? "")
+                  ? error.code
+                  : null,
+              }),
+            );
+          }
           json(res, { error: "native_verification_failed" }, 500);
           rejectDone(new Error("Native bridge rejected result or evidence"));
         }
