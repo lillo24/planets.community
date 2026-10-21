@@ -270,7 +270,7 @@ export async function seed(context) {
     await delegate(giulia, sara, garden, "co_organizer");
     await member(giulia, sara, garden);
     await member(giulia, dario, garden);
-    await delegate(marco, giulia, workshop, "co_organizer");
+    await delegate(marco, people.elena, workshop, "co_organizer");
     await member(marco, sara, workshop);
     const roomResult = await once("idea:garden", () =>
       rpc(giulia, "create_group_discussion_v2", {
