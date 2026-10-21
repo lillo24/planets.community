@@ -421,23 +421,39 @@ do $$ declare f record; begin
   end if;
  end loop;
 end; $$;
--- Compose canonical block activation without replacing any predecessor domain.
-do $$ declare definition text:=pg_get_functiondef('private.close_pending_direct_requests_for_user_block(uuid,uuid)'::regprocedure);
-begin
- execute replace(definition,'FUNCTION private.close_pending_direct_requests_for_user_block(',
-  'FUNCTION private.close_pre_cocreate_direct_requests_for_user_block(');
-end; $$;
-create or replace function private.close_pending_direct_requests_for_user_block(p_blocker_profile_id uuid,p_blocked_profile_id uuid)
+-- Extend the effective canonical body in place. Existing member-contact tests
+-- deliberately protect its direct delegation, OID, ACL and sorted lock owner.
+create function private.close_cocreate_interests_for_user_block(p_blocker_profile_id uuid,p_blocked_profile_id uuid)
 returns void language plpgsql security definer set search_path='' as $$
 begin
- perform private.close_pre_cocreate_direct_requests_for_user_block(p_blocker_profile_id,p_blocked_profile_id);
  update private.cocreate_interests i set state='declined' from private.cocreate_posts p
  where p.id=i.post_id and i.state='pending'
   and ((p.author_id=p_blocker_profile_id and i.requester_id=p_blocked_profile_id)
     or (p.author_id=p_blocked_profile_id and i.requester_id=p_blocker_profile_id));
 end; $$;
-revoke all on function private.close_pre_cocreate_direct_requests_for_user_block(uuid,uuid),
- private.close_pending_direct_requests_for_user_block(uuid,uuid) from public,anon,authenticated,service_role;
+do $compose$
+declare canonical oid:='private.close_pending_direct_requests_for_user_block(uuid,uuid)'::regprocedure;
+ definition text; source text; permissions aclitem[]; extended text;
+begin
+ select prosrc,proacl into source,permissions from pg_proc where oid=canonical;
+ if strpos(source,'perform private.member_contact_previous_block_convergence(')=0
+  or strpos(source,'for pair in select')=0
+  or strpos(source,'private.community_groups')>0
+  or source !~ E'\nend;[[:space:]]*$' then
+  raise exception 'Review the changed canonical Block body before adding co-creation cleanup.';
+ end if;
+ extended:=regexp_replace(source,E'\nend;[[:space:]]*$',
+  E'\n  perform private.close_cocreate_interests_for_user_block(p_blocker_profile_id,p_blocked_profile_id);\nend;\n');
+ definition:=pg_get_functiondef(canonical);
+ execute replace(definition,source,extended);
+ if 'private.close_pending_direct_requests_for_user_block(uuid,uuid)'::regprocedure::oid<>canonical
+  or (select proacl from pg_proc where oid=canonical) is distinct from permissions then
+  raise exception 'Co-creation Block composition changed canonical identity or privileges.';
+ end if;
+end;
+$compose$;
+revoke all on function private.close_cocreate_interests_for_user_block(uuid,uuid)
+ from public,anon,authenticated,service_role;
 
 alter table private.moderation_cases add column target_cocreate_id uuid,
  add column cocreate_evidence jsonb,
