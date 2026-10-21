@@ -65,7 +65,10 @@ void main() {
       ProfilePhotoAudience.interactions,
     ]);
     expect(harness.state.photo?.audience, ProfilePhotoAudience.interactions);
-    expect(harness.gateway.uploadPaths, ['user-1/new-version.webp']);
+    expect(harness.gateway.uploadPaths, [
+      'user-1/new-version.webp',
+      'user-1/new-version-thumbnail.webp',
+    ]);
   });
 
   test('replacement preserves public and cleans the previous path', () async {
@@ -109,7 +112,10 @@ void main() {
 
       expect(await harness.save(), isFalse);
 
-      expect(harness.gateway.deletedPaths, ['user-1/new-version.webp']);
+      expect(harness.gateway.deletedPaths, [
+        'user-1/new-version.webp',
+        'user-1/new-version-thumbnail.webp',
+      ]);
       expect(harness.state.photo?.objectPath, 'user-1/current.webp');
       expect(harness.state.failure, ProfilePhotoFailureKind.save);
     },
@@ -215,7 +221,7 @@ void main() {
     expect(await first, isTrue);
 
     expect(harness.processor.calls, 1);
-    expect(harness.gateway.uploadPaths, hasLength(1));
+    expect(harness.gateway.uploadPaths, hasLength(2));
   });
 
   test('picker cancellation is not an error', () async {
@@ -329,6 +335,7 @@ class PhotoHarness {
       ..calls = 0;
     processor
       ..result = ProcessedProfilePhoto(
+        thumbnailBytes: Uint8List.fromList([1]),
         bytes: avatarPngBytes(),
         width: 512,
         height: 512,

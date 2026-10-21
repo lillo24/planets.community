@@ -21,6 +21,18 @@ const ideaOwnFields = [
   "cancelled_at",
 ];
 export const participationRpcNullableFields = Object.freeze({
+  // IMG01 optional thumbnails preserve full-only legacy photos.
+  get_own_profile_photo_v2: ["thumbnail_object_path"],
+  get_profile_photo_for_viewer_v2: ["thumbnail_object_path"],
+  list_profile_photos_for_viewer_v2: ["thumbnail_object_path"],
+  get_project_creator_profile_photo_for_viewer_v2: ["thumbnail_object_path"],
+  get_resource_listing_owner_profile_photo_for_viewer_v2: [
+    "thumbnail_object_path",
+  ],
+  set_own_profile_photo_v2: [
+    "previous_object_path",
+    "previous_thumbnail_object_path",
+  ],
   // GRP03A relationship recovery and contextual reads have explicit null states.
   get_own_group_membership_context: [
     "authority_role",

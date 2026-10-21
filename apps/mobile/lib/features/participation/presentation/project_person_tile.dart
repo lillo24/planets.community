@@ -22,6 +22,7 @@ class ProjectPersonTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => InkWell(
     key: Key('people-person-${person.profileId}'),
+    onTap: onActions,
     onLongPress: hasActions ? onActions : null,
     child: Padding(
       padding: const EdgeInsets.symmetric(

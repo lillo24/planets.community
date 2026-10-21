@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
 import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
+import { verifyProfileAvatarVariants } from "./lib/profile-avatar-variant-verifier.mjs";
 
 const repositoryRoot = process.cwd();
 const mailpitUrl = (
@@ -54,6 +55,15 @@ async function verifyProfilePhotoViewers() {
   try {
     const proposalId = await createProposal(organizer);
     const tavoloId = await createTavolo(organizer);
+    await verifyProfileAvatarVariants({
+      owner: organizer,
+      viewer: unrelated,
+      anonymous,
+      projectId: proposalId,
+      tavoloId,
+      fullPath: organizerPhoto.object_path,
+      bytes: tinyWebp,
+    });
     const draftProposalId = await createProposal(organizer, {
       publish: false,
       title: "Private photo verifier draft",

@@ -1,3 +1,5 @@
+import 'package:planets_mobile/features/profile/presentation/person_preview_sheet.dart';
+
 import '../../../support/fake_policy.dart';
 
 import 'dart:async';
@@ -41,6 +43,39 @@ import '../../../support/fake_proposal.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  for (final language in [
+    LanguagePreference.english,
+    LanguagePreference.italian,
+  ]) {
+    testWidgets(
+      'guest Tavolo organizer opens a reusable profile over detail $language',
+      (tester) async {
+        final app = await _pump(
+          tester,
+          recurring: FakeRecurringActivityGateway()
+            ..publicDetail = publicRecurringDetailFixture(),
+          signedIn: false,
+          language: language,
+        );
+        app.read(appRouterProvider).go('/tavoli/tavolo-1');
+        await tester.pumpAndSettle();
+        final identity = find.byKey(const Key('tavoli-organizer-identity'));
+        await tester.scrollUntilVisible(identity, 350);
+        await tester.tap(identity);
+        await tester.pumpAndSettle();
+        expect(find.byType(PersonPreviewContent), findsOneWidget);
+        expect(find.byKey(const Key('tavoli-blocking-action')), findsNothing);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(PersonPreviewContent), findsNothing);
+        expect(
+          app.read(appRouterProvider).routeInformationProvider.value.uri.path,
+          '/tavoli/tavolo-1',
+        );
+      },
+    );
+  }
+
   for (final locale in [
     LanguagePreference.english,
     LanguagePreference.italian,

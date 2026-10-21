@@ -3124,5 +3124,13 @@
   "discussionPersonInviteHelp": "This sends an invitation to the selected Idea. The person must accept before joining.",
   "discussionPersonInviteGroupAudience": "Group-visible Idea. Current Group people can join.",
   "discussionPersonInviteRestrictedAudience": "Invitation-only Idea. Current Group managers can read it.",
-  "discussionPersonInvited": "Invitation sent. Acceptance is still required."
+  "discussionPersonInvited": "Invitation sent. Acceptance is still required.",
+  "personPreviewTitle": "Profile",
+  "personPreviewPhoto": "Profile photo",
+  "personPreviewNoPhoto": "No visible profile photo",
+  "personPreviewPhotoError": "Could not load this photo.",
+  "personPreviewAnonymous": "PLANETS member",
+  "personPreviewNoDetails": "No further public profile details are available.",
+  "personPreviewReadError": "Could not load this profile.",
+  "personPreviewBlocked": "You have blocked this person."
 }

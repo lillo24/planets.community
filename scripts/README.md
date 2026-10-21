@@ -140,3 +140,10 @@ D→C populated upgrade checks, row/function preservation and genuine mixed repo
 unread checks. It serially resets only the explicitly disposable selected local
 stack. Its temporary migration-set journal and recovery steps are documented in
 [combined qualification](../docs/development/contact-discussion-integration.md).
+
+
+- `lib/profile-avatar-variant-verifier.mjs` extends the existing profile-photo
+  viewer gate with real local Auth/Storage checks for IMG01 immutable variants,
+  legacy RPC shapes, contextual authorization, Block, removal and byte ceilings.
+  It uses the viewer verifier's synthetic actors and restores their original
+  photo after its fixture checks. It does not use hosted accounts or service keys.
