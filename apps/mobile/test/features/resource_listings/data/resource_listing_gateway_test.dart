@@ -124,6 +124,7 @@ void main() {
       'p_cursor_published_at': '2026-09-14T12:00:00.000Z',
       'p_cursor_id': resourceListingId,
       'p_listing_mode': 'exchange',
+      'p_category_slug': null,
       'p_locality': 'Bologna',
       'p_query': 'shovel',
     });
@@ -136,6 +137,7 @@ void main() {
     expect(contract.contentParams(resourceOwnerProfileId, input), {
       'p_expected_owner_profile_id': resourceOwnerProfileId,
       'p_listing_mode': 'exchange',
+      'p_category_slug': input.category?.wireValue,
       'p_title': input.title,
       'p_description': input.description,
       'p_country_code': input.countryCode,
@@ -152,20 +154,49 @@ void main() {
     );
   });
 
+  test('category parser preserves legacy null and rejects unknown slugs', () {
+    expect(parser.publicSummary(_publicRow()).category, isNull);
+    for (final category in ResourceCategory.values) {
+      final row = {..._publicRow(), 'category_slug': category.wireValue};
+      expect(parser.publicSummary(row).category, category);
+      expect(
+        parser.ownListing({
+          ..._ownRow('draft'),
+          'category_slug': category.wireValue,
+        }).category,
+        category,
+      );
+    }
+    expect(
+      () => parser.publicSummary({..._publicRow(), 'category_slug': 'unknown'}),
+      throwsFormatException,
+    );
+  });
+
+  test('public category criterion is serialized for backend paging', () {
+    expect(
+      contract.publicListParams(
+        limit: 7,
+        category: ResourceCategory.toolsDiy,
+      )['p_category_slug'],
+      'tools_diy',
+    );
+  });
+
   test('gateway source never directly accesses resource_listings', () {
     final source = File(
       'lib/features/resource_listings/data/resource_listing_gateway.dart',
     ).readAsStringSync();
     expect(source, isNot(contains(".from('resource_listings')")));
     for (final rpc in [
-      'create_resource_listing_draft',
-      'update_own_resource_listing',
+      'create_resource_listing_draft_v2',
+      'update_own_resource_listing_v2',
       'publish_resource_listing',
       'close_resource_listing',
-      'list_own_resource_listings',
-      'get_own_resource_listing',
-      'list_public_resource_listings',
-      'get_public_resource_listing',
+      'list_own_resource_listings_v2',
+      'get_own_resource_listing_v2',
+      'list_public_resource_listings_v2',
+      'get_public_resource_listing_v2',
     ]) {
       expect(source, contains("'$rpc'"));
     }

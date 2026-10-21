@@ -35,6 +35,7 @@ class FakeResourceListingGateway implements ResourceListingGateway {
   final List<String> calls = [];
   ResourceListingCursor? lastCursor;
   ResourceListingMode? lastMode;
+  ResourceCategory? lastCategory;
   String? lastLocality;
   String? lastQuery;
   String? lastExpectedOwnerId;
@@ -46,6 +47,7 @@ class FakeResourceListingGateway implements ResourceListingGateway {
     required int limit,
     ResourceListingCursor? cursor,
     ResourceListingMode? mode,
+    ResourceCategory? category,
     String? locality,
     String? query,
   }) async {
@@ -53,6 +55,7 @@ class FakeResourceListingGateway implements ResourceListingGateway {
     calls.add('list-public');
     lastCursor = cursor;
     lastMode = mode;
+    lastCategory = category;
     lastLocality = locality;
     lastQuery = query;
     if (publicLoader case final loader?) {
@@ -228,6 +231,7 @@ PublicResourceListingSummary _publicSummary(OwnResourceListing listing) =>
     PublicResourceListingSummary(
       id: listing.id,
       mode: listing.mode,
+      category: listing.category,
       title: listing.title!,
       description: listing.description!,
       countryCode: listing.countryCode!,
@@ -247,6 +251,7 @@ const newResourceListingId = '00000000-0000-4000-8000-000000000203';
 
 ResourceListingInput resourceListingInputFixture({
   ResourceListingMode mode = ResourceListingMode.donate,
+  ResourceCategory? category = ResourceCategory.toolsDiy,
   String title = 'Garden tools',
   String description = 'A rake and a shovel ready for a new garden.',
   String countryCode = 'IT',
@@ -255,6 +260,7 @@ ResourceListingInput resourceListingInputFixture({
   String publicLocationLabel = 'Central Bologna',
 }) => ResourceListingInput(
   mode: mode,
+  category: category,
   title: title,
   description: description,
   countryCode: countryCode,
@@ -265,6 +271,7 @@ ResourceListingInput resourceListingInputFixture({
 
 PublicResourceListingSummary publicResourceListingFixture({
   String id = resourceListingId,
+  ResourceCategory? category,
   ResourceListingMode mode = ResourceListingMode.donate,
   String title = 'Garden tools',
   String description = 'A rake and a shovel ready for a new garden.',
@@ -278,6 +285,7 @@ PublicResourceListingSummary publicResourceListingFixture({
 }) => PublicResourceListingSummary(
   id: id,
   mode: mode,
+  category: category,
   title: title,
   description: description,
   countryCode: countryCode,
@@ -291,6 +299,7 @@ PublicResourceListingSummary publicResourceListingFixture({
 
 PublicResourceListingDetail publicResourceListingDetailFixture({
   String id = resourceListingId,
+  ResourceCategory? category,
   String title = 'Garden tools',
   String ownerId = resourceOwnerProfileId,
   String? ownerDisplayName = 'Casey',
@@ -301,6 +310,7 @@ PublicResourceListingDetail publicResourceListingDetailFixture({
 }) => PublicResourceListingDetail(
   summary: publicResourceListingFixture(
     id: id,
+    category: category,
     title: title,
     activeRequestCount: activeRequestCount,
     locality: locality,
@@ -326,6 +336,7 @@ OwnResourceListing ownResourceListingFixture({
     id: id,
     ownerProfileId: ownerProfileId,
     mode: value.mode,
+    category: value.category,
     lifecycle: lifecycle,
     title: value.title.isEmpty ? null : value.title,
     description: value.description.isEmpty ? null : value.description,
@@ -357,6 +368,7 @@ OwnResourceListing copyOwnResourceListing(
   id: item.id,
   ownerProfileId: item.ownerProfileId,
   mode: item.mode,
+  category: item.category,
   lifecycle: lifecycle,
   title: item.title,
   description: item.description,
@@ -378,6 +390,7 @@ OwnResourceListing copyOwnResourceListingCover(
   id: item.id,
   ownerProfileId: item.ownerProfileId,
   mode: item.mode,
+  category: item.category,
   lifecycle: item.lifecycle,
   title: item.title,
   description: item.description,

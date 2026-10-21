@@ -1,5 +1,5 @@
 // pg-meta cannot infer nullable RETURNS TABLE fields. Keep participation API
-// MSG01 typed-feed, opt-in Idea and group contracts accurate without changing unrelated records.
+// MSG01 typed-feed, opt-in Idea, group and CAT01 contracts accurate without changing unrelated records.
 const ideaLogistics = [
   "starts_at",
   "ends_at",
@@ -21,6 +21,13 @@ const ideaOwnFields = [
   "cancelled_at",
 ];
 export const participationRpcNullableFields = Object.freeze({
+  // CAT01 leaves existing and old-client listings/definitions unclassified.
+  get_public_resource_listing_v2: ["category_slug"],
+  list_public_resource_listings_v2: ["category_slug"],
+  get_own_resource_listing_v2: ["category_slug"],
+  list_own_resource_listings_v2: ["category_slug"],
+  get_own_resource_saved_search_v2: ["category_slug"],
+  list_own_resource_saved_searches_v2: ["category_slug"],
   // GRP03A relationship recovery and contextual reads have explicit null states.
   get_own_group_membership_context: [
     "authority_role",

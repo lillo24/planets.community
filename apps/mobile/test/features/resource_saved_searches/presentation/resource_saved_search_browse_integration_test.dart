@@ -14,6 +14,7 @@ import 'package:planets_mobile/features/profile/data/profile_gateway.dart';
 import 'package:planets_mobile/features/resource_listings/application/resource_listing_controllers.dart';
 import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
 import 'package:planets_mobile/features/resource_listings/domain/resource_listing_models.dart';
+import 'package:planets_mobile/features/resource_listings/presentation/resource_category_field.dart';
 import 'package:planets_mobile/features/resource_saved_searches/data/resource_saved_search_gateway.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -24,7 +25,172 @@ import '../../../support/fake_resource_saved_search.dart';
 import '../../../support/rendered_evidence.dart';
 
 void main() {
-  setUpAll(RenderedEvidence.loadFonts);
+  setUpAll(() => RenderedEvidence.loadFonts(force: true));
+  testWidgets(
+    'category-only saved definition edits and Open restores updated category',
+    (tester) async {
+      final listings = FakeResourceListingGateway();
+      final saved = FakeResourceSavedSearchGateway()
+        ..items = [
+          resourceSavedSearchFixture(
+            query: null,
+            mode: null,
+            locality: null,
+            category: ResourceCategory.toolsDiy,
+          ),
+        ];
+      final app = await _pump(tester, listings: listings, saved: saved);
+      app.read(appRouterProvider).go('/resources/saved-searches');
+      await tester.pumpAndSettle();
+      final id = saved.items.single.id;
+      await tester.tap(find.byKey(Key('saved-search-edit-$id')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('saved-search-editor-category')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Books & Learning').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('saved-search-editor-save')));
+      await tester.pumpAndSettle();
+      expect(saved.lastInput?.category, ResourceCategory.booksLearning);
+      expect(saved.lastInput?.query, isNull);
+      expect(find.text('Category: Books & Learning'), findsOneWidget);
+      await tester.tap(find.byKey(Key('saved-search-open-$id')));
+      await tester.pumpAndSettle();
+      expect(listings.lastCategory, ResourceCategory.booksLearning);
+    },
+  );
+  for (final language in ['en', 'it']) {
+    for (final brightness in Brightness.values) {
+      testWidgets('CAT01 browse $language $brightness fits 320px/2x', (
+        tester,
+      ) async {
+        tester.platformDispatcher.localesTestValue = [Locale(language)];
+        tester.platformDispatcher.platformBrightnessTestValue = brightness;
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+        addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await tester.binding.setSurfaceSize(const Size(320, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final listings = FakeResourceListingGateway()
+          ..publicItems = [
+            publicResourceListingFixture(
+              category: ResourceCategory.booksLearning,
+            ),
+          ];
+        final app = await _pump(
+          tester,
+          listings: listings,
+          saved: FakeResourceSavedSearchGateway(),
+          signedIn: false,
+        );
+        app.read(appRouterProvider).go('/resources');
+        await tester.pumpAndSettle();
+        await app
+            .read(publicResourceListingsProvider.notifier)
+            .applyFilters(
+              mode: ResourceListingMode.donate,
+              category: ResourceCategory.booksLearning,
+              locality: 'Trento',
+              query: 'ladder',
+            );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('resource-toggle-filters')));
+        await tester.pumpAndSettle();
+        final field = find.byKey(const Key('resource-category-filter'));
+        expect(
+          tester.widget<ResourceCategoryField>(field).category,
+          ResourceCategory.booksLearning,
+        );
+        expect(tester.takeException(), isNull);
+        await RenderedEvidence.capture(
+          tester,
+          'resource-cat01-browse-$language-${brightness.name}-2x',
+        );
+      });
+    }
+  }
+  testWidgets(
+    'category-only save and Open preserve hidden selection without extra fetch',
+    (tester) async {
+      final listings = FakeResourceListingGateway()
+        ..publicItems = [
+          publicResourceListingFixture(category: ResourceCategory.toolsDiy),
+        ];
+      final saved = FakeResourceSavedSearchGateway();
+      final app = await _pump(tester, listings: listings, saved: saved);
+      app.read(appRouterProvider).go('/resources');
+      await tester.pumpAndSettle();
+      final category = find.byKey(const Key('resource-category-filter'));
+      expect(category, findsNothing);
+      await tester.tap(find.byKey(const Key('resource-toggle-filters')));
+      await tester.pumpAndSettle();
+      await tester.tap(category);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tools & DIY').last);
+      await tester.pumpAndSettle();
+      expect(listings.lastCategory, ResourceCategory.toolsDiy);
+      expect(listings.lastMode, isNull);
+      expect(listings.lastQuery, isNull);
+      final requests = listings.calls.length;
+      await tester.tap(find.byKey(const Key('resource-toggle-filters')));
+      await tester.pumpAndSettle();
+      expect(category, findsNothing);
+      expect(
+        tester
+            .widget<Badge>(find.byKey(const Key('browse-active-filters')))
+            .isLabelVisible,
+        isTrue,
+      );
+      await tester.tap(find.byKey(const Key('resource-save-search')));
+      await tester.pumpAndSettle();
+      expect(saved.lastInput?.category, ResourceCategory.toolsDiy);
+      expect(saved.lastInput?.query, isNull);
+      expect(listings.calls.length, requests);
+      await app
+          .read(publicResourceListingsProvider.notifier)
+          .applyFilters(
+            mode: ResourceListingMode.exchange,
+            category: ResourceCategory.materials,
+            locality: 'Elsewhere',
+            query: 'changed',
+          );
+      app.read(appRouterProvider).go('/resources/saved-searches');
+      await tester.pumpAndSettle();
+      expect(find.text('Category: Tools & DIY'), findsOneWidget);
+      await RenderedEvidence.capture(
+        tester,
+        'resource-cat01-saved-category-only',
+      );
+      await tester.tap(
+        find.byKey(
+          const Key('saved-search-open-$createdResourceSavedSearchId'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(listings.lastCategory, ResourceCategory.toolsDiy);
+      expect(category, findsNothing);
+      await tester.tap(find.byKey(const Key('resource-toggle-filters')));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<ResourceCategoryField>(category).category,
+        ResourceCategory.toolsDiy,
+      );
+      expect(_text(tester, 'resource-locality-filter'), '');
+      await RenderedEvidence.capture(tester, 'resource-cat01-browse-restored');
+      await tester.tap(category);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('All').last);
+      await tester.pumpAndSettle();
+      expect(listings.lastCategory, isNull);
+      expect(
+        tester
+            .widget<Badge>(find.byKey(const Key('browse-active-filters')))
+            .isLabelVisible,
+        isFalse,
+      );
+    },
+  );
   for (final mode in [null, ...ResourceListingMode.values]) {
     testWidgets('Save and Open round-trip ${mode ?? 'both'} modes', (
       tester,

@@ -8,6 +8,7 @@ import 'package:planets_mobile/features/geographic_discovery/data/geographic_dis
 import 'package:planets_mobile/features/geographic_discovery/application/geographic_discovery_controller.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/resource_listings/domain/resource_category.dart';
 
 const reference = '2026-10-09T00:00:00.000000Z';
 final key = List.filled(64, 'a').join();
@@ -63,6 +64,18 @@ class FakeGeoGateway implements GeographicDiscoveryGateway {
 }
 
 void main() {
+  test('category transport is optional and uses the stable Resource slug', () {
+    expect(query().toJson(), isNot(contains('resource_category_slug')));
+    for (final category in ResourceCategory.values) {
+      expect(
+        GeoQuery(
+          area: const GeoRadius(46.07, 11.12, 5000),
+          resourceCategory: category,
+        ).toJson()['resource_category_slug'],
+        category.wireValue,
+      );
+    }
+  });
   test(
     'typed radius/bounds and family-scoped filters preserve explicit intent',
     () {
