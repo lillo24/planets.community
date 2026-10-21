@@ -31,7 +31,10 @@ const pending = diff.pending.map((m) => {
     m.name.startsWith("member_contact") || m.name.startsWith("contact_report");
   return {
     ...m,
-    prerequisites: [local[local.indexOf(canonical) - 1].version],
+    prerequisites:
+      local.indexOf(canonical) > 0
+        ? [local[local.indexOf(canonical) - 1].version]
+        : [],
     prerequisite_basis:
       "Conservative canonical release order; not a claim that every immediate predecessor is a direct SQL dependency",
     domain: category

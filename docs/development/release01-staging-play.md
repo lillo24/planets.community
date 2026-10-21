@@ -94,7 +94,7 @@ and credentials scoped to environments. This change is explicit infrastructure
 configuration, not performed by RELEASE01's code merge.
 
 One concurrency group serializes all hosted writers without cancellation; PR
-rehearsals use separate groups and have no environment secrets. Complete release
+rehearsals use separate groups, cancel stale PR runs and have no environment secrets. Complete release
 Validation is reused by exact SHA or explicitly dispatched; every Mobile, Web,
 Site and Database check must succeed, including generated types and existing
 upgrade/RLS/Auth tests. Existing change-scoped PR CI is unchanged. The extra
@@ -105,7 +105,10 @@ timestamp prefix. It becomes a short no-op after bootstrap is reconciled.
 The CLI receives no seed/role/Vault options. A session advisory lock and comparison
 with independently identified management history protect application; applied
 canonical versions/names/SQL fingerprints are verified afterward. SHA-256 of
-original files and stored statement arrays is retained separately. SQL fingerprints
+original files and stored statement arrays is retained separately, with their
+predecessor digest bound into bootstrap approval. Both database clients enforce
+verified TLS; trust errors must be resolved using legitimate provider certificates,
+never by disabling certificate checks. SQL fingerprints
 ignore exterior comments/whitespace and empty terminators; literals, quoted
 identifiers, statement boundaries and dollar bodies remain exact. They are not
 claims of byte-identical CLI statement serialization.
@@ -113,6 +116,7 @@ claims of byte-identical CLI statement serialization.
 Backend readiness includes current static mobile RPC names and explicit CAT01/
 Messages contracts, RLS exposure, Storage limits/privacy, mutation grants, map
 license/budget/TTL settings and pinned deployed Edge bundle/source identities.
+New literal mobile Edge dependencies fail until their deployment/policy is reviewed.
 Anonymous HTTP verifies old/V2 listing reads, `22023` for an invalid category and
 denial of authenticated Messages access. These probes do not log returned rows,
 impersonate users or create hosted synthetic fixtures. They complement local

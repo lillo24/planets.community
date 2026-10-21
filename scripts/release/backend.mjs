@@ -1,5 +1,9 @@
 import { ReleaseError } from "./errors.mjs";
-import { STAGING_REF, requiredRpcs } from "./migrations.mjs";
+import {
+  STAGING_REF,
+  requiredRpcs,
+  requiredEdgeFunctions,
+} from "./migrations.mjs";
 import { readFileSync } from "node:fs";
 import { sha256, sqlFingerprint } from "./sql-fingerprint.mjs";
 
@@ -70,6 +74,12 @@ export function verifyFunctions(root, policy, functions) {
   if (
     !policy.approved_functions?.length ||
     !Object.keys(policy.approved_function_source_sha256 ?? {}).length
+  )
+    return false;
+  if (
+    requiredEdgeFunctions(root).some(
+      (name) => !policy.approved_functions.some((f) => f.slug === name),
+    )
   )
     return false;
   for (const expected of policy.approved_functions) {

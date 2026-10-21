@@ -1,6 +1,7 @@
 {
-  "source_sha": "62781c91323836807dad7ac4c014adac253c71e2",
+  "source_sha": "85b335cb3da724d3499ba294a2cfa5401f34ee9a",
   "observed_at": "2026-10-21",
+  "generated_at": "2026-10-21T19:54:43.932Z",
   "project_ref": "cllpvruvrrvxczjitlqd",
   "applied": 97,
   "pending": [
@@ -848,7 +849,8 @@
     }
   ],
   "drift": [],
-  "approval_digest": "54cdb12fa7a9fb2c096a97177118364d5a616aa0c80e9294645a0a8948beef7c",
+  "predecessor_sha256": "4cd47dac4ce6e5f6eb56261ad0407bf79baa3a706b95c1ebe512cd8368a9e67f",
+  "approval_digest": "5ccf8794b665b3300f358c765515bd4188a26a164ad4819229083215f217f907",
   "comparison": "Token-exact SQL excluding exterior comments/whitespace/empty terminators; string and dollar-body contents preserved. Raw executed hashes are separate, not byte-identical source claims.",
   "applied_history": [
     {

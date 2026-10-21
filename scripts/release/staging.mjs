@@ -46,9 +46,12 @@ export function assertDatabaseUrl(value) {
     !["postgres:", "postgresql:"].includes(url.protocol) ||
     (!direct && !pooler) ||
     url.pathname !== "/postgres" ||
-    !url.password
+    !url.password ||
+    [...url.searchParams.keys()].some((key) => key !== "sslmode")
   )
     throw new ReleaseError("Database URL is not the verified staging target");
+  url.searchParams.set("sslmode", "verify-full");
+  return url.toString();
 }
 
 export async function stagingRelease(mode, env = process.env) {
@@ -105,8 +108,8 @@ export async function stagingRelease(mode, env = process.env) {
         throw new ReleaseError(
           "Main advanced before migration approval; start a new release run",
         );
-      assertDatabaseUrl(env.STAGING_DB_URL);
-      const sql = postgres(env.STAGING_DB_URL, {
+      const databaseUrl = assertDatabaseUrl(env.STAGING_DB_URL);
+      const sql = postgres(databaseUrl, {
         ssl: { rejectUnauthorized: true },
         max: 1,
         onnotice: () => {},
@@ -115,7 +118,12 @@ export async function stagingRelease(mode, env = process.env) {
       try {
         // Hold a session advisory lock even across CLI transactions. Compare the
         // direct connection's history to the independently identified API target.
-        await sql`select pg_advisory_lock(72701, 1)`;
+        const [lock] =
+          await sql`select pg_try_advisory_lock(72701, 1) as acquired`;
+        if (!lock.acquired)
+          throw new ReleaseError(
+            "Another staging deployment holds the writer lock",
+          );
         const direct = summarizeHistory(await sql.unsafe(historyQuery));
         if (JSON.stringify(direct) !== JSON.stringify(remote))
           throw new ReleaseError(
@@ -136,7 +144,7 @@ export async function stagingRelease(mode, env = process.env) {
           "db",
           "push",
           "--db-url",
-          env.STAGING_DB_URL,
+          databaseUrl,
           "--workdir",
           temp,
           "--skip-vault",

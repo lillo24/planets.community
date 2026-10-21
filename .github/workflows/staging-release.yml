@@ -32,7 +32,7 @@ permissions:
 # One staging/Play writer. Do not cancel a migration or an accepted upload.
 concurrency:
   group: planets-staging-and-play-${{ github.event_name == 'pull_request' && github.ref || 'writer' }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   rehearse:

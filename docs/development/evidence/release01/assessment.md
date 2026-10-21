@@ -30,6 +30,11 @@ RLS checks pass. Category mutation/read grants cannot pass while CAT01 is absent
 MAP-COST01 enabled/license/retention and bounded provider/TTL/editor gates pass.
 No provider request or counter reservation was made.
 
+An additional read-only count inventory covers 126 tables across product schemas
+and selected Auth/Storage metadata (355 rows total), without retrieving user field values.
+This establishes that staging is populated; it is not a recovery backup or a
+claim that synthetic predecessor fixtures reproduce every hosted row.
+
 The deployed map-provider v5 bundle is
 `afbba54efcce958ac5416d5e0eb9a9874827da7a931886d8d3181e917fc8b7b3`;
 location-search v5 is `c85211f868e39caab986cb6f6b164d5233a749038692ea49deac68b151535f66`;

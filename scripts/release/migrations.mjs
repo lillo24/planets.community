@@ -51,7 +51,25 @@ export function migrationDiff(local, remote, projectRef) {
   const pending = local
     .filter((m) => !seen.has(m.version))
     .map(({ sql, ...m }) => ({ ...m, historical: m.version < latest }));
-  return { project_ref: projectRef, applied: remote.length, pending, drift };
+  const predecessor_sha256 = sha256(
+    JSON.stringify(
+      remote
+        .map((row) => ({
+          version: row.version,
+          name: row.name,
+          remote_sha256: row.remote_sha256,
+          canonical_sha256: byVersion.get(row.version)?.sha256,
+        }))
+        .sort((a, b) => a.version.localeCompare(b.version)),
+    ),
+  );
+  return {
+    project_ref: projectRef,
+    applied: remote.length,
+    pending,
+    drift,
+    predecessor_sha256,
+  };
 }
 
 export function deploymentSet(diff, policy, approvalDigest) {
@@ -133,6 +151,29 @@ export function requiredRpcs(root) {
         const source = readFileSync(path, "utf8");
         for (const match of source.matchAll(
           /\.rpc(?:<[^;]*?>)?\(\s*['"]([a-z][a-z0-9_]+)['"]/g,
+        ))
+          names.add(match[1]);
+      }
+    }
+  }
+  walk(join(root, "apps/mobile/lib"));
+  return [...names].sort();
+}
+
+export function requiredEdgeFunctions(root) {
+  const names = new Set([
+    "map-provider",
+    "location-search",
+    "location-preview",
+  ]);
+  function walk(dir) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (entry.name.endsWith(".dart")) {
+        const source = readFileSync(path, "utf8");
+        for (const match of source.matchAll(
+          /(?:functions\/v1\/|\.functions\.invoke\(\s*['"])([a-z][a-z0-9-]+)/g,
         ))
           names.add(match[1]);
       }

@@ -17,6 +17,7 @@ import {
   deploymentSet,
   assertBackendReady,
   STAGING_REF,
+  requiredEdgeFunctions,
 } from "../release/migrations.mjs";
 import { sqlFingerprint, sha256 } from "../release/sql-fingerprint.mjs";
 import {
@@ -176,6 +177,15 @@ test("bootstrap binds every hash and exact predecessor to approval/recovery/rehe
     assert.throws(() => deploymentSet(diff, candidate, approval));
   assert.throws(() => deploymentSet(diff, policy, "stale"), /Bootstrap/);
   assert.throws(
+    () =>
+      deploymentSet(
+        { ...diff, predecessor_sha256: "changed" },
+        policy,
+        approval,
+      ),
+    /Bootstrap/,
+  );
+  assert.throws(
     () => deploymentSet({ ...diff, drift: [{}] }, policy, approval),
     /drift/,
   );
@@ -237,6 +247,12 @@ test("every backend failure blocks Android, and verify SQL includes current cate
 });
 
 test("DB URL rejects localhost, other projects, deceptive hosts and missing secrets", () => {
+  assert.match(
+    assertDatabaseUrl(
+      `postgres://postgres:synthetic@db.${STAGING_REF}.supabase.co/postgres?sslmode=disable`,
+    ),
+    /sslmode=verify-full$/,
+  );
   for (const value of [
     undefined,
     "postgres://postgres:secret@localhost/postgres",
@@ -299,6 +315,29 @@ test("changed deployed Edge bundle or unreviewed source blocks delivery", () => 
     ),
     false,
   );
+});
+
+test("a newly added mobile Edge dependency cannot pass an older release policy", () => {
+  const root = mkdtempSync(join(tmpdir(), "release01-edge-"));
+  try {
+    mkdirSync(join(root, "apps/mobile/lib"), { recursive: true });
+    writeFileSync(
+      join(root, "apps/mobile/lib/compat.dart"),
+      "final uri = base.resolve('functions/v1/client-compatibility');",
+    );
+    assert.ok(requiredEdgeFunctions(root).includes("client-compatibility"));
+    const p = JSON.parse(readFileSync("scripts/release/policy.json", "utf8"));
+    assert.equal(
+      verifyFunctions(
+        root,
+        p,
+        p.approved_functions.map((f) => ({ ...f, status: "ACTIVE" })),
+      ),
+      false,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("hosted HTTP smoke checks legacy/V2/validation/privacy without retaining returned content", async () => {
