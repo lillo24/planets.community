@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/planets_app.dart';
+import '../features/app_compatibility/presentation/client_compatibility_gate.dart';
 import '../features/settings/application/activities_split_preference_controller.dart';
 import '../features/settings/data/activities_split_preference_store.dart';
 import '../features/settings/domain/activities_split_preference.dart';
@@ -102,7 +103,10 @@ Future<void> bootstrapApplication({
             navigationPreference,
           ),
         ],
-        child: const PlanetsApp(),
+        child: ClientCompatibilityGate(
+          enabled: config.clientCompatibilityCheckEnabled,
+          child: const PlanetsApp(),
+        ),
       ),
     ),
   );

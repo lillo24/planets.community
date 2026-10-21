@@ -6,6 +6,7 @@ This folder owns the Flutter application and its generated Android/iOS platform 
 
 - `lib/main.dart` is the process boundary. It reports startup failures without rendering configuration or exception details.
 - `lib/bootstrap/` orders validated configuration, Supabase initialization, optional monitoring, and application launch.
+- `lib/features/app_compatibility/` checks supported Android/iOS versions before app navigation, using Google's native Immediate Update flow and a separate iOS App Store gate. See the [inactive rollout prerequisite](../../docs/development/appver01-client-compatibility.md).
 - `lib/app/` owns the root `MaterialApp.router`, stable Profile / Home / Browse branch shell with a configurable Messages/Browse shortcut, neutral foundation screen, and startup-failure application. See its [navigation contract](lib/app/README.md).
 - `lib/core/config/` owns the typed compile-time environment contract and its Riverpod provider.
 - `lib/core/backend/` initializes Supabase and exposes its client through an overrideable provider.

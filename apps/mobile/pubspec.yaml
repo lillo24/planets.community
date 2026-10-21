@@ -27,6 +27,8 @@ dependencies:
   url_launcher: 6.3.2
   flutter_map: 8.3.2
   latlong2: 0.9.1
+  package_info_plus: 10.2.1
+  in_app_update: 5.0.0
 
 dev_dependencies:
   # Already resolved via Supabase; declares SDK binary-transport test fixtures.

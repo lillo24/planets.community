@@ -2386,5 +2386,16 @@
   "discussionPersonInviteHelp": "Invia un invito all'Idea scelta. La persona deve accettare prima di entrare.",
   "discussionPersonInviteGroupAudience": "Idea visibile al Gruppo. Le persone attuali del Gruppo possono partecipare.",
   "discussionPersonInviteRestrictedAudience": "Idea su invito. I gestori attuali del Gruppo possono leggerla.",
-  "discussionPersonInvited": "Invito inviato. È ancora necessaria l'accettazione."
+  "discussionPersonInvited": "Invito inviato. È ancora necessaria l'accettazione.",
+  "appCompatibilityChecking": "Verifica degli aggiornamenti necessari…",
+  "appCompatibilityFailedTitle": "Impossibile verificare gli aggiornamenti",
+  "appCompatibilityFailedBody": "Connettiti a Internet e riprova prima di aprire PLANETS.",
+  "appUpdateRequiredTitle": "Aggiornamento necessario",
+  "appUpdateRequiredBody": "Aggiorna PLANETS per continuare.",
+  "appUpdateNotCompleted": "Aggiornamento non completato. Riprova.",
+  "appUpdateStoreFailed": "Impossibile aprire lo store. Riprova.",
+  "appUpdateAndroidAction": "Aggiorna con Google Play",
+  "appUpdateGooglePlay": "Apri Google Play",
+  "appUpdateAppStore": "Aggiorna dall’App Store",
+  "appUpdateRecheck": "Verifica di nuovo"
 }
