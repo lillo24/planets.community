@@ -101,11 +101,14 @@ test("migration lexer preserves literal/body content, token boundaries and state
     ["select 'a b'", "select 'ab'"],
     ["select ab", "select a b"],
     ["select $$--x\na$$", "select $$--x\nb$$"],
+    ["select 'a\r\nb'", "select 'a\nb'"],
+    ["select $$a\r\nb$$", "select $$a\nb$$"],
     ["select 1; select 2", "select 1 select 2"],
     ["select 'a;';", "select 'a'"],
     ['select "x y"', 'select "xy"'],
   ])
     assert.notEqual(sqlFingerprint(a), sqlFingerprint(b));
+  assert.equal(sqlFingerprint("select\r\n1;"), sqlFingerprint("select\n1;"));
   assert.equal(
     sqlFingerprint("select E'a\\\'b';"),
     sqlFingerprint("select E'a\\\'b'"),

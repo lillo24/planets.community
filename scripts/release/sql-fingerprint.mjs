@@ -7,7 +7,7 @@ export const sha256 = (value) =>
 // Compare CLI statement arrays with whole-file history without discarding string
 // contents or dollar-quoted function bodies. This is a lexer, not a SQL rewriter.
 export function sqlFingerprint(source) {
-  const text = source.replace(/\r\n/g, "\n");
+  const text = source;
   const tokens = [];
   let i = 0;
   while (i < text.length) {
