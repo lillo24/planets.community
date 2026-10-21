@@ -1,0 +1,202 @@
+name: Staging and Play closed testing
+
+on:
+  pull_request:
+    paths:
+      - "scripts/release/**"
+      - "scripts/lib/release01.test.mjs"
+      - "docs/development/evidence/release01/migration-manifest.json"
+      - ".github/workflows/staging-release.yml"
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Inspect is read-only. Deploy/build/publish require configured protected environments."
+        type: choice
+        options: [inspect, deploy, build, publish]
+        default: inspect
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/functions/**"
+      - "apps/mobile/**"
+      - "!apps/mobile/**/*.md"
+      - "scripts/release/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/staging-release.yml"
+
+permissions:
+  contents: read
+
+# One staging/Play writer. Do not cancel a migration or an accepted upload.
+concurrency:
+  group: planets-staging-and-play-${{ github.event_name == 'pull_request' && github.ref || 'writer' }}
+  cancel-in-progress: false
+
+jobs:
+  rehearse:
+    name: Populated staging predecessor rehearsal
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.ref == 'refs/heads/main' && vars.STAGING_RELEASE_ENABLED == 'true' &&
+        (github.event_name == 'push' || inputs.operation != 'inspect'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24.20.0
+          cache: npm
+      - run: npm ci
+      - name: Rehearse exact non-contiguous staging history and no-op retry
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: node scripts/release/rehearse.mjs
+      - if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-rehearsal-${{ github.run_id }}
+          path: build/release01/rehearsal.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+  validate:
+    if: >-
+      github.event_name != 'pull_request' && github.ref == 'refs/heads/main' &&
+      vars.STAGING_RELEASE_ENABLED == 'true' &&
+      (github.event_name == 'push' || inputs.operation != 'inspect')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24.20.0
+      - name: Reuse or dispatch complete exact-source Validation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release/validation.mjs
+      - uses: actions/upload-artifact@v6
+        with:
+          name: release-validation-${{ github.run_id }}
+          path: build/release01/validation.json
+          if-no-files-found: error
+          retention-days: 30
+
+  staging:
+    needs: [validate, rehearse]
+    if: >-
+      always() && github.ref == 'refs/heads/main' &&
+      vars.STAGING_RELEASE_ENABLED == 'true' &&
+      ((needs.validate.result == 'success' && needs.rehearse.result == 'success') ||
+        (github.event_name == 'workflow_dispatch' && inputs.operation == 'inspect'))
+    environment: planets-staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24.20.0
+          cache: npm
+      - run: npm ci
+      - name: Preflight, approved migration apply, backend verification
+        env:
+          OPERATION: ${{ inputs.operation || 'publish' }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
+          STAGING_CONFIG_JSON: ${{ secrets.STAGING_CONFIG_JSON }}
+          BOOTSTRAP_MANIFEST_SHA256: ${{ vars.BOOTSTRAP_MANIFEST_SHA256 }}
+          STAGING_DEPLOYMENT_OWNER: ${{ vars.STAGING_DEPLOYMENT_OWNER }}
+          RELEASE_VALIDATED_SHA: ${{ needs.validate.result == 'success' && github.sha || '' }}
+        run: |
+          if [ "$OPERATION" = inspect ]; then
+            node scripts/release/staging.mjs inspect
+          else
+            node scripts/release/staging.mjs deploy
+          fi
+      - name: Persist sanitized migration and backend evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-staging-${{ github.run_id }}
+          path: |
+            build/release01/preflight.json
+            build/release01/backend.json
+            build/release01/http-smoke.json
+          retention-days: 30
+      - name: Failure status
+        if: failure()
+        run: echo 'Staging gate failed. Android delivery blocked. Review the sanitized artifact and RELEASE01 runbook.' >> "$GITHUB_STEP_SUMMARY"
+
+  android:
+    needs: [validate, staging]
+    if: >-
+      needs.staging.result == 'success' &&
+      ((github.event_name == 'push' && vars.STAGING_AUTO_PUBLISH == 'true') ||
+        (github.event_name == 'workflow_dispatch' && (inputs.operation == 'build' || inputs.operation == 'publish')))
+    environment: planets-play-closed
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24.20.0
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.2
+          cache: true
+      - run: npm ci
+      - uses: actions/download-artifact@v5
+        with:
+          name: release-validation-${{ github.run_id }}
+          path: build/release01
+      - name: Verify backend, sign/inspect AAB, optionally deliver to verified closed track
+        env:
+          OPERATION: ${{ inputs.operation || 'publish' }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          STAGING_CONFIG_JSON: ${{ secrets.STAGING_CONFIG_JSON }}
+          ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          PLAY_VERIFIED_UNUSED_CODE: ${{ vars.PLAY_VERIFIED_UNUSED_CODE }}
+          PLAY_CONSOLE_CHECKED_AT: ${{ vars.PLAY_CONSOLE_CHECKED_AT }}
+        run: node scripts/release/android.mjs "$OPERATION"
+      - name: Persist verified AAB and sanitized evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: planets-closed-test-${{ github.run_id }}
+          path: |
+            build/release01/*.aab
+            build/release01/artifact.json
+            build/release01/backend.json
+            build/release01/play.json
+            build/release01/validation.json
+            build/release01/http-smoke.json
+          retention-days: 30
+      - name: Delivery status
+        if: always()
+        run: echo 'See persisted evidence. A committed Play edit is not proof of Google review completion or device installability. Follow RELEASE01 smoke/incident steps.' >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,47 @@
+{
+  "project_ref": "cllpvruvrrvxczjitlqd",
+  "migration_owner": "github-actions",
+  "bootstrap_complete": false,
+  "reconciled_through": null,
+  "bootstrap_approvals": {},
+  "recovery_reference": null,
+  "rehearsal_reference": null,
+  "package": "community.planets.app",
+  "closed_track": "alpha",
+  "closed_track_verified_reference": "docs/development/evidence/release01/assessment.md",
+  "historical_version_code_floor": 12,
+  "upload_certificate_sha256": "f9362ed9f6f7be7c59a6eacfd8aae99426af98935ff1197f65e8207cc0fd22c0",
+  "budget_basemap": true,
+  "approved_function_source_sha256": {
+    "location-search/handler.mjs": "b51813066aa7e4a1c7a6d68b894c6ba8073491aa084ff551ed8afe321c97d0e7",
+    "location-search/index.ts": "d39792cbfb755442bda528b9c1e6ce066f08c832ca45912f99e09280728e7991",
+    "location-search/provider.mjs": "dce9359a044cebb40d8370d1d5b5d7cf23e5f67305b841b8a3d2e0abfd4d0e8a",
+    "location-preview/handler.mjs": "fbee2f92a2f8f33e71eb6287bd6ba66412858facde28cc8dc82fb3a8c8f5a6c3",
+    "location-preview/index.ts": "f0ff48f15eb0db5b9ec2f685e536fb881aeccbe9fcc86bf177f044aa2d0b829b",
+    "location-preview/provider.mjs": "4348a18ef22214f9284771138861b43bd899a297954a677bfc44570da7497885",
+    "map-provider/basemap.mjs": "163f0150162e364184fb3505f15d5a55a5ec058df383232fa9c70e41a3f60841",
+    "map-provider/handler.mjs": "b2d8c21b2ffc2307f97973fe1f5f3cbf25233b83b52951f2177a2f2c7005035f",
+    "map-provider/index.ts": "58aed220cb7e1e9a0cea4827611ae2f4d73f01e094c998839a124361a5aa5571",
+    "map-provider/provider.mjs": "7621c2352742702da6729d8e607f2e57234dac9e5b05327acb8c146299bf8e65"
+  },
+  "approved_functions": [
+    {
+      "slug": "map-provider",
+      "version": 5,
+      "verify_jwt": true,
+      "ezbr_sha256": "afbba54efcce958ac5416d5e0eb9a9874827da7a931886d8d3181e917fc8b7b3"
+    },
+    {
+      "slug": "location-search",
+      "version": 5,
+      "verify_jwt": true,
+      "ezbr_sha256": "c85211f868e39caab986cb6f6b164d5233a749038692ea49deac68b151535f66"
+    },
+    {
+      "slug": "location-preview",
+      "version": 4,
+      "verify_jwt": false,
+      "ezbr_sha256": "7cf99298e81fc3cfd070065fa97946441731f7f5ac3759ee9c57264e8f3bf83f"
+    }
+  ]
+}
