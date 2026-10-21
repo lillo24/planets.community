@@ -12,22 +12,25 @@ This feature checks compatibility before `PlanetsApp` is mounted.
   consent/download/install remain Google's UI. In-progress updates resume after
   process recreation and through the plugin's native lifecycle handler.
 - `application/client_compatibility_controller.dart` owns checking, supported,
-  update-required and failed states. Metadata/policy reads each have an eight
-  second deadline. One automatic native attempt per cold start avoids consent
+  unverified, update-required and failed states. Metadata/policy reads each have an eight
+  second deadline. Missing/unreachable policy transport allows an unverified
+  app shell; malformed policy or invalid native metadata remains retryable
+  failure. One automatic native attempt per cold start avoids consent
   loops after cancellation; deliberate retry remains available. Native success
   or opening a store never proves the running binary changed: recheck admission.
 - `presentation/client_compatibility_gate.dart` blocks navigation/auth/profile
-  startup until supported. Android shows a minimal fallback behind/after native
-  cancellation/unavailability/failure; iOS links to its App Store listing. Failed
-  policy checks expose Retry. Blocked resume rechecks; admitted sessions preserve
-  their forms until next cold startup. This is not RLS or session revocation.
+  startup until supported, unverified-offline, or a confirmed update requirement. Android shows a minimal fallback behind/after native
+  cancellation/unavailability/failure; iOS links to its App Store listing. Malformed policy checks expose Retry. Unverified clients retry on resume and
+  every 45 seconds in the foreground without unmounting forms or navigation;
+  confirmed obsolete clients are blocked until updated. This is not RLS or session revocation.
 
 Bootstrap wraps the existing app. `ENABLE_CLIENT_COMPATIBILITY_CHECK` defaults
 to false locally and true in staging/production. Local/staging can override for
 isolated QA; production false is a configuration error. Flutter web/desktop
 tooling bypasses this Android/iOS gate. Deploy the policy endpoint **before**
-releasing enabled clients: missing/malformed policy blocks with Retry and never
-silently admits the app. No last-allowed policy is persisted.
+releasing enabled clients: unavailable transport permits unverified offline
+entry, while malformed policies block with Retry. Backend compatibility must
+independently protect future incompatible reads and writes. No last-allowed policy is persisted.
 
 No floor, release or recovery campaign is activated. Existing installed clients
 do not know about this gate. See the [rollout prerequisite](../../../../../docs/development/appver01-client-compatibility.md).

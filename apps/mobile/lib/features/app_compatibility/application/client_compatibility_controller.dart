@@ -3,7 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/client_compatibility_gateway.dart';
 import '../domain/client_compatibility.dart';
 
-enum ClientCompatibilityPhase { checking, supported, updateRequired, failed }
+enum ClientCompatibilityPhase {
+  checking,
+  supported,
+  unverified,
+  updateRequired,
+  failed,
+}
 
 class ClientCompatibilityState {
   const ClientCompatibilityState({
@@ -42,12 +48,18 @@ class ClientCompatibilityController extends Notifier<ClientCompatibilityState> {
     }
     _busy = true;
     final revision = ++_revision;
-    state = const ClientCompatibilityState();
+    // An offline retry must not unmount the already-open application.
+    final retainApp = state.phase == ClientCompatibilityPhase.unverified;
+    if (!retainApp) {
+      state = const ClientCompatibilityState();
+    }
+    var nativeMetadataReady = false;
     try {
       final gateway = ref.read(clientCompatibilityGatewayProvider);
       final installed = await gateway
           .installedClient(platform)
           .timeout(const Duration(seconds: 8));
+      nativeMetadataReady = true;
       final policy = await gateway
           .policy(installed)
           .timeout(const Duration(seconds: 8));
@@ -58,12 +70,17 @@ class ClientCompatibilityController extends Notifier<ClientCompatibilityState> {
             : ClientCompatibilityPhase.updateRequired,
         policy: policy,
       );
-    } catch (_) {
-      // Startup boundary: a failed check is visible and retryable, never treated
-      // as a supported client or an implicit inactive policy.
+    } catch (error) {
       if (ref.mounted && revision == _revision) {
-        state = const ClientCompatibilityState(
-          phase: ClientCompatibilityPhase.failed,
+        // A reachable policy is needed to *enforce* a minimum. When policy
+        // transport is unavailable, allow the shell (and cached/local UI),
+        // never claim compatibility, and retry on resume or in the foreground.
+        // Malformed policy and invalid native metadata remain explicit errors.
+        final unverified = nativeMetadataReady && error is! FormatException;
+        state = ClientCompatibilityState(
+          phase: unverified
+              ? ClientCompatibilityPhase.unverified
+              : ClientCompatibilityPhase.failed,
         );
       }
     } finally {

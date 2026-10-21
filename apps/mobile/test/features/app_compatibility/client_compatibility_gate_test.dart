@@ -165,7 +165,7 @@ void main() {
     expect(starts, 1);
     expect(gateway.reads, reads);
   });
-  testWidgets('policy failure blocks startup and exposes a working Retry', (
+  testWidgets('offline policy failure opens the app and rechecks on resume', (
     tester,
   ) async {
     final gateway = _Gateway()..failure = true;
@@ -180,14 +180,41 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('compatibility-retry')), findsOneWidget);
-    expect(starts, 0);
+    expect(find.text('Domain navigation'), findsOneWidget);
+    expect(starts, 1);
+    expect(gateway.nativeCalls, 0);
     gateway
       ..failure = false
       ..supported = true;
-    await tester.tap(find.byKey(const Key('compatibility-retry')));
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(gateway.reads, 2);
+    expect(starts, 1); // Rechecking must not remount the application.
+  });
+
+  testWidgets('an offline app shows the required update after reconnecting', (
+    tester,
+  ) async {
+    final gateway = _Gateway()..failure = true;
+    var starts = 0;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          clientPlatformProvider.overrideWithValue(ClientPlatform.android),
+          clientCompatibilityGatewayProvider.overrideWithValue(gateway),
+        ],
+        child: ClientCompatibilityGate(child: _Domain(onStart: () => starts++)),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(starts, 1);
+    gateway.failure = false; // Still outdated: supported remains false.
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(find.text('Update required'), findsOneWidget);
+    expect(gateway.nativeCalls, 1);
   });
   testWidgets(
     'explicit local bypass preserves existing bootstrap without native/network calls',

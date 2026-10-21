@@ -18,7 +18,9 @@ consent/download/install UI; pinned `package_info_plus` 10.2.1 reads native rele
 metadata. Current Flutter/Dart/Android tooling satisfies their requirements.
 Package-info retains its already-resolved 10.2.1 version as a direct dependency;
 the native update bridge is the only new runtime package.
-Cancellation/unavailability/errors retain a minimal blocking retry/store fallback.
+Cancellation/unavailability/errors retain a blocking retry/store fallback
+for a confirmed obsolete version; unavailable policy transport instead permits
+unverified offline entry.
 Native success must recheck the installed release. No flexible/custom installer,
 signing, application ID, release numbering or distribution automation is changed.
 See [Google's flow](https://developer.android.com/guide/playcore/in-app-updates/kotlin-java)
@@ -32,10 +34,12 @@ to public App Store availability. No guessed name/bundle search is used.
 [Apple's link guidance](https://developer.apple.com/library/archive/qa/qa1633/_index.html).
 
 Checks default off locally and on in staging/production; explicit local/staging
-QA bypass is allowed, production bypass is rejected. A missing endpoint or bad/
-offline policy blocks enabled clients with Retry. An admitted session preserves
-forms until its next cold start; blocked resume rechecks. No last-allowed disk
-cache conceals a failed check. Deploy the endpoint before enabled client releases.
+QA bypass is allowed, production bypass is rejected. Unreachable policy transport
+permits unverified offline entry without resetting navigation or forms. Malformed
+policy and invalid native metadata remain blocking failures with Retry. Unverified
+foreground clients recheck every 45 seconds and on resume; confirmed obsolete
+versions retain required-update enforcement. No last-allowed disk cache pretends
+to authorize an unknown version. Deploy the endpoint before enabled client releases.
 
 ## Safest rollout order (owner actions, not executed)
 

@@ -32,11 +32,21 @@ class _ClientCompatibilityGateState
   bool get _enabled =>
       widget.enabled && ref.read(clientPlatformProvider) != null;
 
+  Timer? _unverifiedRetry;
+  bool _foreground = true;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     if (_enabled) {
+      _unverifiedRetry = Timer.periodic(const Duration(seconds: 45), (_) {
+        if (!mounted || !_foreground) return;
+        if (ref.read(clientCompatibilityProvider).phase ==
+            ClientCompatibilityPhase.unverified) {
+          unawaited(ref.read(clientCompatibilityProvider.notifier).check());
+        }
+      });
       Future<void>.microtask(() {
         if (mounted) {
           unawaited(ref.read(clientCompatibilityProvider.notifier).check());
@@ -47,17 +57,23 @@ class _ClientCompatibilityGateState
 
   @override
   void dispose() {
+    _unverifiedRetry?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed &&
-        _enabled &&
-        ref.read(clientCompatibilityProvider).phase !=
-            ClientCompatibilityPhase.supported) {
-      unawaited(ref.read(clientCompatibilityProvider.notifier).check());
+    if (state == AppLifecycleState.paused) {
+      _foreground = false;
+    }
+    if (state == AppLifecycleState.resumed) {
+      _foreground = true;
+      if (_enabled &&
+          ref.read(clientCompatibilityProvider).phase !=
+              ClientCompatibilityPhase.supported) {
+        unawaited(ref.read(clientCompatibilityProvider.notifier).check());
+      }
     }
   }
 
@@ -65,7 +81,10 @@ class _ClientCompatibilityGateState
   Widget build(BuildContext context) {
     if (!_enabled) return widget.child;
     final state = ref.watch(clientCompatibilityProvider);
-    if (state.phase == ClientCompatibilityPhase.supported) return widget.child;
+    if (state.phase == ClientCompatibilityPhase.supported ||
+        state.phase == ClientCompatibilityPhase.unverified) {
+      return widget.child;
+    }
     final android = ref.watch(clientPlatformProvider) == ClientPlatform.android;
     final controller = ref.read(clientCompatibilityProvider.notifier);
     return MaterialApp(

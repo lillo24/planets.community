@@ -150,7 +150,7 @@ void main() {
     },
   );
   test(
-    'policy errors and duplicate checks remain blocked, Retry can recover',
+    'policy transport failure is unverified; retries preserve app state',
     () async {
       final gateway = FakeCompatibilityGateway()..error = StateError('offline');
       final container = harness(gateway);
@@ -159,7 +159,7 @@ void main() {
       await controller.check();
       expect(
         container.read(clientCompatibilityProvider).phase,
-        ClientCompatibilityPhase.failed,
+        ClientCompatibilityPhase.unverified,
       );
       expect(gateway.nativeCalls, 0);
       gateway.error = null;
@@ -168,6 +168,10 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       await controller.check();
       expect(gateway.policyCalls, 2);
+      expect(
+        container.read(clientCompatibilityProvider).phase,
+        ClientCompatibilityPhase.unverified,
+      );
       gateway.pending!.complete(policy(installed(), build: '0'));
       await checking;
       expect(
@@ -176,6 +180,17 @@ void main() {
       );
     },
   );
+  test('malformed policy remains an explicit retryable failure', () async {
+    final gateway = FakeCompatibilityGateway()
+      ..error = const FormatException('bad policy');
+    final container = harness(gateway);
+    addTearDown(container.dispose);
+    await container.read(clientCompatibilityProvider.notifier).check();
+    expect(
+      container.read(clientCompatibilityProvider).phase,
+      ClientCompatibilityPhase.failed,
+    );
+  });
   test(
     'iOS opens only its store and keeps the gate blocked after launch',
     () async {
