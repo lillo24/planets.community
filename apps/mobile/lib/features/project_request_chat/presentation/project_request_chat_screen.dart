@@ -1,3 +1,5 @@
+import '../../profile/presentation/person_preview_sheet.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -261,30 +263,40 @@ class _ProjectRequestChatScreenState
           context,
           title: summary == null
               ? Text(l10n.projectRequestChatTitle)
-              : Row(
-                  children: [
-                    VisibleProfilePhotoAvatar(
-                      key: const Key('project-request-chat-counterparty-photo'),
-                      entry: counterpartyPhoto,
-                      imageSemanticsLabel: l10n
-                          .resourceChatCounterpartyPhotoLabel(
-                            summary.counterpartyDisplayName,
-                          ),
-                      placeholderSemanticsLabel: l10n
-                          .resourceChatCounterpartyPhotoLabel(
-                            summary.counterpartyDisplayName,
-                          ),
-                      radius: 18,
-                    ),
-                    const SizedBox(width: AppSpacing.small),
-                    Expanded(
-                      child: Text(
-                        summary.counterpartyDisplayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+              : InkWell(
+                  onTap: () => showPersonPreviewSheet(
+                    context,
+                    profileId: summary.counterpartyProfileId,
+                    contextDisplayName: summary.counterpartyDisplayName,
+                    onChanged: (_) => _refresh(),
+                  ),
+                  child: Row(
+                    children: [
+                      VisibleProfilePhotoAvatar(
+                        key: const Key(
+                          'project-request-chat-counterparty-photo',
+                        ),
+                        entry: counterpartyPhoto,
+                        imageSemanticsLabel: l10n
+                            .resourceChatCounterpartyPhotoLabel(
+                              summary.counterpartyDisplayName,
+                            ),
+                        placeholderSemanticsLabel: l10n
+                            .resourceChatCounterpartyPhotoLabel(
+                              summary.counterpartyDisplayName,
+                            ),
+                        radius: 18,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: AppSpacing.small),
+                      Expanded(
+                        child: Text(
+                          summary.counterpartyDisplayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
         ),
         body: SafeArea(

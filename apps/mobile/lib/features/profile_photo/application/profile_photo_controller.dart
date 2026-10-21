@@ -1,3 +1,7 @@
+import 'visible_profile_photo_controller.dart';
+import 'project_creator_photo_controller.dart';
+import 'resource_listing_owner_photo_controller.dart';
+
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -176,8 +180,11 @@ class ProfilePhotoController extends Notifier<ProfilePhotoState> {
       return false;
     }
     if (!_isCurrent(revision, profileId)) return false;
-    if (processed.width != 512 ||
-        processed.height != 512 ||
+    if (processed.width < 1 ||
+        processed.width > 512 ||
+        processed.height != processed.width ||
+        processed.thumbnailBytes.isEmpty ||
+        processed.thumbnailBytes.length > profilePhotoThumbnailMaxBytes ||
         processed.byteLength > profilePhotoMaxBytes) {
       state = previous.copyWith(
         phase: ProfilePhotoPhase.failure,
@@ -187,6 +194,9 @@ class ProfilePhotoController extends Notifier<ProfilePhotoState> {
     }
 
     final path = ref.read(profilePhotoPathGeneratorProvider).newPath(profileId);
+    final thumbnailPath = ref
+        .read(profilePhotoPathGeneratorProvider)
+        .newPath(profileId);
     final gateway = ref.read(profilePhotoGatewayProvider);
     state = previous.copyWith(
       phase: ProfilePhotoPhase.uploading,
@@ -194,7 +204,14 @@ class ProfilePhotoController extends Notifier<ProfilePhotoState> {
     );
     try {
       await gateway.uploadNewPhoto(path, processed.bytes);
+      if (!_isCurrent(revision, profileId)) {
+        await _deleteBestEffort(gateway, path);
+        return false;
+      }
+      await gateway.uploadNewPhoto(thumbnailPath, processed.thumbnailBytes);
     } catch (_) {
+      await _deleteBestEffort(gateway, path);
+      await _deleteBestEffort(gateway, thumbnailPath);
       if (_isCurrent(revision, profileId)) {
         state = previous.copyWith(
           phase: ProfilePhotoPhase.failure,
@@ -205,6 +222,7 @@ class ProfilePhotoController extends Notifier<ProfilePhotoState> {
     }
     if (!_isCurrent(revision, profileId)) {
       await _deleteBestEffort(gateway, path);
+      await _deleteBestEffort(gateway, thumbnailPath);
       return false;
     }
 
@@ -212,7 +230,12 @@ class ProfilePhotoController extends Notifier<ProfilePhotoState> {
         previous.photo?.audience ?? ProfilePhotoAudience.interactions;
     late final ProfilePhotoCommit commit;
     try {
-      commit = await gateway.commitOwnPhoto(profileId, path, audience);
+      commit = await gateway.commitOwnPhoto(
+        profileId,
+        path,
+        audience,
+        thumbnailObjectPath: thumbnailPath,
+      );
       if (commit.currentObjectPath != path) {
         throw const ProfilePhotoDataException(
           'Owner photo commit returned another path.',
@@ -220,6 +243,7 @@ class ProfilePhotoController extends Notifier<ProfilePhotoState> {
       }
     } catch (_) {
       await _deleteBestEffort(gateway, path);
+      await _deleteBestEffort(gateway, thumbnailPath);
       if (_isCurrent(revision, profileId)) {
         state = previous.copyWith(
           phase: ProfilePhotoPhase.failure,
@@ -236,12 +260,18 @@ class ProfilePhotoController extends Notifier<ProfilePhotoState> {
       photo: OwnProfilePhoto(
         profileId: profileId,
         objectPath: commit.currentObjectPath,
+        thumbnailObjectPath: thumbnailPath,
         audience: commit.audience,
         createdAt: previous.photo?.createdAt ?? commit.updatedAt,
         updatedAt: commit.updatedAt,
       ),
       imageBytes: processed.bytes,
     );
+    _invalidateViewers();
+    final oldThumbnail = commit.previousThumbnailObjectPath;
+    if (oldThumbnail != null && oldThumbnail != thumbnailPath) {
+      unawaited(_deleteBestEffort(gateway, oldThumbnail));
+    }
     final oldPath = commit.previousObjectPath;
     if (oldPath != null && oldPath != commit.currentObjectPath) {
       unawaited(_deleteBestEffort(gateway, oldPath));
@@ -287,6 +317,7 @@ class ProfilePhotoController extends Notifier<ProfilePhotoState> {
         ),
         clearFailure: true,
       );
+      _invalidateViewers();
       return true;
     } catch (_) {
       if (_isCurrent(revision, profileId)) {
@@ -328,10 +359,20 @@ class ProfilePhotoController extends Notifier<ProfilePhotoState> {
       profileId: profileId,
       phase: ProfilePhotoPhase.ready,
     );
+    _invalidateViewers();
     if (oldPath != null) {
       unawaited(_deleteBestEffort(gateway, oldPath));
     }
+    if (previous.photo?.thumbnailObjectPath case final oldThumbnail?) {
+      unawaited(_deleteBestEffort(gateway, oldThumbnail));
+    }
     return true;
+  }
+
+  void _invalidateViewers() {
+    ref.read(visibleProfilePhotoProvider.notifier).invalidateAll();
+    ref.read(projectCreatorPhotoProvider.notifier).invalidateAll();
+    ref.read(resourceListingOwnerPhotoProvider.notifier).invalidateAll();
   }
 
   Future<void> _deleteBestEffort(

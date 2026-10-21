@@ -1,3 +1,4 @@
+import '../../profile/presentation/person_preview_sheet.dart';
 import '../../group_discussions/presentation/discussion_group_conversations.dart';
 import '../../group_projects/presentation/group_project_widgets.dart';
 import '../../group_contact/presentation/group_contact_widgets.dart';
@@ -32,7 +33,6 @@ import '../../auth/application/auth_session_controller.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../drafts/domain/draft_entry.dart';
-import '../../blocking/presentation/blocking_action.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../../participation/application/participation_controllers.dart';
 import '../../participation/domain/participation_models.dart';
@@ -639,6 +639,28 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                   const SizedBox(height: AppSpacing.large),
                   ListTile(
                     key: const Key('proposal-organizer-identity'),
+                    onTap: () => showPersonPreviewSheet(
+                      context,
+                      projectId: detail.summary.id,
+                      profileId: detail.creatorProfileId,
+                      contextDisplayName: detail.creatorDisplayName,
+                      blockingKey: const Key('proposal-blocking-action'),
+                      onChanged: (_) async {
+                        ref
+                            .read(projectCreatorPhotoProvider.notifier)
+                            .invalidate(detail.summary.id);
+                        await Future.wait([
+                          ref
+                              .read(projectCreatorPhotoProvider.notifier)
+                              .load(detail.summary.id, force: true),
+                          if (ref.read(authSessionProvider).identity?.id
+                              case final profileId?)
+                            ref
+                                .read(ownParticipationProvider.notifier)
+                                .load(profileId),
+                        ]);
+                      },
+                    ),
                     contentPadding: EdgeInsets.zero,
                     leading: VisibleProfilePhotoAvatar(
                       entry: organizerPhoto,
@@ -656,27 +678,6 @@ class _ProposalDetailScreenState extends ConsumerState<ProposalDetailScreen> {
                           AuthSessionPhase.ready &&
                       ref.watch(authSessionProvider).identity?.id !=
                           detail.creatorProfileId) ...[
-                    const SizedBox(height: AppSpacing.small),
-                    BlockingActionButton(
-                      targetProfileId: detail.creatorProfileId,
-                      targetDisplayName: detail.creatorDisplayName,
-                      buttonKey: const Key('proposal-blocking-action'),
-                      onChanged: (_) async {
-                        ref
-                            .read(projectCreatorPhotoProvider.notifier)
-                            .invalidate(detail.summary.id);
-                        await Future.wait([
-                          ref
-                              .read(projectCreatorPhotoProvider.notifier)
-                              .load(detail.summary.id, force: true),
-                          if (ref.read(authSessionProvider).identity?.id
-                              case final profileId?)
-                            ref
-                                .read(ownParticipationProvider.notifier)
-                                .load(profileId),
-                        ]);
-                      },
-                    ),
                     const SizedBox(height: AppSpacing.small),
                     OutlinedButton.icon(
                       key: const Key('proposal-report-action'),

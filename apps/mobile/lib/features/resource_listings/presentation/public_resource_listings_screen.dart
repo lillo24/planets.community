@@ -1,3 +1,5 @@
+import '../../profile/presentation/person_preview_sheet.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -697,21 +699,45 @@ class _PublicResourceListingDetailScreenState
                     ),
                   ),
                   const SizedBox(height: AppSpacing.large),
-                  Row(
-                    key: const Key('resource-listing-owner'),
-                    children: [
-                      VisibleProfilePhotoAvatar(
-                        entry: ownerPhoto,
-                        imageSemanticsLabel:
-                            l10n.resourceListingOwnerPhotoLabel,
-                        placeholderSemanticsLabel:
-                            l10n.resourceListingOwnerPhotoLabel,
-                      ),
-                      if (detail.ownerDisplayName case final owner?) ...[
-                        const SizedBox(width: AppSpacing.small),
-                        Expanded(child: Text(l10n.resourceListedBy(owner))),
+                  InkWell(
+                    onTap: () => showPersonPreviewSheet(
+                      context,
+                      profileId: detail.ownerProfileId,
+                      contextDisplayName: detail.ownerDisplayName,
+                      listingId: widget.listingId,
+                      onChanged: (_) async {
+                        ref
+                            .read(resourceListingOwnerPhotoProvider.notifier)
+                            .invalidate(widget.listingId);
+                        await ref
+                            .read(resourceListingOwnerPhotoProvider.notifier)
+                            .load(widget.listingId, force: true);
+                        if (profileId != null) {
+                          await ref
+                              .read(resourceRequestHistoryProvider.notifier)
+                              .load(profileId, force: true);
+                          await ref
+                              .read(messagesInboxProvider.notifier)
+                              .load(profileId, refresh: true);
+                        }
+                      },
+                    ),
+                    child: Row(
+                      key: const Key('resource-listing-owner'),
+                      children: [
+                        VisibleProfilePhotoAvatar(
+                          entry: ownerPhoto,
+                          imageSemanticsLabel:
+                              l10n.resourceListingOwnerPhotoLabel,
+                          placeholderSemanticsLabel:
+                              l10n.resourceListingOwnerPhotoLabel,
+                        ),
+                        if (detail.ownerDisplayName case final owner?) ...[
+                          const SizedBox(width: AppSpacing.small),
+                          Expanded(child: Text(l10n.resourceListedBy(owner))),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                   if (profileId != null && !isOwner) ...[
                     const SizedBox(height: AppSpacing.large),

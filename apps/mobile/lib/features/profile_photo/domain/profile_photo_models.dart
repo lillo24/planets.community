@@ -19,6 +19,7 @@ class OwnProfilePhoto {
   const OwnProfilePhoto({
     required this.profileId,
     required this.objectPath,
+    this.thumbnailObjectPath,
     required this.audience,
     required this.createdAt,
     required this.updatedAt,
@@ -28,6 +29,7 @@ class OwnProfilePhoto {
     return OwnProfilePhoto(
       profileId: _requiredString(row, 'profile_id'),
       objectPath: _requiredString(row, 'object_path'),
+      thumbnailObjectPath: row['thumbnail_object_path'] as String?,
       audience: ProfilePhotoAudience.fromWire(row['audience']),
       createdAt: _requiredDateTime(row, 'created_at'),
       updatedAt: _requiredDateTime(row, 'updated_at'),
@@ -36,6 +38,7 @@ class OwnProfilePhoto {
 
   final String profileId;
   final String objectPath;
+  final String? thumbnailObjectPath;
   final ProfilePhotoAudience audience;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -47,6 +50,7 @@ class OwnProfilePhoto {
     return OwnProfilePhoto(
       profileId: profileId,
       objectPath: objectPath,
+      thumbnailObjectPath: thumbnailObjectPath,
       audience: audience ?? this.audience,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -58,6 +62,7 @@ class ProfilePhotoCommit {
   const ProfilePhotoCommit({
     required this.currentObjectPath,
     required this.previousObjectPath,
+    this.previousThumbnailObjectPath,
     required this.audience,
     required this.updatedAt,
   });
@@ -70,6 +75,8 @@ class ProfilePhotoCommit {
     return ProfilePhotoCommit(
       currentObjectPath: _requiredString(row, 'current_object_path'),
       previousObjectPath: previousObjectPath as String?,
+      previousThumbnailObjectPath:
+          row['previous_thumbnail_object_path'] as String?,
       audience: ProfilePhotoAudience.fromWire(row['audience']),
       updatedAt: _requiredDateTime(row, 'updated_at'),
     );
@@ -77,6 +84,7 @@ class ProfilePhotoCommit {
 
   final String currentObjectPath;
   final String? previousObjectPath;
+  final String? previousThumbnailObjectPath;
   final ProfilePhotoAudience audience;
   final DateTime updatedAt;
 }
@@ -111,6 +119,7 @@ class ProcessedProfilePhoto {
     required this.height,
     required this.quality,
     required this.encodingAttempts,
+    required this.thumbnailBytes,
   });
 
   final Uint8List bytes;
@@ -118,6 +127,7 @@ class ProcessedProfilePhoto {
   final int height;
   final int quality;
   final int encodingAttempts;
+  final Uint8List thumbnailBytes;
 
   int get byteLength => bytes.length;
 }

@@ -220,7 +220,7 @@ class VisibleProfilePhotoController extends Notifier<VisibleProfilePhotoState> {
     try {
       bytes = await ref
           .read(profilePhotoGatewayProvider)
-          .downloadVisiblePhoto(photo.objectPath);
+          .downloadVisiblePhoto(photo.smallObjectPath);
     } catch (_) {
       _setFailureIfCurrent(
         photo.profileId,

@@ -2427,5 +2427,13 @@
     }
   },
   "eventScheduleZone": "Orari in {zone}",
-  "@eventScheduleZone": { "placeholders": { "zone": { "type": "String" } } }
+  "@eventScheduleZone": { "placeholders": { "zone": { "type": "String" } } },
+  "personPreviewTitle": "Profilo",
+  "personPreviewPhoto": "Foto del profilo",
+  "personPreviewNoPhoto": "Nessuna foto del profilo visibile",
+  "personPreviewPhotoError": "Impossibile caricare questa foto.",
+  "personPreviewAnonymous": "Persona su PLANETS",
+  "personPreviewNoDetails": "Non sono disponibili altri dettagli pubblici del profilo.",
+  "personPreviewReadError": "Impossibile caricare questo profilo.",
+  "personPreviewBlocked": "Hai bloccato questa persona."
 }
