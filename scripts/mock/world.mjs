@@ -428,7 +428,7 @@ export async function seed(context) {
     );
     await cover("tavolo", marco, tavolo, "project", "repair-cafe.webp");
     for (const [key, mode, title] of [
-      ["donation", "donation", "Vasi per nuove piante"],
+      ["donation", "donate", "Vasi per nuove piante"],
       ["exchange", "exchange", "Attrezzi da condividere"],
     ]) {
       const id = await once(`listing:${key}`, () =>
