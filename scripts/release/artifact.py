@@ -39,6 +39,19 @@ def validate_manifest(xml, code):
             "min_sdk": int(sdk.get(ANDROID + "minSdkVersion", "0")), "debuggable": False}
 
 
+def validate_jarsigner(output):
+    # Upload certificates are intentionally self-signed. Trust comes from the
+    # separately pinned Play upload certificate, not the JDK's CA trust store.
+    # Keep integrity/expiry/algorithm failures fatal and verify every ZIP payload.
+    lines = output.splitlines()
+    self_signed = "This jar contains entries whose signer certificate is self-signed." in lines
+    remaining = "\n".join(line for line in lines if not (
+        self_signed and line.startswith("This jar contains entries whose certificate chain is invalid. Reason:")
+    ))
+    if "jar verified." not in output or re.search(r"unsigned|expired|disabled|invalid", remaining, re.I):
+        raise ValueError("AAB signature verification failed")
+
+
 def verify_payloads(bundle):
     # Jarsigner checks signatures; independently reject *any* unsigned payload.
     with zipfile.ZipFile(bundle) as archive:
@@ -103,8 +116,7 @@ def inspect(bundle, code, policy, build_manifest, source_sha):
     xml = run(["java", "-jar", str(tool), "dump", "manifest", "--bundle=" + str(bundle), "--module=base"])
     evidence = validate_manifest(xml, code)
     verification = run(["jarsigner", "-J-Duser.language=en", "-verify", str(bundle)])
-    if "jar verified." not in verification or re.search(r"unsigned|expired|disabled|invalid", verification, re.I):
-        raise ValueError("AAB signature verification failed")
+    validate_jarsigner(verification)
     certificate = run(["keytool", "-J-Duser.language=en", "-printcert", "-jarfile", str(bundle)])
     fingerprints = re.findall(r"SHA256:\s*([A-Fa-f0-9:]+)", certificate)
     if len(fingerprints) != 1 or fingerprints[0].replace(":", "").lower() != policy["upload_certificate_sha256"]:

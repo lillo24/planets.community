@@ -40,6 +40,9 @@ diagnostics stay out of public Actions output.
 - `artifact.py` inspects package/code/SDK/debug flags, upload signature and every
   signed payload, original certificate, source/backend/map flags, compiled origin
   and 64-bit ELF alignment using checksum-pinned bundletool and the installed JDK.
+  The original upload certificate is self-signed: its known JDK trust-chain warning
+  is accepted only alongside successful signature verification and the pinned
+  certificate; unsigned payloads, expiry and disabled algorithms still fail.
   `test_artifact.py` runs through the root Node tooling test gate.
 - `play.mjs` owns service-account OAuth and the Publisher edits API. It never
   creates tracks, modifies testers/countries or submits production releases.

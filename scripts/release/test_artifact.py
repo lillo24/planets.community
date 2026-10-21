@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import struct
 import zipfile
-from artifact import validate_manifest, verify_payloads, validate_build, native_alignment
+from artifact import validate_manifest, validate_jarsigner, verify_payloads, validate_build, native_alignment
 
 
 class ArtifactTests(unittest.TestCase):
@@ -18,6 +18,13 @@ class ArtifactTests(unittest.TestCase):
         for xml in [self.xml.replace('app"', 'other"'), self.xml.replace('debuggable="false"', 'debuggable="true"'), self.xml.replace('targetSdkVersion="36"', 'targetSdkVersion="35"'), self.xml.replace('versionCode="13"', 'versionCode="12"')]:
             with self.assertRaises(ValueError):
                 validate_manifest(xml, 13)
+
+    def test_self_signed_upload_certificate_requires_integrity(self):
+        warning = "jar verified.\nThis jar contains entries whose certificate chain is invalid. Reason: PKIX path building failed\nThis jar contains entries whose signer certificate is self-signed.\n"
+        validate_jarsigner(warning)
+        for output in [warning.replace("jar verified.", ""), warning + "unsigned entry", warning + "certificate expired", warning + "algorithm disabled", warning + "invalid signature", warning.replace("This jar contains entries whose signer certificate is self-signed.", "")]:
+            with self.assertRaises(ValueError):
+                validate_jarsigner(output)
 
     def test_unsigned_and_changed_payload(self):
         with tempfile.TemporaryDirectory() as directory:
