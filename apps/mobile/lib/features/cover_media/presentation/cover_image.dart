@@ -15,6 +15,7 @@ class CoverImage extends ConsumerWidget {
     this.previewBytes,
     this.borderRadius = BorderRadius.zero,
     this.aspectRatio = 16 / 9,
+    this.compact = false,
     super.key,
   });
 
@@ -26,6 +27,7 @@ class CoverImage extends ConsumerWidget {
 
   /// Display crop only; normalization and stored image dimensions stay 16:9.
   final double aspectRatio;
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,9 +37,9 @@ class CoverImage extends ConsumerWidget {
     var failed = false;
     Widget content;
     if (bytes != null) {
-      content = _CoverBytes(bytes: bytes);
+      content = _CoverBytes(bytes: bytes, compact: compact);
     } else if (path == null) {
-      content = const _CoverFallback();
+      content = _CoverFallback(compact: compact);
     } else {
       final ownerId = ownerProfileId;
       final request = ownerId == null
@@ -48,11 +50,18 @@ class CoverImage extends ConsumerWidget {
               ),
             );
       content = request.when(
-        data: (loaded) => _CoverBytes(bytes: loaded),
-        loading: () => const _CoverFallback(loading: true),
+        skipLoadingOnRefresh: ownerId == null,
+        skipLoadingOnReload: false,
+        data: (loaded) => _CoverBytes(
+          key: ValueKey((ownerId, path)),
+          bytes: loaded,
+          compact: compact,
+          gaplessPlayback: ownerId == null,
+        ),
+        loading: () => _CoverFallback(loading: true, compact: compact),
         error: (_, _) {
           failed = true;
-          return const _CoverFallback(failed: true);
+          return _CoverFallback(failed: true, compact: compact);
         },
       );
     }
@@ -80,38 +89,53 @@ class CoverImage extends ConsumerWidget {
 }
 
 class _CoverBytes extends StatelessWidget {
-  const _CoverBytes({required this.bytes});
+  const _CoverBytes({
+    required this.bytes,
+    required this.compact,
+    this.gaplessPlayback = true,
+    super.key,
+  });
 
   final Uint8List bytes;
+  final bool compact;
+  final bool gaplessPlayback;
 
   @override
   Widget build(BuildContext context) {
     return Image.memory(
       bytes,
       fit: BoxFit.cover,
-      gaplessPlayback: true,
+      gaplessPlayback: gaplessPlayback,
       filterQuality: FilterQuality.medium,
-      errorBuilder: (_, _, _) => const _CoverFallback(failed: true),
+      errorBuilder: (_, _, _) => _CoverFallback(failed: true, compact: compact),
     );
   }
 }
 
 class _CoverFallback extends StatelessWidget {
-  const _CoverFallback({this.loading = false, this.failed = false});
+  const _CoverFallback({
+    this.loading = false,
+    this.failed = false,
+    this.compact = false,
+  });
 
   final bool loading;
   final bool failed;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [scheme.primaryContainer, scheme.tertiaryContainer],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: compact ? scheme.surfaceContainerHighest : null,
+        gradient: compact
+            ? null
+            : LinearGradient(
+                colors: [scheme.primaryContainer, scheme.tertiaryContainer],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
       ),
       child: Center(
         child: loading
@@ -126,10 +150,10 @@ class _CoverFallback extends StatelessWidget {
                     failed
                         ? Icons.broken_image_outlined
                         : Icons.landscape_outlined,
-                    size: 44,
+                    size: compact ? 28 : 44,
                     color: scheme.onPrimaryContainer,
                   ),
-                  if (failed) ...[
+                  if (failed && !compact) ...[
                     const SizedBox(height: AppSpacing.xSmall),
                     Text(
                       AppLocalizations.of(context).coverLoadError,

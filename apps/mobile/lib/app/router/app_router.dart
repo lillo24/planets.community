@@ -1122,7 +1122,10 @@ RoutingConfig _routingConfig(
                   ),
                   GoRoute(
                     path: 'mine',
-                    builder: (context, state) => const OwnProposalsScreen(),
+                    builder: (context, state) => OwnProposalsScreen(
+                      itemId: state.uri.queryParameters['item'],
+                      returnToHub: state.extra == DraftEditorOrigin.hub,
+                    ),
                   ),
                   GoRoute(
                     path: 'create',
@@ -1271,8 +1274,10 @@ RoutingConfig _routingConfig(
                 routes: [
                   GoRoute(
                     path: 'mine',
-                    builder: (context, state) =>
-                        const OwnRecurringActivitiesScreen(),
+                    builder: (context, state) => OwnRecurringActivitiesScreen(
+                      itemId: state.uri.queryParameters['item'],
+                      returnToHub: state.extra == DraftEditorOrigin.hub,
+                    ),
                   ),
                   GoRoute(
                     path: 'create',
@@ -1304,6 +1309,7 @@ RoutingConfig _routingConfig(
                         builder: (context, state) =>
                             RecurringActivityEditorScreen(
                               activityId: state.pathParameters['id'],
+                              returnToHub: state.extra == DraftEditorOrigin.hub,
                             ),
                       ),
                       GoRoute(
@@ -1370,8 +1376,10 @@ RoutingConfig _routingConfig(
                 routes: [
                   GoRoute(
                     path: 'mine',
-                    builder: (context, state) =>
-                        const OwnResourceListingsScreen(),
+                    builder: (context, state) => OwnResourceListingsScreen(
+                      itemId: state.uri.queryParameters['item'],
+                      returnToHub: state.extra == DraftEditorOrigin.hub,
+                    ),
                   ),
                   GoRoute(
                     path: 'create',
@@ -1395,6 +1403,7 @@ RoutingConfig _routingConfig(
                         builder: (context, state) =>
                             ResourceListingEditorScreen(
                               listingId: state.pathParameters['listingId'],
+                              returnToHub: state.extra == DraftEditorOrigin.hub,
                             ),
                       ),
                       GoRoute(
