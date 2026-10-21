@@ -4,6 +4,7 @@ node_modules/
 dist/
 out/
 coverage/
+__pycache__/
 *.tsbuildinfo
 
 # Flutter and Dart

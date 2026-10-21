@@ -198,3 +198,16 @@ Batch D adds one populated upgrade check before fresh replay and one bounded
 real-Auth verifier alongside group membership. The existing path classifier and
 required statuses remain unchanged. Requests/chat/unread compatibility and safety
 changes share the Database gate; schema changes also regenerate Web contracts.
+
+# RELEASE01 staged delivery
+
+`staging-release.yml` is separate from Validation and is disabled unless
+`STAGING_RELEASE_ENABLED=true`. PRs touching release code run only its disposable
+populated predecessor rehearsal, with no hosted credentials. Main/dispatch runs
+use protected environments and a single non-cancelling writer; complete Validation,
+approved bootstrap migration hashes, recovery, backend checks and signing/track
+checks gate delivery. Main-push Android delivery additionally requires
+`STAGING_AUTO_PUBLISH=true`. No variable or secret is provisioned by merging.
+The [runbook](../../docs/development/release01-staging-play.md) documents exact
+triggers, initial approval and incident/retry behavior. This adds no deployment
+trigger to `validation.yml` and does not let plan/document-only commits deploy.
