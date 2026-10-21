@@ -152,8 +152,11 @@ update public.projects set registration_capacity=10 where id='c7030000-0000-4000
 insert into public.recurring_activity_schedules(recurring_activity_id,recurrence_type,weekday,local_start_time,duration_minutes,event_timezone,effective_from)
  values ('c7030000-0000-4000-8000-000000000002','weekly',1,'12:00',60,'Europe/Rome',current_date);
 update public.recurring_activities set lifecycle_state='published',published_at=now() where id='c7030000-0000-4000-8000-000000000002';
+-- Resource publication uses statement_timestamp(), later than transaction now().
+-- Pin a snapshot after publication so subsequent cursor comparisons stay stable.
+select set_config('cat01.map_reference',clock_timestamp()::text,true);
 create function pg_temp.cat01_geo() returns jsonb language sql as $$
- select '{"mode":"radius","latitude":46.07,"longitude":11.12,"radius_m":5000,"proposal_keyword":"CAT01","tavolo_locality":"CAT01","resource_keyword":"CAT01"}'::jsonb||jsonb_build_object('reference_time',now())
+ select '{"mode":"radius","latitude":46.07,"longitude":11.12,"radius_m":5000,"proposal_keyword":"CAT01","tavolo_locality":"CAT01","resource_keyword":"CAT01"}'::jsonb||jsonb_build_object('reference_time',current_setting('cat01.map_reference')::timestamptz)
 $$;
 create temp table cat01_map as select public.search_public_geography_v1(pg_temp.cat01_geo()||'{"resource_category_slug":"tools_diy"}') value;
 select is((select count(*) from jsonb_array_elements((select value->'items' from cat01_map)) item where item->>'kind'='resource'),1::bigint,'Radius filters categorized Resource candidates before pagination');
