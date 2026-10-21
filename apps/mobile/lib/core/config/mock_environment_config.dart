@@ -92,7 +92,12 @@ final class MockEnvironmentConfig {
         'MOCK_PERSONA_BROKER_URL must be the fixed mock broker endpoint.',
       );
     }
-    if ([mockUrl, mockKey, brokerUrl, generation].any((value) => value.isEmpty)) {
+    if ([
+      mockUrl,
+      mockKey,
+      brokerUrl,
+      generation,
+    ].any((value) => value.isEmpty)) {
       return null;
     }
     return MockEnvironmentConfig._(
