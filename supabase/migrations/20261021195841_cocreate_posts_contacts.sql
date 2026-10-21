@@ -547,12 +547,14 @@ begin
 end; $$;
 create function public.get_moderation_case_cocreate(p_expected_staff_profile_id uuid,p_case_id uuid)
 returns jsonb language plpgsql stable security definer set search_path='' as $$
-declare evidence jsonb;
+declare evidence jsonb; source private.cocreate_posts%rowtype;
 begin
  perform private.require_moderation_staff(p_expected_staff_profile_id);
  select cocreate_evidence into evidence from private.moderation_cases where id=p_case_id and target_cocreate_id is not null;
  if evidence is null then raise sqlstate '42501' using message='The report evidence is unavailable.'; end if;
- return evidence;
+ select * into source from private.cocreate_posts where id=(evidence->>'post_id')::uuid;
+ return jsonb_build_object('evidence',evidence,'post_version',source.version,
+  'post_suppressed',source.suppressed);
 end; $$;
 create function public.moderate_cocreate_post(p_expected_staff_profile_id uuid,p_command_id uuid,p_case_id uuid,p_expected_version bigint,p_suppressed boolean)
 returns jsonb language plpgsql security definer set search_path='' as $$

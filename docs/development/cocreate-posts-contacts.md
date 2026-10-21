@@ -85,8 +85,10 @@ is private to the canonical case, never generic audit/outbox metadata.
 Reporting a known accepted message remains possible after blocking/closure.
 Erased identities do not become fabricated report subjects.
 
-Current staff can fetch only a case's exact evidence through
-`get_moderation_case_cocreate`; staff role does not authorize contact browsing.
+Current staff can fetch a case's exact immutable evidence and its source post's
+current version/suppression flag through `get_moderation_case_cocreate`.
+Those two bounded current fields make versioned moderation actionable without
+granting a live transcript or contact browsing.
 `moderate_cocreate_post` requires an existing co-creation case, current staff,
 immutable command identity and post version to suppress/restore that source.
 No second staff role or unscoped private-room oversight is added.

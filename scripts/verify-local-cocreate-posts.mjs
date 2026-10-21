@@ -209,7 +209,7 @@ try {
     p_case_id: report[0].case_id,
   });
   equal(
-    evidence.message_id,
+    evidence.evidence.message_id,
     page.messages[0].message_id,
     "Staff get only scoped reported message evidence",
   );
@@ -217,6 +217,30 @@ try {
     ...actor(staff),
     p_contact_id: room,
   });
+  const suppress = await rpc(staff, "moderate_cocreate_post", {
+    p_expected_staff_profile_id: staff.id,
+    p_command_id: randomUUID(),
+    p_case_id: report[0].case_id,
+    p_expected_version: evidence.post_version,
+    p_suppressed: true,
+  });
+  await denied(b, "get_cocreate_contact_page", {
+    ...actor(b),
+    p_contact_id: room,
+  });
+  await denied(b, "acknowledge_cocreate_contact", {
+    ...actor(b),
+    p_contact_id: room,
+    p_read_token: page.read_token,
+  });
+  const restored = await rpc(staff, "moderate_cocreate_post", {
+    p_expected_staff_profile_id: staff.id,
+    p_command_id: randomUUID(),
+    p_case_id: report[0].case_id,
+    p_expected_version: suppress.version,
+    p_suppressed: false,
+  });
+  source.version = restored.version;
 
   // Distinct accounts race opposite state transitions on the same post/request.
   const racePost = await post(a, "race");

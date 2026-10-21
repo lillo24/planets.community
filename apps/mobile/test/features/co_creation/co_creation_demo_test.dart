@@ -29,6 +29,89 @@ void main() {
   setUpAll(() => RenderedEvidence.loadFonts(force: true));
   for (final language in ['en', 'it']) {
     for (final dark in [false, true]) {
+      testWidgets(
+        'Home 320dp 2x $language dark=$dark keeps three native pillars usable',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 480);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final router = GoRouter(
+            routes: [
+              GoRoute(path: '/', builder: (_, _) => const FoundationScreen()),
+              for (final path in ['/people', '/proposals', '/resources'])
+                GoRoute(
+                  path: path,
+                  builder: (_, _) => Scaffold(body: Text(path)),
+                ),
+            ],
+          );
+          addTearDown(router.dispose);
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                initialCoCreationPreferenceProvider.overrideWithValue(
+                  const CoCreationPreferenceState(mode: CoCreationMode.on),
+                ),
+                initialActivitiesSplitPreferenceProvider.overrideWithValue(
+                  const ActivitiesSplitPreferenceState(
+                    mode: ActivitiesSplitMode.on,
+                  ),
+                ),
+                authSessionProvider.overrideWith(Session.new),
+              ],
+              child: RenderedEvidence.wrap(
+                MaterialApp.router(
+                  routerConfig: router,
+                  theme: dark ? AppTheme.dark : AppTheme.light,
+                  locale: Locale(language),
+                  localizationsDelegates:
+                      AppLocalizations.localizationsDelegates,
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  builder: (context, child) => MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      textScaler: TextScaler.linear(2),
+                      disableAnimations: true,
+                    ),
+                    child: child!,
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          for (final entry in {
+            'browse-people-button': '/people',
+            'browse-proposals-button': '/proposals',
+            'browse-resources-button': '/resources',
+          }.entries) {
+            final card = find.byKey(Key(entry.key));
+            await tester.ensureVisible(card);
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+            if (entry.key == 'browse-people-button') {
+              await RenderedEvidence.capture(
+                tester,
+                'cocreate-home-$language-$dark-2x',
+              );
+            }
+            await tester.tap(card);
+            await tester.pumpAndSettle();
+            expect(router.routeInformationProvider.value.uri.path, entry.value);
+            router.go('/');
+            await tester.pumpAndSettle();
+          }
+          expect(
+            find.byKey(const Key('browse-activities-button')),
+            findsNothing,
+          );
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+  for (final language in ['en', 'it']) {
+    for (final dark in [false, true]) {
       for (final scale in [1.0, 2.0]) {
         testWidgets('demo navigation $language dark=$dark 320dp scale=$scale', (
           tester,
