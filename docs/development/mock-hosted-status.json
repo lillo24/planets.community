@@ -1,15 +1,15 @@
 {
-  "observedAt": "2026-10-21T20:04:17.006Z",
-  "sourceBase": "037eba7f2871a0171d4fdeefd565eb39b8159d2c",
-  "qualifiedHostedSource": "1e685d734b5976b623270f66ba8b2505628fec9e",
-  "canonicalSchemaFingerprint": "60138f6c6898aef024018da4bf98d6a0e81c1c03c6efc00d768bd37c615e0367",
+  "observedAt": "2026-10-21T20:46:14.117Z",
+  "sourceBase": "82ace622331b97ca39dca5876e2dbb12ae92045b",
+  "qualifiedHostedSource": "541be6fb459ffbf658da0822505aa9a705d4dfe1",
+  "canonicalSchemaFingerprint": "0fb9da0135a09b51d9e853d201a1b54e36d544e40836d8fbea004038b16c0cae",
   "generation": "mock-world-2026-10-21-v1",
   "mock": {
     "name": "planets-mock",
     "projectRef": "pnolarmzxmmjtguligfc",
     "region": "eu-west-1",
     "creationCostQuotedMonthly": 0,
-    "canonicalMigrationsApplied": 124,
+    "canonicalMigrationsApplied": 125,
     "activationEnabled": true,
     "authUsers": 5,
     "profiles": 5,
@@ -22,13 +22,13 @@
     "controlSourceSha256": "009734ddc55453e41a2fbec5be70bdef74eab898f9cdebf057d6298bb77d1dde",
     "deployedAccessModel": "Public fixed fictional personas, including signed-out guests; private per-client capability",
     "hostedSeedVerification": {
-      "run": "https://github.com/lillo24/planets.community/actions/runs/39666524637",
+      "run": "https://github.com/lillo24/planets.community/actions/runs/39672734857",
       "checks": 42,
       "success": true,
       "operation": "verify-only"
     },
     "hostedPublicSmoke": {
-      "observedAt": "2026-10-21T20:02:14.039Z",
+      "observedAt": "2026-10-21T20:46:05.792Z",
       "checks": 92,
       "success": true,
       "independentSamePersonaSessions": true,
@@ -64,7 +64,7 @@
     "hostedNativeEndToEndRun": false,
     "readiness": "Hosted public API verified; hosted native end-to-end journey remains unrun",
     "hostedRealtime": {
-      "observedAt": "2026-10-21T20:04:17.006Z",
+      "observedAt": "2026-10-21T20:46:14.117Z",
       "success": true,
       "checks": 10,
       "privateSubscription": true,
@@ -73,6 +73,14 @@
       "persistedSyntheticMessages": 1,
       "initialAttempt": "CHANNEL_ERROR before sending; unchanged backend passed a fresh attempt",
       "nativeEndToEnd": false
+    },
+    "hostedAvatarV2": {
+      "observedAt": "2026-10-21T20:46:11.481Z",
+      "success": true,
+      "checks": 36,
+      "legacyFullOnlyPhotosPreserved": true,
+      "versionedOwnPhotoApiVerified": true,
+      "normalMutations": 0
     }
   },
   "normal": {
@@ -104,26 +112,27 @@
       "20261019073011_contact_report_erased_subject_provenance.sql",
       "20261020123403_group_idea_invitation_context.sql",
       "20261020144145_contact_discussion_integration.sql",
+      "20261021152141_profile_avatar_variants.sql",
       "20261021155653_resource_cat01_categories.sql",
       "20261021193500_notification_projection_atomic_claim.sql"
     ],
     "mutated": false,
-    "gapObservedAt": "2026-10-21T19:49:37Z"
+    "gapObservedAt": "2026-10-21 20:48:41.378948+00"
   },
   "hostedBlockers": [],
   "codeQualification": {
     "publicAccessCorrectionImplemented": true,
     "requiredCumulativeChecks": "https://github.com/lillo24/planets.community/pull/278/checks",
     "previousNativeProof": {
-      "source": "01975102868154ad7aa8dd6242a0b0f70ed878d0",
-      "run": "https://github.com/lillo24/planets.community/actions/runs/39659331380",
+      "source": "1e685d734b5976b623270f66ba8b2505628fec9e",
+      "run": "https://github.com/lillo24/planets.community/actions/runs/39666757829",
       "success": true,
       "screenshots": 35,
       "forbiddenNormalProductCalls": 0,
-      "boundary": "Before MYHUB01 integration; does not qualify changed mobile objects"
+      "boundary": "Before PROF01/IMG01 integration; does not qualify changed mobile objects"
     },
-    "integratedRuntimeSource": "1e685d734b5976b623270f66ba8b2505628fec9e",
-    "integratedNativeRun": "https://github.com/lillo24/planets.community/actions/runs/39666757829",
+    "integratedRuntimeSource": "541be6fb459ffbf658da0822505aa9a705d4dfe1",
+    "integratedNativeRun": "https://github.com/lillo24/planets.community/actions/runs/39673018086",
     "mergeGate": "Requires successful native conclusion/artifact and complete final-head Validation; see PR checks and task delivery evidence",
     "notificationRegression": {
       "source": "e4627c8f925b21709c1714edc7f293321126e9b2",
@@ -133,14 +142,22 @@
       "twoRealmChecks": 174,
       "atomicClaimRollbackAndRetryPassed": true
     },
-    "evidenceBoundary": "Native fixture uses two disposable loopback realms; hosted API, native and publication evidence remain separate"
+    "evidenceBoundary": "Native fixture uses two disposable loopback realms; hosted API, native and publication evidence remain separate",
+    "previousFullValidation": {
+      "source": "5f7181a3f4cf5cede174bfb677d7df67fe0a1216",
+      "run": "https://github.com/lillo24/planets.community/actions/runs/39668157016",
+      "success": true,
+      "mobilePassed": 3936,
+      "mobileSkipped": 2,
+      "boundary": "Before PROF01/IMG01; all four areas passed, not final-head qualification"
+    }
   },
   "release": {
     "artifactBuilt": true,
     "version": "0.1.9+13",
-    "buildSource": "1e685d734b5976b623270f66ba8b2505628fec9e",
-    "sha256": "62a914d2295e0d94e9fcb6e642378776601da4415e80c875488a0b113be72477",
-    "bytes": 85617537,
+    "buildSource": "541be6fb459ffbf658da0822505aa9a705d4dfe1",
+    "sha256": "9f8c2376ebffdb106b1982387b2a188b6a472bb8bf0fa0ad9f0819667d898896",
+    "bytes": 85660556,
     "configSha256": "9ac9ed9b44aa27802ab078b78489f5a25ef87b7edcd2d5a7b860d6d574212459",
     "existingUploadCertificateSha256": "f9362ed9f6f7be7c59a6eacfd8aae99426af98935ff1197f65e8207cc0fd22c0",
     "package": "community.planets.app",
