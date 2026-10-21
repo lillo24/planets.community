@@ -120,11 +120,14 @@ begin
     where issuer=p_issuer and tester_id=p_tester and request_id=p_request;
 end $$;
 
-create or replace function public.mock_control_retire(p_issuer text,p_tester uuid,p_request uuid)
+create or replace function public.mock_control_retire(p_issuer text,p_tester uuid,p_request uuid,p_persona text)
 returns void language plpgsql security definer set search_path='' as $$
 begin
   perform 1 from mock_control.testers where issuer=p_issuer and user_id=p_tester for update;
   if not found then raise insufficient_privilege; end if;
+  if exists(select 1 from mock_control.deliveries where issuer=p_issuer and tester_id=p_tester
+    and request_id=p_request and persona_key<>p_persona) then
+    raise exception using errcode='PT409',message='Request payload changed'; end if;
   delete from auth.sessions where id in(select session_id from mock_control.deliveries
     where issuer=p_issuer and tester_id=p_tester and request_id=p_request);
   update mock_control.deliveries set state='retired',encrypted_delivery=null
@@ -144,10 +147,10 @@ end $$;
 
 revoke all on function public.mock_control_catalog(text,uuid),
   public.mock_control_claim(text,uuid,uuid,text),public.mock_control_finish(text,uuid,uuid,uuid,text),
-  public.mock_control_retire(text,uuid,uuid),public.mock_control_offboard(text,uuid) from public,anon,authenticated;
+  public.mock_control_retire(text,uuid,uuid,text),public.mock_control_offboard(text,uuid) from public,anon,authenticated;
 grant execute on function public.mock_control_catalog(text,uuid),
   public.mock_control_claim(text,uuid,uuid,text),public.mock_control_finish(text,uuid,uuid,uuid,text),
-  public.mock_control_retire(text,uuid,uuid),public.mock_control_offboard(text,uuid) to service_role;
+  public.mock_control_retire(text,uuid,uuid,text),public.mock_control_offboard(text,uuid) to service_role;
 
 create or replace function public.mock_control_retire_candidate(p_session uuid,p_user uuid)
 returns void language plpgsql security definer set search_path='' as $$

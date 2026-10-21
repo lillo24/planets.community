@@ -22,7 +22,10 @@ export function createRuntime({
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-    const text = await boundedText(response, 32768);
+    // PostgREST returns 204 for void control RPCs. Empty success is a valid
+    // transport result here; it is not an absent broker session/delivery.
+    const text =
+      response.status === 204 ? "" : await boundedText(response, 32768);
     const result = text ? JSON.parse(text) : null;
     if (!response.ok)
       throw new BrokerFailure(
@@ -61,7 +64,11 @@ export function createRuntime({
     Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
 
   return createHandler({
-    enabled: enabled && Boolean(service && normalKey && deliveryKey),
+    enabled:
+      enabled &&
+      Boolean(service) &&
+      /^sb_publishable_[A-Za-z0-9_-]{20,}$/.test(normalKey) &&
+      /^[A-Za-z0-9+/]{43}=$/.test(deliveryKey),
     normalOrigin,
     mockOrigin,
     authenticate: (authorization) =>

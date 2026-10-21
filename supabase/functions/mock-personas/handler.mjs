@@ -77,17 +77,20 @@ export function createHandler({
       ) {
         throw new BrokerFailure("invalid_request", 400);
       }
-      const persona = catalog.find((p) => p.key === body.persona_key);
-      if (!persona) throw new BrokerFailure("persona_unavailable", 403);
       const args = {
         p_issuer: issuer,
         p_tester: tester.id,
         p_request: body.request_id,
       };
       if (body.action === "retire") {
-        await rpc("mock_control_retire", args);
+        await rpc("mock_control_retire", {
+          ...args,
+          p_persona: body.persona_key,
+        });
         return reply(200, { retired: true });
       }
+      const persona = catalog.find((p) => p.key === body.persona_key);
+      if (!persona) throw new BrokerFailure("persona_unavailable", 403);
       const claim = await rpc("mock_control_claim", {
         ...args,
         p_persona: persona.key,
@@ -138,7 +141,7 @@ export function createHandler({
       } catch (error) {
         if (session?.session_id)
           await revoke(session.session_id, persona.user_id);
-        await rpc("mock_control_retire", args);
+        await rpc("mock_control_retire", { ...args, p_persona: persona.key });
         throw error;
       }
     } catch (error) {

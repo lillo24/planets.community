@@ -148,6 +148,16 @@ async function login(status, id, email) {
 try {
   const normal = await stack("normal", 1000),
     mock = await stack("mock", 2000);
+  equal(
+    normal.publishableKey !== mock.publishableKey,
+    true,
+    "Independent public API credentials",
+  );
+  equal(
+    normal.serviceRoleKey !== mock.serviceRoleKey,
+    true,
+    "Independent administrative credentials",
+  );
   const sql = postgres(mock.databaseUrl, { max: 4, onnotice: () => {} });
   const inventory = await migrationInventory(root);
   await sql.unsafe(await readFile("supabase/mock/marker.sql", "utf8"));
