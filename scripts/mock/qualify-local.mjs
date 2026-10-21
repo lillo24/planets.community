@@ -39,13 +39,17 @@ function equal(a, b, label) {
   checks++;
 }
 function run(cwd, args) {
-  const result = spawnSync("supabase", args, {
-    cwd,
-    encoding: "utf8",
-    shell: process.platform === "win32",
-    timeout: 900000,
-    maxBuffer: 32 * 1024 * 1024,
-  });
+  const result = spawnSync(
+    path.join(root, "node_modules/.bin/supabase"),
+    args,
+    {
+      cwd,
+      encoding: "utf8",
+      shell: process.platform === "win32",
+      timeout: 900000,
+      maxBuffer: 32 * 1024 * 1024,
+    },
+  );
   if (result.status !== 0)
     throw new Error(
       `Disposable ${args[0]} failed (${result.error?.code ?? result.status}); private CLI output suppressed.`,
