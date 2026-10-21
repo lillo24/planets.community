@@ -20,6 +20,7 @@ import '../../profile_photo/presentation/profile_photo_trust_gate.dart';
 import '../application/resource_listing_controllers.dart';
 import '../domain/resource_listing_models.dart';
 import 'resource_listing_widgets.dart';
+import 'resource_category_field.dart';
 
 class ResourceListingEditorScreen extends ConsumerStatefulWidget {
   const ResourceListingEditorScreen({this.listingId, super.key});
@@ -46,6 +47,7 @@ class _ResourceListingEditorScreenState
   final _administrativeArea = TextEditingController();
   final _publicLocation = TextEditingController();
   ResourceListingMode _mode = ResourceListingMode.donate;
+  ResourceCategory? _category;
   String? _requestedIdentity;
   String? _hydratedVersion;
   bool _attemptPublish = false;
@@ -86,6 +88,7 @@ class _ResourceListingEditorScreenState
     }
     _hydratedVersion = null;
     _mode = ResourceListingMode.donate;
+    _category = null;
   }
 
   @override
@@ -224,6 +227,20 @@ class _ResourceListingEditorScreenState
                             : (selection) =>
                                   setState(() => _mode = selection.single),
                       ),
+                    ),
+                    const SizedBox(height: AppSpacing.medium),
+                    ResourceCategoryField(
+                      key: const Key('resource-editor-category'),
+                      category: _category,
+                      enabled: !isClosed && !state.isBusy,
+                      // Read the attempt flag during validation: Submit sets it
+                      // before the next build, as with the existing text fields.
+                      validator: (category) =>
+                          _attemptPublish && !isPublished && category == null
+                          ? l10n.resourceCategoryRequired
+                          : null,
+                      onChanged: (category) =>
+                          setState(() => _category = category),
                     ),
                     const SizedBox(height: AppSpacing.medium),
                     CoverEditorSection(
@@ -467,6 +484,7 @@ class _ResourceListingEditorScreenState
 
   ResourceListingInput _input() => ResourceListingInput(
     mode: _mode,
+    category: _category,
     title: _title.text,
     description: _description.text,
     countryCode: _country.text,
@@ -563,6 +581,7 @@ class _ResourceListingEditorScreenState
 
   void _hydrate(OwnResourceListing listing) {
     _mode = listing.mode;
+    _category = listing.category;
     _title.text = listing.title ?? '';
     _description.text = listing.description ?? '';
     _country.text = listing.countryCode ?? '';

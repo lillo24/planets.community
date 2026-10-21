@@ -43,9 +43,11 @@ import '../../resource_saved_searches/presentation/resource_saved_search_routes.
 import '../application/resource_listing_controllers.dart';
 import '../domain/resource_listing_models.dart';
 import 'resource_listing_widgets.dart';
+import 'resource_category_field.dart';
 
 typedef _ResourceFilterTuple = ({
   ResourceListingMode? mode,
+  ResourceCategory? category,
   String locality,
   String query,
 });
@@ -69,6 +71,7 @@ class _PublicResourceListingsScreenState
   late final TextEditingController _queryController;
   late final TextEditingController _localityController;
   ResourceListingMode? _modeFilter;
+  ResourceCategory? _categoryFilter;
   bool _filtersExpanded = false;
   Timer? _filterTimer;
 
@@ -79,6 +82,7 @@ class _PublicResourceListingsScreenState
     _queryController = TextEditingController(text: current.query);
     _localityController = TextEditingController(text: current.locality);
     _modeFilter = current.modeFilter;
+    _categoryFilter = current.categoryFilter;
     if (current.phase == ResourceListingLoadPhase.idle) {
       Future<void>.microtask(
         () => ref.read(publicResourceListingsProvider.notifier).load(),
@@ -107,6 +111,7 @@ class _PublicResourceListingsScreenState
       publicResourceListingsProvider.select(
         (value) => (
           mode: value.modeFilter,
+          category: value.categoryFilter,
           locality: value.locality,
           query: value.query,
         ),
@@ -153,7 +158,12 @@ class _PublicResourceListingsScreenState
                 state.resultsMatchFilters,
             requestKey: (
               state.items.length,
-              (state.modeFilter, state.locality, state.query),
+              (
+                state.modeFilter,
+                state.categoryFilter,
+                state.locality,
+                state.query,
+              ),
               ref.watch(authSessionProvider).phase,
               ref.watch(authSessionProvider).identity?.id,
             ),
@@ -217,6 +227,7 @@ class _PublicResourceListingsScreenState
                       expanded: _filtersExpanded,
                       hasActiveFilters:
                           state.modeFilter != null ||
+                          state.categoryFilter != null ||
                           state.locality.trim().isNotEmpty,
                       onPressed: () {
                         FocusManager.instance.primaryFocus?.unfocus();
@@ -268,6 +279,16 @@ class _PublicResourceListingsScreenState
                         _flushFilters();
                       },
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  ResourceCategoryField(
+                    key: const Key('resource-category-filter'),
+                    category: _categoryFilter,
+                    showAll: true,
+                    onChanged: (category) {
+                      setState(() => _categoryFilter = category);
+                      _flushFilters();
+                    },
                   ),
                   const SizedBox(height: AppSpacing.small),
                   TextField(
@@ -418,6 +439,7 @@ class _PublicResourceListingsScreenState
     // A failed request remains retryable; successful/in-flight tuples dedupe.
     if (current.phase != ResourceListingLoadPhase.failure &&
         current.modeFilter == input.mode &&
+        current.categoryFilter == input.category &&
         current.locality == (input.locality ?? '') &&
         current.query == (input.query ?? '')) {
       return;
@@ -426,6 +448,7 @@ class _PublicResourceListingsScreenState
         .read(publicResourceListingsProvider.notifier)
         .applyFilters(
           mode: input.mode,
+          category: input.category,
           locality: input.locality ?? '',
           query: input.query ?? '',
         );
@@ -435,6 +458,7 @@ class _PublicResourceListingsScreenState
       ResourceSavedSearchInput.normalized(
         query: _queryController.text,
         mode: _modeFilter,
+        category: _categoryFilter,
         locality: _localityController.text,
       );
 
@@ -444,6 +468,7 @@ class _PublicResourceListingsScreenState
     _localityController.text = filters.locality;
     setState(() {
       _modeFilter = filters.mode;
+      _categoryFilter = filters.category;
     });
   }
 
@@ -600,6 +625,8 @@ class _PublicResourceListingDetailScreenState
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       ResourceListingModeBadge(mode: detail.summary.mode),
+                      if (detail.summary.category case final category?)
+                        ResourceCategoryText(category: category),
                       Semantics(
                         container: true,
                         label: l10n.resourceInterestCount(

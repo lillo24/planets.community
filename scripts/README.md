@@ -70,7 +70,9 @@ domain verification and change-scoped validation tooling.
   deployment mode. See [the preflight](../docs/development/staging01-recovery-preflight.md).
 
 - `generate-database-types.mjs` writes the canonical public TypeScript schema
-  from the checkout's local Supabase stack. Never hand-edit its output.
+  from the checkout's local Supabase stack. Its tested nullability registry
+  corrects pg-meta's nullable result omissions, including CAT01 categories on
+  the six V2 listing/saved-search readers. Never hand-edit its output.
 - `generate-*-local-config.mjs` prepares local client configuration.
 - `official-starter-inventory.mjs` emits read-only preflight/catalog-diff SQL
   or verifies the actual anonymous public Workshop RPC. It has no mutation mode.

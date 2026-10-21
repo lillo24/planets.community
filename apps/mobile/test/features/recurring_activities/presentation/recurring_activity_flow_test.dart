@@ -204,10 +204,7 @@ void main() {
         final app = await _pump(tester, recurring: recurring, signedIn: false);
         app.read(appRouterProvider).go('/tavoli');
         await tester.pumpAndSettle();
-        final expected = participants == 1
-            ? 'Up to 20 participants · +1 organizers'
-            : '4 / 20 participant spots used · +1 organizers · '
-                  '5 unique people involved';
+        final expected = participants == 1 ? 'Up to 21 people' : '5/21 people';
         await _scrollTo(tester, find.text(expected), 300);
         expect(find.text(expected), findsOneWidget);
         if (participants == 1) {
@@ -368,7 +365,7 @@ void main() {
       expect(find.byKey(const Key('browse-requested-badge')), findsOneWidget);
       expect(find.byKey(const Key('tavolo-card-tavolo-1')), findsOneWidget);
       expect(find.byKey(const Key('tavolo-card-tavolo-2')), findsOneWidget);
-      expect(find.textContaining('Up to 20 participants'), findsNWidgets(2));
+      expect(find.textContaining('Up to 21 people'), findsNWidgets(2));
       expect(
         tester.getTopLeft(find.byKey(const Key('tavolo-card-tavolo-1'))).dy,
         lessThan(
@@ -433,12 +430,12 @@ void main() {
         find.byKey(const Key('tavolo-detail-cover-tavolo-1')),
         findsOneWidget,
       );
-      await tester.scrollUntilVisible(find.text('September 9, 2026'), 250);
+      await tester.scrollUntilVisible(find.textContaining('Sep 9, 2026'), 250);
       // Settle the lazy resource section before targeting the next date.
       await tester.pumpAndSettle();
-      expect(find.text('19:00 – 20:30'), findsWidgets);
-      await tester.scrollUntilVisible(find.text('September 16, 2026'), 250);
-      expect(find.text('September 16, 2026'), findsOneWidget);
+      expect(find.textContaining('19:00–20:30'), findsWidgets);
+      await tester.scrollUntilVisible(find.textContaining('Sep 16, 2026'), 250);
+      expect(find.textContaining('Sep 16, 2026'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.text('Exact location available after joining.'),
         300,
