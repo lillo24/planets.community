@@ -9,20 +9,20 @@ deployment, store upload or external delivery authorized/performed.
 
 ## Stage ledger
 
-| Stage | State                  | Dependency      | Evidence / next action                                                                                                                                                  |
-| ----- | ---------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A00   | implemented_unverified | base            | Implemented and inspected. 287 affected tests pass, eight rendered combinations pass, Flutter analysis and all-file formatting pass. Android debug build still running. |
-| A01   | in_progress            | A00             | Experimental contract, strict typed identities and default-OFF private server gate added. Local stack startup/DB replay and gate tests pending.                         |
-| B01   | pending                | A01             | Posts, consent/contact backend and negative/concurrency qualification.                                                                                                  |
-| B02   | pending                | B01             | Live mobile Posts/Requests/accepted-contact Messages.                                                                                                                   |
-| C01   | pending                | A01             | Independent hub membership and General backend.                                                                                                                         |
-| C02   | pending                | C01             | Live communities and General UI.                                                                                                                                        |
-| C03   | pending                | C01             | Atomic numbered groups, history, hub-exit cascade.                                                                                                                      |
-| C04   | pending                | C02/C03         | Live numbered groups and Messages integration.                                                                                                                          |
-| D01   | pending                | C03/C04         | Canonical capacity-aware recruitment.                                                                                                                                   |
-| D02   | pending                | B/C             | Explicit source links and native Project drafts.                                                                                                                        |
-| D03   | pending                | B/C             | Ordinary deterministic filters. Provider part conditional on merged ACTAPI01.                                                                                           |
-| Q00   | pending                | eligible stages | Full synthetic programme journey, fresh/upgrade DB and regression qualification.                                                                                        |
+| Stage | State                  | Dependency      | Evidence / next action                                                                                                                                               |
+| ----- | ---------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A00   | verified               | base            | Implemented and inspected. 287 affected tests pass, eight rendered combinations pass, Flutter analysis and all-file formatting pass. Android debug APK build passed. |
+| A01   | implemented_unverified | A00             | Experimental contract, strict typed identities and default-OFF private server gate added. Local stack startup/DB replay and gate tests pending.                      |
+| B01   | in_progress            | A01             | Posts, consent/contact backend and negative/concurrency qualification.                                                                                               |
+| B02   | pending                | B01             | Live mobile Posts/Requests/accepted-contact Messages.                                                                                                                |
+| C01   | pending                | A01             | Independent hub membership and General backend.                                                                                                                      |
+| C02   | pending                | C01             | Live communities and General UI.                                                                                                                                     |
+| C03   | pending                | C01             | Atomic numbered groups, history, hub-exit cascade.                                                                                                                   |
+| C04   | pending                | C02/C03         | Live numbered groups and Messages integration.                                                                                                                       |
+| D01   | pending                | C03/C04         | Canonical capacity-aware recruitment.                                                                                                                                |
+| D02   | pending                | B/C             | Explicit source links and native Project drafts.                                                                                                                     |
+| D03   | pending                | B/C             | Ordinary deterministic filters. Provider part conditional on merged ACTAPI01.                                                                                        |
+| Q00   | pending                | eligible stages | Full synthetic programme journey, fresh/upgrade DB and regression qualification.                                                                                     |
 
 ## Isolation and evidence
 
@@ -62,3 +62,12 @@ unimplemented live features must never be reported as verified.
 - Tooling limitation: documented Dart/Flutter marketplace add reports an existing marketplace from another source; plugin add says plugin not found. Existing marketplace preserved. Installed Flutter/Dart CLI tests and analysis work.
 - Local DB startup: first attempt followed the unrelated default Podman connection despite DOCKER_HOST; inspection failed without mutation. Retried with process-only CONTAINER_CONNECTION=planets-cocreate-qa-root and owned pipe. Images downloading; no existing machine/database reset or global default change.
 - Next: commit tested A00, push cumulative draft PR; finish A01 gate replay/tests then continue B01 and independent C01. A00-only stop restriction is superseded.
+
+## A01 / B01 resumable checkpoint
+
+- Cumulative draft PR: https://github.com/lillo24/planets.community/pull/287. A00 commit: 230727e5; pushed. Automatic merge remains prohibited.
+- A00 Android debug APK build passed (358 seconds). Artifact: apps/mobile/build/app/outputs/flutter-apk/app-debug.apk; no installation/store action.
+- A01: experimental contract and access matrix added; strict canonical PostId/HubId/NumberedGroupId parsing and separate route builders pass **8 tests**; Flutter analysis passes. Private server gate defaults OFF, checks existing policy acceptance and live account restrictions; pgTAP includes direct-call grants, missing config, ban/deletion, wrong identity, incomplete profile and protected own-exit. SQL replay/tests are **not yet run** while local images download.
+- Owned local machine is planets-cocreate-qa, root connection planets-cocreate-qa-root, pipe npipe:////./pipe/podman-planets-cocreate-qa. Three pre-existing machines remain stopped and untouched. The CLI startup (exec session 40023) is downloading images; do not launch a second stack.
+- B01 source work has begun in 20261021195841_cocreate_posts_contacts.sql (uncommitted/incomplete). It is not qualified or a completed stage. Complete scoped moderation/report evidence and blocking serialization, add negative/idempotency/concurrency tests, replay and generate exact public types before claiming verification. Never activate live UI against incomplete backend paths.
+- Current next action: finish A01 DB replay/pgTAP when startup completes; continue B01 and independent C01. B02/C02 need real tested domain contracts. No live two-account journey is claimed.

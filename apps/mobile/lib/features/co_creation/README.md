@@ -20,3 +20,9 @@ All demo screens independently hide when disabled. Turning this mode off has
 no backend effect. Native routes and the bottom-right shortcut are unchanged.
 
 See [programme progress](../../../../../docs/development/cocreate-progress.md).
+
+A01 adds domain/co_creation_identity.dart: strict, mutually distinct canonical
+PostId, HubId and NumberedGroupId UUID wrappers and domain route builders.
+These are not Demo IDs; live routes are registered by their later UI stages.
+The server gate and access matrix are documented in
+[the experimental contract](../../../../../docs/development/cocreate-experimental-contract.md).
