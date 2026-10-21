@@ -1,0 +1,49 @@
+name: Mock Android release review
+
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mock-native-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mock-native:
+    name: Mock Android release review
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.label.name == 'qa-mock-native' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      PLANETS_DISPOSABLE_QA: "1"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24.20.0
+          cache: npm
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.2
+          cache: true
+      - run: npm ci
+      - name: Real two-realm signed release fixture and process restart
+        run: bash scripts/run-mock-native-ci.sh
+      - name: Retain bounded synthetic evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: mock-android-release-${{ github.event.pull_request.head.sha || github.sha }}
+          path: mock-native-evidence/
+          if-no-files-found: warn
+          retention-days: 7

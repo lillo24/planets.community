@@ -1,5 +1,19 @@
 # Validation workflow
 
+`mock-native.yml` is an explicit `qa-mock-native` same-repository label gate
+(remove/reapply after executable source changes), or manual dispatch after merge.
+It uses the exact PR head, two independently keyed disposable Supabase stacks,
+the reviewed broker runtime and a CI-owned Android emulator. A release-mode APK
+uses a temporary fixture signing key through the existing signing guard. It is
+never upload-ready and neither that key nor the APK is exported. The journey
+uses ordinary OTP, three personas, canonical interaction, a forced process
+restart and full logout. No test Auth gateway is injected. Narrow loopback
+proxies record request families/operations without headers, tokens or payloads.
+The job is bounded to 50 minutes, runs only on explicit request and supplements
+required Validation without changing required-status/path classification.
+Only synthetic PNGs, hashes, safe outcomes and artifact-scan metadata are retained
+for seven days. This is local/CI proof, never hosted deployment or Play readiness.
+
 `mock-qualification.yml` is an opt-in isolated-backend gate. Apply
 `qa-mock-backend` to a same-repository draft/integration PR (remove/reapply after
 source changes) or dispatch manually after merge. It creates two owned disposable

@@ -20,4 +20,7 @@ Core `secure_session_storage.dart` owns platform credential persistence and
 legacy normal-session migration. `realm_transport.dart` fences old captured
 gateways and keeps normal Auth maintenance separate from normal product traffic.
 See `docs/development/mock-environment.md` for the fixed server contract and
-readiness limits. MOCK03 completes the account picker and cumulative native gate.
+readiness limits. `presentation/mock_accounts_screen.dart` is the shared initial
+and Help selector, with localized exploration scenarios, current-account state,
+catalog invalidation and no credential copying. The CI-only native release
+target qualifies this same coordinator and actual backend clients.

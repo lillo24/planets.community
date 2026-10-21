@@ -2406,5 +2406,11 @@
   "mockNormalLink": "Questo link appartiene alla comunità normale. Torna alla modalità normale e aprilo di nuovo.",
   "mockUncertainAction": "Un’azione precedente potrebbe essere arrivata al server. Il recupero rimane associato a questo account. Potrai tornare qui per verificarne il risultato.",
   "mockKeepRecovery": "Mantieni il recupero e continua",
-  "mockStay": "Rimani qui"
+  "mockStay": "Rimani qui",
+  "mockScenarioGiulia": "Esplora l’organizzazione di Gruppi e Progetti.",
+  "mockScenarioMarco": "Prova riparazioni, scambi e organizzazione delegata.",
+  "mockScenarioSara": "Esplora attività creative, conversazioni tra persone e Idee.",
+  "mockScenarioDario": "Prova inviti e partecipazione senza foto del profilo.",
+  "mockScenarioElena": "Esplora la scoperta e le richieste esplicite di partecipazione.",
+  "mockScenarioGeneric": "Esplora la comunità immaginaria. I permessi attuali dipendono dal suo stato condiviso."
 }

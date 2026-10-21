@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Release-mode local QA may use two explicit loopback realms. External
+     product endpoints remain HTTPS; debug keeps its existing resource overlay. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain>127.0.0.1</domain>
+        <domain>localhost</domain>
+    </domain-config>
+</network-security-config>

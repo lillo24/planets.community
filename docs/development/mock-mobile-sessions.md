@@ -79,7 +79,11 @@ recovery instead of normal content. No/persona change retires only the current
 mock session; explicit PLANETS logout clears retained normal and local mock
 access and metadata. Failure remains recovery rather than a success message.
 
-MOCK02's minimal adapter consumes `catalog()` and
-`select(persona, prepareDeparture: ...)` on the same coordinator completed by
-MOCK03. No production fake gateway fallback exists. Hosted setup and the normal
+The shared selector consumes `catalog()` and
+`select(persona, prepareDeparture: ...)` on the same coordinator. Help exposes it
+only while mock is active; initial entry requires the explicit Sandbox action.
+Scenarios are localized exploration suggestions and do not assert current roles.
+The release Android network policy permits HTTP only for IPv4 loopback/localhost
+QA; external destinations remain HTTPS. Debug keeps its existing overlay.
+No production fake gateway fallback exists. Hosted setup and the normal
 staging migration gap remain separately recorded in `mock-hosted-status.json`.

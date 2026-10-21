@@ -376,7 +376,11 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
     normalTransport.productBlocked = true;
     await normal.removeAllChannels();
     await normal.realtime.disconnect();
-    if (previous != null && previous != candidate) await previous.retire();
+    if (previous != null && previous != candidate) {
+      await previous.retire();
+      _candidates.remove(previous.selection.requestId);
+      _operationTokens.remove(previous.selection.requestId);
+    }
     _active = candidate;
     candidate.transport.productBlocked = false;
     candidate.client.auth.startAutoRefresh();
@@ -388,6 +392,7 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
     if (previous != null) {
       await previous.retire();
       _candidates.remove(previous.selection.requestId);
+      _operationTokens.remove(previous.selection.requestId);
     }
     _active = null;
     // Existing Auth restoration owns valid/expired normal login. No normal
@@ -405,7 +410,7 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
   @override
   Future<void> retire(MockSelection selection) async {
     final candidate = _candidates[selection.requestId];
-    if (candidate != null && !candidate.retired) await candidate.retire();
+    if (candidate != null) await candidate.retire();
     _candidates.remove(selection.requestId);
     final token =
         _operationTokens.remove(selection.requestId) ??
@@ -428,7 +433,7 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
   @override
   Future<void> fullLogout() async {
     for (final candidate in _candidates.values.toList()) {
-      if (!candidate.retired) await candidate.retire();
+      await candidate.retire();
     }
     _candidates.clear();
     _active = null;

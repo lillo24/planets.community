@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,40 +9,78 @@ import '../application/mock_mode_coordinator.dart';
 import '../application/realm_departure.dart';
 import '../domain/mock_models.dart';
 
-/// Minimal real-session adapter for MOCK02. MOCK03 completes the account-picker
-/// presentation; all selection already uses the single coordinator and broker.
+/// One authorized selector serves first entry and Help. Scenario suggestions
+/// never assert current powers after shared-world changes.
 class MockAccountsScreen extends ConsumerStatefulWidget {
   const MockAccountsScreen({super.key});
   @override
   ConsumerState<MockAccountsScreen> createState() => _MockAccountsScreenState();
 }
 
-class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen> {
+class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen>
+    with WidgetsBindingObserver {
   List<MockPersona>? _people;
   MockFailureKind? _failure;
   bool _loading = false;
+  int _revision = 0;
+  String? _catalogRoot;
+  StreamSubscription<String?>? _controlSubscription;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _controlSubscription = ref
+        .read(mockModeCoordinatorProvider)
+        ?.access
+        .controlChanges
+        .listen((id) {
+          if (mounted && _catalogRoot != null && id != _catalogRoot) {
+            _revision++;
+            setState(() {
+              _people = null;
+              _loading = false;
+              _failure = MockFailureKind.controlLoginRequired;
+            });
+          }
+        });
     Future<void>.microtask(_load);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        ref.read(mockModeCoordinatorProvider)?.busy == false) {
+      unawaited(_load());
+    }
+  }
+
+  @override
+  void dispose() {
+    _revision++;
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_controlSubscription?.cancel() ?? Future<void>.value());
+    super.dispose();
   }
 
   Future<void> _load() async {
     if (_loading) return;
+    final revision = ++_revision;
+    final controller = ref.read(mockModeCoordinatorProvider);
+    _catalogRoot = controller?.access.controlId;
     setState(() {
       _loading = true;
       _people = null;
       _failure = null;
     });
     try {
-      final controller = ref.read(mockModeCoordinatorProvider);
       if (controller == null) {
         throw const MockFailure(MockFailureKind.unavailable);
       }
       final people = await controller.catalog();
-      if (mounted) setState(() => _people = people);
+      if (mounted && revision == _revision) setState(() => _people = people);
     } catch (error) {
-      if (mounted) {
+      if (mounted && revision == _revision) {
         setState(
           () => _failure = error is MockFailure
               ? error.kind
@@ -48,20 +88,32 @@ class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && revision == _revision) setState(() => _loading = false);
     }
   }
+
+  String _scenario(AppLocalizations l10n, String key) => switch (key) {
+    'giulia' => l10n.mockScenarioGiulia,
+    'marco' => l10n.mockScenarioMarco,
+    'sara' => l10n.mockScenarioSara,
+    'dario' => l10n.mockScenarioDario,
+    'elena' => l10n.mockScenarioElena,
+    _ => l10n.mockScenarioGeneric,
+  };
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final coordinator = ref.watch(mockModeCoordinatorProvider);
-    return Scaffold(
+    Widget screen() => Scaffold(
       appBar: pageAppBar(context, title: Text(l10n.mockAccountsTitle)),
       body: SafeArea(
         child: ListView(
+          key: const Key('mock-accounts-list'),
           padding: const EdgeInsets.all(16),
           children: [
+            Text(l10n.mockSharedWorld, key: const Key('mock-shared-world')),
+            const SizedBox(height: 16),
             if (_loading) const Center(child: CircularProgressIndicator()),
             if (_failure != null) ...[
               Text(
@@ -73,19 +125,37 @@ class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen> {
               ),
               TextButton(onPressed: _load, child: Text(l10n.retryAction)),
             ],
-            if (_people?.isEmpty == true) Text(l10n.mockAccountsEmpty),
+            if (_people?.isEmpty == true) ...[
+              Text(l10n.mockAccountsEmpty),
+              TextButton(onPressed: _load, child: Text(l10n.retryAction)),
+            ],
             for (final person in _people ?? <MockPersona>[])
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(person.name),
-                      Text(person.email),
+                      Text(
+                        person.name,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      Text(person.email, key: Key('mock-email-${person.key}')),
+                      const SizedBox(height: 8),
+                      Text(_scenario(l10n, person.key)),
+                      const SizedBox(height: 8),
+                      if (coordinator?.active?.personaKey == person.key)
+                        Text(
+                          l10n.mockCurrentAccount,
+                          key: Key('mock-current-${person.key}'),
+                        ),
                       FilledButton(
                         key: Key('mock-login-${person.key}'),
-                        onPressed: coordinator == null
+                        onPressed:
+                            coordinator == null ||
+                                coordinator.busy ||
+                                coordinator.active?.personaKey == person.key ||
+                                coordinator.access.controlId != _catalogRoot
                             ? null
                             : () async {
                                 await coordinator.select(
@@ -104,5 +174,11 @@ class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen> {
         ),
       ),
     );
+    return coordinator == null
+        ? screen()
+        : ListenableBuilder(
+            listenable: coordinator,
+            builder: (_, _) => screen(),
+          );
   }
 }

@@ -93,6 +93,9 @@ async function stack(name, offset) {
       '# signing_keys_path = "./signing_keys.json"',
       'signing_keys_path = "./signing_keys.json"',
     );
+  if (name === "mock") {
+    config = config.replaceAll("enable_signup = true", "enable_signup = false");
+  }
   const { privateKey } = generateKeyPairSync("ec", {
     namedCurve: "prime256v1",
   });
@@ -173,6 +176,15 @@ try {
     true,
     "Independent administrative credentials",
   );
+  const signup = await fetch(`${mock.apiUrl}/auth/v1/signup`, {
+    method: "POST", headers: { apikey: mock.publishableKey, "content-type": "application/json" },
+    body: JSON.stringify({ email: "unsupported-signup@personas.planets.invalid", password: "synthetic-denied-signup-value" }),
+  });
+  equal((await signup.json()).error_code, "signup_disabled", "Mock Auth rejects public signup at the server");
+  const authSettings = await (await fetch(`${mock.apiUrl}/auth/v1/settings`, {
+    headers: { apikey: mock.publishableKey },
+  })).json();
+  equal(authSettings.external.google, false, "Mock Google provider is disabled at the server");
   const sql = postgres(mock.databaseUrl, { max: 4, onnotice: () => {} });
   const inventory = await migrationInventory(root);
   await sql.unsafe(await readFile("supabase/mock/marker.sql", "utf8"));
@@ -477,6 +489,10 @@ try {
       success: true,
     }),
   );
+  if (process.argv[2] === "--native") {
+    const { nativeBridge } = await import("./native-bridge.mjs");
+    await nativeBridge({ directory: process.argv[3], normal, mock, sql, first, normalSentinel });
+  }
 } catch (error) {
   console.error(
     `Mock two-realm qualification failed at ${error.message?.replace(/[^a-zA-Z0-9 ._:()/-]/g, "").slice(0, 180) ?? "unknown step"}`,

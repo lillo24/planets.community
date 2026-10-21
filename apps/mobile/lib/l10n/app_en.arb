@@ -3144,5 +3144,11 @@
   "mockNormalLink": "This link belongs to the normal community. Return to normal and open it again.",
   "mockUncertainAction": "A previous action may have reached the server. Its recovery stays with this account. You can return here to check the result.",
   "mockKeepRecovery": "Keep recovery and continue",
-  "mockStay": "Stay here"
+  "mockStay": "Stay here",
+  "mockScenarioGiulia": "Explore Group and Project organization.",
+  "mockScenarioMarco": "Try repairs, exchange and delegated organization.",
+  "mockScenarioSara": "Explore creative activities, member conversations and Ideas.",
+  "mockScenarioDario": "Try invitations and participation without a profile photo.",
+  "mockScenarioElena": "Explore discovery and explicit first-join requests.",
+  "mockScenarioGeneric": "Explore the fictional community. Current permissions depend on its shared state."
 }

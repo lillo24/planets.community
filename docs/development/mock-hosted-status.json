@@ -1,5 +1,5 @@
 {
-  "observedAt": "2026-10-21 11:53:00 UTC",
+  "observedAt": "2026-10-21 13:09:16 UTC",
   "sourceBase": "49b6159af0034c5c97317b39b570ea3ea319901d",
   "canonicalSchemaFingerprint": "e01979c9de0bd01a52d76cc4c5244467435077b4eae9953221e97a8ccb6ece88",
   "mock": {
@@ -22,7 +22,12 @@
     "brokerSmoke": {
       "unauthenticatedStatus": 503,
       "error": "unavailable"
-    }
+    },
+    "controlSourceSha256": "e64f054f8707ad0c0e05623128b04789ef2e583b83e4ce24cfbfb8bb9350700f",
+    "cancellationTombstoneInstalled": true,
+    "authSettingsVerified": false,
+    "secretsConfigured": false,
+    "hostedAuthenticatedSmokePassed": false
   },
   "normal": {
     "projectRef": "cllpvruvrrvxczjitlqd",
@@ -54,7 +59,8 @@
       "20261020123403_group_idea_invitation_context.sql",
       "20261020144145_contact_discussion_integration.sql"
     ],
-    "mutated": false
+    "mutated": false,
+    "gapObservedAt": "2026-10-21 13:09:16 UTC"
   },
   "hostedBlockers": [
     "Approved closed-tester issuer/Auth UUID roster is unavailable.",
@@ -71,5 +77,13 @@
     "boundaryTests": 9,
     "genuineTwoRealmChecks": 144,
     "result": "passed"
+  },
+  "stage02BackendProof": {
+    "sourceHead": "343792529a382d6b21b25feb2f20057cf238537d",
+    "formatOnlyHead": "6720c6c453c8ee77f502a59e8cb69dc578c7fbff",
+    "workflowRun": 39601559321,
+    "nodeUnitTestsPassed": 9,
+    "genuineTwoRealmChecksPassed": 146,
+    "hostedProof": false
   }
 }
