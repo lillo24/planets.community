@@ -1,0 +1,75 @@
+{
+  "observedAt": "2026-10-21 11:53:00 UTC",
+  "sourceBase": "49b6159af0034c5c97317b39b570ea3ea319901d",
+  "canonicalSchemaFingerprint": "e01979c9de0bd01a52d76cc4c5244467435077b4eae9953221e97a8ccb6ece88",
+  "mock": {
+    "name": "planets-mock",
+    "projectRef": "pnolarmzxmmjtguligfc",
+    "region": "eu-west-1",
+    "creationCostQuotedMonthly": 0,
+    "canonicalMigrationsApplied": 122,
+    "activationEnabled": false,
+    "authUsers": 0,
+    "profiles": 0,
+    "controlInstalled": true,
+    "brokerDeployed": true,
+    "fixturesSeeded": false,
+    "approvedTesterTotal": null,
+    "enrolledTesterCount": 0,
+    "readiness": "not ready",
+    "brokerVersion": 1,
+    "brokerBundleSha256": "3236fc0823bfc65d77cbfc5cab896ff03c3badc0c7f38b18d31f8b5581bc153b",
+    "brokerSmoke": {
+      "unauthenticatedStatus": 503,
+      "error": "unavailable"
+    }
+  },
+  "normal": {
+    "projectRef": "cllpvruvrrvxczjitlqd",
+    "observedMigrations": 97,
+    "missingSourceMigrations": [
+      "20261014072939_group_contact_requests.sql",
+      "20261014073229_group_contact_conversations.sql",
+      "20261014074055_group_contact_messages_integration.sql",
+      "20261014074255_group_discussions_domain.sql",
+      "20261014074651_group_contact_safety.sql",
+      "20261014075208_group_discussion_report_evidence.sql",
+      "20261014085233_group_discussion_mobile_projection.sql",
+      "20261014092339_group_contact_context_and_access_invalidation.sql",
+      "20261014100704_group_contact_exit_context.sql",
+      "20261014113958_group_contact_sender_context.sql",
+      "20261014122236_group_coordination_proposals.sql",
+      "20261014123208_group_discussion_named_links.sql",
+      "20261014124500_group_coordination_messages_and_safety.sql",
+      "20261014125000_group_coordination_block_convergence.sql",
+      "20261015094229_group_ideas_general_and_history.sql",
+      "20261015094324_group_ideas_workspaces_and_project_folders.sql",
+      "20261015095004_member_contact_domain.sql",
+      "20261015095020_group_discussion_conversion_final.sql",
+      "20261015095042_member_contact_messages_and_safety.sql",
+      "20261015095248_group_contact_activity_and_preferences.sql",
+      "20261015110945_contact_activity_canonical_projector.sql",
+      "20261015114510_member_contact_block_lock_order.sql",
+      "20261019073011_contact_report_erased_subject_provenance.sql",
+      "20261020123403_group_idea_invitation_context.sql",
+      "20261020144145_contact_discussion_integration.sql"
+    ],
+    "mutated": false
+  },
+  "hostedBlockers": [
+    "Approved closed-tester issuer/Auth UUID roster is unavailable.",
+    "Auth settings and broker secret configuration require authenticated dashboard or management-configuration access; in-app browser is signed out.",
+    "Hosted persona seed, full enrollment and smoke verification are not complete."
+  ],
+  "release": {
+    "artifactBuilt": false,
+    "status": "not yet qualified"
+  },
+  "stage01Qualification": {
+    "source": "6dbc725ae87b77168fb186ab7eda6bd1e4a2cda8",
+    "run": "https://github.com/lillo24/planets.community/actions/runs/39595113413",
+    "boundaryTests": 9,
+    "genuineTwoRealmChecks": 144,
+    "result": "passed"
+  }
+}
