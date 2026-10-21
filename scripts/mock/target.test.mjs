@@ -7,6 +7,7 @@ import {
   NORMAL_ORIGIN,
   GENERATION,
   publicKey,
+  databaseTarget,
 } from "./target.mjs";
 const hash = "a".repeat(64);
 const config = {
@@ -20,6 +21,31 @@ const marker = {
   schema_fingerprint: hash,
   operator_confirmed: true,
 };
+test("database endpoint binds session mode and exact mock login identities", () => {
+  for (const user of [
+    `postgres.${MOCK_REF}`,
+    `cli_login_postgres.${MOCK_REF}`,
+  ]) {
+    assert.deepEqual(
+      databaseTarget(
+        `postgresql://${user}:private@aws-0-eu-west-1.pooler.supabase.com:5432/postgres`,
+      ),
+      { temporary: user.startsWith("cli_login_") },
+    );
+  }
+  for (const value of [
+    `postgresql://postgres.cllpvruvrrvxczjitlqd:private@aws-0-eu-west-1.pooler.supabase.com:5432/postgres`,
+    `postgresql://cli_login_postgres.cllpvruvrrvxczjitlqd:private@aws-0-eu-west-1.pooler.supabase.com:5432/postgres`,
+    `postgresql://postgres.${MOCK_REF}:private@aws-0-eu-west-1.pooler.supabase.com:6543/postgres`,
+    `postgresql://postgres.${MOCK_REF}:private@evil.invalid:5432/postgres`,
+    `postgresql://postgres.${MOCK_REF}:private@aws-0-eu-west-1.pooler.supabase.com.evil.invalid:5432/postgres`,
+    `postgresql://postgres:private@db.cllpvruvrrvxczjitlqd.supabase.co:5432/postgres`,
+    `postgresql://postgres.${MOCK_REF}:private@aws-0-eu-west-1.pooler.supabase.com:5432/another`,
+    `postgresql://postgres.${MOCK_REF}:private@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?host=db.cllpvruvrrvxczjitlqd.supabase.co`,
+    `postgresql://postgres.${MOCK_REF}@aws-0-eu-west-1.pooler.supabase.com:5432/postgres`,
+  ])
+    assert.throws(() => databaseTarget(value));
+});
 test("requires exact independent target, acknowledged marker and schema", () => {
   assert.equal(assertTarget(config, marker, hash), true);
   for (const change of [

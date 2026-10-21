@@ -128,9 +128,32 @@ broker secret digests matched the private supplied values, with
 prove a seeded world, approved enrollment or a hosted tester-to-broker journey.
 The current seeder requires a persistent session-pooler Postgres connection for
 its advisory lock and transaction semantics. Management SQL calls are not a
-substitute for that connection. The passwordless CLI path timed out here;
-provide the exact mock session-pooler credential or run the reviewed operator
-from a host where it is available. Do not fake SQL locks, reset the shared world,
+substitute for that connection. The local connection was diagnosed before
+authentication: all resolved pooler IPv4 endpoints accepted TCP but did not
+answer PostgreSQL SSL negotiation on 5432/6543. No network restrictions or bans
+were configured. No cached mock DB password existed; the management login
+remained valid. A password change does not remedy this observed network failure.
+
+The platform CLI login endpoint can issue `cli_login_postgres` with a five-minute
+password. The operator accepts that exact mock pooler identity on 5432 and asks
+PostgreSQL to assume its authorized `postgres` role on every connection. It
+verifies the resulting current user before reading the marker, and rejects URL
+query overrides, transaction-pooler ports and normal identities. This changes
+neither environment's permanent password. A permanent mock-password change
+requires separate explicit approval.
+
+`Mock hosted setup` is an opt-in `qa-mock-hosted` label/manual workflow for a
+network-capable GitHub-owned host. Its private `PLANETS_MOCK_OPERATOR` JSON secret
+contains `source` (exact checked-out SHA), `databaseUrl` (temporary CLI session
+URL), `expiresAt`, `serviceKey` (mock only), and `publishableKey`. Create that
+short-lived secret immediately before dispatch and remove it after the job.
+No management token or normal credential belongs in GitHub. The workflow only
+seeds/verifies a confirmed **disabled** mock marker and matching migration
+receipts. It cannot enroll testers or activate access. Its artifact contains
+counts, verification status and provenance only. An expired login fails closed;
+issue another temporary login rather than falling back to a permanent password.
+
+Do not fake SQL locks, reset the shared world,
 grant an unreviewed execution endpoint or use the normal staging credential.
 
 Enable the database marker and `MOCK_BROKER_ENABLED` only after configuration,

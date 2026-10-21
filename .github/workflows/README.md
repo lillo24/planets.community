@@ -1,5 +1,14 @@
 # Validation workflow
 
+`mock-hosted.yml` is an explicitly selected `qa-mock-hosted` same-repository
+label/manual operation for the disabled `planets-mock` environment. It runs the
+reviewed seed and read-only verifier with a private five-minute CLI database
+login and mock-only server credential, bound to the exact source SHA. It never
+receives a management token or normal staging credential. It cannot enroll or
+activate; artifacts contain counts/provenance only. Remove the temporary
+`PLANETS_MOCK_OPERATOR` secret after each operation. This occasional job is
+bounded to ten minutes and does not change required Validation checks/triggers.
+
 `mock-native.yml` is an explicit `qa-mock-native` same-repository label gate
 (remove/reapply after executable source changes), or manual dispatch after merge.
 It uses the exact PR head, two independently keyed disposable Supabase stacks,

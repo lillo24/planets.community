@@ -7,6 +7,32 @@ export const GENERATION = "mock-world-2026-10-21-v1";
 export const MOCK_ORIGIN = `https://${MOCK_REF}.supabase.co`;
 export const NORMAL_ORIGIN = `https://${NORMAL_REF}.supabase.co`;
 
+// A session pooler is required: the seeder reserves a session advisory lock.
+// The platform's short-lived CLI login inherits postgres through SET ROLE; it
+// does not rotate the project's permanent password or normal staging secrets.
+export function databaseTarget(value) {
+  const url = new URL(value ?? "invalid:");
+  const user = decodeURIComponent(url.username);
+  const temporary = user === `cli_login_postgres.${MOCK_REF}`;
+  if (
+    !["postgres:", "postgresql:"].includes(url.protocol) ||
+    !url.password ||
+    url.search ||
+    url.hash ||
+    (url.port && url.port !== "5432") ||
+    url.pathname !== "/postgres" ||
+    !(
+      (url.hostname === `db.${MOCK_REF}.supabase.co` && user === "postgres") ||
+      (url.hostname.endsWith(".pooler.supabase.com") &&
+        (user === `postgres.${MOCK_REF}` || temporary))
+    )
+  )
+    throw new Error(
+      "Database URL must address the exact mock session endpoint.",
+    );
+  return { temporary };
+}
+
 // Adding a new target requires review, never a --force argument or name match.
 export function assertTarget(config, marker, fingerprint) {
   if (

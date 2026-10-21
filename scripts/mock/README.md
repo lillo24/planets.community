@@ -5,6 +5,8 @@ local demo seeder and never removes its loopback guard.
 
 - `target.mjs` owns the exact project allowlist and canonical migration digest.
 - `operator.mjs` owns dry-run inventory, setup, enrollment and offboarding.
+- `hosted-setup.mjs` runs the same seed/verifier on an explicitly selected owned CI
+  host, using a short-lived platform CLI login for the disabled mock target only.
 - `world.mjs` owns non-destructive ordinary-persona fixture operations.
 - `verify.mjs` reads canonical fixtures without repairing them.
 - `target.test.mjs` exercises target-confusion and credential rejection.

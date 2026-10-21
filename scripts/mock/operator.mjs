@@ -9,6 +9,7 @@ import {
   NORMAL_ORIGIN,
   GENERATION,
   publicKey,
+  databaseTarget,
 } from "./target.mjs";
 
 export async function operator(configPath) {
@@ -23,22 +24,14 @@ export async function operator(configPath) {
   };
   assertTarget(config, expected, inventory.fingerprint);
   const databaseUrl = process.env.MOCK_DATABASE_URL;
-  const url = new URL(databaseUrl ?? "invalid:");
-  if (
-    !["postgres:", "postgresql:"].includes(url.protocol) ||
-    !(
-      url.hostname === `db.${MOCK_REF}.supabase.co` ||
-      (url.hostname.endsWith(".pooler.supabase.com") &&
-        decodeURIComponent(url.username) === `postgres.${MOCK_REF}`)
-    )
-  ) {
-    throw new Error(
-      "MOCK_DATABASE_URL must address the exact dedicated mock project.",
-    );
-  }
+  const { temporary } = databaseTarget(databaseUrl);
   const sql = postgres(databaseUrl, {
     max: 4,
     ssl: "require",
+    connect_timeout: 15,
+    // Applied to every connection, including replacements. PostgreSQL itself
+    // checks role membership; no grant or privilege bypass is attempted here.
+    ...(temporary ? { connection: { options: "-c role=postgres" } } : {}),
     onnotice: () => {},
   });
   async function guard(tx = sql) {
@@ -48,6 +41,11 @@ export async function operator(configPath) {
     return marker;
   }
   try {
+    if (temporary) {
+      const [identity] = await sql`select current_user`;
+      if (identity.current_user !== "postgres")
+        throw new Error("Temporary CLI connection did not assume postgres.");
+    }
     await guard();
   } catch (error) {
     await sql.end();
