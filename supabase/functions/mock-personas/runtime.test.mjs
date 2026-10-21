@@ -3,6 +3,33 @@ import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { createRuntime } from "./runtime.mjs";
 
+test("wrong-project Auth rejection remains an authoritative denial before control RPCs", async () => {
+  let calls = 0;
+  const handler = createRuntime({
+    enabled: true,
+    normalOrigin: "https://cllpvruvrrvxczjitlqd.supabase.co",
+    mockOrigin: "https://pnolarmzxmmjtguligfc.supabase.co",
+    service: "synthetic-server-key",
+    normalKey: "sb_publishable_" + "a".repeat(30),
+    deliveryKey: randomBytes(32).toString("base64"),
+    fetcher: async (url) => {
+      calls++;
+      assert.equal(new URL(url).host, "cllpvruvrrvxczjitlqd.supabase.co");
+      return new Response(JSON.stringify({ code: "bad_jwt" }), { status: 403 });
+    },
+  });
+  const response = await handler(
+    new Request("https://broker.invalid", {
+      method: "POST",
+      headers: { authorization: "Bearer wrong-project-token" },
+      body: '{"action":"catalog"}',
+    }),
+  );
+  assert.equal(response.status, 403);
+  assert.equal(calls, 1);
+  assert.deepEqual(await response.json(), { error: "denied" });
+});
+
 test("standard Auth exchange accepts void RPC completion and recovers encrypted delivery", async () => {
   const tester = "10000000-0000-4000-8000-000000000001";
   const user = "20000000-0000-4000-8000-000000000001";

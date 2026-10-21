@@ -29,14 +29,14 @@ export function createRuntime({
     const result = text ? JSON.parse(text) : null;
     if (!response.ok)
       throw new BrokerFailure(
-        response.status === 401 || result?.code === "42501"
+        [401, 403].includes(response.status) || result?.code === "42501"
           ? "denied"
           : result?.code === "PT409"
             ? "request_conflict"
             : result?.code === "PT429"
               ? "rate_limited"
               : "unavailable",
-        response.status === 401 || result?.code === "42501"
+        [401, 403].includes(response.status) || result?.code === "42501"
           ? 403
           : result?.code === "PT409"
             ? 409
