@@ -48,11 +48,14 @@ controller retains current cards with a subtle progress indicator while a
 replacement page loads. Revision checks ignore late responses from an older
 filter set; no speculative local filtering is applied.
 
-Browse keeps the thin keyword field and Dona/Scambia selector visible. Locality
-is collapsed behind the shared `BrowseFilterButton` by default; its badge
-indicates an applied locality even while hidden. Disclosure preserves the
-controls and never applies or clears filters. There is no separate Search
-button. Both text fields share the debounce; keyboard submit applies
+Browse keeps the thin keyword field, authenticated Save search icon, and shared
+`BrowseFilterButton` in one toolbar row. The localized Save search tooltip also
+labels the accessible action; signed-out discovery leaves no empty icon slot.
+Dona/Scambia and locality are collapsed together by default, with mode before
+locality. The disclosure badge indicates an applied mode or locality even while
+hidden; visible keyword text does not contribute to that badge. Disclosure
+preserves the controls and never applies or clears filters. There is no separate
+Search button. Both text fields share the debounce; keyboard submit applies
 immediately. Identical successful/in-flight tuples do not issue another request
 from submit or Save, while failed tuples remain retryable.
 
@@ -127,7 +130,8 @@ public listing visibility and accepted Resource coordination remain unchanged.
 
 ## UI-NEXT-02 discovery and drafts
 
-Search and Donate/Exchange toggles stay mounted in every result state. A changed
+The search toolbar stays mounted in every result state, with Donate/Exchange
+available through its disclosure. A changed
 filter retains the established prior-row contract with an explicit previous-results
 caption and disabled old card actions until success; refresh failures remain
 visible alongside retained cards. Both/neither toggle rules are unchanged.
