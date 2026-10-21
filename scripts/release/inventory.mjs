@@ -28,6 +28,8 @@ const pending = diff.pending.map((m) => {
   ].map((r) => r[1]);
   const category = m.name.startsWith("resource_cat01");
   const avatar = m.name === "profile_avatar_variants";
+  const notification = m.name === "notification_projection_atomic_claim";
+  if (notification) routines.push("process_notification_outbox_batch");
   const member =
     m.name.startsWith("member_contact") || m.name.startsWith("contact_report");
   return {
@@ -42,9 +44,11 @@ const pending = diff.pending.map((m) => {
       ? "resource categories/saved searches/maps"
       : avatar
         ? "Profile photo thumbnail variants"
-        : member
-          ? "Group-member personal contact/privacy/reporting"
-          : "Groups/representative contact/discussions/coordination/messages",
+        : notification
+          ? "Notification projection idempotency"
+          : member
+            ? "Group-member personal contact/privacy/reporting"
+            : "Groups/representative contact/discussions/coordination/messages",
     effects: {
       tables_created: [...new Set(tables)],
       routines_created_or_replaced: [...new Set(routines)],
@@ -52,7 +56,9 @@ const pending = diff.pending.map((m) => {
         ? "V2 RPC grants, category constraints/predicates; legacy calls retained; no backfill"
         : avatar
           ? "Private thumbnail metadata, owner-bound WebP limit, existing full-photo audience/block checks; legacy calls retained; no backfill"
-          : "Private RLS/grants, consent/history/reporting, locking and/or message projections; existing data must be preserved",
+          : notification
+            ? "Claims the existing unique receipt under the event lock before projection; preserves OID, resolver, budget and grants; no data backfill"
+            : "Private RLS/grants, consent/history/reporting, locking and/or message projections; existing data must be preserved",
     },
     required_for_current_app_release: true,
     rollout_approval: category

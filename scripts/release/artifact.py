@@ -78,6 +78,7 @@ def validate_build(code, policy, build_manifest, source_sha):
     if policy["budget_basemap"]:
         expected["LOCATION_BASEMAP_BUDGET_ENABLED"] = "true"
     if (build_manifest.get("source_commit") != source_sha or build_manifest.get("source_dirty") is not False
+            or build_manifest.get("mock", {"capability": False}) != {"capability": False}
             or build_manifest.get("backend") != "https://cllpvruvrrvxczjitlqd.supabase.co"
             or build_manifest.get("defines") != expected or build_manifest.get("mode") != "release"
             or build_manifest.get("target") != "appbundle" or build_manifest.get("version_code") != code):
@@ -123,7 +124,7 @@ def inspect(bundle, code, policy, build_manifest, source_sha):
         raise ValueError("AAB does not match the original upload certificate")
     evidence.update({"sha256": hashlib.sha256(bundle.read_bytes()).hexdigest(), "source_sha": source_sha,
                      "upload_certificate_sha256": policy["upload_certificate_sha256"], "signed_payloads": verify_payloads(bundle),
-                     "backend": build_manifest["backend"], "map_defines": expected, "demos_enabled": False})
+                     "backend": build_manifest["backend"], "map_defines": expected, "demos_enabled": False, "mock_capability": False})
     with zipfile.ZipFile(bundle) as archive:
         libraries = [n for n in archive.namelist() if n.endswith("/libapp.so")]
         if not libraries or not all(build_manifest["backend"].encode() in archive.read(n) for n in libraries):

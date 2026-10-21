@@ -345,6 +345,25 @@ test("a newly added mobile Edge dependency cannot pass an older release policy",
   }
 });
 
+test("the isolated Mock config broker is not a normal-staging dependency", () => {
+  const root = mkdtempSync(join(tmpdir(), "release01-realms-"));
+  try {
+    mkdirSync(join(root, "apps/mobile/lib/core/config"), { recursive: true });
+    writeFileSync(
+      join(root, "apps/mobile/lib/core/config/mock_environment_config.dart"),
+      "final broker = 'functions/v1/mock-personas';",
+    );
+    assert.equal(requiredEdgeFunctions(root).includes("mock-personas"), false);
+    writeFileSync(
+      join(root, "apps/mobile/lib/ordinary.dart"),
+      "final broker = 'functions/v1/mock-personas';",
+    );
+    assert.equal(requiredEdgeFunctions(root).includes("mock-personas"), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("hosted HTTP smoke checks legacy/V2/validation/privacy without retaining returned content", async () => {
   const config = JSON.stringify({
     SUPABASE_URL: `https://${STAGING_REF}.supabase.co`,
@@ -478,6 +497,46 @@ test("signing preflight rejects absent secrets and never overwrites owner inputs
   }
 });
 
+test("ordinary release rejects Mock capability/endpoints before writing inputs", () => {
+  const root = mkdtempSync(join(tmpdir(), "release01-mock-"));
+  try {
+    for (const config of [
+      { ENABLE_CLOSED_TEST_MOCK: "true" },
+      {
+        MOCK_PERSONA_BROKER_URL:
+          "https://isolated.invalid/functions/v1/mock-personas",
+      },
+    ]) {
+      assert.throws(
+        () =>
+          prepareSigning(
+            {
+              STAGING_CONFIG_JSON: JSON.stringify({
+                APP_ENV: "staging",
+                SUPABASE_URL: `https://${STAGING_REF}.supabase.co`,
+                ENABLE_DEMO_TOOLS: "false",
+                SENTRY_DSN: "",
+                ...config,
+              }),
+              ANDROID_UPLOAD_KEYSTORE_BASE64: "c3ludGhldGlj",
+              ANDROID_UPLOAD_STORE_PASSWORD: "synthetic",
+              ANDROID_UPLOAD_KEY_PASSWORD: "synthetic",
+              ANDROID_UPLOAD_KEY_ALIAS: "synthetic",
+            },
+            root,
+          ),
+        /Mock/,
+      );
+      assert.equal(
+        existsSync(join(root, "apps/mobile/config/staging.json")),
+        false,
+      );
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("ephemeral signing files are private, correctly escaped, and cleaned", () => {
   const root = mkdtempSync(join(tmpdir(), "release01-signing-"));
   try {
@@ -554,6 +613,7 @@ test("publication approves only the persisted verified source/certificate/AAB re
     backend: `https://${STAGING_REF}.supabase.co`,
     debuggable: false,
     demos_enabled: false,
+    mock_capability: false,
     target_sdk: 36,
     signed_payloads: 3,
     native_16k_checks: 2,
@@ -571,6 +631,7 @@ test("publication approves only the persisted verified source/certificate/AAB re
     { ...e, upload_certificate_sha256: "c".repeat(64) },
     { ...e, target_sdk: undefined },
     { ...e, demos_enabled: true },
+    { ...e, mock_capability: true },
   ])
     assert.throws(() =>
       verifyPersistedArtifact(

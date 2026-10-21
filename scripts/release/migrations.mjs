@@ -139,6 +139,8 @@ export function requiredRpcs(root) {
     "list_own_resource_saved_searches_v2",
     "list_own_scoped_conversation_items_v7",
     "get_own_message_unread_summary_with_contacts_and_discussions",
+    "set_own_profile_photo_v2",
+    "can_read_profile_photo_thumbnail_object",
   ]);
   function walk(dir) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -163,11 +165,18 @@ export function requiredEdgeFunctions(root) {
     "location-search",
     "location-preview",
   ]);
+  // This validator names a broker on the separately configured Mock origin.
+  // Ordinary RELEASE01 builds reject Mock capability/endpoints, so requiring
+  // that broker on planets-staging would mix the two backend realms.
+  const isolatedMockConfig = join(
+    root,
+    "apps/mobile/lib/core/config/mock_environment_config.dart",
+  );
   function walk(dir) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const path = join(dir, entry.name);
       if (entry.isDirectory()) walk(path);
-      else if (entry.name.endsWith(".dart")) {
+      else if (entry.name.endsWith(".dart") && path !== isolatedMockConfig) {
         const source = readFileSync(path, "utf8");
         for (const match of source.matchAll(
           /(?:functions\/v1\/|\.functions\.invoke\(\s*['"])([a-z][a-z0-9-]+)/g,

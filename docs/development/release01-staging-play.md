@@ -10,8 +10,11 @@ records the blockers; merging release plumbing does not resolve them.
 
 1. Review the [original 26-file manifest](evidence/release01/migration-manifest.json)
    and any subsequent migration addenda. The [avatar addendum](evidence/release01/additional-avatar-migration.json)
-   records IMG01, which merged while RELEASE01 validation was running; current
-   main requires 124 canonical files rather than the initial 123.
+   records IMG01, which merged while RELEASE01 validation was running. Mock Mode
+   then added a notification-worker fix: current main requires 125 canonical files.
+   The [remaining-set manifest](evidence/release01/remaining-migrations.json) identifies
+   both additions outside the original approval. The [execution receipt](evidence/release01/hosted-26-execution.json)
+   confirms the original 26 are now applied (97 to 123), with all original data preserved.
    The owner explicitly approved all 26 files on 21 October after reviewing the
    manifest and populated rehearsal. `policy.json` records their exact hashes and
    the explicit task-specific backup waiver, “No backup is fine”. No backup exists
@@ -123,6 +126,12 @@ Backend readiness includes current static mobile RPC names and explicit CAT01/
 Messages contracts, RLS exposure, Storage limits/privacy, mutation grants, map
 license/budget/TTL settings and pinned deployed Edge bundle/source identities.
 New literal mobile Edge dependencies fail until their deployment/policy is reviewed.
+The dedicated `mock_environment_config.dart` validator names a broker on its
+separate Mock origin; it is excluded from the normal-staging Edge inventory.
+RELEASE01 ordinary builds require `ENABLE_CLOSED_TEST_MOCK` absent/false and
+all `MOCK_*` endpoint/key/generation fields empty. Build provenance and the AAB
+receipt confirm Mock capability is off; its broker is never deployed to staging
+as a workaround. A Mock-enabled release belongs to its separate qualification flow.
 Anonymous HTTP verifies old/V2 listing reads, `22023` for an invalid category and
 denial of authenticated Messages access. These probes do not log returned rows,
 impersonate users or create hosted synthetic fixtures. They complement local

@@ -27,6 +27,7 @@ export function verifyPersistedArtifact(
     evidence.backend !== "https://cllpvruvrrvxczjitlqd.supabase.co" ||
     evidence.debuggable !== false ||
     evidence.demos_enabled !== false ||
+    evidence.mock_capability !== false ||
     !Number.isSafeInteger(evidence.target_sdk) ||
     evidence.target_sdk < 36 ||
     !Number.isSafeInteger(evidence.version_code) ||

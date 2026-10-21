@@ -47,7 +47,7 @@ class ArtifactTests(unittest.TestCase):
         build = {"source_commit": "a" * 40, "source_dirty": False, "backend": "https://cllpvruvrrvxczjitlqd.supabase.co", "defines": flags, "mode": "release", "target": "appbundle", "version_code": 13}
         policy = {"budget_basemap": True}
         self.assertEqual(validate_build(13, policy, build, "a" * 40), flags)
-        for changed in [{**build, "source_dirty": True}, {**build, "backend": "http://localhost"}, {**build, "defines": {**flags, "LOCATION_MAP_TILES_ENABLED": "false"}}, {**build, "version_code": 12}]:
+        for changed in [{**build, "source_dirty": True}, {**build, "mock": {"capability": True}}, {**build, "mock": {"capability": False, "origin": "https://isolated.invalid"}}, {**build, "backend": "http://localhost"}, {**build, "defines": {**flags, "LOCATION_MAP_TILES_ENABLED": "false"}}, {**build, "version_code": 12}]:
             with self.assertRaises(ValueError):
                 validate_build(13, policy, changed, "a" * 40)
 

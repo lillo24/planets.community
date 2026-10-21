@@ -16,6 +16,8 @@ diagnostics stay out of public Actions output.
   statement SHA-256 values remain separate evidence.
 - `backend.mjs` owns bounded metadata reads, required mobile RPC inventory,
   Storage/RLS/grant/map/Edge checks and anonymous legacy/V2/privacy HTTP smoke.
+  Only the dedicated isolated-Mock URL validator is excluded from normal-staging
+  Edge inventory; ordinary builds reject Mock capability and endpoints.
 - `staging.mjs inspect|deploy|verify` performs identified preflight, approved CLI
   apply and verification. Apply is supported only in the protected Linux runner.
   It never repairs history, includes seeds/roles/Vault secrets or deploys Edge

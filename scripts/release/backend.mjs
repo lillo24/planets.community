@@ -135,7 +135,7 @@ export function verificationQuery(root, budget) {
     (not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
       where n.nspname='public' and p.proname in ('create_resource_listing_draft_v2','update_own_resource_listing_v2',
         'create_resource_saved_search_v2','update_resource_saved_search_v2','list_own_scoped_conversation_items_v7',
-        'get_own_message_unread_summary_with_contacts_and_discussions')
+        'get_own_message_unread_summary_with_contacts_and_discussions','set_own_profile_photo_v2')
         and (has_function_privilege('anon',p.oid,'EXECUTE') or not has_function_privilege('authenticated',p.oid,'EXECUTE')))
       and exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public'
         and p.proname='list_public_resource_listings_v2' and has_function_privilege('anon',p.oid,'EXECUTE'))) as grants_safe,

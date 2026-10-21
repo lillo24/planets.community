@@ -112,3 +112,26 @@ submission or rollout is authorized. Both release switches are explicitly false.
 Existing owner staging/signing inputs have been provisioned into main-only GitHub
 environments; new Supabase management and Play service-account credentials remain
 unavailable. These facts supersede the initial account-configuration snapshot.
+
+## Original staging scope executed; later main additions remain blocked
+
+At 21:20:25 UTC the approved 26 files were applied from current reviewed main
+`09d379f5`, after exact source-hash comparison, passing main/RELEASE01 CI and
+the completed populated rehearsal. [Execution evidence](hosted-26-execution.json)
+confirms 97 to 123 canonical records, all original 97 unchanged, and original
+column/row digests preserved across 126 tables / 355 rows. No backup was taken,
+as explicitly waived. Only the exact hash-verified redundant API wrapper record
+was removed; no application data or canonical history was deleted/rewritten.
+
+Legacy and V2 Resource reads returned 200; invalid category returned 400/22023;
+anonymous Messages returned 401/42501. Storage/privacy, RLS exposure, mutation
+grants and map gates passed. New advisor counts reflect canonical RPC-only private
+tables and intentional definer grants; no new finding category appeared. See the
+receipt for counts and official explanations. Hosted authenticated/device flows
+remain unrun. No RELEASE01 AAB or Play upload has occurred.
+
+Main also merged Mock Mode #278, including a notification-worker fix. The
+[remaining-set manifest](remaining-migrations.json) now lists two unapproved files
+(avatar plus notification fix): 123 applied / 125 canonical. This supersedes the
+earlier avatar-only pending-set snapshot. Ordinary release plumbing keeps Mock
+capability/endpoints disabled and checks only the normal backend realm.
