@@ -19,6 +19,7 @@ const allowed = new Set([
   "native-result.json",
   "apk-scan.json",
   "failure.json",
+  "qualification.json",
 ]);
 const files = [];
 for (const name of await readdir(output)) {
@@ -48,6 +49,43 @@ for (const name of await readdir(output)) {
 const source = execFileSync("git", ["rev-parse", "HEAD"], {
   encoding: "utf8",
 }).trim();
+// Export only the qualifier's explicit bounded summary, never its private log.
+try {
+  const lines = (
+    await readFile(path.join(directory, "backend.log"), "utf8")
+  ).split(/\r?\n/);
+  const line = lines.find((value) =>
+    /^\{"checks":\d+,"sourceSchema":/.test(value),
+  );
+  if (line) {
+    const proof = JSON.parse(line);
+    assert.equal(proof.success, true);
+    assert.ok(
+      Number.isInteger(proof.checks) &&
+        proof.checks > 0 &&
+        proof.checks < 10000,
+    );
+    assert.equal(proof.personas, 5);
+    assert.match(proof.sourceSchema, /^[a-f0-9]{64}$/);
+    await writeFile(
+      path.join(output, "qualification.json"),
+      JSON.stringify(
+        {
+          source,
+          checks: proof.checks,
+          sourceSchema: proof.sourceSchema,
+          personas: proof.personas,
+          success: true,
+          hostedProof: false,
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+  }
+} catch (error) {
+  if (error.code !== "ENOENT") throw error;
+}
 if (result !== "0") {
   let details = {};
   try {
@@ -67,11 +105,11 @@ if (result !== "0") {
     diagnostics = log
       .split(/\r?\n/)
       .filter((line) =>
-        /\.(?:dart|java|kt):\d+(?::\d+)?: [Ee]rror:|^\s*(?:symbol|location):|^FAILURE:|^Error:|^Execution failed for task|^> /.test(
+        /\bError:|\.(?:dart|java|kt):\d+(?::\d+)?: [Ee]rror:|^\s*(?:symbol|location):|^FAILURE:|^Error:|^Execution failed for task|^> /.test(
           line,
         ),
       )
-      .slice(-18)
+      .slice(-32)
       .map((line) => {
         for (const value of privateValues)
           if (value.length > 12) line = line.replaceAll(value, "[redacted]");
