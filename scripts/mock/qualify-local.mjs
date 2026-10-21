@@ -172,7 +172,9 @@ try {
     client: () => createClient(mock.apiUrl, mock.publishableKey, options),
     admin: () => createClient(mock.apiUrl, mock.serviceRoleKey, options),
   };
+  console.log("Creating canonical mock fixtures.");
   const first = await seed(context);
+  console.log("Reading canonical fixture verification.");
   const verification = await verify(context);
   checks += verification.checks;
   async function snapshot() {
@@ -188,6 +190,7 @@ try {
     }
     return hashes;
   }
+  console.log("Checking populated control replay and repeat seed.");
   const before = await snapshot();
   // Populate -> reinstall mock control -> repeat seed, preserving every product
   // row and every deliberately changed profile field.
@@ -343,13 +346,28 @@ try {
     409,
     "Changed payload cannot reuse request",
   );
-  const concurrent = await send(other, { ...intent, request_id: randomUUID() });
-  equal(
-    concurrent.status,
-    200,
-    "Second tester, same persona, independent session",
-  );
-  const delivery2 = await concurrent.json();
+  const concurrentIntents = [
+    { ...intent, request_id: randomUUID() },
+    { ...intent, request_id: randomUUID() },
+  ];
+  const concurrentResponses = await Promise.all([
+    send(tester, concurrentIntents[0]),
+    send(other, concurrentIntents[1]),
+  ]);
+  for (let i = 0; i < 2; i++) {
+    if (concurrentResponses[i].status === 409)
+      concurrentResponses[i] = await send(
+        i === 0 ? tester : other,
+        concurrentIntents[i],
+      );
+    equal(
+      concurrentResponses[i].status,
+      200,
+      "Simultaneous testers recover independent same-persona sessions",
+    );
+  }
+  const deliveryA = await concurrentResponses[0].json();
+  const delivery2 = await concurrentResponses[1].json();
   equal(
     delivery2.refresh_token !== delivery.refresh_token,
     true,
@@ -361,6 +379,12 @@ try {
     refresh_token: delivery2.refresh_token,
   });
   await persona.auth.signOut({ scope: "local" });
+  const candidateA = createClient(mock.apiUrl, mock.publishableKey, options);
+  await candidateA.auth.setSession({
+    access_token: deliveryA.access_token,
+    refresh_token: deliveryA.refresh_token,
+  });
+  await candidateA.auth.signOut({ scope: "local" });
   equal(
     (await otherPersona.auth.refreshSession()).error,
     null,

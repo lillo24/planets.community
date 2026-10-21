@@ -88,7 +88,7 @@ export async function verify(context) {
     const [project] =
       await sql`select receipt from mock_control.fixtures where fixture_key='proposal:garden'`;
     const publicProjects = await rpc(people.elena, "list_public_proposals", {
-      p_limit: 100,
+      p_limit: 50,
     });
     has(
       publicProjects.some((p) => p.proposal_id === project.receipt),
