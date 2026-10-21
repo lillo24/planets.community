@@ -24,11 +24,12 @@ class ProjectCapacityLabel extends StatelessWidget {
     final reveal =
         presentation == ProjectCapacityPresentation.managerExact ||
         shouldRevealPublicProjectCounts(capacity);
-    final summary = projectCapacityText(l10n, capacity, revealExact: reveal);
-    final label = reveal
-        ? '$summary · '
-              '${l10n.projectSocialPeopleInvolved(capacity.socialPeopleCount)}'
-        : summary;
+    final label = projectCapacityText(
+      l10n,
+      capacity,
+      revealExact: reveal,
+      managerExact: presentation == ProjectCapacityPresentation.managerExact,
+    );
     if (!icon) return Text(label, style: style);
     return Row(
       children: [
@@ -44,26 +45,40 @@ String projectCapacityText(
   AppLocalizations l10n,
   ProjectCapacitySnapshot capacity, {
   required bool revealExact,
+  bool managerExact = false,
 }) {
   final limit = capacity.registrationCapacity;
-  final organizerText = capacity.countOrganizersTowardCapacity
-      ? l10n.projectOrganizerIncludedCount(capacity.organizerCount)
-      : '+${l10n.projectOrganizerCount(capacity.organizerCount)}';
+  if (managerExact) {
+    final usage = limit == null
+        ? l10n.projectPeopleCount(capacity.ordinaryParticipantCount)
+        : capacity.countOrganizersTowardCapacity
+        ? l10n.projectCapacityUsage(capacity.capacityUsedCount, limit)
+        : l10n.projectCapacityParticipantUsage(
+            capacity.ordinaryParticipantCount,
+            limit,
+          );
+    final organizers = capacity.countOrganizersTowardCapacity
+        ? l10n.projectOrganizerIncludedCount(capacity.organizerCount)
+        : l10n.projectOrganizerCount(capacity.organizerCount);
+    final summary = '$usage\n$organizers';
+    return capacity.isFull ? l10n.projectCapacityFullLabel(summary) : summary;
+  }
   if (limit == null) {
-    return '${l10n.projectCapacityNotSet} · $organizerText';
+    return revealExact
+        ? l10n.projectPeopleCount(capacity.socialPeopleCount)
+        : l10n.projectCapacityNotSet;
   }
+  // Both sides measure unique people. Registration slots may exclude organizers;
+  // this presentation total must never change canonical admission enforcement.
+  final peopleCapacity =
+      limit +
+      (capacity.countOrganizersTowardCapacity ? 0 : capacity.organizerCount);
   if (!revealExact) {
-    final intendedCapacity = capacity.countOrganizersTowardCapacity
-        ? l10n.projectCapacityLimit(limit)
-        : l10n.projectCapacityUpToParticipants(limit);
-    return '$intendedCapacity · $organizerText';
+    return l10n.projectPeopleCapacity(peopleCapacity);
   }
-  final usage = capacity.countOrganizersTowardCapacity
-      ? l10n.projectCapacityUsage(capacity.capacityUsedCount, limit)
-      : l10n.projectCapacityParticipantUsage(
-          capacity.ordinaryParticipantCount,
-          limit,
-        );
-  final summary = '$usage · $organizerText';
+  final summary = l10n.projectPeopleFraction(
+    capacity.socialPeopleCount,
+    peopleCapacity,
+  );
   return capacity.isFull ? l10n.projectCapacityFullLabel(summary) : summary;
 }

@@ -172,15 +172,9 @@ void main() {
       ),
     );
 
-    expect(
-      find.text(
-        '3 / 4 participant spots used · +1 organizers · '
-        '4 unique people involved',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('4/5 people'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('Registration capacity not set · +1 organizers'),
+      find.text('Registration capacity not set'),
       300,
       scrollable: find.byType(Scrollable).first,
     );
@@ -230,10 +224,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Paint the square'), findsOneWidget);
-      expect(
-        find.text('Up to 20 participants · +1 organizers'),
-        findsOneWidget,
-      );
+      expect(find.text('Up to 21 people'), findsOneWidget);
       expect(find.textContaining('people involved'), findsNothing);
       expect(find.byKey(const Key('proposal-requested-section')), findsNothing);
       expect(gateway.calls, isNot(contains('list-requested')));
@@ -252,14 +243,8 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('A full proposal description.'), findsOneWidget);
-      await tester.scrollUntilVisible(
-        find.text('Up to 20 participants · +1 organizers'),
-        200,
-      );
-      expect(
-        find.text('Up to 20 participants · +1 organizers'),
-        findsOneWidget,
-      );
+      await tester.scrollUntilVisible(find.text('Up to 21 people'), 200);
+      expect(find.text('Up to 21 people'), findsOneWidget);
       expect(find.textContaining(' / 20'), findsNothing);
       expect(find.textContaining('people involved'), findsNothing);
       expect(gateway.calls, contains('public-detail:proposal-1'));
