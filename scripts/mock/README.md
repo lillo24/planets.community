@@ -9,6 +9,8 @@ local demo seeder and never removes its loopback guard.
   `SET SESSION ROLE postgres`; a lost connection fails closed for that operation.
 - `hosted-setup.mjs` runs the same seed/verifier on an explicitly selected owned CI
   host, using a short-lived platform CLI login for the disabled mock target only.
+  Its private `verifyOnly` boolean skips control/seed mutations after a schema-only
+  upgrade. Auth sessions remain real; failures export bounded codes/status only.
 - `world.mjs` owns non-destructive ordinary-persona fixture operations.
 - `verify.mjs` reads canonical fixtures without repairing them.
 - `target.test.mjs` exercises target-confusion and credential rejection.

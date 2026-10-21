@@ -27,8 +27,9 @@ For an existing environment whose canonical inventory changes, keep issuance
 disabled and compare every existing migration receipt with the previous reviewed
 inventory. Apply only the missing canonical migrations to the mock target, then
 record their hashes and the new marker fingerprint atomically. A changed marker
-alone does not prove a schema upgrade. Re-run seed and read-only verification;
-existing fixture receipts preserve shared edits. Do not change the normal target.
+alone does not prove a schema upgrade. Run read-only verification after a schema-only
+upgrade; repeat seeding only when reviewed fixtures need it. Existing fixture
+receipts preserve shared edits. Do not change the normal target.
 
 1. Verify the mock project, zero cost and independently confirmed marker.
 2. Run `node scripts/mock/operator.mjs dry-run <private-config>`.
@@ -126,10 +127,16 @@ A permanent mock-password rotation requires separate explicit approval.
 The opt-in `qa-mock-hosted` workflow uses a network-capable GitHub-owned host.
 Its temporary private `PLANETS_MOCK_OPERATOR` JSON secret contains exact source
 SHA `source`, temporary session `databaseUrl`, `expiresAt`, mock-only `serviceKey`
-and `publishableKey`. Create it immediately before dispatch and remove afterward.
+and `publishableKey`. Optional boolean `verifyOnly: true` skips control upgrades
+and seeding, verifying the existing world and exact migration inventory. It still
+creates ordinary short-lived Auth sessions to verify persona permissions; it
+does not create missing accounts or repair product data. Create the secret
+immediately before dispatch and remove afterward.
 It never receives a management token or normal credential. It verifies disabled
 marker/migration receipts, upgrades mock controls, seeds and verifies. Artifacts
-contain counts/provenance only. An expired login fails closed; use another
+contain counts/provenance only. Auth failures retain an allowlisted operation
+code, provider code and integer HTTP status, never raw errors or credentials.
+An expired login fails closed; use another
 temporary login instead of substituting normal or permanent credentials.
 
 ## Qualification
