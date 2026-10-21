@@ -61,15 +61,35 @@ async function verifyNotifications() {
     );
   }
 
+  const [projectionStart] =
+    await sql`select clock_timestamp()::text observed_at`;
   const concurrentResults = await Promise.all([
     processNotificationBatch(),
     processNotificationBatch(),
   ]);
-  assertBatchTotals(concurrentResults, {
-    processed: 1,
-    created: 1,
-    suppressed: 0,
-  });
+  try {
+    assertBatchTotals(concurrentResults, {
+      processed: 1,
+      created: 1,
+      suppressed: 0,
+    });
+  } catch (error) {
+    // Preserve the exact assertion. If a shared-stack recurrence happens,
+    // distinguish an unrelated source from repeated processing before CI's
+    // owned stack is removed. Export identifiers/types only, never payloads.
+    const receipts = await sql`
+      select event.id,event.event_type,
+        event.payload->>'project_id'=${projectId}::text as own_project
+      from private.outbox_consumer_receipts receipt
+      join private.outbox_events event on event.id=receipt.outbox_event_id
+      where receipt.consumer_key='notifications.v1'
+        and receipt.processed_at>=${projectionStart.observed_at}::timestamptz
+      order by receipt.processed_at,event.id limit 20`;
+    console.error(
+      `Notification concurrency diagnostics: ${JSON.stringify({ results: concurrentResults, receipts })}`,
+    );
+    throw error;
+  }
 
   const creatorInbox = await listNotifications(creator);
   const requestReceived = creatorInbox.filter(
