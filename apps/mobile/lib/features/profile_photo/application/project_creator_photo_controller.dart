@@ -139,6 +139,12 @@ class ProjectCreatorPhotoController extends Notifier<ProjectCreatorPhotoState> {
     state = state.without(projectId);
   }
 
+  void invalidateAll() {
+    _identityRevision++;
+    _projectRevisions.clear();
+    state = ProjectCreatorPhotoState(viewerProfileId: state.viewerProfileId);
+  }
+
   Future<void> _download(
     String projectId,
     VisibleProfilePhoto photo,
@@ -150,7 +156,7 @@ class ProjectCreatorPhotoController extends Notifier<ProjectCreatorPhotoState> {
     try {
       bytes = await ref
           .read(profilePhotoGatewayProvider)
-          .downloadVisiblePhoto(photo.objectPath);
+          .downloadVisiblePhoto(photo.smallObjectPath);
     } catch (_) {
       _setFailureIfCurrent(
         projectId,

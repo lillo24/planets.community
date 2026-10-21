@@ -138,6 +138,14 @@ PR. No recurring deployment or hosted database job is introduced.
 
 # MAP01 location validation
 
+IMG01 runs the existing `profile:photo:viewer:verify:local` command after pgTAP
+in Database CI, matching the full `check:db` gate. It verifies real local
+Auth/Storage small/full permissions, Project/Tavolo/Resource context isolation,
+Block, immutable replacement/removal and legacy RPC behavior. SQL-only tests
+cannot verify Storage HTTP operation scope. This bounded fixture check makes no
+external provider requests; trigger classification and required checks stay
+unchanged. The shared workflow edit selects every area for its own PR.
+
 C03 adds the room-owned named-link Auth verifier after discussion checks in the
 same database job and full `check:db`. It runs against the disposable local stack
 with fictional OTP actors and makes no external provider requests. The existing

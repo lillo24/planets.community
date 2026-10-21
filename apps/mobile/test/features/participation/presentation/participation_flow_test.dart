@@ -158,7 +158,10 @@ void main() {
       await _openMemberMenu(tester, 'current');
       expect(find.byKey(const Key('people-safety-section')), findsOneWidget);
       expect(find.byKey(const Key('people-event-section')), findsOneWidget);
-      await tester.tap(find.byKey(const Key('people-action-inviteCoCreator')));
+      await _tapPersonAction(
+        tester,
+        find.byKey(const Key('people-action-inviteCoCreator')),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('people-confirm')));
       await tester.pumpAndSettle();
@@ -203,7 +206,10 @@ void main() {
       findsNothing,
     );
     expect(find.byKey(const Key('participation-remove-current')), findsNothing);
-    await tester.tap(find.byKey(const Key('people-action-stepDown')));
+    await _tapPersonAction(
+      tester,
+      find.byKey(const Key('people-action-stepDown')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('people-confirm')));
     await tester.pumpAndSettle();
@@ -722,7 +728,10 @@ void main() {
       findsOneWidget,
     );
     await _openMemberMenu(tester, 'current');
-    await tester.tap(find.byKey(const Key('participation-remove-current')));
+    await _tapPersonAction(
+      tester,
+      find.byKey(const Key('participation-remove-current')),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Remove Jordan?'), findsOneWidget);
     await tester.tap(find.byKey(const Key('participation-confirm-remove')));
@@ -770,7 +779,8 @@ void main() {
       findsNothing,
     );
     await _openMemberMenu(tester, 'other-membership');
-    await tester.tap(
+    await _tapPersonAction(
+      tester,
       find.byKey(const Key('participation-remove-other-membership')),
     );
     await tester.pumpAndSettle();
@@ -806,7 +816,8 @@ void main() {
         find.byKey(const Key('participation-commitments-current')),
         findsOneWidget,
       );
-      await tester.tap(
+      await _tapPersonAction(
+        tester,
         find.byKey(const Key('participation-commitments-current')),
       );
       await tester.pumpAndSettle();
@@ -820,7 +831,10 @@ void main() {
       await tester.pumpAndSettle();
 
       await _openMemberMenu(tester, 'left', historical: true);
-      await tester.tap(find.byKey(const Key('participation-commitments-left')));
+      await _tapPersonAction(
+        tester,
+        find.byKey(const Key('participation-commitments-left')),
+      );
       await tester.pumpAndSettle();
       expect(commitments.calls, contains('commitments:left'));
       expect(commitments.calls, isNot(contains('options:left')));
@@ -858,7 +872,8 @@ void main() {
         find.byKey(const Key('participation-actual-contributions-current')),
         findsOneWidget,
       );
-      await tester.tap(
+      await _tapPersonAction(
+        tester,
         find.byKey(const Key('participation-actual-contributions-current')),
       );
       await tester.pumpAndSettle();
@@ -872,7 +887,8 @@ void main() {
       await tester.pumpAndSettle();
 
       await _openMemberMenu(tester, 'left', historical: true);
-      await tester.tap(
+      await _tapPersonAction(
+        tester,
         find.byKey(const Key('participation-actual-contributions-left')),
       );
       await tester.pumpAndSettle();
@@ -912,7 +928,8 @@ void main() {
     await tester.pumpAndSettle();
 
     await _openMemberMenu(tester, 'current');
-    await tester.tap(
+    await _tapPersonAction(
+      tester,
       find.byKey(const Key('participation-commitments-current')),
     );
     await tester.pumpAndSettle();
@@ -948,7 +965,8 @@ void main() {
     await tester.pumpAndSettle();
 
     await _openMemberMenu(tester, 'current');
-    await tester.tap(
+    await _tapPersonAction(
+      tester,
       find.byKey(const Key('participation-commitments-current')),
     );
     await tester.pumpAndSettle();
@@ -1220,4 +1238,12 @@ Future<void> _openMemberMenu(
     find.descendant(of: row, matching: find.byType(IconButton)).first,
   );
   await tester.pumpAndSettle();
+}
+
+// Profile previews make the existing action sheet scrollable. Reveal the exact
+// operational action before tapping without weakening its behavior assertions.
+Future<void> _tapPersonAction(WidgetTester tester, Finder action) async {
+  await tester.ensureVisible(action);
+  await tester.pumpAndSettle();
+  await tester.tap(action);
 }

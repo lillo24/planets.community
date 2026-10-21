@@ -10,6 +10,7 @@ import '../domain/visible_profile_photo_models.dart';
 const profilePhotoBucket = 'profile-photos';
 const profilePhotoContentType = 'image/webp';
 const profilePhotoMaxBytes = 256000;
+const profilePhotoThumbnailMaxBytes = 32768;
 
 abstract interface class ProfilePhotoGateway {
   Future<OwnProfilePhoto?> loadOwnPhoto(String expectedProfileId);
@@ -31,8 +32,9 @@ abstract interface class ProfilePhotoGateway {
   Future<ProfilePhotoCommit> commitOwnPhoto(
     String expectedProfileId,
     String objectPath,
-    ProfilePhotoAudience audience,
-  );
+    ProfilePhotoAudience audience, {
+    String? thumbnailObjectPath,
+  });
 
   Future<ProfilePhotoAudienceChange> setAudience(
     String expectedProfileId,
@@ -105,7 +107,7 @@ class SupabaseProfilePhotoGateway implements ProfilePhotoGateway {
 
   @override
   Future<OwnProfilePhoto?> loadOwnPhoto(String expectedProfileId) async {
-    final response = await _remote.rpc('get_own_profile_photo', {
+    final response = await _remote.rpc('get_own_profile_photo_v2', {
       'p_expected_profile_id': expectedProfileId,
     });
     final rows = _rows(response, operation: 'owner photo read');
@@ -126,7 +128,7 @@ class SupabaseProfilePhotoGateway implements ProfilePhotoGateway {
   @override
   Future<VisibleProfilePhoto?> loadVisiblePhoto(String profileId) async {
     _requireProfileId(profileId);
-    final response = await _remote.rpc('get_profile_photo_for_viewer', {
+    final response = await _remote.rpc('get_profile_photo_for_viewer_v2', {
       'p_profile_id': profileId,
     });
     final rows = _rows(response, operation: 'viewer photo read');
@@ -158,7 +160,7 @@ class SupabaseProfilePhotoGateway implements ProfilePhotoGateway {
       _requireProfileId(profileId);
     }
 
-    final response = await _remote.rpc('list_profile_photos_for_viewer', {
+    final response = await _remote.rpc('list_profile_photos_for_viewer_v2', {
       'p_profile_ids': profileIds,
     });
     final rows = _rows(response, operation: 'viewer photo batch read');
@@ -186,7 +188,7 @@ class SupabaseProfilePhotoGateway implements ProfilePhotoGateway {
   Future<VisibleProfilePhoto?> loadProjectCreatorPhoto(String projectId) async {
     _requireProfileId(projectId);
     final response = await _remote.rpc(
-      'get_project_creator_profile_photo_for_viewer',
+      'get_project_creator_profile_photo_for_viewer_v2',
       {'p_project_id': projectId},
     );
     final rows = _rows(response, operation: 'project creator photo read');
@@ -205,7 +207,7 @@ class SupabaseProfilePhotoGateway implements ProfilePhotoGateway {
   ) async {
     _requireProfileId(listingId);
     final response = await _remote.rpc(
-      'get_resource_listing_owner_profile_photo_for_viewer',
+      'get_resource_listing_owner_profile_photo_for_viewer_v2',
       {'p_listing_id': listingId},
     );
     final rows = _rows(
@@ -251,13 +253,20 @@ class SupabaseProfilePhotoGateway implements ProfilePhotoGateway {
   Future<ProfilePhotoCommit> commitOwnPhoto(
     String expectedProfileId,
     String objectPath,
-    ProfilePhotoAudience audience,
-  ) async {
-    final response = await _remote.rpc('set_own_profile_photo', {
-      'p_expected_profile_id': expectedProfileId,
-      'p_object_path': objectPath,
-      'p_audience': audience.wireValue,
-    });
+    ProfilePhotoAudience audience, {
+    String? thumbnailObjectPath,
+  }) async {
+    final response = await _remote.rpc(
+      thumbnailObjectPath == null
+          ? 'set_own_profile_photo'
+          : 'set_own_profile_photo_v2',
+      {
+        'p_expected_profile_id': expectedProfileId,
+        'p_object_path': objectPath,
+        'p_thumbnail_object_path': ?thumbnailObjectPath,
+        'p_audience': audience.wireValue,
+      },
+    );
     return ProfilePhotoCommit.fromRpcRow(
       _singleRow(response, operation: 'owner photo commit'),
     );
