@@ -107,6 +107,12 @@ void main() {
         isTrue,
         reason: 'This gate must execute release-mode code.',
       );
+      // IntegrationTest leaves the platform IME connected by default. Its
+      // unregistered TestTextInput sends client -1, accepted only in debug.
+      // Register the automation keyboard so release receives the real client
+      // ID. This qualifies product text handling, not physical IME behavior.
+      tester.testTextInput.register();
+      addTearDown(tester.testTextInput.unregister);
       final config = AppConfig.fromCompileTime();
       expect(config.environment, AppEnvironment.local);
       expect(config.supabaseUrl.origin, 'http://127.0.0.1:57421');
@@ -161,6 +167,17 @@ void main() {
         await tester.pump(const Duration(milliseconds: 400));
       }
 
+      Future<void> enterNativeText(Finder finder, String text) async {
+        await tester.enterText(finder, text);
+        await tester.pump(const Duration(milliseconds: 200));
+        final editable = find.descendant(
+          of: finder,
+          matching: find.byType(EditableText),
+          matchRoot: true,
+        );
+        expect(tester.widget<EditableText>(editable).controller.text, text);
+      }
+
       Future<void> capture(String name) async {
         await tester.pump(const Duration(milliseconds: 500));
         final boundary = tester.renderObject<RenderRepaintBoundary>(
@@ -182,7 +199,7 @@ void main() {
       Future<void> sendChat(String body, String name) async {
         operation = 'send-chat-$name';
         final composer = find.byKey(const Key('project-chat-composer'));
-        await tester.enterText(composer, body);
+        await enterNativeText(composer, body);
         // Let the real keyboard close before locating the send action at 2x.
         FocusManager.instance.primaryFocus?.unfocus();
         await tester.pump(const Duration(milliseconds: 600));
@@ -297,7 +314,7 @@ void main() {
         operation = 'normal-email-field';
         await tap(find.byKey(const Key('auth-email-field')));
         operation = 'normal-email-input';
-        await tester.enterText(
+        await enterNativeText(
           find.byKey(const Key('auth-email-field')),
           'normal-sentinel@planets.invalid',
         );
@@ -328,7 +345,7 @@ void main() {
           reason: 'Mailpit captured ordinary local OTP',
         );
         operation = 'normal-code-input';
-        await tester.enterText(find.byKey(const Key('auth-code-field')), code!);
+        await enterNativeText(find.byKey(const Key('auth-code-field')), code!);
         operation = 'normal-verify-code';
         await tap(find.byKey(const Key('auth-verify-button')));
         operation = 'normal-ready';

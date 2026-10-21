@@ -17,6 +17,9 @@ bounded result to its CI-only loopback bridge; no VM service/debug driver is
 required. PNGs come from the native Flutter render tree. The plugin's native
 result channel remains present. See Flutter's integration-test binding and
 [official integration documentation](https://docs.flutter.dev/testing/integration-tests).
+The fixture explicitly registers Flutter's automation keyboard and checks each
+field's resulting text. Unregistered test input uses client ID -1, which release
+mode correctly ignores. This is text-driver coverage, not physical IME evidence.
 The release manifest permits cleartext only for IPv4 loopback/localhost; external
 traffic remains HTTPS. Debug retains its existing network resource overlay.
 The fixture binary and its temporary signer are never distributed. A real upload
