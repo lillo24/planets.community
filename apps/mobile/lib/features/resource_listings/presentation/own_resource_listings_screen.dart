@@ -1,3 +1,5 @@
+import '../../drafts/domain/draft_entry.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,7 +18,14 @@ import '../domain/resource_listing_models.dart';
 import 'resource_listing_widgets.dart';
 
 class OwnResourceListingsScreen extends ConsumerStatefulWidget {
-  const OwnResourceListingsScreen({super.key});
+  const OwnResourceListingsScreen({
+    this.itemId,
+    this.returnToHub = false,
+    super.key,
+  });
+
+  final String? itemId;
+  final bool returnToHub;
 
   @override
   ConsumerState<OwnResourceListingsScreen> createState() =>
@@ -55,6 +64,10 @@ class _OwnResourceListingsScreenState
     final state = ref.watch(ownResourceListingsProvider);
     final items = state.expectedOwnerId == identity?.id
         ? state.items
+              .where(
+                (item) => widget.itemId == null || item.id == widget.itemId,
+              )
+              .toList(growable: false)
         : const <OwnResourceListing>[];
     if (identity != null &&
         (_requestedIdentity != identity.id ||
@@ -104,7 +117,10 @@ class _OwnResourceListingsScreenState
                         separatorBuilder: (_, _) =>
                             const SizedBox(height: AppSpacing.small),
                         itemBuilder: (context, index) =>
-                            _OwnResourceListingCard(listing: items[index]),
+                            _OwnResourceListingCard(
+                              listing: items[index],
+                              returnToHub: widget.returnToHub,
+                            ),
                       ),
                     ),
                   ],
@@ -122,9 +138,13 @@ class _OwnResourceListingsScreenState
 }
 
 class _OwnResourceListingCard extends StatelessWidget {
-  const _OwnResourceListingCard({required this.listing});
+  const _OwnResourceListingCard({
+    required this.listing,
+    this.returnToHub = false,
+  });
 
   final OwnResourceListing listing;
+  final bool returnToHub;
 
   @override
   Widget build(BuildContext context) {
@@ -173,8 +193,10 @@ class _OwnResourceListingCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.medium),
                 OutlinedButton(
                   key: Key('resource-edit-${listing.id}'),
-                  onPressed: () =>
-                      context.push('/resources/${listing.id}/edit'),
+                  onPressed: () => context.push(
+                    '/resources/${listing.id}/edit',
+                    extra: returnToHub ? DraftEditorOrigin.hub : null,
+                  ),
                   child: Text(
                     listing.lifecycle == ResourceListingLifecycle.closed
                         ? l10n.resourceViewListing

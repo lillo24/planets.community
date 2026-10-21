@@ -22,9 +22,14 @@ import '../domain/resource_listing_models.dart';
 import 'resource_listing_widgets.dart';
 
 class ResourceListingEditorScreen extends ConsumerStatefulWidget {
-  const ResourceListingEditorScreen({this.listingId, super.key});
+  const ResourceListingEditorScreen({
+    this.listingId,
+    this.returnToHub = false,
+    super.key,
+  });
 
   final String? listingId;
+  final bool returnToHub;
 
   @override
   ConsumerState<ResourceListingEditorScreen> createState() =>
@@ -520,6 +525,10 @@ class _ResourceListingEditorScreenState
     }
     _coverChange = const CoverChange.unchanged();
     if (!navigate) return true;
+    if (widget.returnToHub && context.canPop()) {
+      context.pop();
+      return true;
+    }
     if (publish) {
       context.go('/resources/mine');
     } else if (widget.listingId == null) {
@@ -557,6 +566,10 @@ class _ResourceListingEditorScreenState
     if (identity == null) return;
     final closed = await ref.read(_editorProvider.notifier).close(identity.id);
     if (closed && mounted) {
+      if (widget.returnToHub && context.canPop()) {
+        context.pop();
+        return;
+      }
       context.go('/resources/mine');
     }
   }

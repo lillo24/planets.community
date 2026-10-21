@@ -156,10 +156,11 @@ drafts. Their broad synthetic location is Trento; none has an exact meeting plac
 
 Use the existing explicit mutating `demo:seed:local` on a selected disposable local
 stack, then sign in as Giulia and open a discovery folder or `/drafts`. Toggle
-any types together; clearing the last selected type shows all. The management
-menu preserves published history/co-organizer access. A ready different persona
-has a genuinely empty hub unless it saved its own drafts. Opening a draft uses
-the ordinary editor, and publishing removes it after the affected source refresh.
+Type and Status choices in the compact staged pickers; clearing either shows all
+for that dimension. My activities also includes published/history and separately
+co-organized work. A ready different persona sees only its authorized managed
+activities. Opening a draft uses the ordinary editor. After publishing, the row
+remains unless the selected Status excludes Published.
 
 `scripts/lib/demo-drafts.mjs` stores only opaque draft IDs/request IDs/pending kinds
 in the host temp directory: `planets-demo-drafts-<sha256>.json`, where the hash

@@ -112,3 +112,10 @@ panels with deterministic preview/image/Maps gateways. map03_native_smoke.dart
 takes an owned VM URI and capture directory and checks distinct card taps,
 three details, EN/IT and zero disabled image calls. Production uses lib/main.dart.
 See [MAP03](../../../docs/development/map03-location-previews.md).
+
+`myhub01_preview.dart` runs the isolated annotated My activities card preview,
+without configuration or backend access. Run `flutter run -d <supported-device>
+-t test_support/myhub01_preview.dart`; no installation on a physical phone is
+required by MYHUB01. The complete screen/locale/text-size matrix lives in
+`test/features/drafts/drafts_test.dart` and uses the existing RenderedEvidence
+capture interface.

@@ -178,8 +178,9 @@ Family/search controls remain mounted during idle/loading/error/empty results.
 Same-query refresh retains rows; failure retains their pagination reference-time
 snapshot. Changed filters clear previous rows. Owner/delegated sources settle
 independently and clear private caches on readiness changes.
-The folder action opens `/drafts?types=table`; management/history remains reachable
-from the hub's menu.
+The folder action opens `/drafts?types=table`, the My activities hub with all
+statuses and separate co-organized work. Non-draft owner rows focus existing
+actions through `/tavoli/mine?item=<id>`; the unfiltered legacy route still works.
 
 ## Discovery pagination
 
