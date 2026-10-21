@@ -33,10 +33,12 @@ import '../domain/recurring_activity_models.dart';
 class RecurringActivityEditorScreen extends ConsumerStatefulWidget {
   const RecurringActivityEditorScreen({
     this.activityId,
+    this.returnToHub = false,
     this.initialGroupId,
     super.key,
   });
   final String? activityId;
+  final bool returnToHub;
   final String? initialGroupId;
 
   @override
@@ -859,6 +861,10 @@ class _RecurringActivityEditorScreenState
     ref.invalidate(ownRecurringActivitiesProvider);
     ref.invalidate(publicRecurringActivitiesProvider);
     if (!navigate) return true;
+    if (widget.returnToHub && context.canPop()) {
+      context.pop();
+      return true;
+    }
     final origin = GoRouter.maybeOf(context) == null
         ? null
         : GoRouterState.of(context).extra;

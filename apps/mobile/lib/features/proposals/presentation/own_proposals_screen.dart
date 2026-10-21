@@ -1,3 +1,5 @@
+import '../../drafts/domain/draft_entry.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,7 +25,10 @@ import '../data/proposal_gateway.dart';
 import '../domain/proposal_models.dart';
 
 class OwnProposalsScreen extends ConsumerStatefulWidget {
-  const OwnProposalsScreen({super.key});
+  const OwnProposalsScreen({this.itemId, this.returnToHub = false, super.key});
+
+  final String? itemId;
+  final bool returnToHub;
 
   @override
   ConsumerState<OwnProposalsScreen> createState() => _OwnProposalsScreenState();
@@ -107,6 +112,10 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
     final state = ref.watch(ownProposalsProvider);
     final items = state.expectedCreatorId == identity?.id
         ? state.items
+              .where(
+                (item) => widget.itemId == null || item.id == widget.itemId,
+              )
+              .toList(growable: false)
         : const <OwnProposal>[];
     final delegatedState = ref.watch(delegatedProjectsProvider);
     final delegated = delegatedState.expectedProfileId == identity?.id
@@ -120,6 +129,36 @@ class _OwnProposalsScreenState extends ConsumerState<OwnProposalsScreen> {
         (state.phase == ProposalLoadPhase.idle ||
             delegatedState.phase == ProjectDelegateLoadPhase.idle)) {
       Future<void>.microtask(_loadMissing);
+    }
+
+    if (widget.itemId != null) {
+      return Scaffold(
+        appBar: pageAppBar(context, title: Text(l10n.projectManageTitle)),
+        body: identity == null
+            ? const SizedBox.shrink()
+            : state.phase == ProposalLoadPhase.failure
+            ? ErrorState(
+                message: l10n.proposalSafeError,
+                onRetry: () => _load(force: true),
+              )
+            : items.isEmpty
+            ? state.phase == ProposalLoadPhase.ready
+                  ? EmptyState(
+                      title: l10n.projectManageUnavailable,
+                      message: l10n.proposalMyEmptyMessage,
+                    )
+                  : LoadingState(message: l10n.draftsLoading)
+            : ListView(
+                padding: const EdgeInsets.all(AppSpacing.medium),
+                children: [
+                  _OwnProposalCard(
+                    proposal: items.single,
+                    returnToHub: widget.returnToHub,
+                    identityId: identity.id,
+                  ),
+                ],
+              ),
+      );
     }
 
     return Scaffold(
@@ -313,10 +352,15 @@ String _roleLabel(AppLocalizations l10n, ProjectDelegatedAuthorityRole role) =>
     };
 
 class _OwnProposalCard extends ConsumerWidget {
-  const _OwnProposalCard({required this.proposal, required this.identityId});
+  const _OwnProposalCard({
+    required this.proposal,
+    required this.identityId,
+    this.returnToHub = false,
+  });
 
   final OwnProposal proposal;
   final String identityId;
+  final bool returnToHub;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -398,8 +442,10 @@ class _OwnProposalCard extends ConsumerWidget {
                     if (proposal.isEditableAt(now))
                       OutlinedButton(
                         key: Key('proposal-edit-${proposal.id}'),
-                        onPressed: () =>
-                            context.push('/proposals/${proposal.id}/edit'),
+                        onPressed: () => context.push(
+                          '/proposals/${proposal.id}/edit',
+                          extra: returnToHub ? DraftEditorOrigin.hub : null,
+                        ),
                         child: Text(l10n.proposalEditAction),
                       ),
                     if (proposal.lifecycle == ProposalLifecycle.draft)
