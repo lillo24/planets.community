@@ -237,10 +237,7 @@ void main() {
           tester,
           find.byKey(const Key('participation-join-proposal-1')),
         );
-        final expected = participants == 1
-            ? 'Up to 20 participants · +1 organizers'
-            : '4 / 20 participant spots used · +1 organizers · '
-                  '5 unique people involved';
+        final expected = participants == 1 ? 'Up to 21 people' : '5/21 people';
         expect(find.text(expected), findsOneWidget);
         if (participants == 1) {
           expect(find.textContaining('people involved'), findsNothing);
@@ -276,9 +273,7 @@ void main() {
       );
       app.read(appRouterProvider).go('/proposals/proposal-1');
       await tester.pumpAndSettle();
-      const exact =
-          '1 / 20 participant spots used · +1 organizers · '
-          '2 unique people involved';
+      const exact = '1 / 20 participant spots used\n1 organizer';
       await _scrollTo(tester, find.text(exact));
       expect(find.text(exact), findsOneWidget);
       expect(find.textContaining('Up to 20'), findsNothing);
@@ -541,10 +536,7 @@ void main() {
     );
 
     expect(find.text('No spots available.'), findsWidgets);
-    expect(
-      find.textContaining('Full · 1 / 1 participant spots used'),
-      findsWidgets,
-    );
+    expect(find.textContaining('Full: 2/2 people'), findsWidgets);
     expect(
       find.byKey(const Key('participation-join-proposal-1')),
       findsNothing,
