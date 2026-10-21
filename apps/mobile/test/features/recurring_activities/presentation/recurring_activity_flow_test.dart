@@ -395,12 +395,12 @@ void main() {
         find.byKey(const Key('tavolo-detail-cover-tavolo-1')),
         findsOneWidget,
       );
-      await tester.scrollUntilVisible(find.text('September 9, 2026'), 250);
+      await tester.scrollUntilVisible(find.textContaining('Sep 9, 2026'), 250);
       // Settle the lazy resource section before targeting the next date.
       await tester.pumpAndSettle();
-      expect(find.text('19:00 – 20:30'), findsWidgets);
-      await tester.scrollUntilVisible(find.text('September 16, 2026'), 250);
-      expect(find.text('September 16, 2026'), findsOneWidget);
+      expect(find.textContaining('19:00–20:30'), findsWidgets);
+      await tester.scrollUntilVisible(find.textContaining('Sep 16, 2026'), 250);
+      expect(find.textContaining('Sep 16, 2026'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.text('Exact location available after joining.'),
         300,

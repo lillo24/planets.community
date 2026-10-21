@@ -2438,5 +2438,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "eventScheduleZone": "Orari in {zone}",
+  "@eventScheduleZone": { "placeholders": { "zone": { "type": "String" } } }
 }

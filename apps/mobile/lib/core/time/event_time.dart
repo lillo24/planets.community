@@ -78,11 +78,28 @@ String formatEventClock(
   final zoned = time_zone.TZDateTime.from(instant.toUtc(), eventTimeZone(zone));
   final clock = DateFormat.Hm(locale).format(zoned);
   if (!includeOffset) return clock;
-  // A repeated DST hour otherwise produces two indistinguishable endpoints.
+  // A repeated DST hour otherwise produces indistinguishable endpoints.
+  return '$clock (${eventTimeZoneLabel(instant, zone, abbreviation: false)})';
+}
+
+Duration eventTimeZoneOffset(DateTime instant, String zone) =>
+    time_zone.TZDateTime.from(
+      instant.toUtc(),
+      eventTimeZone(zone),
+    ).timeZoneOffset;
+
+/// A readable clock-zone cue; never infer an IANA location from device locale.
+String eventTimeZoneLabel(
+  DateTime instant,
+  String zone, {
+  bool abbreviation = true,
+}) {
+  final zoned = time_zone.TZDateTime.from(instant.toUtc(), eventTimeZone(zone));
   final minutes = zoned.timeZoneOffset.inMinutes;
   final hours = (minutes.abs() ~/ 60).toString().padLeft(2, '0');
   final remainder = (minutes.abs() % 60).toString().padLeft(2, '0');
-  return '$clock (UTC${minutes < 0 ? '-' : '+'}$hours:$remainder)';
+  final offset = 'UTC${minutes < 0 ? '-' : '+'}$hours:$remainder';
+  return abbreviation ? '${zoned.timeZoneName} ($offset)' : offset;
 }
 
 String eventTimeRange(

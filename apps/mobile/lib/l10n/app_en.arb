@@ -3176,5 +3176,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "eventScheduleZone": "Times shown in {zone}",
+  "@eventScheduleZone": { "placeholders": { "zone": { "type": "String" } } }
 }

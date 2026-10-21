@@ -440,9 +440,9 @@ void main() {
     expect(gateway.calls, ['public-detail:proposal-1']);
     await tester.scrollUntilVisible(find.text('Schedule'), 200);
     expect(find.text('Schedule'), findsOneWidget);
-    expect(find.text('September 10, 2026'), findsOneWidget);
-    expect(find.text('12:00 – 14:00'), findsOneWidget);
-    expect(find.text('Europe/Rome'), findsOneWidget);
+    expect(find.textContaining('Sep 10, 2026'), findsOneWidget);
+    expect(find.textContaining('12:00–14:00'), findsOneWidget);
+    expect(find.text('Europe/Rome'), findsNothing);
     await tester.scrollUntilVisible(find.text('Gardening'), 200);
     expect(find.text('Skills'), findsOneWidget);
     expect(find.text('Required'), findsOneWidget);
