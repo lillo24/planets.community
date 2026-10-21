@@ -464,10 +464,6 @@ class _PublicRecurringActivityDetailScreenState
                       resolvedDetail.schedule.durationMinutes,
                     ),
                   ),
-                  Text(
-                    l10n.tavoliTimezone(resolvedDetail.schedule.eventTimezone),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
                 ],
               ),
             ),
