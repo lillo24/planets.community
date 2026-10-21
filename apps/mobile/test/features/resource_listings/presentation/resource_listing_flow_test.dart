@@ -54,6 +54,11 @@ void main() {
     await tester.pumpAndSettle();
 
     final selector = find.byKey(const Key('resource-mode-filter'));
+    expect(selector, findsNothing);
+    expect(find.byKey(const Key('resource-locality-filter')), findsNothing);
+    final requests = gateway.calls.length;
+    await _tap(tester, 'resource-toggle-filters');
+    expect(gateway.calls.length, requests);
     expect(_selectedModes(tester), ResourceListingMode.values.toSet());
     expect(
       find.descendant(of: selector, matching: find.byIcon(Icons.check)),
@@ -61,7 +66,7 @@ void main() {
     );
     expect(find.byKey(const Key('resource-filter-mode-all')), findsNothing);
     expect(find.byKey(const Key('resource-apply-filters')), findsNothing);
-    expect(find.byKey(const Key('resource-locality-filter')), findsNothing);
+    expect(find.byKey(const Key('resource-locality-filter')), findsOneWidget);
     final query = tester.widget<TextField>(
       find.byKey(const Key('resource-query-filter')),
     );
@@ -126,6 +131,7 @@ void main() {
               .applyFilters(mode: transition.start, locality: '', query: '');
           await tester.pumpAndSettle();
         }
+        await _tap(tester, 'resource-toggle-filters');
         final before = gateway.calls.length;
         await _tap(tester, 'resource-filter-mode-${transition.tap.wireValue}');
         final expected = transition.result == null
@@ -418,8 +424,8 @@ void main() {
       app.read(appRouterProvider).go('/resources');
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('resource-filter-mode-donate')));
       await _tap(tester, 'resource-toggle-filters');
+      await tester.tap(find.byKey(const Key('resource-filter-mode-donate')));
       await tester.enterText(
         find.byKey(const Key('resource-query-filter')),
         'shovel',
