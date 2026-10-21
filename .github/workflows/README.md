@@ -1,5 +1,15 @@
 # Validation workflow
 
+`mock-qualification.yml` is an opt-in isolated-backend gate. Apply
+`qa-mock-backend` to a same-repository draft/integration PR (remove/reapply after
+source changes) or dispatch manually after merge. It creates two owned disposable
+loopback stacks with independent private signing keys, exercises standard Auth,
+canonical fixture RPCs/Storage, same-persona sessions and tester offboarding, then
+stops only those stacks. CLI status/secrets are captured privately and never
+uploaded. It uses no hosted credentials and does not replace required Validation.
+The bounded 25-minute job runs only at the requested stack checkpoints; it is
+not an ordinary push trigger. Native qualification is reported separately.
+
 `contact-native.yml` is an opt-in Android review, separate from required Validation
 checks. Adding `qa-contact-native` to a same-repository PR runs its exact head;
 remove/reapply the label after a source change. It does not run on ordinary pushes
