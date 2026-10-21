@@ -154,6 +154,14 @@ class _MockRealmHostState extends State<MockRealmHost>
         _productRevision = revision;
       }
       _scopeLoading = false;
+      // Logout/control replacement may supersede the preference read above.
+      // Build the latest committed scope even if its notification arrived while
+      // this load owned the guard; never leave a blank or stale product root.
+      if (coordinator.showProduct &&
+          coordinator.scopeRevision != _productRevision) {
+        unawaited(_changed());
+        return;
+      }
     }
     if (mounted) setState(() {});
   }

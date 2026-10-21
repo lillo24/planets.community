@@ -59,8 +59,10 @@ void main() {
       final labels = binding.failureMethodsDetails.map((failure) {
         final wait = RegExp(r'Native wait failed: ([a-zA-Z0-9 _-]{2,70})')
             .firstMatch(failure.details ?? '');
+        final location = RegExp(r'mock_realm_release_test\.dart:(\d+)')
+            .firstMatch(failure.details ?? '');
         return wait == null
-            ? 'native-assertion-or-framework-failure'
+            ? 'native-assertion-line-${location?.group(1) ?? 'unknown'}'
             : wait.group(1)!;
       }).toList();
       await request('/qa/result', {
