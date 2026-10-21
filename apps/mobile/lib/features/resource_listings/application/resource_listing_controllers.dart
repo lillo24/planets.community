@@ -41,6 +41,7 @@ class PublicResourceListingsController
       _successfulPages = 0;
       state = PublicResourceListingsState(
         modeFilter: state.modeFilter,
+        categoryFilter: state.categoryFilter,
         locality: state.locality,
         query: state.query,
       );
@@ -59,6 +60,7 @@ class PublicResourceListingsController
     final revision = ++_revision;
     final previousItems = state.items;
     final mode = state.modeFilter;
+    final category = state.categoryFilter;
     final locality = state.locality;
     final query = state.query;
     final previousCursor = state.cursor;
@@ -69,6 +71,7 @@ class PublicResourceListingsController
       items: previousItems,
       resultsMatchFilters: state.resultsMatchFilters,
       modeFilter: mode,
+      categoryFilter: category,
       locality: locality,
       query: query,
       cursor: previousCursor,
@@ -83,10 +86,11 @@ class PublicResourceListingsController
             limit: pageSize,
             cursor: cursor,
             mode: mode,
+            category: category,
             locality: locality.isEmpty ? null : locality,
             query: query.isEmpty ? null : query,
           );
-      if (!_isCurrent(revision, mode, locality, query)) return;
+      if (!_isCurrent(revision, mode, category, locality, query)) return;
 
       final nextItems = reset
           ? List<PublicResourceListingSummary>.of(page)
@@ -96,6 +100,7 @@ class PublicResourceListingsController
         phase: ResourceListingLoadPhase.ready,
         items: List.unmodifiable(nextItems),
         modeFilter: mode,
+        categoryFilter: category,
         locality: locality,
         query: query,
         cursor: page.isEmpty
@@ -104,12 +109,13 @@ class PublicResourceListingsController
         hasMore: page.length == pageSize,
       );
     } catch (error) {
-      if (_isCurrent(revision, mode, locality, query)) {
+      if (_isCurrent(revision, mode, category, locality, query)) {
         state = PublicResourceListingsState(
           phase: ResourceListingLoadPhase.failure,
           items: previousItems,
           resultsMatchFilters: state.resultsMatchFilters,
           modeFilter: mode,
+          categoryFilter: category,
           locality: locality,
           query: query,
           cursor: previousCursor,
@@ -122,6 +128,7 @@ class PublicResourceListingsController
 
   Future<void> applyFilters({
     required ResourceListingMode? mode,
+    ResourceCategory? category,
     required String locality,
     required String query,
   }) async {
@@ -130,6 +137,7 @@ class PublicResourceListingsController
       items: state.items,
       resultsMatchFilters: false,
       modeFilter: mode,
+      categoryFilter: category,
       locality: locality.trim(),
       query: query.trim(),
     );
@@ -139,12 +147,14 @@ class PublicResourceListingsController
   bool _isCurrent(
     int revision,
     ResourceListingMode? mode,
+    ResourceCategory? category,
     String locality,
     String query,
   ) =>
       ref.mounted &&
       revision == _revision &&
       state.modeFilter == mode &&
+      state.categoryFilter == category &&
       state.locality == locality &&
       state.query == query;
 
@@ -403,7 +413,11 @@ class ResourceListingEditorController
     ResourceListingInput input, {
     CoverChange coverChange = const CoverChange.unchanged(),
   }) {
-    if (state.isBusy || !isPublishableResourceListingInput(input)) {
+    // Existing published legacy content can still be edited without category.
+    if (state.isBusy ||
+        !isPublishableResourceListingInput(input) ||
+        (state.listing?.lifecycle != ResourceListingLifecycle.published &&
+            input.category == null)) {
       _setInvalidInput(expectedOwnerId);
       return Future.value(null);
     }

@@ -29,6 +29,17 @@ test("already accurate generated results are unchanged", () => {
   assert.equal(applyParticipationRpcNullability(output), output);
 });
 
+test("CAT01 nullable categories do not change legacy RPC shapes", () => {
+  const legacy =
+    "      get_public_resource_listing: {\n        Returns: {\n          title: string\n        }[]\n      }";
+  const output = applyParticipationRpcNullability(`${fixture()}\n${legacy}`);
+  assert.equal(
+    (output.match(/category_slug: string \| null/g) ?? []).length,
+    6,
+  );
+  assert.ok(output.includes(legacy));
+});
+
 test("group locality is nullable in every owner/public projection", () => {
   for (const name of [
     "get_public_group",

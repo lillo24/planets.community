@@ -30,6 +30,8 @@ import 'package:planets_mobile/features/profile_photo/domain/visible_profile_pho
 import 'package:planets_mobile/features/resource_listings/application/resource_listing_controllers.dart';
 import 'package:planets_mobile/features/resource_listings/data/resource_listing_gateway.dart';
 import 'package:planets_mobile/features/resource_listings/domain/resource_listing_models.dart';
+import 'package:planets_mobile/features/resource_listings/presentation/resource_category_field.dart';
+import 'package:planets_mobile/features/resource_listings/presentation/resource_listing_editor_screen.dart';
 import 'package:planets_mobile/features/resource_requests/data/resource_request_gateway.dart';
 import 'package:planets_mobile/features/resource_requests/domain/resource_request_models.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
@@ -43,8 +45,108 @@ import '../../../support/fake_profile_photo.dart';
 import '../../../support/fake_resource_listing.dart';
 import '../../../support/fake_resource_request.dart';
 import '../../../support/fake_resource_loan.dart';
+import '../../../support/rendered_evidence.dart';
 
 void main() {
+  setUpAll(() => RenderedEvidence.loadFonts(force: true));
+  for (final category in [null, ResourceCategory.toolsDiy]) {
+    testWidgets(
+      'category $category is preserved on public card/detail and owner history',
+      (tester) async {
+        final gateway = FakeResourceListingGateway()
+          ..publicItems = [publicResourceListingFixture(category: category)]
+          ..publicDetail = publicResourceListingDetailFixture(
+            category: category,
+          )
+          ..ownItems = [
+            ownResourceListingFixture(
+              input: resourceListingInputFixture(category: category),
+            ),
+          ];
+        final app = await _pump(tester, gateway: gateway);
+        final labels = find.byType(ResourceCategoryText);
+        app.read(appRouterProvider).go('/resources');
+        await tester.pumpAndSettle();
+        expect(labels, category == null ? findsNothing : findsOneWidget);
+        app.read(appRouterProvider).go('/resources/$resourceListingId');
+        await tester.pumpAndSettle();
+        expect(labels, category == null ? findsNothing : findsOneWidget);
+        app.read(appRouterProvider).go('/resources/mine');
+        await tester.pumpAndSettle();
+        expect(labels, category == null ? findsNothing : findsOneWidget);
+        expect(find.text('Other'), findsNothing);
+      },
+    );
+  }
+  testWidgets(
+    'filled new publication prompts for unset category on first tap',
+    (tester) async {
+      final gateway = FakeResourceListingGateway();
+      final app = await _pump(tester, gateway: gateway);
+      app.read(appRouterProvider).go('/resources/create');
+      await tester.pumpAndSettle();
+      await _fillPublishableListing(tester);
+      await _tap(tester, 'resource-editor-category');
+      await tester.tap(find.text('Not categorized').last);
+      await tester.pumpAndSettle();
+      await _tap(tester, 'resource-publish');
+      expect(find.text('Choose a category before publishing.'), findsOneWidget);
+      expect(find.byKey(const Key('profile-photo-trust-gate')), findsNothing);
+      expect(gateway.createCount, 0);
+    },
+  );
+
+  for (final language in ['en', 'it']) {
+    for (final brightness in Brightness.values) {
+      testWidgets(
+        'CAT01 legacy editor $language $brightness fits 320px/2x and saves unset',
+        (tester) async {
+          tester.platformDispatcher.localesTestValue = [Locale(language)];
+          tester.platformDispatcher.platformBrightnessTestValue = brightness;
+          tester.platformDispatcher.textScaleFactorTestValue = 2;
+          addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+          addTearDown(
+            tester.platformDispatcher.clearPlatformBrightnessTestValue,
+          );
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+          final gateway = FakeResourceListingGateway()
+            ..ownItems = [
+              ownResourceListingFixture(
+                lifecycle: ResourceListingLifecycle.published,
+                input: resourceListingInputFixture(category: null),
+              ),
+            ];
+          final app = await _pump(tester, gateway: gateway);
+          await tester.binding.setSurfaceSize(const Size(320, 900));
+          app.read(appRouterProvider).go('/resources/$resourceListingId/edit');
+          await tester.pumpAndSettle();
+          final category = find.byKey(const Key('resource-editor-category'));
+          expect(
+            tester.widget<ResourceCategoryField>(category).category,
+            isNull,
+          );
+          await RenderedEvidence.capture(
+            tester,
+            'resource-cat01-legacy-editor-$language-${brightness.name}-2x',
+          );
+          await tester.scrollUntilVisible(
+            find.byKey(const Key('resource-save-changes')),
+            500,
+            scrollable: find
+                .descendant(
+                  of: find.byType(ResourceListingEditorScreen),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          );
+          await _tap(tester, 'resource-save-changes');
+          expect(gateway.calls, contains('update:$resourceListingId'));
+          expect(gateway.lastInput?.category, isNull);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
   testWidgets('Scambio starts with both checked modes and compact filters', (
     tester,
   ) async {
@@ -54,6 +156,11 @@ void main() {
     await tester.pumpAndSettle();
 
     final selector = find.byKey(const Key('resource-mode-filter'));
+    expect(selector, findsNothing);
+    expect(find.byKey(const Key('resource-locality-filter')), findsNothing);
+    final requests = gateway.calls.length;
+    await _tap(tester, 'resource-toggle-filters');
+    expect(gateway.calls.length, requests);
     expect(_selectedModes(tester), ResourceListingMode.values.toSet());
     expect(
       find.descendant(of: selector, matching: find.byIcon(Icons.check)),
@@ -61,7 +168,7 @@ void main() {
     );
     expect(find.byKey(const Key('resource-filter-mode-all')), findsNothing);
     expect(find.byKey(const Key('resource-apply-filters')), findsNothing);
-    expect(find.byKey(const Key('resource-locality-filter')), findsNothing);
+    expect(find.byKey(const Key('resource-locality-filter')), findsOneWidget);
     final query = tester.widget<TextField>(
       find.byKey(const Key('resource-query-filter')),
     );
@@ -126,6 +233,7 @@ void main() {
               .applyFilters(mode: transition.start, locality: '', query: '');
           await tester.pumpAndSettle();
         }
+        await _tap(tester, 'resource-toggle-filters');
         final before = gateway.calls.length;
         await _tap(tester, 'resource-filter-mode-${transition.tap.wireValue}');
         final expected = transition.result == null
@@ -418,8 +526,8 @@ void main() {
       app.read(appRouterProvider).go('/resources');
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('resource-filter-mode-donate')));
       await _tap(tester, 'resource-toggle-filters');
+      await tester.tap(find.byKey(const Key('resource-filter-mode-donate')));
       await tester.enterText(
         find.byKey(const Key('resource-query-filter')),
         'shovel',
@@ -1088,13 +1196,15 @@ void main() {
       app.read(appRouterProvider).go('/resources/create');
       await tester.pumpAndSettle();
       expect(gateway.createCount, 0);
-      for (final deferred in ['Category', 'Price', 'Quantity', 'Image']) {
+      expect(find.text('Category'), findsOneWidget);
+      for (final deferred in ['Price', 'Quantity', 'Image']) {
         expect(find.text(deferred), findsNothing);
       }
 
       await tester.ensureVisible(find.byKey(const Key('resource-publish')));
       await _tap(tester, 'resource-publish');
       expect(find.text('Required to publish.'), findsNWidgets(5));
+      expect(find.text('Choose a category before publishing.'), findsOneWidget);
       expect(gateway.createCount, 0);
 
       await tester.ensureVisible(find.byKey(const Key('resource-save-draft')));
@@ -1538,7 +1648,7 @@ Future<ProviderContainer> _pump(
           profilePhotos ?? FakeProfilePhotoGateway(),
         ),
       ],
-      child: const PlanetsApp(),
+      child: RenderedEvidence.wrap(const PlanetsApp()),
     ),
   );
   await tester.pumpAndSettle();
@@ -1546,6 +1656,9 @@ Future<ProviderContainer> _pump(
 }
 
 Future<void> _fillPublishableListing(WidgetTester tester) async {
+  await _tap(tester, 'resource-editor-category');
+  await tester.tap(find.text('Tools & DIY').last);
+  await tester.pumpAndSettle();
   for (final entry in <Key, String>{
     const Key('resource-title-field'): 'Community ladder',
     const Key('resource-description-field'):

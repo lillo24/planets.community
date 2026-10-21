@@ -103,10 +103,15 @@ skills; full names remain accessible and the parent card owns navigation. Detail
 and authoring widgets keep complete names and importance.
 
 `event_schedule.dart` renders canonical public instants in the saved event zone.
-Same-day schedules show one date and a time range; different dates have separate
-Start/End endpoints. Missing dates remain undecided. `core/time/event_time.dart`
-owns compact summaries and displays offsets when DST makes endpoint clocks
-ambiguous. Tavoli reuse the surface without changing recurrence or occurrences.
+Same-day schedules show one date and a time range; different dates show an arrow
+between date/time endpoints, stacked when width or text scaling requires it.
+Start/End labels remain in screen-reader semantics, without repeating visually.
+Missing dates remain undecided. `core/time/event_time.dart` owns compact summaries
+and displays offsets when DST makes endpoint clocks ambiguous. A different
+device offset gets an abbreviation/UTC-offset cue; locale never guesses the
+viewer's timezone. Tavoli reuse the surface without changing recurrence or
+occurrences. This exact-time widget never derives public dates from private
+Organization planning.
 
 Skill callers resolve known catalog display text through
 `../localization/skill_display.dart`; generic tag widgets continue to receive

@@ -75,6 +75,7 @@ pumpMap(
           query: 'tools',
           locality: 'Trento',
           mode: ResourceListingMode.exchange,
+          category: ResourceCategory.toolsDiy,
         );
   }
   final router = GoRouter(
@@ -194,6 +195,7 @@ void main() {
       expect(query.proposalKeyword, isNull);
       expect(query.proposalSkillIds, isEmpty);
       expect(query.resourceMode, isNull);
+      expect(query.resourceCategory, isNull);
       expect((query.area as GeoRadius).radiusMeters, 20000);
       await chooseFamily(tester, l.resourceTitle);
       expect(
@@ -205,6 +207,8 @@ void main() {
       expect(query.kinds, {GeoKind.resource});
       expect(query.resourceKeyword, 'tools');
       expect(query.resourceMode, GeoResourceMode.exchange);
+      expect(query.resourceCategory, ResourceCategory.toolsDiy);
+      expect(query.toJson()['resource_category_slug'], 'tools_diy');
       expect(query.proposalKeyword, isNull);
       expect(query.tavoloLocality, isNull);
       await chooseFamily(tester, l.mapAll);
@@ -213,9 +217,11 @@ void main() {
       expect(query.proposalKeyword, 'garden');
       expect(query.tavoloLocality, 'Trento');
       expect(query.resourceKeyword, 'tools');
+      expect(query.resourceCategory, ResourceCategory.toolsDiy);
       await chooseFamily(tester, l.proposalsTitle);
       query = app.geo.calls.last.query;
       expect(query.kinds, {GeoKind.oneTime});
+      expect(query.resourceCategory, isNull);
       expect((query.area as GeoRadius).radiusMeters, 5000);
       expect(app.container.read(publicProposalsProvider).query, 'garden');
       expect(
@@ -550,11 +556,16 @@ void main() {
       expect(query.tavoloLocality, 'Trento');
       expect(query.resourceKeyword, 'tools');
       expect(query.resourceMode, GeoResourceMode.exchange);
+      expect(query.resourceCategory, ResourceCategory.toolsDiy);
       final prefs = app.container
           .read(mapDiscoverySessionsProvider)
           .forOrigin(MapDiscoveryOrigin.projects);
       prefs.radiusKm = 10;
       await tapMapKey(tester, 'map-return-list');
+      expect(
+        app.container.read(publicResourceListingsProvider).categoryFilter,
+        ResourceCategory.toolsDiy,
+      );
       expect(app.container.read(publicProposalsProvider).query, 'garden');
       expect(
         app.container.read(publicResourceListingsProvider).modeFilter,

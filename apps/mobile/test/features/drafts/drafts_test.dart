@@ -240,7 +240,7 @@ void main() {
           _ => const PublicResourceListingsScreen(),
         };
         final control = family == 'listings'
-            ? 'resource-mode-filter'
+            ? 'resource-query-filter'
             : 'browse-activity-switcher';
         await harness.container.read(authSessionProvider.notifier).start();
         await tester.pumpWidget(

@@ -1,0 +1,41 @@
+# PLANETS PROF01 + IMG01 — Clickable person profiles, Block in profile sheet, efficient avatars
+
+**Implementation prompt for Codex.** Work from the latest `main` of `lillo24/planets.community`. Read root/nested `AGENTS.md`, `implementation_plan_sections_suggestions.md`, and relevant feature/security docs before editing. Prepare one focused PR; do not deploy production, change hosted security configuration, or merge without review.
+
+## Objective and accepted UX
+
+Whenever a person is represented by a tappable name or avatar in a suitable PLANETS context, tapping it should open a **reusable modal bottom sheet** over the current screen, rather than navigating into that person's edit page. The sheet shows a larger profile photo, display name, bio and controlled skills **only when those fields are authorized for this viewer**. It remains useful when fields or photos are absent. It dismisses with swipe/back/outside tap, supports scrolling and accessibility, and returns the viewer to the unchanged underlying screen.
+
+The **Blocca / Sblocca** action belongs in this sheet for an authenticated viewer inspecting someone else, with the existing confirmation, consequences and cache invalidations. Do not show Block for oneself or anonymous viewers. Preserve `Settings > Blocked Users` and existing moderation/report actions; remove redundant inline Block buttons from Project/Tavolo detail once the sheet entry point works. Do not create a generic unsolicited private-message action or disclose contact information.
+
+**Accepted prior image choice:** keep an approximately **512×512 lossy WebP** large avatar (~100 KiB target, **256,000-byte hard ceiling**); create a separate approximately **160×160 WebP** small thumbnail for rows/cards. Fetch the full variant **on opening** the sheet, not for every small avatar. Pick a measured small-thumbnail byte target (e.g. 10–25 KiB, with an enforced safe maximum) and verify actual dimensions/quality with representative images; avoid needless upscaling or a new original-image archive. A sheet photo roughly 180–220 logical pixels wide is a reasonable responsive default, adjusted for accessibility and device pixel density. `cacheWidth` alone does not save network bytes.
+
+## Current repository evidence (verified 21 Oct 2026)
+
+- `apps/mobile/lib/features/proposals/presentation/public_proposals_screen.dart` renders organizer `ListTile` without a tap handler and a separate `BlockingActionButton`; the Tavoli detail in `features/recurring_activities/presentation/public_recurring_activities_screen.dart` follows the same pattern.
+- `apps/mobile/lib/features/participation/presentation/creator_participation_screen.dart` already has a limited person-actions sheet. Several Messages, Resource, Group and Participation surfaces display persons; inspect their navigation/actions before expanding taps.
+- `apps/mobile/lib/features/blocking/presentation/blocking_action.dart` already owns block/unblock confirmation and context consequences. Reuse it rather than reimplementing moderation logic.
+- `get_public_profile(uuid)` already provides visibility-sanitized scalar profile fields (`display_name`, `bio`, `skills`); `apps/mobile/lib/features/profile/data/profile_gateway.dart` currently reads the **owner** profile, not another user's public projection.
+- `apps/mobile/lib/features/profile_photo/README.md` and controllers describe **private** `profile-photos` Storage, 512×512 processed WebP, audience `public | interactions`, separate Project-context creator photo access, authorized viewer batch loading and identity-bound caches. There is no verified small network thumbnail tier. Do not assume generic photo reads authorize Project-context interaction photos.
+
+## Required implementation
+
+1. Build a small, tested public-profile read model/gateway/controller over the current *sanitized* exact-ID projection; do not query owner-private profile tables for other people. Do not synthesize hidden bio/skills from chat, project, group or organizer context. Project-attributed organizer identity may display only what that context explicitly authorizes; no transfer of authorization into a generic profile cache.
+2. Create a reusable person-preview sheet with loading, empty/denied, retry and blocked states. Use visible name/bio/skills, and preserve source-context avatar authorization. Avoid presenting `Edit profile` for other people. Tapping one's own avatar can use the read-only self profile or self-preview, with no Block action. Make the whole intended identity region accessible as a tap target without hijacking a parent Project/card navigation.
+3. Wire **at least** Project and Tavolo organizer avatar/name rows and relevant People/member and direct-counterparty avatar/name entry points where the target identity is reliable. Inspect Messages, Resource and Group surfaces and integrate where actions/permissions allow; do not add profile affordances where the identity is absent or anonymous. Consolidate, rather than duplicate, existing person-action sheets when compatible.
+4. Reuse `BlockingActionButton` inside the sheet. Preserve project-member, pending-request, contact or other relevant context consequences; propagate `onChanged` so existing canonical lists and image caches refresh correctly after Block/Unblock. Remove standalone organizer Block actions from detail once tested. Keep `Segnala` / Report available as already authorized.
+5. Implement real **small and full** media variants where safe. Process from the one cropped image, strip metadata, store private immutable objects, verify per-variant Storage permissions and RPC projections, preserve audience semantics, and invalidate both versions on replacement/removal, block, revocation and identity switch. Fetch bytes lazily by target **and authorized source context**, never by promoting a Project-private photo into generic public cache. Existing single-variant photos must still work without re-upload; make fallback explicit and avoid automatic mass rewriting of old private objects. Preserve cleanup/account deletion and old-client compatibility. If a backend migration is needed, make it additive, security-tested and documented; do not deploy it without authorization.
+
+## Privacy and non-goals
+
+Do not weaken `get_public_profile`, photo audience decisions, RLS or Storage access. No public user directory, friendship/follow system, new DM permissions, activity ratings, local file persistence or photo originals. Do not fetch larger photos during list scrolling. Keep the separate Group profile/showcase concept outside this person-sheet task.
+
+## Acceptance and validation
+
+- Guest and signed-in taps open/close the sheet, display only permitted fields, and never expose owner-private records; missing photo or hidden display name has a graceful presentation.
+- Block/Unblock from the sheet uses existing confirmation and effects; self and guest actions are absent; blocking/revocation/account changes cannot leave formerly authorized private photos cached or visible.
+- Demonstrate in tests/network mocks that a 160px row uses the small object and does not download the 512px object until the full sheet is opened. Test photo replacement, fallback legacy objects, cache invalidation, bytes, dimensions, refusal and offline error states.
+- Cover Project, Tavolo and other wired person entry points with Flutter widget tests (IT/EN, back/drag, small screens, text scaling and accessibility). Run focused Storage/RPC/RLS and migration-replay tests for media changes and appropriate mobile/static analysis checks. Use test phone `48091FDAS0041A` only if physical-device testing is appropriate and available; report rather than claim an unrun test.
+- Update feature docs and localized strings. Return PR link, changed files, exact tests/results, security implications, media sizes measured, migration/rollout needs and unresolved decisions. Stop and report if the existing access model cannot authorize a proposed sheet field or media variant without a substantive privacy-policy decision.
+
+**External context:** The 11 October product discussion agreed on the bottom-sheet preview and thumbnail/full distinction; this prompt contains the required decisions. `Planets Community Design` on Google Drive is optional background only, not a required Codex dependency.

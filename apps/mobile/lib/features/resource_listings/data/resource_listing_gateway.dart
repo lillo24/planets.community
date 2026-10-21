@@ -13,6 +13,7 @@ abstract interface class ResourceListingGateway {
     required int limit,
     ResourceListingCursor? cursor,
     ResourceListingMode? mode,
+    ResourceCategory? category,
     String? locality,
     String? query,
   });
@@ -54,6 +55,7 @@ class ResourceListingRpcContract {
     required int limit,
     ResourceListingCursor? cursor,
     ResourceListingMode? mode,
+    ResourceCategory? category,
     String? locality,
     String? query,
   }) => {
@@ -61,6 +63,7 @@ class ResourceListingRpcContract {
     'p_cursor_published_at': cursor?.publishedAt.toUtc().toIso8601String(),
     'p_cursor_id': cursor?.id,
     'p_listing_mode': mode?.wireValue,
+    'p_category_slug': category?.wireValue,
     'p_locality': locality,
     'p_query': query,
   };
@@ -71,6 +74,7 @@ class ResourceListingRpcContract {
   ) => {
     'p_expected_owner_profile_id': expectedOwnerId,
     'p_listing_mode': input.mode.wireValue,
+    'p_category_slug': input.category?.wireValue,
     'p_title': input.title,
     'p_description': input.description,
     'p_country_code': input.countryCode,
@@ -100,6 +104,7 @@ class ResourceListingPayloadParser {
           parentSegment: 'resources',
         ),
         mode: ResourceListingMode.fromWire(_string(row, 'listing_mode')),
+        category: _category(row),
         title: _string(row, 'title'),
         description: _string(row, 'description'),
         countryCode: _string(row, 'country_code'),
@@ -146,6 +151,7 @@ class ResourceListingPayloadParser {
       ),
       ownerProfileId: _uuid(row, 'owner_profile_id'),
       mode: ResourceListingMode.fromWire(_string(row, 'listing_mode')),
+      category: _category(row),
       lifecycle: lifecycle,
       title: _optionalString(row, 'title'),
       description: _optionalString(row, 'description'),
@@ -158,6 +164,11 @@ class ResourceListingPayloadParser {
       publishedAt: publishedAt,
       closedAt: closedAt,
     );
+  }
+
+  ResourceCategory? _category(Map<String, dynamic> row) {
+    final value = _optionalString(row, 'category_slug');
+    return value == null ? null : ResourceCategory.fromWire(value);
   }
 
   String _string(Map<String, dynamic> row, String key) {
@@ -224,15 +235,17 @@ class SupabaseResourceListingGateway implements ResourceListingGateway {
     required int limit,
     ResourceListingCursor? cursor,
     ResourceListingMode? mode,
+    ResourceCategory? category,
     String? locality,
     String? query,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_public_resource_listings',
+      'list_public_resource_listings_v2',
       params: contract.publicListParams(
         limit: limit,
         cursor: cursor,
         mode: mode,
+        category: category,
         locality: locality,
         query: query,
       ),
@@ -248,7 +261,7 @@ class SupabaseResourceListingGateway implements ResourceListingGateway {
     String listingId,
   ) async {
     final response = await _client.rpc<List<dynamic>>(
-      'get_public_resource_listing',
+      'get_public_resource_listing_v2',
       params: {'p_listing_id': listingId},
     );
     final rows = response.cast<Map<String, dynamic>>();
@@ -261,7 +274,7 @@ class SupabaseResourceListingGateway implements ResourceListingGateway {
   ) async {
     final response = await readOwnerCollection(
       _client,
-      'list_own_resource_listings',
+      'list_own_resource_listings_v2',
       params: {'p_expected_owner_profile_id': expectedOwnerId},
       idColumn: 'listing_id',
       descendingIdTie: true,
@@ -278,7 +291,7 @@ class SupabaseResourceListingGateway implements ResourceListingGateway {
     String listingId,
   ) async {
     final response = await _client.rpc<List<dynamic>>(
-      'get_own_resource_listing',
+      'get_own_resource_listing_v2',
       params: contract.ownerListingParams(expectedOwnerId, listingId),
     );
     final rows = response.cast<Map<String, dynamic>>();
@@ -292,8 +305,8 @@ class SupabaseResourceListingGateway implements ResourceListingGateway {
     String? clientRequestId,
   }) => _client.rpc<String>(
     clientRequestId == null
-        ? 'create_resource_listing_draft'
-        : 'create_editor_resource_listing_draft',
+        ? 'create_resource_listing_draft_v2'
+        : 'create_editor_resource_listing_draft_v2',
     params: {
       ...contract.contentParams(expectedOwnerId, input),
       'p_client_request_id': ?clientRequestId,
@@ -307,7 +320,7 @@ class SupabaseResourceListingGateway implements ResourceListingGateway {
     ResourceListingInput input,
   ) async {
     await _client.rpc<String>(
-      'update_own_resource_listing',
+      'update_own_resource_listing_v2',
       params: {
         ...contract.contentParams(expectedOwnerId, input),
         'p_listing_id': listingId,
