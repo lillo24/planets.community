@@ -3124,5 +3124,7 @@
   "discussionPersonInviteHelp": "This sends an invitation to the selected Idea. The person must accept before joining.",
   "discussionPersonInviteGroupAudience": "Group-visible Idea. Current Group people can join.",
   "discussionPersonInviteRestrictedAudience": "Invitation-only Idea. Current Group managers can read it.",
-  "discussionPersonInvited": "Invitation sent. Acceptance is still required."
+  "discussionPersonInvited": "Invitation sent. Acceptance is still required.",
+  "eventScheduleZone": "Times shown in {zone}",
+  "@eventScheduleZone": { "placeholders": { "zone": { "type": "String" } } }
 }
