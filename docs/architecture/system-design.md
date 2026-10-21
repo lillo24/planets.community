@@ -117,6 +117,13 @@ PostgreSQL is the canonical record for accounts, profiles, proposals, standalone
 
 External systems such as FCM, Resend, Sentry, and PostHog are delivery or observation tools. They must not become the only record of product state.
 
+ACTMET01 adds explicit mobile public-Tavolo card navigation and ordinary public
+copy/share-handoff signals behind a denied analytics permission gate. They are
+internal attention metrics, never attendance, capacity or public popularity.
+Production PostHog transport remains absent/blocked because the inspected Flutter
+SDK cannot meet the no-persistent-identity contract; configuration alone cannot
+activate it. See the [metrics and activation guide](../development/activity-interest-metrics.md).
+
 ### Identity and transaction-local operational primitives
 
 Supabase Auth's `auth.users` row is the login identity. The matching `public.profiles` row is the stable PLANETS application identity anchor and uses the same UUID. It owns a casing-preserving display name, optional bio, and database-maintained timestamps. A profile is complete exactly when its display name is non-null after canonical validation; there is no writable completion flag. There is no signup trigger, so an Auth identity without a profile anchor remains a valid transitional state and the authenticated application flow must create its own anchor explicitly.

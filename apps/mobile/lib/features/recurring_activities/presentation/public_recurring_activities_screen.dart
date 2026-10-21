@@ -27,6 +27,8 @@ import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../activity_interest/application/activity_interest_tracker.dart';
+import '../../activity_interest/domain/activity_interest_event.dart';
 import '../../cover_media/presentation/project_cover_image.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../drafts/domain/draft_entry.dart';
@@ -56,6 +58,20 @@ class _PublicRecurringActivitiesScreenState
     extends ConsumerState<PublicRecurringActivitiesScreen> {
   late final TextEditingController _localityController;
   bool _filtersExpanded = false;
+  final _openingActivities = <String>{};
+
+  Future<void> _openActivity(String id) async {
+    if (!_openingActivities.add(id)) return;
+    final item = PublicActivityInterestItem.tavolo(id);
+    if (item != null) {
+      recordActivityInterest(ref, ActivityInterestEvent.cardOpened(item));
+    }
+    try {
+      await context.push<void>('/tavoli/$id');
+    } finally {
+      _openingActivities.remove(id);
+    }
+  }
 
   @override
   void initState() {
@@ -215,8 +231,7 @@ class _PublicRecurringActivitiesScreenState
                         builder: (context) => RecurringActivityCard(
                           activity: requested.activity,
                           isRequested: true,
-                          onTap: () =>
-                              context.push('/tavoli/${requested.activity.id}'),
+                          onTap: () => _openActivity(requested.activity.id),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.medium),
@@ -235,7 +250,7 @@ class _PublicRecurringActivitiesScreenState
                     Builder(
                       builder: (context) => RecurringActivityCard(
                         activity: activity,
-                        onTap: () => context.push('/tavoli/${activity.id}'),
+                        onTap: () => _openActivity(activity.id),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.medium),

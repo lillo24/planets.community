@@ -79,9 +79,16 @@ revocation passes the displayed generation ID. Preview availability is an
 independent read: an unavailable link is labelled honestly, and a failed preview
 does not prevent useful authorized revocation/history. There is no fixed expiry.
 
+ACTMET01 passes a typed public item only in ordinary Tavolo mode. Successful
+copy/native handoffs require an exact ordinary-URL match and current account,
+route and mode before reaching the [activity-interest tracker](../activity_interest/README.md).
+Special participant and authority controls never supply that item, and Progetti
+remain excluded. Opening or cancelling a dialog emits nothing; native dismissal
+after invocation is labelled only `share_sheet_invoked`.
+
 Sentry drops capability-bearing events and breadcrumbs, including encoded Auth
 `returnTo` paths, RPC token fields and standalone opaque tokens. This filter lives
-in `core/monitoring`; no analytics or token logging is added.
+in `core/monitoring`; invitation analytics and token logging remain excluded.
 
 See the [PI02 record](../../../../../docs/implementation/pi02-mobile-participant-invitations.md)
 for validation and the disposable backend/internal-route smoke procedure.

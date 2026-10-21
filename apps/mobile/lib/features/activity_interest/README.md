@@ -1,0 +1,30 @@
+# Activity interest (ACTMET01)
+
+This feature owns two explicit, internal attention signals for real public
+activities. It owns no attendance, registration, popularity or canonical domain
+state. **Production transmission is disabled and SDK activation is blocked.**
+
+- `domain/activity_interest_event.dart` owns the closed version-1 vocabulary,
+  lowercase canonical UUID validation and immutable property allowlist. Only
+  `tavolo` exists; fictional examples and speculative imported models cannot be
+  passed as item kinds.
+- `application/activity_interest_tracker.dart` owns independent configuration
+  and denied-by-default permission providers, actor/readiness invalidation,
+  short gesture deduplication, volume bounds and best-effort dispatch.
+- `data/activity_interest_sink.dart` owns explicit delivery outcomes and the
+  no-op sink.
+- `data/posthog_activity_interest_sink.dart` owns the EU/manual-only adapter and
+  the app-owned client requirements. There is **no installed production SDK
+  client**. Its injected client is a test seam, not an assertion that the SDK
+  exposes these options. Unsupported identity persistence fails closed.
+
+The public Tavoli list calls the tracker from its Requested and ordinary card
+callbacks. The ordinary `ProjectShareDialog` supplies a typed public Tavolo to
+`ShareLinkButtons`; platform success, exact ordinary URL, account, route and
+mode checks must pass before recording. Invitation controls leave this nullable
+argument unset. No router observer or widget-build capture exists.
+
+`test/support/fake_activity_interest.dart` provides an inspectable in-memory
+sink and mutable test permission. Neither is used by production bootstrap.
+See the [metrics and activation guide](../../../../../docs/development/activity-interest-metrics.md)
+for boundaries, counts, SDK evidence and future importer integration.

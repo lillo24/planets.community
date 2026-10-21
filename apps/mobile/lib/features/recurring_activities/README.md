@@ -1,5 +1,11 @@
 # Recurring activities (Tavoli)
 
+ACTMET01 instruments the deliberate public Requested/ordinary card callbacks
+through the [activity-interest boundary](../activity_interest/README.md), in
+either split-mode state. Duplicate callbacks while that detail is open share one
+navigation attempt. Builds, retained-list return and direct links do not emit.
+The same public detail uses the existing ordinary-link share boundary.
+
 GRP03C composes [group publication selection](../group_projects/README.md) with
 the existing editor save chain. Draft hydration reads its confirmed private
 binding; atomic creation and first publication keep the human Creator. Public
