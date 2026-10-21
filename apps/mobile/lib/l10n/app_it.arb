@@ -1376,6 +1376,12 @@
   "projectCountOrganizersCapacityLabel": "Conta gli organizzatori nella capienza",
   "projectCountOrganizersCapacityHelp": "Il Creatore e gli organizzatori useranno posti d'iscrizione disponibili. Puoi modificare questa scelta in seguito nelle impostazioni del progetto.",
   "projectOrganizerCapacityConflict": "Aumenta la capienza iscrizioni prima di conteggiare gli organizzatori.",
+  "projectPeopleFraction": "{people}/{capacity} {capacity, plural, =1{persona} other{persone}}",
+  "@projectPeopleFraction": {"placeholders": {"people": {"type": "int"}, "capacity": {"type": "int"}}},
+  "projectPeopleCapacity": "Fino a {capacity} {capacity, plural, =1{persona} other{persone}}",
+  "@projectPeopleCapacity": {"placeholders": {"capacity": {"type": "int"}}},
+  "projectPeopleCount": "{count, plural, =1{1 persona} other{{count} persone}}",
+  "@projectPeopleCount": {"placeholders": {"count": {"type": "int"}}},
   "projectCapacityNotSet": "Capienza iscrizioni non impostata",
   "projectCapacityUpToParticipants": "Fino a {capacity} partecipanti",
   "@projectCapacityUpToParticipants": { "placeholders": { "capacity": { "type": "int" } } },
@@ -1383,9 +1389,9 @@
   "@projectCapacityLimit": { "placeholders": { "capacity": { "type": "int" } } },
   "projectCapacityUsage": "{used} / {capacity} posti utilizzati",
   "projectCapacityParticipantUsage": "{participants} / {capacity} posti partecipante utilizzati",
-  "projectOrganizerIncludedCount": "{count} organizzatori inclusi",
-  "projectOrganizerCount": "{count} organizzatori",
-  "projectCapacityFullLabel": "Al completo · {summary}",
+  "projectOrganizerIncludedCount": "{count, plural, =1{1 organizzatore incluso} other{{count} organizzatori inclusi}}",
+  "projectOrganizerCount": "{count, plural, =1{1 organizzatore} other{{count} organizzatori}}",
+  "projectCapacityFullLabel": "Al completo: {summary}",
   "projectSocialPeopleInvolved": "{count} persone uniche coinvolte",
   "projectCapacityManagerSummary": "{participants} adesioni attuali · {organizers} organizzatori · {used} / {capacity} posti utilizzati",
   "projectCapacityOrganizersIncluded": "Il Creatore e gli organizzatori usano posti d'iscrizione.",
@@ -2387,6 +2393,27 @@
   "discussionPersonInviteGroupAudience": "Idea visibile al Gruppo. Le persone attuali del Gruppo possono partecipare.",
   "discussionPersonInviteRestrictedAudience": "Idea su invito. I gestori attuali del Gruppo possono leggerla.",
   "discussionPersonInvited": "Invito inviato. È ancora necessaria l'accettazione.",
+  "resourceCategoryField": "Categoria",
+  "resourceCategoryAll": "Tutte",
+  "resourceCategoryUnset": "Non categorizzato",
+  "resourceCategoryRequired": "Scegli una categoria prima di pubblicare.",
+  "resourceCategoryToolsDiy": "Attrezzi e fai-da-te",
+  "resourceCategoryGardenOutdoors": "Giardinaggio ed esterni",
+  "resourceCategoryHomeFurniture": "Casa e arredamento",
+  "resourceCategoryElectronics": "Elettronica",
+  "resourceCategoryClothingAccessories": "Abbigliamento e accessori",
+  "resourceCategoryBooksLearning": "Libri e materiali didattici",
+  "resourceCategorySportsHobbies": "Sport, hobby e giochi",
+  "resourceCategoryMaterials": "Materiali e forniture",
+  "resourceCategoryOther": "Altro",
+  "resourceSavedSearchCategoryFilter": "Categoria: {category}",
+  "@resourceSavedSearchCategoryFilter": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
   "eventScheduleZone": "Orari in {zone}",
   "@eventScheduleZone": { "placeholders": { "zone": { "type": "String" } } }
 }

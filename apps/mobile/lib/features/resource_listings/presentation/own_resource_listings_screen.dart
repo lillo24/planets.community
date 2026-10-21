@@ -14,6 +14,7 @@ import '../../cover_media/presentation/cover_image.dart';
 import '../application/resource_listing_controllers.dart';
 import '../domain/resource_listing_models.dart';
 import 'resource_listing_widgets.dart';
+import 'resource_category_field.dart';
 
 class OwnResourceListingsScreen extends ConsumerStatefulWidget {
   const OwnResourceListingsScreen({super.key});
@@ -160,6 +161,8 @@ class _OwnResourceListingCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xSmall),
                 ResourceListingLifecycleBadge(lifecycle: listing.lifecycle),
+                if (listing.category case final category?)
+                  ResourceCategoryText(category: category),
                 if (listing.publicLocationLabel case final location?) ...[
                   const SizedBox(height: AppSpacing.small),
                   Text(location),

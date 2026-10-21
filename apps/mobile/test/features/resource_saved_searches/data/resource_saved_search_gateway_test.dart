@@ -55,6 +55,28 @@ void main() {
     }
   });
 
+  test('category-only parsing and serialization retain canonical slugs', () {
+    final row = {
+      ..._row(),
+      'query': null,
+      'listing_mode': null,
+      'locality': null,
+      'category_slug': 'tools_diy',
+    };
+    final saved = parser.savedSearch(row);
+    expect(saved.category, ResourceCategory.toolsDiy);
+    expect(saved.input.isValid, isTrue);
+    expect(
+      contract.inputParams('profile-id', saved.input)['p_category_slug'],
+      'tools_diy',
+    );
+    expect(parser.savedSearch(_row()).category, isNull);
+    expect(
+      () => parser.savedSearch({...row, 'category_slug': 'unknown'}),
+      throwsFormatException,
+    );
+  });
+
   test('maps nullable input and update target exactly', () {
     const input = ResourceSavedSearchInput(
       query: 'tools',
@@ -65,6 +87,7 @@ void main() {
       'p_expected_profile_id': 'profile-id',
       'p_query': 'tools',
       'p_listing_mode': null,
+      'p_category_slug': null,
       'p_locality': null,
     });
     expect(contract.targetParams('profile-id', resourceSavedSearchId), {
@@ -97,17 +120,17 @@ void main() {
     });
   });
 
-  test('gateway source uses exactly the five F1 RPCs and no table read', () {
+  test('gateway source uses category-aware RPCs and legacy delete with no table read', () {
     final source = File(
       'lib/features/resource_saved_searches/data/resource_saved_search_gateway.dart',
     ).readAsStringSync();
     expect(source, isNot(contains(".from('resource_saved_searches')")));
     for (final rpc in [
-      'create_resource_saved_search',
-      'update_resource_saved_search',
+      'create_resource_saved_search_v2',
+      'update_resource_saved_search_v2',
       'delete_resource_saved_search',
-      'get_own_resource_saved_search',
-      'list_own_resource_saved_searches',
+      'get_own_resource_saved_search_v2',
+      'list_own_resource_saved_searches_v2',
     ]) {
       expect(source, contains("'$rpc'"));
     }

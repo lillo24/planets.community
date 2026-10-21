@@ -43,6 +43,7 @@ class ResourceSavedSearchRpcContract {
     'p_expected_profile_id': expectedProfileId,
     'p_query': input.query,
     'p_listing_mode': input.mode?.wireValue,
+    'p_category_slug': input.category?.wireValue,
     'p_locality': input.locality,
   };
 
@@ -73,10 +74,14 @@ class ResourceSavedSearchPayloadParser {
     final query = _optionalBoundedString(row, 'query');
     final locality = _optionalBoundedString(row, 'locality');
     final modeValue = _optionalBoundedString(row, 'listing_mode');
+    final categoryValue = _optionalBoundedString(row, 'category_slug');
+    final category = categoryValue == null
+        ? null
+        : ResourceCategory.fromWire(categoryValue);
     final mode = modeValue == null
         ? null
         : ResourceListingMode.fromWire(modeValue);
-    if (query == null && mode == null && locality == null) {
+    if (query == null && mode == null && locality == null && category == null) {
       throw const FormatException(
         'Resource saved search contained no filters.',
       );
@@ -92,6 +97,7 @@ class ResourceSavedSearchPayloadParser {
       id: _uuid(row, 'saved_search_id'),
       query: query,
       mode: mode,
+      category: category,
       locality: locality,
       createdAt: createdAt,
       updatedAt: updatedAt,
@@ -153,7 +159,7 @@ class SupabaseResourceSavedSearchGateway implements ResourceSavedSearchGateway {
     String expectedProfileId,
     ResourceSavedSearchInput input,
   ) => _client.rpc<String>(
-    'create_resource_saved_search',
+    'create_resource_saved_search_v2',
     params: contract.inputParams(expectedProfileId, input),
   );
 
@@ -164,7 +170,7 @@ class SupabaseResourceSavedSearchGateway implements ResourceSavedSearchGateway {
     ResourceSavedSearchInput input,
   ) async {
     await _client.rpc<String>(
-      'update_resource_saved_search',
+      'update_resource_saved_search_v2',
       params: {
         ...contract.inputParams(expectedProfileId, input),
         'p_saved_search_id': savedSearchId,
@@ -186,7 +192,7 @@ class SupabaseResourceSavedSearchGateway implements ResourceSavedSearchGateway {
     String savedSearchId,
   ) async {
     final response = await _client.rpc<List<dynamic>>(
-      'get_own_resource_saved_search',
+      'get_own_resource_saved_search_v2',
       params: contract.targetParams(expectedProfileId, savedSearchId),
     );
     final rows = response.cast<Map<String, dynamic>>();
@@ -200,7 +206,7 @@ class SupabaseResourceSavedSearchGateway implements ResourceSavedSearchGateway {
     ResourceSavedSearchCursor? cursor,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_resource_saved_searches',
+      'list_own_resource_saved_searches_v2',
       params: contract.listParams(
         expectedProfileId: expectedProfileId,
         pageSize: pageSize,

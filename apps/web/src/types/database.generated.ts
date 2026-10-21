@@ -2330,6 +2330,7 @@ export type Database = {
       resource_listings: {
         Row: {
           administrative_area: string | null
+          category_slug: string | null
           closed_at: string | null
           country_code: string | null
           created_at: string
@@ -2349,6 +2350,7 @@ export type Database = {
         }
         Insert: {
           administrative_area?: string | null
+          category_slug?: string | null
           closed_at?: string | null
           country_code?: string | null
           created_at?: string
@@ -2368,6 +2370,7 @@ export type Database = {
         }
         Update: {
           administrative_area?: string | null
+          category_slug?: string | null
           closed_at?: string | null
           country_code?: string | null
           created_at?: string
@@ -2462,6 +2465,7 @@ export type Database = {
       }
       resource_saved_searches: {
         Row: {
+          category_slug: string | null
           created_at: string
           id: string
           listing_mode: string | null
@@ -2471,6 +2475,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category_slug?: string | null
           created_at?: string
           id?: string
           listing_mode?: string | null
@@ -2480,6 +2485,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category_slug?: string | null
           created_at?: string
           id?: string
           listing_mode?: string | null
@@ -3084,6 +3090,21 @@ export type Database = {
         }
         Returns: string
       }
+      create_editor_resource_listing_draft_v2: {
+        Args: {
+          p_administrative_area: string
+          p_category_slug: string
+          p_client_request_id: string
+          p_country_code: string
+          p_description: string
+          p_expected_owner_profile_id: string
+          p_listing_mode: string
+          p_locality: string
+          p_public_location_label: string
+          p_title: string
+        }
+        Returns: string
+      }
       create_group_authority_invitation: {
         Args: {
           p_client_request_id: string
@@ -3487,8 +3508,32 @@ export type Database = {
         }
         Returns: string
       }
+      create_resource_listing_draft_v2: {
+        Args: {
+          p_administrative_area: string
+          p_category_slug: string
+          p_country_code: string
+          p_description: string
+          p_expected_owner_profile_id: string
+          p_listing_mode: string
+          p_locality: string
+          p_public_location_label: string
+          p_title: string
+        }
+        Returns: string
+      }
       create_resource_saved_search: {
         Args: {
+          p_expected_profile_id: string
+          p_listing_mode: string
+          p_locality: string
+          p_query: string
+        }
+        Returns: string
+      }
+      create_resource_saved_search_v2: {
+        Args: {
+          p_category_slug: string
           p_expected_profile_id: string
           p_listing_mode: string
           p_locality: string
@@ -4253,6 +4298,27 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_own_resource_listing_v2: {
+        Args: { p_expected_owner_profile_id: string; p_listing_id: string }
+        Returns: {
+          administrative_area: string
+          category_slug: string | null
+          closed_at: string
+          country_code: string
+          cover_object_path: string
+          created_at: string
+          description: string
+          lifecycle_state: string
+          listing_id: string
+          listing_mode: string
+          locality: string
+          owner_profile_id: string
+          public_location_label: string
+          published_at: string
+          title: string
+          updated_at: string
+        }[]
+      }
       get_own_resource_request_chat: {
         Args: { p_chat_id: string; p_expected_profile_id: string }
         Returns: {
@@ -4281,6 +4347,18 @@ export type Database = {
       get_own_resource_saved_search: {
         Args: { p_expected_profile_id: string; p_saved_search_id: string }
         Returns: {
+          created_at: string
+          listing_mode: string
+          locality: string
+          query: string
+          saved_search_id: string
+          updated_at: string
+        }[]
+      }
+      get_own_resource_saved_search_v2: {
+        Args: { p_expected_profile_id: string; p_saved_search_id: string }
+        Returns: {
+          category_slug: string | null
           created_at: string
           listing_mode: string
           locality: string
@@ -4603,6 +4681,25 @@ export type Database = {
         Returns: {
           active_request_count: number
           administrative_area: string
+          country_code: string
+          cover_object_path: string
+          description: string
+          listing_id: string
+          listing_mode: string
+          locality: string
+          owner_display_name: string
+          owner_profile_id: string
+          public_location_label: string
+          published_at: string
+          title: string
+        }[]
+      }
+      get_public_resource_listing_v2: {
+        Args: { p_listing_id: string }
+        Returns: {
+          active_request_count: number
+          administrative_area: string
+          category_slug: string | null
           country_code: string
           cover_object_path: string
           description: string
@@ -5850,6 +5947,27 @@ export type Database = {
           updated_at: string
         }[]
       }
+      list_own_resource_listings_v2: {
+        Args: { p_expected_owner_profile_id: string }
+        Returns: {
+          administrative_area: string
+          category_slug: string | null
+          closed_at: string
+          country_code: string
+          cover_object_path: string
+          created_at: string
+          description: string
+          lifecycle_state: string
+          listing_id: string
+          listing_mode: string
+          locality: string
+          owner_profile_id: string
+          public_location_label: string
+          published_at: string
+          title: string
+          updated_at: string
+        }[]
+      }
       list_own_resource_request_chat_messages: {
         Args: {
           p_before_created_at?: string
@@ -5905,6 +6023,23 @@ export type Database = {
           p_limit?: number
         }
         Returns: {
+          created_at: string
+          listing_mode: string
+          locality: string
+          query: string
+          saved_search_id: string
+          updated_at: string
+        }[]
+      }
+      list_own_resource_saved_searches_v2: {
+        Args: {
+          p_cursor_id?: string
+          p_cursor_updated_at?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: {
+          category_slug: string | null
           created_at: string
           listing_mode: string
           locality: string
@@ -6579,6 +6714,31 @@ export type Database = {
         Returns: {
           active_request_count: number
           administrative_area: string
+          country_code: string
+          cover_object_path: string
+          description: string
+          listing_id: string
+          listing_mode: string
+          locality: string
+          public_location_label: string
+          published_at: string
+          title: string
+        }[]
+      }
+      list_public_resource_listings_v2: {
+        Args: {
+          p_category_slug?: string
+          p_cursor_id?: string
+          p_cursor_published_at?: string
+          p_limit?: number
+          p_listing_mode?: string
+          p_locality?: string
+          p_query?: string
+        }
+        Returns: {
+          active_request_count: number
+          administrative_area: string
+          category_slug: string | null
           country_code: string
           cover_object_path: string
           description: string
@@ -7946,6 +8106,21 @@ export type Database = {
         }
         Returns: string
       }
+      update_own_resource_listing_v2: {
+        Args: {
+          p_administrative_area: string
+          p_category_slug: string
+          p_country_code: string
+          p_description: string
+          p_expected_owner_profile_id: string
+          p_listing_id: string
+          p_listing_mode: string
+          p_locality: string
+          p_public_location_label: string
+          p_title: string
+        }
+        Returns: string
+      }
       update_project_resource_need: {
         Args: {
           p_details?: string
@@ -7967,6 +8142,17 @@ export type Database = {
       }
       update_resource_saved_search: {
         Args: {
+          p_expected_profile_id: string
+          p_listing_mode: string
+          p_locality: string
+          p_query: string
+          p_saved_search_id: string
+        }
+        Returns: string
+      }
+      update_resource_saved_search_v2: {
+        Args: {
+          p_category_slug: string
           p_expected_profile_id: string
           p_listing_mode: string
           p_locality: string

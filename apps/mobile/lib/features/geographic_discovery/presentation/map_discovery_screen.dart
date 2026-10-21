@@ -19,6 +19,7 @@ import '../../proposals/application/proposal_controllers.dart';
 import '../../proposals/domain/proposal_time.dart';
 import '../../recurring_activities/application/recurring_activity_controllers.dart';
 import '../../resource_listings/application/resource_listing_controllers.dart';
+import '../../resource_listings/presentation/resource_category_field.dart';
 import '../application/geographic_discovery_controller.dart';
 import '../application/map_discovery_sessions.dart';
 import '../application/shared_basemap_tiles.dart';
@@ -84,6 +85,7 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
       proposalSkillIds: projects.selectedSkillIds.toList()..sort(),
       tavoloLocality: tavoli.locality,
       resourceKeyword: resources.query,
+      resourceCategory: resources.categoryFilter,
       resourceLocality: resources.locality,
       resourceMode: resources.modeFilter == null
           ? null
@@ -123,6 +125,7 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
     resourceKeyword: _resources ? _filters.resourceKeyword : null,
     resourceLocality: _resources ? _filters.resourceLocality : null,
     resourceMode: _resources ? _filters.resourceMode : null,
+    resourceCategory: _resources ? _filters.resourceCategory : null,
   );
 
   @override
@@ -525,6 +528,8 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
         '${l10n.resourceTitle}: ${_query.resourceKeyword}',
       if (_query.resourceLocality?.isNotEmpty == true)
         '${l10n.resourceTitle}: ${_query.resourceLocality}',
+      if (_query.resourceCategory case final category?)
+        resourceCategoryLabel(l10n, category),
       if (_query.resourceMode != null)
         _query.resourceMode == GeoResourceMode.donate
             ? l10n.resourceModeDonate

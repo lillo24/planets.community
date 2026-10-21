@@ -21,6 +21,146 @@ const _resourceCoverPath =
     '00000000-0000-4000-8000-000000000301.webp';
 
 void main() {
+  test('category requests reject stale pages, retain retry state, and clear to All', () async {
+    final first = Completer<List<PublicResourceListingSummary>>();
+    final second = Completer<List<PublicResourceListingSummary>>();
+    final gateway = FakeResourceListingGateway();
+    gateway.publicLoader = ({required limit, cursor, mode, locality, query}) =>
+        gateway.lastCategory == ResourceCategory.toolsDiy
+        ? first.future
+        : second.future;
+    final container = ProviderContainer(
+      overrides: [resourceListingGatewayProvider.overrideWithValue(gateway)],
+    );
+    addTearDown(container.dispose);
+    final controller = container.read(publicResourceListingsProvider.notifier);
+    final oldLoad = controller.applyFilters(
+      mode: null,
+      locality: '',
+      query: '',
+      category: ResourceCategory.toolsDiy,
+    );
+    await pumpEventQueue();
+    final newLoad = controller.applyFilters(
+      mode: null,
+      locality: '',
+      query: '',
+      category: ResourceCategory.materials,
+    );
+    second.complete([
+      publicResourceListingFixture(
+        title: 'Current materials',
+        category: ResourceCategory.materials,
+      ),
+    ]);
+    await newLoad;
+    first.complete([
+      publicResourceListingFixture(
+        title: 'Stale tools',
+        category: ResourceCategory.toolsDiy,
+      ),
+    ]);
+    await oldLoad;
+    expect(
+      container.read(publicResourceListingsProvider).items.single.title,
+      'Current materials',
+    );
+    expect(
+      container.read(publicResourceListingsProvider).categoryFilter,
+      ResourceCategory.materials,
+    );
+    expect(container.read(publicResourceListingsProvider).hasFilters, isTrue);
+    gateway.publicLoader = ({required limit, cursor, mode, locality, query}) =>
+        Future.error(StateError('synthetic failure'));
+    await controller.load(force: true);
+    expect(
+      container.read(publicResourceListingsProvider).phase,
+      ResourceListingLoadPhase.failure,
+    );
+    expect(
+      container.read(publicResourceListingsProvider).categoryFilter,
+      ResourceCategory.materials,
+    );
+    gateway.publicLoader = null;
+    await controller.retry();
+    expect(gateway.lastCategory, ResourceCategory.materials);
+    await controller.applyFilters(
+      mode: null,
+      locality: '',
+      query: '',
+      category: null,
+    );
+    expect(gateway.lastCategory, isNull);
+    expect(container.read(publicResourceListingsProvider).hasFilters, isFalse);
+  });
+
+  test(
+    'new publication requires category; legacy published edits remain allowed',
+    () async {
+      final gateway = FakeResourceListingGateway();
+      final session = _readyContainer(gateway);
+      addTearDown(session.container.dispose);
+      addTearDown(session.auth.close);
+      final editor = session.container.read(
+        resourceListingEditorProvider.notifier,
+      );
+      await editor.load(resourceOwnerProfileId, null);
+      expect(
+        await editor.publish(
+          resourceOwnerProfileId,
+          resourceListingInputFixture(category: null),
+        ),
+        isNull,
+      );
+      expect(gateway.createCount, 0);
+      expect(
+        await editor.save(
+          resourceOwnerProfileId,
+          resourceListingInputFixture(category: null),
+        ),
+        newResourceListingId,
+      );
+      expect(gateway.lastInput?.category, isNull);
+      gateway.ownItems = [
+        ownResourceListingFixture(
+          lifecycle: ResourceListingLifecycle.published,
+          input: resourceListingInputFixture(category: null),
+        ),
+      ];
+      await editor.load(resourceOwnerProfileId, resourceListingId);
+      expect(
+        await editor.save(
+          resourceOwnerProfileId,
+          resourceListingInputFixture(title: 'Legacy edit', category: null),
+        ),
+        resourceListingId,
+      );
+      expect(gateway.lastInput?.category, isNull);
+    },
+  );
+
+  test('public account reset preserves the category filter', () async {
+    final session = _readyContainer(FakeResourceListingGateway());
+    addTearDown(session.container.dispose);
+    addTearDown(session.auth.close);
+    await session.container
+        .read(publicResourceListingsProvider.notifier)
+        .applyFilters(
+          mode: null,
+          locality: '',
+          query: '',
+          category: ResourceCategory.toolsDiy,
+        );
+    session.container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: otherProfileId));
+    await pumpEventQueue();
+    expect(
+      session.container.read(publicResourceListingsProvider).categoryFilter,
+      ResourceCategory.toolsDiy,
+    );
+  });
+
   test('MAP02 response-loss bootstrap retries one actor request before applying newer content', () async {
     final gateway = FakeResourceListingGateway()
       ..createResponseError = StateError('synthetic lost response');
