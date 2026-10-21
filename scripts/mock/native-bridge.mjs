@@ -377,6 +377,14 @@ export async function nativeBridge({
                       action: authAction,
                       status,
                     })),
+                  mockRpc: calls
+                    .filter(
+                      (r) =>
+                        r.realm === "mock" &&
+                        /^[a-z_]+$/.test(r.operation ?? ""),
+                    )
+                    .slice(-20)
+                    .map(({ operation, status }) => ({ operation, status })),
                 }),
               );
             }

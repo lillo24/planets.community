@@ -19,6 +19,7 @@ import 'package:planets_mobile/features/auth/application/auth_command_controller
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/mock_mode/application/mock_mode_coordinator.dart';
 import 'package:planets_mobile/features/mock_mode/presentation/mock_mode_routes.dart';
+import 'package:planets_mobile/features/project_chat/application/project_chat_controllers.dart';
 import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
 import 'package:planets_mobile/features/settings/domain/language_preference.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
@@ -176,6 +177,30 @@ void main() {
         final response = await upload.close();
         expect(response.statusCode, 200);
         await response.drain<void>();
+      }
+
+      Future<void> sendChat(String body, String name) async {
+        operation = 'send-chat-$name';
+        final composer = find.byKey(const Key('project-chat-composer'));
+        await tester.enterText(composer, body);
+        // Let the real keyboard close before locating the send action at 2x.
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pump(const Duration(milliseconds: 600));
+        await tap(find.byKey(const Key('project-chat-send')));
+        try {
+          await wait(
+            () =>
+                tester.widget<TextField>(composer).controller!.text.isEmpty ||
+                scope().read(projectChatDetailProvider).failure != null,
+            'chat composer acknowledged $name',
+          );
+          final failure = scope().read(projectChatDetailProvider).failure;
+          expect(failure, isNull, reason: 'Canonical send ${failure?.name}');
+          await reveal(find.text(body));
+        } catch (_) {
+          await capture('chat-failure-$name');
+          rethrow;
+        }
       }
 
       Future<void> ready(String id) async {
@@ -420,16 +445,7 @@ void main() {
               .isNotEmpty,
           'Giulia genuine chat',
         );
-        await tester.enterText(
-          find.byKey(const Key('project-chat-composer')),
-          'Native mock hello from Giulia',
-        );
-        await tap(find.byKey(const Key('project-chat-send')));
-        await wait(
-          () =>
-              find.text('Native mock hello from Giulia').evaluate().isNotEmpty,
-          'message committed',
-        );
+        await sendChat('Native mock hello from Giulia', 'giulia');
         await capture('giulia-message-committed');
         await picker();
         await asPerson('marco', marco);
@@ -470,15 +486,7 @@ void main() {
               find.text('Native mock hello from Giulia').evaluate().isNotEmpty,
           'Sara reads Giulia message',
         );
-        await tester.enterText(
-          find.byKey(const Key('project-chat-composer')),
-          'Native mock reply from Sara',
-        );
-        await tap(find.byKey(const Key('project-chat-send')));
-        await wait(
-          () => find.text('Native mock reply from Sara').evaluate().isNotEmpty,
-          'Sara reply committed',
-        );
+        await sendChat('Native mock reply from Sara', 'sara');
         await capture('sara-cross-person-reply');
         steps.add('cross-person-chat-canonical');
         final garden = const String.fromEnvironment('MOCK_QA_GARDEN');
