@@ -111,8 +111,10 @@ Then from repository root:
 npm exec -- node scripts/verify-local-cocreate-posts.mjs
 ```
 
-That verifier refuses any connection except the programme-owned local engine
-and loopback endpoints. It uses genuine OTP sessions for fictional
+That verifier requires the programme-owned local engine or an explicit
+`PLANETS_DISPOSABLE_QA=1` opt-in, and always requires loopback endpoints.
+The opt-in permits the existing disposable CI runner and other deliberately
+owned local test stacks; this task uses only its named machine. It uses genuine OTP sessions for fictional
 `@planets.invalid` identities, temporarily enables the gate, exercises uncertain
 retries, concurrent duplicate acceptance/send, crossed accept/withdraw, private
 projections, unread ACK, scoped staff evidence, expiry/closure, blocks and safe

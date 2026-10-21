@@ -79,3 +79,10 @@ unimplemented live features must never be reported as verified.
 - The local ECR image download was exceptionally slow. Only the identified startup process from this worktree was stopped, then retried with process-only SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io and unchanged pinned image versions. Owned startup now runs in exec session 79200. No pre-existing machine or global Podman setting changed.
 - GitHub reports PR #287 CONFLICTING with newer main; Actions is enabled/Validation active, but this conflicting PR has no workflow runs. Next action: fetch and inspect actual newer main, checkpoint this source commit, reconcile only already-merged main, run scope checks and DB qualification, generate exact public types and push the cumulative branch. Do not incorporate another open PR as a shortcut.
 - Remaining stages B02/C01/C02/C03/C04/D01/D02/D03/Q00 are still pending, not silently omitted or claimed complete.
+
+## Main integration and CI checkpoint
+
+- Already-merged MYHUB01 main 037eba7f integrated at a489e72f; only conflict was adjacent test imports, both sides retained. No open ACTAPI01/ACTMET01 PR copied or changed.
+- After integration, **191 affected mobile tests passed** (co-creation, Settings, bootstrap, actual router, draft hub, owner cover cache). Earlier 287-test startup/tutorial run and debug APK pass remain evidence for the pre-integration source; final CI/build must qualify the integrated head.
+- B01 source commit: 2527dc77. Added standard cocreate:posts:verify:local and included it in the existing Database job/full check:db with explicit disposable opt-in. 118 tooling tests, Node syntax, scoped formatting and diff checks pass. The genuine backend/concurrency verifier is still NOT RUN locally.
+- Next: push reconciled source, check classified CI, finish local image startup; replay/lint/pgTAP B01 and A01, fix concrete errors, run genuine Auth/concurrency verifier and generate public types with the repository command. CI type-drift check must remain intact; generated types have not yet been refreshed.

@@ -342,6 +342,13 @@ jobs:
       - name: Verify reviewed conversion and opt-in Project invitations
         run: npm run group:conversion:verify:local
 
+      # Co-creation is enabled only inside this disposable runner and restored
+      # OFF by the verifier. This exercises private consent/block/report races.
+      - name: Verify experimental co-creation posts and accepted contacts
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: npm run cocreate:posts:verify:local
+
       - name: Regenerate public database types
         run: npm run db:types
 

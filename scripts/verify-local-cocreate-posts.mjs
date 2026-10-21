@@ -5,10 +5,12 @@ import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 
 // Never accepts a hosted URL/key. The named engine belongs to this programme.
-assert.equal(process.env.CONTAINER_CONNECTION, "planets-cocreate-qa-root");
-assert.equal(
-  process.env.DOCKER_HOST,
-  "npipe:////./pipe/podman-planets-cocreate-qa",
+const namedOwnedEngine =
+  process.env.CONTAINER_CONNECTION === "planets-cocreate-qa-root" &&
+  process.env.DOCKER_HOST === "npipe:////./pipe/podman-planets-cocreate-qa";
+assert.ok(
+  namedOwnedEngine || process.env.PLANETS_DISPOSABLE_QA === "1",
+  "Co-creation verification requires an explicitly owned disposable LOCAL stack (PLANETS_DISPOSABLE_QA=1).",
 );
 const status = readLocalSupabaseStatus(process.cwd());
 const mailpitUrl = "http://127.0.0.1:54324";

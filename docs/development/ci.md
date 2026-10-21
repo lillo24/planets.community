@@ -8,6 +8,16 @@ leave required checks pending.
 
 ## Validation areas
 
+COCREATE-RUNALL adds one post/contact verifier inside the existing Database job,
+after the clean pgTAP suite and other domain fixtures. It uses genuine synthetic
+Auth sessions and bounded consent/block/report races, temporarily enables only
+the runner-local experiment and restores OFF. CI passes the existing explicit
+`PLANETS_DISPOSABLE_QA=1` opt-in; local operators must select a disposable stack.
+The same verifier is in `check:db`. No hosted activation, new trigger, duplicate
+post-merge run or required-check change is introduced. Root script/workflow
+changes retain conservative full classification; the added recurring work is
+one bounded integration verifier only when Database already runs.
+
 MSG01 adds a populated predecessor migration rehearsal before Database's clean
 reset, plus its pair/privacy/race/Realtime verifier after the notification
 consumer fixtures and blocking producer, immediately before the unrestricted
