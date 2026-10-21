@@ -15,6 +15,23 @@ void main() {
     expect(() => validateStagingDistribution(validConfig()), returnsNormally);
   });
 
+  test('accepts the explicit enabled compatibility check', () {
+    expect(
+      () => validateStagingDistribution(
+        validConfig()..['ENABLE_CLIENT_COMPATIBILITY_CHECK'] = 'true',
+      ),
+      returnsNormally,
+    );
+    for (final bad in ['false', 'True', ' true', true, null]) {
+      expect(
+        () => validateStagingDistribution(
+          validConfig()..['ENABLE_CLIENT_COMPATIBILITY_CHECK'] = bad,
+        ),
+        throwsFormatException,
+      );
+    }
+  });
+
   test('accepts omitted, empty and plausible public Google Web client ID', () {
     for (final value in ['', '123456789-example.apps.googleusercontent.com']) {
       expect(
