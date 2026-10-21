@@ -128,6 +128,9 @@ class MockModeCoordinator extends ChangeNotifier {
         scopeRevision = revision;
         phase = MockModePhase.mock;
       } else {
+        _transitionRoot = null;
+        await access.resume();
+        if (_disposed || revision != _revision) return;
         phase = MockModePhase.normal;
       }
       _emit();
@@ -156,13 +159,19 @@ class MockModeCoordinator extends ChangeNotifier {
     if (!selectionRequested && !isMock) {
       throw const MockFailure(MockFailureKind.denied);
     }
+    final revision = _revision;
+    final root = access.controlId;
+    bool current() =>
+        !_disposed && revision == _revision && access.controlId == root;
     try {
       return await access.catalog(expectedRoot: active?.rootId);
     } on MockFailure catch (error) {
-      if (isMock &&
+      if (current() &&
+          isMock &&
           (error.kind == MockFailureKind.denied ||
               error.kind == MockFailureKind.controlLoginRequired)) {
         await access.suspend();
+        if (!current()) rethrow;
         scopeRevision++;
         _failed(error);
       }
@@ -362,6 +371,7 @@ class MockModeCoordinator extends ChangeNotifier {
     } catch (error) {
       if (!_current(revision, root) || phase != MockModePhase.mock) return;
       await access.suspend();
+      if (!_current(revision, root) || phase != MockModePhase.mock) return;
       scopeRevision++;
       _failed(error);
     }
@@ -374,13 +384,16 @@ class MockModeCoordinator extends ChangeNotifier {
     final revision = ++_revision;
     _pendingOperations++;
     _logout = true;
+    _transitionRoot = access.controlId;
     phase = MockModePhase.switching;
     fencing = true;
     selectionRequested = false;
     _emit();
     try {
       await access.suspend();
+      if (_disposed || revision != _revision) return;
       if (_record.pending case final pending?) await access.retire(pending);
+      if (_disposed || revision != _revision) return;
       await access.fullLogout();
       if (_disposed || revision != _revision) return;
       await _save(MockModeRecord(revision: revision));

@@ -62,6 +62,9 @@ class FakeAccess implements MockSessionAccess {
   MockSelection? installed;
   Completer<void>? gate;
   Completer<void>? activationGate;
+  Completer<void>? delayedCatalogGate;
+  Completer<void>? suspendGate;
+  MockFailureKind? catalogFailure;
   MockFailureKind? fail;
   bool blocked = false;
   bool normalExpired = false;
@@ -73,6 +76,9 @@ class FakeAccess implements MockSessionAccess {
   Stream<void> get dataInvalidations => invalidations.stream;
   @override
   Future<List<MockPersona>> catalog({String? expectedRoot}) async {
+    final failure = catalogFailure;
+    await delayedCatalogGate?.future;
+    if (failure != null) throw MockFailure(failure);
     if (id == null || (expectedRoot != null && id != expectedRoot)) {
       throw const MockFailure(MockFailureKind.controlLoginRequired);
     }
@@ -105,6 +111,7 @@ class FakeAccess implements MockSessionAccess {
   @override
   Future<void> suspend() async {
     blocked = true;
+    await suspendGate?.future;
   }
 
   @override
@@ -260,6 +267,60 @@ void main() {
       },
     );
   }
+  test('a delayed catalog denial cannot clear a subsequently committed tester realm', () async {
+    await coordinator.start();
+    await select();
+    final gate = Completer<void>();
+    access.delayedCatalogGate = gate;
+    access.catalogFailure = MockFailureKind.denied;
+    final delayed = expectLater(
+      coordinator.catalog(),
+      throwsA(isA<MockFailure>()),
+    );
+    await Future<void>.delayed(Duration.zero);
+    access.delayedCatalogGate = null;
+    access.catalogFailure = null;
+    access.id = otherRoot;
+    access.controls.add(otherRoot);
+    expect(await coordinator.leave(prepareDeparture: () async => true), isTrue);
+    expect(await select(), isTrue);
+    gate.complete();
+    await delayed;
+    expect(coordinator.phase, MockModePhase.mock);
+    expect(coordinator.active?.rootId, otherRoot);
+    expect(access.blocked, isFalse);
+  });
+  test(
+    'recovery with confirmed No metadata releases its normal transport fence',
+    () async {
+      await coordinator.start();
+      store.fail = true;
+      expect(await select(), isFalse);
+      expect(access.blocked, isTrue);
+      store.fail = false;
+      expect(await coordinator.retry(), isTrue);
+      expect(coordinator.phase, MockModePhase.normal);
+      expect(coordinator.isMock, isFalse);
+      expect(access.blocked, isFalse);
+    },
+  );
+  test(
+    'logout of a normal account cannot clear its later replacement',
+    () async {
+      await coordinator.start();
+      access.suspendGate = Completer<void>();
+      final logout = coordinator.fullLogout();
+      access.id = otherRoot;
+      access.controls.add(otherRoot);
+      access.suspendGate!.complete();
+      await logout;
+      expect(access.controlId, otherRoot);
+      expect(coordinator.phase, MockModePhase.recovery);
+      expect(await coordinator.retry(), isTrue);
+      expect(coordinator.phase, MockModePhase.normal);
+      expect(access.blocked, isFalse);
+    },
+  );
   test('guest and denied tester cannot commit Mock mode', () async {
     await coordinator.start();
     access.id = null;

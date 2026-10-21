@@ -368,10 +368,12 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
 
   @override
   Future<void> suspend() async {
-    activeTransport.productBlocked = true;
+    final client = activeClient;
+    final transport = activeTransport;
+    transport.productBlocked = true;
     _active?.client.auth.stopAutoRefresh();
-    await activeClient.removeAllChannels();
-    await activeClient.realtime.disconnect();
+    await client.removeAllChannels();
+    await client.realtime.disconnect();
   }
 
   @override
@@ -480,21 +482,28 @@ class SupabaseMockSessionAccess implements MockSessionAccess {
 
   @override
   Future<void> fullLogout() async {
+    final root = controlId;
     for (final candidate in _candidates.values.toList()) {
       await candidate.retire();
     }
     _candidates.clear();
     _active = null;
     _operationTokens.clear();
-    normal.auth.stopAutoRefresh();
+    if (controlId != root) {
+      throw const MockFailure(MockFailureKind.controlLoginRequired);
+    }
     // Coalesce any outstanding SDK refresh before clearing the normal session.
     if (normal.auth.currentSession != null) {
       try {
-        await normal.auth.refreshSession();
+        await normal.auth.refreshSession().timeout(const Duration(seconds: 12));
       } on AuthException {
         /* sign-out still owns cleanup below */
       }
     }
+    if (controlId != null && controlId != root) {
+      throw const MockFailure(MockFailureKind.controlLoginRequired);
+    }
+    normal.auth.stopAutoRefresh();
     await normal.auth.signOut();
     await credentials.delete(normalSessionKey(config.normalOrigin));
     normalTransport.productBlocked = false;

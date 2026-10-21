@@ -182,8 +182,7 @@ void main() {
         await tap(find.byKey(const Key('open-help-button')));
         await tap(find.byKey(const Key('help-mock-accounts-action')));
         await wait(
-          () =>
-              find.byKey(const Key('mock-login-giulia')).evaluate().isNotEmpty,
+          () => find.byKey(const Key('mock-login-dario')).evaluate().isNotEmpty,
           'authorized picker',
         );
       }
@@ -199,6 +198,13 @@ void main() {
               coordinator.active?.personaKey == key &&
               coordinator.scopeRevision > previousRevision,
           'committed realm generation',
+        );
+        await wait(
+          () =>
+              find.byType(PlanetsApp).evaluate().isNotEmpty &&
+              !identical(scope(), old) &&
+              scope().read(activeMockRealmProvider),
+          'installed persona scope',
         );
         await ready(id);
         expect(
@@ -292,8 +298,7 @@ void main() {
         await reveal(setting);
         await tap(find.descendant(of: setting, matching: find.text('Yes')));
         await wait(
-          () =>
-              find.byKey(const Key('mock-login-giulia')).evaluate().isNotEmpty,
+          () => find.byKey(const Key('mock-login-dario')).evaluate().isNotEmpty,
           'first selector',
         );
         for (final language in [
@@ -525,8 +530,7 @@ void main() {
         await reveal(setting);
         await tap(find.descendant(of: setting, matching: find.text('Yes')));
         await wait(
-          () =>
-              find.byKey(const Key('mock-login-giulia')).evaluate().isNotEmpty,
+          () => find.byKey(const Key('mock-login-dario')).evaluate().isNotEmpty,
           'revocation selector',
         );
         await asPerson('dario', '81000000-0000-4000-8000-000000000004');

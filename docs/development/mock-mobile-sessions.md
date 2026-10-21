@@ -80,6 +80,8 @@ settled and completed scoped cleanup, even after control-account A/B/A changes.
 Retirement coalesces concurrent callers; failed secure deletion remains retryable.
 Normal product transport resumes only after No is persisted and its revision is
 still current. A superseded activation cannot install a retired candidate.
+Catalog denial and channel cleanup retain their originating revision/client;
+late work cannot clear or disconnect a subsequently committed tester realm.
 Changed configuration,
 control account replacement, denial, mock Auth loss and downtime show isolated
 recovery instead of normal content. No/persona change retires only the current
