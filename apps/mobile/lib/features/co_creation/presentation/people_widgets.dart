@@ -53,18 +53,12 @@ class CoCreationInboxGate extends ConsumerWidget {
 }
 
 class PeoplePage extends StatelessWidget {
-  const PeoplePage({
-    required this.title,
-    required this.child,
-    this.actions,
-    super.key,
-  });
+  const PeoplePage({required this.title, required this.child, super.key});
   final String title;
-  final List<Widget>? actions;
   final Widget child;
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: pageAppBar(context, title: Text(title), actions: actions),
+    appBar: pageAppBar(context, title: Text(title)),
     body: SafeArea(
       child: Align(
         alignment: Alignment.topCenter,

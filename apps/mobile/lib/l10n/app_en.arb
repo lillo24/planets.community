@@ -3394,23 +3394,5 @@
     }
   },
   "coEventDraftUnavailable": "This public event is unavailable for a new people-seeking draft.",
-  "coEventUnavailable": "The public event details are no longer available.",
-  "coIntroTitle": "Find your people",
-  "coIntroHeading": "Shared interests bring people together",
-  "coIntroBody": "Start with what you love. Find people to share it with.",
-  "coIntroExamples": "Illustrative interests · Sandbox preview",
-  "coIntroBoardGames": "Board games",
-  "coIntroConcerts": "Concerts",
-  "coIntroVideoGames": "Video games",
-  "coIntroFuso": "Fuso",
-  "coIntroLupus": "Lupus in Fabula",
-  "coIntroStrokes": "The Strokes",
-  "coIntroManeskin": "Måneskin",
-  "coIntroValorant": "Valorant",
-  "coIntroTogether": "An interest in common. A new connection.",
-  "coIntroDescription": "Three interest planets: board games, with Fuso and Lupus in Fabula; concerts, with The Strokes and Måneskin; video games, with Valorant. Shared interests can bring people together. These are examples, not existing communities or partnerships.",
-  "coIntroExplore": "Explore",
-  "coIntroSkip": "Skip",
-  "coIntroReplay": "Replay intro",
-  "coIntroStorageError": "Could not save or read the local intro preference. You can still explore or replay the intro."
+  "coEventUnavailable": "The public event details are no longer available."
 }
