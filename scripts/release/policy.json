@@ -34,7 +34,7 @@
   "package": "community.planets.app",
   "closed_track": "alpha",
   "closed_track_verified_reference": "docs/development/evidence/release01/assessment.md",
-  "historical_version_code_floor": 12,
+  "historical_version_code_floor": 13,
   "upload_certificate_sha256": "f9362ed9f6f7be7c59a6eacfd8aae99426af98935ff1197f65e8207cc0fd22c0",
   "budget_basemap": true,
   "approved_function_source_sha256": {
