@@ -1305,6 +1305,13 @@ Expected scope:
 
 **Goal:** Observe product behavior and operate failures without collecting unnecessary content.
 
+ACTMET01 is a narrow early instrumentation slice for public Tavolo and ACTAPI01
+catalogue card opens and public copy/share actions, excluding Mock mode.
+Its independent permission gate is denied and
+the production SDK adapter remains blocked; injected tests require no service
+activation. This does not complete or start the broader operational scope below.
+See the [metrics contract and activation prerequisites](../development/activity-interest-metrics.md).
+
 Expected scope:
 
 - explicit PostHog event vocabulary tied to product questions;

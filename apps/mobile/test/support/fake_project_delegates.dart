@@ -164,10 +164,20 @@ class FakeProjectDelegateGateway implements ProjectDelegateGateway {
 class FakeProjectInviteSharing implements ProjectInviteSharing {
   String? copied;
   String? shared;
+  Future<void>? delay;
+  Object? error;
 
   @override
-  Future<void> copy(String value) async => copied = value;
+  Future<void> copy(String value) async {
+    if (delay case final delay?) await delay;
+    if (error case final error?) throw error;
+    copied = value;
+  }
 
   @override
-  Future<void> share(String value, {Rect? origin}) async => shared = value;
+  Future<void> share(String value, {Rect? origin}) async {
+    if (delay case final delay?) await delay;
+    if (error case final error?) throw error;
+    shared = value;
+  }
 }
