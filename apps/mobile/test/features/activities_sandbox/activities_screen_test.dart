@@ -2,6 +2,10 @@ import 'package:planets_mobile/features/activities_sandbox/domain/activity_examp
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/features/activity_interest/application/activity_interest_tracker.dart';
+
+import '../../support/fake_activity_interest.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:planets_mobile/core/theme/app_theme.dart';
 import 'package:planets_mobile/features/activities_sandbox/presentation/activities_screen.dart';
@@ -21,6 +25,9 @@ void main() {
         '$language 320dp ${scale}x categories and discipline intersect search accessibly',
         (tester) async {
           final semantics = tester.ensureSemantics();
+          final interestSink = MemoryActivityInterestSink();
+          final tracker = memoryActivityInterestTracker(interestSink);
+          addTearDown(tracker.dispose);
           tester.view.physicalSize = const Size(320, 740);
           tester.view.devicePixelRatio = 1;
           addTearDown(tester.view.resetPhysicalSize);
@@ -46,6 +53,7 @@ void main() {
           await tester.pumpWidget(
             ProviderScope(
               overrides: [
+                activityInterestTrackerProvider.overrideWithValue(tracker),
                 initialActivitiesSplitPreferenceProvider.overrideWithValue(
                   const ActivitiesSplitPreferenceState(
                     mode: ActivitiesSplitMode.on,
@@ -187,6 +195,7 @@ void main() {
             ExampleDiscipline.running,
           );
           expect(tester.takeException(), isNull);
+          expect(interestSink.events, isEmpty);
         },
       );
     }

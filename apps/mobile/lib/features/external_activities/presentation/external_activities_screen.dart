@@ -9,6 +9,8 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/page_app_bar.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../settings/application/activities_split_preference_controller.dart';
+import '../../activity_interest/application/activity_interest_tracker.dart';
+import '../../activity_interest/domain/activity_interest_event.dart';
 import '../application/external_activities_controller.dart';
 import '../domain/external_activity.dart';
 import 'external_activity_widgets.dart';
@@ -29,6 +31,20 @@ class _ExternalActivitiesScreenState
   Timer? _debounce;
   var _desiredActive = false;
   var _foreground = true;
+  final _openingActivities = <String>{};
+
+  Future<void> _openActivity(ExternalActivity activity) async {
+    if (!_openingActivities.add(activity.id)) return;
+    final item = PublicActivityInterestItem.importedActivity(activity.id);
+    if (item != null) {
+      recordActivityInterest(ref, ActivityInterestEvent.cardOpened(item));
+    }
+    try {
+      await context.push<void>('/activities/external/${activity.id}');
+    } finally {
+      _openingActivities.remove(activity.id);
+    }
+  }
 
   @override
   void initState() {
@@ -263,8 +279,7 @@ class _ExternalActivitiesScreenState
                     ExternalActivityCard(
                       key: ValueKey('external-${item.id}'),
                       item: item,
-                      onTap: () =>
-                          context.push('/activities/external/${item.id}'),
+                      onTap: () => _openActivity(item),
                     ),
                   if (state.moreFailed) Text(l.activitiesExternalReadFailed),
                   if (page?.nextCursor != null)

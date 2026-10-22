@@ -9,6 +9,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../settings/application/activities_split_preference_controller.dart';
 import '../application/external_activities_controller.dart';
 import 'external_activity_widgets.dart';
+import 'external_activity_share_actions.dart';
 
 class ExternalActivityDetailScreen extends ConsumerWidget {
   const ExternalActivityDetailScreen({required this.activityId, super.key});
@@ -102,6 +103,7 @@ class ExternalActivityDetailScreen extends ConsumerWidget {
                               _open(context, ref, item.licenseLink),
                           child: Text(l.activitiesSourceLicense),
                         ),
+                        ExternalActivityShareActions(activity: item),
                       ],
               ),
             ),

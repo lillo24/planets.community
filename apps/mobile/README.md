@@ -22,6 +22,9 @@ This folder owns the Flutter application and its generated Android/iOS platform 
   receives inbound block state or filters public content.
 - `lib/features/proposals/` owns public one-time proposal browse/detail plus complete-profile create/edit/my-proposals flows. It calls canonical RPCs and carries the screen's expected identity on every owner mutation.
 - `lib/features/recurring_activities/` owns public Tavoli browse/detail, weekly/monthly draft editing, and My Tavoli lifecycle management over the canonical 04B1 RPCs. See its [feature boundary](lib/features/recurring_activities/README.md).
+- `lib/features/activity_interest/` owns explicit public Tavolo/imported card/share metrics,
+  a denied permission gate and a blocked PostHog EU adapter. See the
+  [metrics and activation guide](../../docs/development/activity-interest-metrics.md).
 - `lib/features/resource_listings/` owns signed-out Scambio-Dona discovery/detail and complete-profile create/edit/publish/close flows over only the canonical 04C1 RPCs. See its [feature boundary](lib/features/resource_listings/README.md).
 - `lib/features/project_resource_needs/` owns public open Project needs plus protected Proposal/Tavolo creator add/edit/close history over only the canonical 04C3A RPCs. See its [feature boundary](lib/features/project_resource_needs/README.md).
 - `lib/features/participation/` owns shared Proposal/Tavolo join requests, canonical contribution-option selection, own participation state, creator review, membership actions, and participant-authorized meeting information over the canonical 04C3B1/05A RPCs. See its [feature boundary](lib/features/participation/README.md).

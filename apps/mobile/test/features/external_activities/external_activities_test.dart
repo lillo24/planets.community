@@ -11,6 +11,12 @@ import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:planets_mobile/core/backend/public_external_link.dart';
 import 'package:planets_mobile/core/theme/app_theme.dart';
+import 'package:planets_mobile/features/activity_interest/application/activity_interest_tracker.dart';
+import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
+import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
+import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/mock_mode/application/mock_mode_coordinator.dart';
+import 'package:planets_mobile/features/project_delegates/application/project_invite_sharing.dart';
 import 'package:planets_mobile/features/activities_sandbox/presentation/activities_screen.dart';
 import 'package:planets_mobile/features/activities_sandbox/presentation/activity_example_detail_screen.dart';
 import 'package:planets_mobile/features/external_activities/application/external_activities_controller.dart';
@@ -26,12 +32,196 @@ import 'package:planets_mobile/l10n/generated/app_localizations_en.dart';
 
 import '../../support/rendered_evidence.dart';
 import '../../support/fake_external_activities.dart';
+import '../../support/fake_activity_interest.dart';
+import '../../support/fake_auth.dart';
+import '../../support/fake_project_delegates.dart';
 
 void main() {
   setUpAll(() async {
     await RenderedEvidence.loadFonts(force: true);
     await initializeDateFormatting('en');
     await initializeDateFormatting('it');
+  });
+
+  testWidgets(
+    'ACTMET01 imported card gesture once; filters, deep links and return do not emit',
+    (tester) async {
+      final item = ExternalActivity.parse(externalActivityPayload());
+      final gateway = FakeExternalActivityGateway()
+        ..page = externalPageFixture(
+          items: [item],
+          health: ExternalCatalogueHealth.healthy,
+        )
+        ..detail = item;
+      final sink = MemoryActivityInterestSink();
+      final router = await _pump(tester, gateway, interestSink: sink);
+      expect(sink.events, isEmpty);
+      router.go('/activities/external/${item.id}');
+      await tester.pumpAndSettle();
+      expect(sink.events, isEmpty);
+      router.go('/activities');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('activities-category-culture')));
+      await tester.pumpAndSettle();
+      expect(sink.events, isEmpty);
+      final card = find.byKey(ValueKey('external-${item.id}'));
+      await tester.scrollUntilVisible(
+        card,
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      final onTap = tester.widget<ExternalActivityCard>(card).onTap;
+      onTap();
+      onTap();
+      await tester.pumpAndSettle();
+      expect(sink.events.single.properties, {
+        'schema_version': 1,
+        'item_kind': 'imported_activity',
+        'item_id': externalActivityFixtureId,
+        'origin_surface': 'activities_list',
+      });
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(sink.events, hasLength(1));
+    },
+  );
+
+  testWidgets(
+    'ACTMET01 imported sharing uses official source URL and honest action names',
+    (tester) async {
+      final item = ExternalActivity.parse(externalActivityPayload());
+      final sink = MemoryActivityInterestSink();
+      final sharing = FakeProjectInviteSharing();
+      final router = await _pump(
+        tester,
+        FakeExternalActivityGateway()..detail = item,
+        interestSink: sink,
+        sharing: sharing,
+      );
+      router.go('/activities/external/${item.id}');
+      await tester.pumpAndSettle();
+      final copy = find.byKey(const Key('external-activity-copy'));
+      await tester.scrollUntilVisible(copy, 250);
+      await tester.tap(copy);
+      await tester.pumpAndSettle();
+      final share = find.byKey(const Key('external-activity-share'));
+      await tester.ensureVisible(share);
+      await tester.tap(share);
+      await tester.pumpAndSettle();
+      expect(sharing.copied, item.officialLink.uri.toString());
+      expect(sharing.shared, sharing.copied);
+      expect(sink.events.map((e) => e.properties['action']), [
+        'link_copied',
+        'share_sheet_invoked',
+      ]);
+      for (final event in sink.events) {
+        expect(event.properties['item_kind'], 'imported_activity');
+        expect(event.properties['origin_surface'], 'imported_activity_detail');
+        expect(event.properties.values, isNot(contains(sharing.copied)));
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final native in [false, true]) {
+    testWidgets(
+      'ACTMET01 imported platform failure native=$native emits nothing',
+      (tester) async {
+        final item = ExternalActivity.parse(externalActivityPayload());
+        final sink = MemoryActivityInterestSink();
+        final router = await _pump(
+          tester,
+          FakeExternalActivityGateway()..detail = item,
+          interestSink: sink,
+          sharing: FakeProjectInviteSharing()
+            ..error = StateError('platform failure'),
+        );
+        router.go('/activities/external/${item.id}');
+        await tester.pumpAndSettle();
+        final button = find.byKey(
+          Key(native ? 'external-activity-share' : 'external-activity-copy'),
+        );
+        await tester.scrollUntilVisible(button, 250);
+        await tester.tap(button);
+        await tester.pumpAndSettle();
+        expect(sink.events, isEmpty);
+        expect(
+          find.text(AppLocalizationsEn().projectShareFailure),
+          findsOneWidget,
+        );
+      },
+    );
+  }
+
+  testWidgets(
+    'ACTMET01 imported pending copy drops after account replacement',
+    (tester) async {
+      final item = ExternalActivity.parse(externalActivityPayload());
+      final sink = MemoryActivityInterestSink();
+      final pending = Completer<void>();
+      final router = await _pump(
+        tester,
+        FakeExternalActivityGateway()..detail = item,
+        interestSink: sink,
+        sharing: FakeProjectInviteSharing()..delay = pending.future,
+      );
+      router.go('/activities/external/${item.id}');
+      await tester.pumpAndSettle();
+      final copy = find.byKey(const Key('external-activity-copy'));
+      await tester.scrollUntilVisible(copy, 250);
+      await tester.tap(copy);
+      await tester.pump();
+      ProviderScope.containerOf(
+            tester.element(find.byType(ExternalActivityDetailScreen)),
+          )
+          .read(authSessionProvider.notifier)
+          .markProfileReady(const AuthIdentity(id: 'account-two'));
+      await tester.pump();
+      pending.complete();
+      await tester.pumpAndSettle();
+      expect(sink.events, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'ACTMET01 Mock catalogue navigates without analytics or external sharing',
+    (tester) async {
+      final item = ExternalActivity.parse(externalActivityPayload());
+      final sink = MemoryActivityInterestSink();
+      final gateway = FakeExternalActivityGateway()
+        ..page = externalPageFixture(
+          items: [item],
+          health: ExternalCatalogueHealth.healthy,
+        )
+        ..detail = item;
+      await _pump(tester, gateway, interestSink: sink, mock: true);
+      final card = find.byKey(ValueKey('external-${item.id}'));
+      await tester.scrollUntilVisible(
+        card,
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(card);
+      await tester.pumpAndSettle();
+      expect(sink.events, isEmpty);
+      expect(find.byKey(const Key('external-activity-copy')), findsNothing);
+      expect(find.byKey(const Key('external-activity-share')), findsNothing);
+    },
+  );
+
+  testWidgets('ACTMET01 unavailable imported detail has no share controls', (
+    tester,
+  ) async {
+    final sink = MemoryActivityInterestSink();
+    final router = await _pump(
+      tester,
+      FakeExternalActivityGateway(),
+      interestSink: sink,
+    );
+    router.go('/activities/external/$externalActivityFixtureId');
+    await tester.pumpAndSettle();
+    expect(sink.events, isEmpty);
+    expect(find.byKey(const Key('external-activity-copy')), findsNothing);
   });
 
   test('RPC gateway forwards complete filters, handles source disable and preserves real failures', () async {
@@ -515,7 +705,16 @@ Future<GoRouter> _pump(
   bool active = true,
   String language = 'en',
   double scale = 1,
+  MemoryActivityInterestSink? interestSink,
+  FakeProjectInviteSharing? sharing,
+  bool mock = false,
 }) async {
+  final auth = FakeAuthGateway();
+  addTearDown(auth.close);
+  final tracker = interestSink == null
+      ? null
+      : memoryActivityInterestTracker(interestSink);
+  if (tracker != null) addTearDown(tracker.dispose);
   final router = GoRouter(
     initialLocation: '/activities',
     routes: [
@@ -553,6 +752,12 @@ Future<GoRouter> _pump(
     ProviderScope(
       key: UniqueKey(),
       overrides: [
+        authGatewayProvider.overrideWithValue(auth),
+        activeMockRealmProvider.overrideWithValue(mock),
+        if (tracker != null)
+          activityInterestTrackerProvider.overrideWithValue(tracker),
+        if (sharing != null)
+          projectInviteSharingProvider.overrideWithValue(sharing),
         initialActivitiesSplitPreferenceProvider.overrideWithValue(
           ActivitiesSplitPreferenceState(
             mode: enabled ? ActivitiesSplitMode.on : ActivitiesSplitMode.off,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
+import '../../activity_interest/domain/activity_interest_event.dart';
 import '../../participation/domain/participation_models.dart';
 import '../../project_delegates/application/project_delegate_controllers.dart';
 import '../../project_delegates/data/project_delegate_gateway.dart';
@@ -191,6 +192,10 @@ class _ProjectShareDialogState extends ConsumerState<ProjectShareDialog> {
               ],
               ShareLinkButtons(
                 projectId: widget.projectId,
+                publicActivity:
+                    !_special && widget.kind == ProjectKind.recurring
+                    ? PublicActivityInterestItem.tavolo(widget.projectId)
+                    : null,
                 canDisclose: () {
                   if (!_current) return false;
                   if (!_special) return true;

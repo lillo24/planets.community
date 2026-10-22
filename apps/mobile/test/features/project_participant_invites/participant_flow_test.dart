@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/features/activity_interest/application/activity_interest_tracker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
@@ -38,6 +39,7 @@ import 'package:planets_mobile/features/cover_media/application/project_cover_re
 import 'package:planets_mobile/features/recurring_activities/data/recurring_activity_gateway.dart';
 
 import '../../support/fake_auth.dart';
+import '../../support/fake_activity_interest.dart';
 import '../../support/fake_blocking.dart';
 import '../../support/fake_participation.dart';
 import '../../support/fake_participant_invitation.dart';
@@ -51,6 +53,146 @@ import '../../support/fake_cover_media.dart';
 import '../../support/fake_recurring_activity.dart';
 
 void main() {
+  const interestId = 'fb040000-0000-4000-8000-000000000002';
+  for (final kind in ProjectKind.values) {
+    for (final signedOut in [true, false]) {
+      testWidgets('ACTMET01 ordinary $kind sharing, guest=$signedOut', (
+        tester,
+      ) async {
+        final sink = MemoryActivityInterestSink();
+        final path = kind == ProjectKind.recurring
+            ? '/tavoli/$interestId'
+            : '/proposals/$interestId';
+        await _pump(
+          tester,
+          path,
+          publicProjectId: interestId,
+          signedOut: signedOut,
+          interestSink: sink,
+        );
+        expect(sink.events, isEmpty);
+        await tester.tap(find.byKey(const Key('project-share-action')));
+        await tester.pumpAndSettle();
+        expect(sink.events, isEmpty);
+        await tester.tap(find.byKey(const Key('project-share-copy')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('project-share-native')));
+        await tester.pumpAndSettle();
+        if (kind == ProjectKind.recurring) {
+          expect(sink.events.map((e) => e.properties['action']), [
+            'link_copied',
+            'share_sheet_invoked',
+          ]);
+          expect(
+            sink.events.every((e) => e.properties['item_id'] == interestId),
+            isTrue,
+          );
+        } else {
+          expect(sink.events, isEmpty);
+        }
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
+  testWidgets(
+    'ACTMET01 special Tavolo links and dialog cancellation excluded',
+    (tester) async {
+      final sink = MemoryActivityInterestSink();
+      final h = await _pump(
+        tester,
+        '/tavoli/$interestId',
+        publicProjectId: interestId,
+        role: ProjectManagementRole.creator,
+        interestSink: sink,
+      );
+      await tester.tap(find.byKey(const Key('project-share-action')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Close').hitTestable());
+      await tester.pumpAndSettle();
+      expect(sink.events, isEmpty);
+      await tester.tap(find.byKey(const Key('project-share-action')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('project-share-special')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('project-share-copy')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('project-share-native')));
+      await tester.pumpAndSettle();
+      expect(h.sharing.copied, contains('/join/project/'));
+      expect(h.sharing.shared, h.sharing.copied);
+      expect(sink.events, isEmpty);
+    },
+  );
+
+  for (final native in [false, true]) {
+    testWidgets('ACTMET01 failed platform handoff native=$native excluded', (
+      tester,
+    ) async {
+      final sink = MemoryActivityInterestSink();
+      final sharing = FakeProjectInviteSharing()
+        ..error = StateError('platform unavailable');
+      await _pump(
+        tester,
+        '/tavoli/$interestId',
+        publicProjectId: interestId,
+        signedOut: true,
+        interestSink: sink,
+        sharingOverride: sharing,
+      );
+      await tester.tap(find.byKey(const Key('project-share-action')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(Key(native ? 'project-share-native' : 'project-share-copy')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'The link could not be shared. Check the current state and try again.',
+        ),
+        findsOneWidget,
+      );
+      expect(sink.events, isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final changeAccount in [false, true]) {
+    testWidgets(
+      'ACTMET01 pending copy discarded on account/permission change $changeAccount',
+      (tester) async {
+        final sink = MemoryActivityInterestSink();
+        final permission = FakeActivityInterestPermission();
+        final delayed = Completer<void>();
+        final sharing = FakeProjectInviteSharing()..delay = delayed.future;
+        final h = await _pump(
+          tester,
+          '/tavoli/$interestId',
+          publicProjectId: interestId,
+          interestSink: sink,
+          sharingOverride: sharing,
+          interestPermission: permission,
+        );
+        await tester.tap(find.byKey(const Key('project-share-action')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('project-share-copy')));
+        await tester.pump();
+        if (changeAccount) {
+          h.container
+              .read(authSessionProvider.notifier)
+              .markProfileReady(const AuthIdentity(id: 'user-2'));
+        } else {
+          permission.allowed = false;
+        }
+        await tester.pump();
+        delayed.complete();
+        await tester.pumpAndSettle();
+        expect(sink.events, isEmpty);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   final token = 'A' * 43;
   const publicId = 'fb040000-0000-4000-8000-000000000002';
   final nativeInvite = 'https://planets.community/join/project/$token';
@@ -1021,6 +1163,9 @@ _pump(
   bool startAuthInApp = false,
   FakeProposalGateway? drafts,
   FakeProviderAuthAdapter? provider,
+  MemoryActivityInterestSink? interestSink,
+  FakeActivityInterestPermission? interestPermission,
+  FakeProjectInviteSharing? sharingOverride,
 }) async {
   if (platformColdStart) {
     tester.platformDispatcher.defaultRouteNameTestValue = location;
@@ -1035,12 +1180,26 @@ _pump(
     ..readiness = incomplete
         ? ProfileAnchorReadiness.incomplete
         : ProfileAnchorReadiness.complete;
-  final sharing = FakeProjectInviteSharing();
+  final sharing = sharingOverride ?? FakeProjectInviteSharing();
   final participation = FakeParticipationGateway();
   final photo = FakeProfilePhotoGateway();
   final invitations = gateway ?? FakeParticipantInvitationGateway();
   final container = ProviderContainer(
     overrides: [
+      if (interestSink != null) ...[
+        activityInterestConfigurationProvider.overrideWithValue(
+          const ActivityInterestConfiguration(
+            enabled: 'true',
+            projectToken: 'phc_localtest1234',
+          ),
+        ),
+        activityInterestPermissionProvider.overrideWithValue(
+          interestPermission ?? FakeActivityInterestPermission(),
+        ),
+        activityInterestSinkFactoryProvider.overrideWithValue(
+          () => interestSink,
+        ),
+      ],
       preacceptedPolicyFixture,
       appConfigProvider.overrideWithValue(
         AppConfig.fromValues(

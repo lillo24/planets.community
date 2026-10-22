@@ -7,6 +7,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planets_mobile/features/activity_interest/application/activity_interest_tracker.dart';
+import 'package:planets_mobile/features/settings/application/activities_split_preference_controller.dart';
+import 'package:planets_mobile/features/settings/domain/activities_split_preference.dart';
 import 'package:planets_mobile/app/planets_app.dart';
 import 'package:planets_mobile/app/router/app_router.dart';
 import 'package:planets_mobile/core/config/app_config.dart';
@@ -34,6 +37,7 @@ import 'package:planets_mobile/features/recurring_activities/domain/recurring_ac
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../support/fake_auth.dart';
+import '../../../support/fake_activity_interest.dart';
 import '../../../support/fake_profile.dart';
 import '../../../support/fake_profile_photo.dart';
 import '../../../support/fake_project_delegates.dart';
@@ -75,6 +79,148 @@ void main() {
       },
     );
   }
+
+  for (final split in ActivitiesSplitMode.values) {
+    testWidgets(
+      'ACTMET01 card gesture only, split $split, retained list and deep link',
+      (tester) async {
+        const id = 'fb040000-0000-4000-8000-000000000002';
+        final recurring = FakeRecurringActivityGateway()
+          ..publicItems = [publicRecurringSummaryFixture(id: id)]
+          ..publicDetail = publicRecurringDetailFixture(id: id);
+        final sink = MemoryActivityInterestSink();
+        final app = await _pump(
+          tester,
+          recurring: recurring,
+          signedIn: false,
+          interestSink: sink,
+          split: split,
+        );
+        final router = app.read(appRouterProvider);
+        router.go('/tavoli/$id');
+        await tester.pumpAndSettle();
+        expect(sink.events, isEmpty);
+        router.go('/tavoli');
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('tavoli-toggle-filters')));
+        await tester.pumpAndSettle();
+        expect(sink.events, isEmpty);
+        final card = find.byKey(const Key('tavolo-card-$id'));
+        await _center(tester, card);
+        final pending = Completer<void>();
+        sink.delay = pending.future;
+        final onTap = tester.widget<InkWell>(card).onTap!;
+        onTap();
+        onTap();
+        await tester.pumpAndSettle();
+        expect(router.state.uri.path, '/tavoli/$id');
+        expect(sink.calls, 1);
+        expect(sink.events, isEmpty);
+        pending.complete();
+        await tester.pumpAndSettle();
+        expect(sink.events.single.name, 'activity_card_opened');
+        expect(sink.events.single.properties['item_id'], id);
+        router.pop();
+        await tester.pumpAndSettle();
+        expect(router.state.uri.path, '/tavoli');
+        expect(sink.events, hasLength(1));
+        await _center(
+          tester,
+          find.byKey(const Key('tavoli-locality-filter')),
+          delta: -300,
+        );
+        expect(find.byKey(const Key('tavoli-locality-filter')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets('ACTMET01 sink failure does not block public card navigation', (
+    tester,
+  ) async {
+    const id = 'fb040000-0000-4000-8000-000000000002';
+    final recurring = FakeRecurringActivityGateway()
+      ..publicItems = [publicRecurringSummaryFixture(id: id)]
+      ..publicDetail = publicRecurringDetailFixture(id: id);
+    final sink = MemoryActivityInterestSink()..failure = StateError('offline');
+    final app = await _pump(
+      tester,
+      recurring: recurring,
+      signedIn: false,
+      interestSink: sink,
+    );
+    app.read(appRouterProvider).go('/tavoli');
+    await tester.pumpAndSettle();
+    final card = find.byKey(const Key('tavolo-card-$id'));
+    await _center(tester, card);
+    await tester.tap(card);
+    await tester.pumpAndSettle();
+    expect(app.read(appRouterProvider).state.uri.path, '/tavoli/$id');
+    expect(sink.calls, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ACTMET01 Requested card is public and counted once', (
+    tester,
+  ) async {
+    const id = 'fb040000-0000-4000-8000-000000000002';
+    final recurring = FakeRecurringActivityGateway()
+      ..publicItems = [publicRecurringSummaryFixture(id: id)]
+      ..requestedItems = [requestedRecurringActivityFixture(activityId: id)]
+      ..publicDetail = publicRecurringDetailFixture(id: id);
+    final sink = MemoryActivityInterestSink();
+    final app = await _pump(tester, recurring: recurring, interestSink: sink);
+    app.read(appRouterProvider).go('/tavoli');
+    await tester.pumpAndSettle();
+    final card = find.byKey(const Key('tavolo-card-$id'));
+    await _center(tester, card);
+    expect(card, findsOneWidget);
+    await tester.tap(card);
+    await tester.pumpAndSettle();
+    expect(sink.events.single.properties['origin_surface'], 'tavoli_list');
+  });
+
+  testWidgets(
+    'ACTMET01 provider construction failure cannot block navigation',
+    (tester) async {
+      const id = 'fb040000-0000-4000-8000-000000000002';
+      final recurring = FakeRecurringActivityGateway()
+        ..publicItems = [publicRecurringSummaryFixture(id: id)]
+        ..publicDetail = publicRecurringDetailFixture(id: id);
+      final app = await _pump(
+        tester,
+        recurring: recurring,
+        signedIn: false,
+        brokenInterestProvider: true,
+      );
+      app.read(appRouterProvider).go('/tavoli');
+      await tester.pumpAndSettle();
+      final card = find.byKey(const Key('tavolo-card-$id'));
+      await _center(tester, card);
+      await tester.tap(card);
+      await tester.pumpAndSettle();
+      expect(app.read(appRouterProvider).state.uri.path, '/tavoli/$id');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'ACTMET01 unavailable public detail offers no analytics share action',
+    (tester) async {
+      const id = 'fb040000-0000-4000-8000-000000000002';
+      final sink = MemoryActivityInterestSink();
+      final app = await _pump(
+        tester,
+        recurring: FakeRecurringActivityGateway(),
+        signedIn: false,
+        interestSink: sink,
+      );
+      app.read(appRouterProvider).go('/tavoli/$id');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('project-share-action')), findsNothing);
+      expect(sink.events, isEmpty);
+    },
+  );
 
   for (final locale in [
     LanguagePreference.english,
@@ -725,6 +871,9 @@ Future<ProviderContainer> _pump(
   LanguagePreference language = LanguagePreference.english,
   bool hasPhoto = true,
   FakeProfilePhotoGateway? photoGateway,
+  MemoryActivityInterestSink? interestSink,
+  ActivitiesSplitMode split = ActivitiesSplitMode.off,
+  bool brokenInterestProvider = false,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: signedIn
@@ -735,6 +884,27 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        if (brokenInterestProvider)
+          activityInterestTrackerProvider.overrideWith(
+            (ref) => throw StateError('telemetry dependency'),
+          ),
+        initialActivitiesSplitPreferenceProvider.overrideWithValue(
+          ActivitiesSplitPreferenceState(mode: split),
+        ),
+        if (interestSink != null) ...[
+          activityInterestConfigurationProvider.overrideWithValue(
+            const ActivityInterestConfiguration(
+              enabled: 'true',
+              projectToken: 'phc_localtest1234',
+            ),
+          ),
+          activityInterestPermissionProvider.overrideWithValue(
+            FakeActivityInterestPermission(),
+          ),
+          activityInterestSinkFactoryProvider.overrideWithValue(
+            () => interestSink,
+          ),
+        ],
         preacceptedPolicyFixture,
         initialLanguagePreferenceProvider.overrideWithValue(language),
         appConfigProvider.overrideWithValue(
