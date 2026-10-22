@@ -75,3 +75,28 @@ retain current-main values. The saved Sandbox preference is shared like Activiti
 Split, while MockRealmHost recreates all private co-creation providers/attempts
 with the selected backend root. Co-creation always uses that root’s canonical
 Supabase client; Demo remains a separate tree and no fixture token is persisted.
+
+C02 adds domain/co_creation_rooms.dart and data/co_creation_rooms_gateway.dart:
+closed public hub and actor/hub/room/episode-bound private projections, canonical
+General context, deterministic cursors and exact command receipts.
+
+- presentation/co_creation_hubs_screen.dart owns Communities discovery/detail,
+  disclosure, explicit join, canonical membership reread, mute and General entry.
+- presentation/co_creation_general_screen.dart owns episode-bound General history,
+  immutable sends, exact rendered-viewport ACK adapter, reports and invalidation.
+- presentation/co_creation_room_items.dart owns one General row per canonical
+  room in existing Messages Groups, admitted People and Auth-only hub leave.
+  Gate-OFF/outdated-policy exits read only the actor's minimal anchors.
+- data/co_creation_commands.dart is a delivery interface only: each gateway
+  validates its own receipts. Frozen attempts are shared across route remounts,
+  without sharing audience or business rules between post and room domains.
+
+The shared read viewport accepts an optional domain ACK adapter; General's scope
+key includes room and episode. Native callers retain their existing path. Neither
+hub preview nor People fetches/acknowledges transcript. General context explicitly
+binds the route's hub to the admitted room/episode and remains available for
+permitted frozen history when the public hub retires. Backend denial clears it.
+The normal inbox projection mounts only after server availability is ON. Own
+recovery is separate; pending availability never duplicates a normal row as an
+exit row. Existing native test fixtures explicitly model default-OFF plus empty
+own exits, and still reject unexpected co-creation calls.

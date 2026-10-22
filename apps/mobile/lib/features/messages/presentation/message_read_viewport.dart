@@ -18,6 +18,7 @@ class MessageReadViewport extends ConsumerStatefulWidget {
     required this.boundary,
     required this.scrollController,
     required this.child,
+    this.acknowledge,
     super.key,
   });
   final String? profileId;
@@ -26,6 +27,11 @@ class MessageReadViewport extends ConsumerStatefulWidget {
   final String? boundary;
   final ScrollController scrollController;
   final Widget child;
+
+  /// Optional domain adapter for an episode-bound receipt. Visibility, exact
+  /// retry and actor/scope invalidation stay owned by this shared viewport.
+  final Future<bool> Function(String profile, String scope, String boundary)?
+  acknowledge;
   @override
   ConsumerState<MessageReadViewport> createState() =>
       _MessageReadViewportState();
@@ -97,9 +103,16 @@ class _MessageReadViewportState extends ConsumerState<MessageReadViewport>
     final profile = widget.profileId!;
     final chat = widget.chatId!;
     _busy = true;
-    final succeeded = await ref
-        .read(messageUnreadProvider.notifier)
-        .acknowledge(profile, widget.kind, chat, boundary);
+    bool succeeded;
+    try {
+      succeeded = widget.acknowledge == null
+          ? await ref
+                .read(messageUnreadProvider.notifier)
+                .acknowledge(profile, widget.kind, chat, boundary)
+          : await widget.acknowledge!(profile, chat, boundary);
+    } catch (_) {
+      succeeded = false;
+    }
     _busy = false;
     if (!mounted ||
         widget.profileId != profile ||

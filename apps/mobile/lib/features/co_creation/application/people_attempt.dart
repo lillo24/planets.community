@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../auth/application/auth_session_controller.dart';
-import '../data/people_private_gateway.dart';
+import '../data/co_creation_commands.dart';
 
 Object? _frozen(Object? value) => switch (value) {
   Map value => Map<String, dynamic>.unmodifiable(
@@ -29,7 +29,7 @@ class PeopleAttempt {
   final Map<String, dynamic> intent;
   bool uncertain = false, busy = false;
   Map<String, Object?>? receipt;
-  Future<Map<String, Object?>> deliver(PeoplePrivateGateway gateway) async {
+  Future<Map<String, Object?>> deliver(CoCreationCommandGateway gateway) async {
     if (busy) throw StateError('Command is already being delivered.');
     busy = true;
     uncertain = true;

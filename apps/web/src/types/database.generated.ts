@@ -3659,6 +3659,15 @@ export type Database = {
         }
         Returns: Json
       }
+      get_cocreate_general_context: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
       get_cocreate_hub: { Args: { p_hub_id: string }; Returns: Json }
       get_cocreate_post: { Args: { p_post_id: string }; Returns: Json }
       get_cocreate_room_page: {

@@ -2462,7 +2462,7 @@
   "personPreviewReadError": "Impossibile caricare questo profilo.",
   "personPreviewBlocked": "Hai bloccato questa persona.",
   "coCreationSetting": "Modalità Co-creazione",
-  "coCreationHelp": "Mostra Trova persone in Home. Ha precedenza su Modalità Attività separate senza cambiarne la scelta salvata. Solo presentazione.",
+  "coCreationHelp": "Mostra Trova persone sperimentale in Home. Prevale su Activities Split senza cambiarne la scelta salvata. Le iscrizioni e Messaggi restano accessibili quando è OFF.",
   "coCreationSaveError": "Salvataggio non riuscito. La scelta precedente resta attiva.",
   "coCreationRestoreError": "Ripristino non riuscito. Modalità Co-creazione è disattivata; salva una scelta per recuperare.",
   "coCreationTitle": "Trova persone",
@@ -2537,5 +2537,15 @@
   "coPeopleStatePending": "In attesa",
   "coPeopleAccepted": "Accettata",
   "coPeopleDeclined": "Rifiutata",
-  "coPeopleWithdrawn": "Ritirata"
+  "coPeopleWithdrawn": "Ritirata",
+  "coRoomsJoin": "Unisciti a questa comunità",
+  "coRoomsHistory": "L’iscrizione condivide il tuo nome con i membri ammessi e apre General, inclusi i messaggi precedenti. Non ti iscrive ai gruppi numerati.",
+  "coRoomsLeave": "Lascia la comunità",
+  "coRoomsLeaveWarning": "L’uscita termina l’iscrizione a General e ai gruppi numerati di questa comunità. La cronologia consentita si ferma all’uscita. Le altre comunità e i Progetti restano invariati.",
+  "coRoomsPeople": "Membri",
+  "coRoomsMute": "Silenzia General",
+  "coRoomsUnmute": "Riattiva General",
+  "coRoomsMuted": "Silenziato",
+  "coRoomsOpenGeneral": "Apri General",
+  "coRoomsGeneral": "General"
 }

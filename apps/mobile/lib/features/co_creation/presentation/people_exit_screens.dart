@@ -6,8 +6,6 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
 import '../../policies/application/policy_acceptance_controller.dart';
 import '../../policies/application/policy_documents.dart';
-import '../application/people_signals.dart';
-import '../data/people_posts_gateway.dart';
 import '../data/people_private_gateway.dart';
 import '../domain/people_post.dart';
 import '../domain/co_creation_identity.dart';
@@ -49,12 +47,6 @@ class PeopleContactCloseScreen extends StatelessWidget {
   }
 }
 
-final _available = FutureProvider.autoDispose<bool>((ref) {
-  ref.watch(authSessionProvider.select((s) => (s.identity?.id, s.phase)));
-  ref.listen(peopleSignalsProvider, (_, _) => ref.invalidateSelf());
-  return ref.watch(peoplePostsGatewayProvider).available();
-});
-
 class PeopleContactExit {
   PeopleContactExit(Object? value, {bool interest = false}) {
     final row = coCreationObject(
@@ -84,8 +76,11 @@ class PeopleContactExits extends ConsumerWidget {
     final accepted = ref
         .watch(policyAcceptanceProvider)
         .allows(session.identity?.id, ref.watch(policyVersionProvider));
-    if (accepted && ref.watch(_available).asData?.value == true) {
-      return const SizedBox.shrink();
+    if (accepted) {
+      final available = ref.watch(coCreationInboxAvailabilityProvider);
+      if (available.isLoading || available.asData?.value == true) {
+        return const SizedBox.shrink();
+      }
     }
     return PeopleAccess(
       requirePolicy: false,

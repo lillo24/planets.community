@@ -14,6 +14,43 @@ import '../application/people_attempt.dart';
 import '../application/people_signals.dart';
 import '../data/people_posts_gateway.dart';
 import '../data/people_private_gateway.dart';
+import '../data/co_creation_commands.dart';
+
+final coCreationInboxAvailabilityProvider = FutureProvider.autoDispose<bool>((
+  ref,
+) {
+  ref.watch(authSessionProvider.select((s) => (s.identity?.id, s.phase)));
+  ref.listen(peopleSignalsProvider, (_, _) => ref.invalidateSelf());
+  return ref.watch(peoplePostsGatewayProvider).available();
+});
+
+/// Native inboxes do not show admission/policy controls for a disabled domain.
+/// Own-exit projections remain separate and never need this availability grant.
+class CoCreationInboxGate extends ConsumerWidget {
+  const CoCreationInboxGate({required this.child, super.key});
+  final Widget child;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    return ref
+        .watch(coCreationInboxAvailabilityProvider)
+        .when(
+          loading: () => const SizedBox.shrink(),
+          data: (enabled) => enabled ? child : const SizedBox.shrink(),
+          error: (_, _) => Row(
+            children: [
+              Expanded(child: Text(l.coPeopleContacts)),
+              IconButton(
+                tooltip: l.coPeopleError,
+                onPressed: () =>
+                    ref.invalidate(coCreationInboxAvailabilityProvider),
+                icon: const Icon(Icons.refresh),
+              ),
+            ],
+          ),
+        );
+  }
+}
 
 class PeoplePage extends StatelessWidget {
   const PeoplePage({required this.title, required this.child, super.key});
@@ -260,11 +297,13 @@ class PeopleCommand extends ConsumerStatefulWidget {
     required this.intent,
     required this.label,
     required this.onSuccess,
+    this.gateway,
     super.key,
   });
   final String slot, rpc, label;
   final Map<String, dynamic> intent;
   final Future<void> Function(Map<String, Object?>) onSuccess;
+  final CoCreationCommandGateway Function(WidgetRef)? gateway;
   @override
   ConsumerState<PeopleCommand> createState() => _PeopleCommandState();
 }
@@ -291,7 +330,7 @@ class _PeopleCommandState extends ConsumerState<PeopleCommand> {
           ? prior!
           : store.acquire(widget.slot, actor, widget.rpc, widget.intent);
       final result = await attempt.deliver(
-        ref.read(peoplePrivateGatewayProvider),
+        widget.gateway?.call(ref) ?? ref.read(peoplePrivateGatewayProvider),
       );
       if (!mounted || ref.read(authSessionProvider).identity?.id != actor) {
         return;

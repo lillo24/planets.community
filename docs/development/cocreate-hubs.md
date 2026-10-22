@@ -109,3 +109,23 @@ unused extension parameters; source was repaired and lint rerun. See the current
 progress ledger for final results. C02 supplies mobile hub/General UI, C03 the
 atomic child extension; no live mobile hub journey or native phone QA is claimed
 by this backend stage.
+
+## C02 mobile integration
+
+Migration 20261022100000 adds only an admitted General context reader, with
+actor/hub/room/episode checks and no implicit read ACK. It deliberately supports
+frozen history after public retirement. Its eight negative/context assertions
+pass on the populated C01 local upgrade. Lint and security advisors are clean.
+
+Communities, General, member-only People, mute and explicit warned leave are
+registered separately from Demo. Existing Messages Groups shows one canonical
+latest-episode General row, including frozen history. Mode OFF preserves it and
+exact Auth-only hub exits. Report submission uses the C01 exact message endpoint;
+foreign Project/other context is rejected before transport. The shared viewport
+keeps visibility/identity/exact retry rules while its General adapter supplies
+the episode-bound server receipt. No preview or member list marks messages read.
+
+C02 contract-fixture widget tests cover guest/auth return without auto-join,
+deliberate admission, lost-reply retry after canonical membership appears, A/B
+and same-actor episode changes, frozen former history, one Messages row and
+non-ACK People. Separate genuine backend testing remains the C01 OTP verifier.

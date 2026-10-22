@@ -47,6 +47,10 @@ class _PeopleBrowseScreenState extends ConsumerState<PeopleBrowseScreen> {
             spacing: 8,
             children: [
               TextButton(
+                onPressed: () => context.go('/people/hubs'),
+                child: Text(l.coCreationHubs),
+              ),
+              TextButton(
                 onPressed: () => context.push('/people/compose'),
                 child: Text(l.coPeopleCompose),
               ),

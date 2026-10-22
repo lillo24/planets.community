@@ -7,6 +7,11 @@ import 'package:planets_mobile/features/messages/application/message_chats_contr
 import '../../../support/fake_policy.dart';
 
 import 'dart:async';
+
+import 'package:planets_mobile/features/co_creation/data/people_posts_gateway.dart';
+import 'package:planets_mobile/features/co_creation/data/people_private_gateway.dart';
+import 'package:planets_mobile/features/co_creation/data/co_creation_rooms_gateway.dart';
+
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -3140,6 +3145,31 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        // Native inbox fixtures model the canonical default-OFF experiment,
+        // including legitimate empty own-exit metadata. Unknown reads fail.
+        peoplePostsGatewayProvider.overrideWithValue(
+          PeoplePostsGateway((name, args) async {
+            if (name == 'get_cocreate_availability') return {'enabled': false};
+            throw StateError('Disabled co-creation public read: $name');
+          }),
+        ),
+        peoplePrivateGatewayProvider.overrideWithValue(
+          PeoplePrivateGateway((name, args) async {
+            if ({
+              'list_own_cocreate_contact_exits',
+              'list_own_cocreate_interest_exits',
+            }.contains(name)) {
+              return [];
+            }
+            throw StateError('Disabled co-creation private read: $name');
+          }),
+        ),
+        coCreationRoomsGatewayProvider.overrideWithValue(
+          CoCreationRoomsGateway((name, args) async {
+            if (name == 'list_own_cocreate_hub_exits') return [];
+            throw StateError('Disabled co-creation room read: $name');
+          }),
+        ),
         discussionProjectsGatewayProvider.overrideWithValue(
           EmptyDiscussionProjectsGateway(),
         ),

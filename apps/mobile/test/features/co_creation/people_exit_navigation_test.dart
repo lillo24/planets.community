@@ -13,7 +13,7 @@ import '../../support/fake_auth.dart';
 const actor = 'cb020000-0000-4000-8000-000000000001';
 const anchor = 'cb020000-0000-4000-8000-000000000002';
 void main() {
-  for (final operation in ['close', 'withdraw']) {
+  for (final operation in ['close', 'withdraw', 'hub']) {
     testWidgets(
       'actual router keeps $operation Auth-only with mode OFF/incomplete/unaccepted account',
       (tester) async {
@@ -27,7 +27,9 @@ void main() {
           AuthIdentity(id: actor),
           hasProfileAnchor: true,
         );
-        final path = operation == 'close'
+        final path = operation == 'hub'
+            ? '/messages/cocreate/hubs/$anchor/$anchor/leave'
+            : operation == 'close'
             ? '/messages/cocreate/contacts/$anchor/close'
             : '/messages/cocreate/posts/$anchor/interests/$anchor/withdraw';
         final router = createAppRouter(

@@ -1,3 +1,4 @@
+import '../../co_creation/presentation/co_creation_room_items.dart';
 import '../../co_creation/presentation/people_message_items.dart';
 import '../../member_contact/presentation/member_contact_widgets.dart';
 import '../../member_contact/presentation/member_contact_routes.dart';
@@ -317,7 +318,7 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                                 (state.hasMore ? 1 : 0)) {
                           return scope == MessageChatScope.private
                               ? const PeopleContactItems()
-                              : const SizedBox.shrink();
+                              : const CoCreationRoomItems();
                         }
                         if (scope == MessageChatScope.groups) {
                           if (index == 0) return folders!;

@@ -3200,7 +3200,7 @@
   "personPreviewReadError": "Could not load this profile.",
   "personPreviewBlocked": "You have blocked this person.",
   "coCreationSetting": "Co-Creation Mode",
-  "coCreationHelp": "Preview Find people on Home. Takes precedence over Activities Split Mode without changing its saved choice. Presentation only.",
+  "coCreationHelp": "Show experimental Find people on Home. Takes precedence over Activities Split without changing its saved choice. Existing memberships and Messages stay available when OFF.",
   "coCreationSaveError": "Could not save. The previous choice remains active.",
   "coCreationRestoreError": "Could not restore Co-Creation Mode. It is OFF; save a choice to recover.",
   "coCreationTitle": "Find people",
@@ -3275,5 +3275,15 @@
   "coPeopleStatePending": "Pending",
   "coPeopleAccepted": "Accepted",
   "coPeopleDeclined": "Declined",
-  "coPeopleWithdrawn": "Withdrawn"
+  "coPeopleWithdrawn": "Withdrawn",
+  "coRoomsJoin": "Join this community",
+  "coRoomsHistory": "Joining shares your display name with admitted members and opens General, including its earlier messages. Joining does not enroll you in numbered groups.",
+  "coRoomsLeave": "Leave community",
+  "coRoomsLeaveWarning": "Leaving ends your General membership and your memberships in this community’s numbered groups. Your permitted history freezes at departure. Other communities and Projects stay unchanged.",
+  "coRoomsPeople": "Members",
+  "coRoomsMute": "Mute General",
+  "coRoomsUnmute": "Unmute General",
+  "coRoomsMuted": "Muted",
+  "coRoomsOpenGeneral": "Open General",
+  "coRoomsGeneral": "General"
 }

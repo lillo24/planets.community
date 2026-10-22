@@ -31,3 +31,8 @@ The Italian capture was visually inspected: body/consent wrap, Report and the
 sign-in continuation remain reachable by scrolling, with no overflow. These are
 widget render evidence, not phone screenshots or a claim of a live UI session.
 The genuine two-account backend is separately verified through OTP/RPC tests.
+
+C02 adds hub-live-en-320-2x.png and hub-live-it-320-2x.png. These are
+contract-fixture renders of the actual hub component (disclosure/auth viewport),
+not phone/live-backend screenshots. Italian was inspected: large consent text
+wraps, no roster/transcript appears, and the explicit auth action is reachable.

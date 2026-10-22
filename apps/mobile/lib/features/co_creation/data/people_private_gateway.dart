@@ -6,8 +6,9 @@ import '../domain/co_creation_identity.dart';
 import '../domain/people_post.dart';
 import '../domain/people_private.dart';
 import 'people_posts_gateway.dart';
+import 'co_creation_commands.dart';
 
-class PeoplePrivateGateway {
+class PeoplePrivateGateway implements CoCreationCommandGateway {
   const PeoplePrivateGateway(this.rpc, {this.signalClient});
   final CoCreationRpc rpc;
   final SupabaseClient? signalClient;
@@ -109,6 +110,7 @@ class PeoplePrivateGateway {
     });
   }
 
+  @override
   Future<Map<String, Object?>> command(
     String name,
     Map<String, dynamic> parameters,

@@ -1,3 +1,7 @@
+import '../../features/co_creation/presentation/co_creation_hubs_screen.dart';
+import '../../features/co_creation/presentation/co_creation_general_screen.dart';
+import '../../features/co_creation/presentation/co_creation_room_items.dart';
+import '../../features/co_creation/domain/co_creation_rooms.dart';
 import '../../features/co_creation/presentation/people_exit_screens.dart';
 import '../../features/co_creation/presentation/people_browse_screen.dart';
 import '../../features/co_creation/presentation/people_manage_screen.dart';
@@ -887,6 +891,46 @@ RoutingConfig _routingConfig(
                 builder: (context, state) => const MessagesLandingScreen(),
                 routes: [
                   GoRoute(
+                    path: 'cocreate/hubs/:hubId/:episodeId/leave',
+                    builder: (_, state) => CoHubLeaveScreen(
+                      key: state.pageKey,
+                      hubId: HubId.parse(state.pathParameters['hubId']),
+                      episodeId: CoEpisodeId.parse(
+                        state.pathParameters['episodeId'],
+                      ),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/hubs/:hubId/general/:roomId/:episodeId',
+                    builder: (_, state) => CoCreationGeneralScreen(
+                      key: ValueKey((
+                        state.pathParameters['hubId'],
+                        state.pathParameters['roomId'],
+                        state.pathParameters['episodeId'],
+                      )),
+                      hubId: HubId.parse(state.pathParameters['hubId']),
+                      roomId: CoRoomId.parse(state.pathParameters['roomId']),
+                      episodeId: CoEpisodeId.parse(
+                        state.pathParameters['episodeId'],
+                      ),
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'people',
+                        builder: (_, state) => CoRoomPeopleScreen(
+                          key: state.pageKey,
+                          hubId: HubId.parse(state.pathParameters['hubId']),
+                          roomId: CoRoomId.parse(
+                            state.pathParameters['roomId'],
+                          ),
+                          episodeId: CoEpisodeId.parse(
+                            state.pathParameters['episodeId'],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
                     path: 'cocreate/posts/:postId/interests/:id/withdraw',
                     builder: (_, state) => PeopleInterestWithdrawScreen(
                       postId: PostId.parse(state.pathParameters['postId']),
@@ -902,6 +946,7 @@ RoutingConfig _routingConfig(
                   GoRoute(
                     path: 'cocreate/contacts/:id',
                     builder: (_, state) => PeopleContactScreen(
+                      key: ValueKey(state.pathParameters['id']),
                       contactId: peopleUuid(state.pathParameters['id']),
                     ),
                   ),
@@ -1299,6 +1344,17 @@ RoutingConfig _routingConfig(
                 ),
                 routes: [
                   GoRoute(
+                    path: 'hubs',
+                    builder: (_, _) => const CoCreationHubsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'hubs/:id',
+                    builder: (_, state) => CoCreationHubScreen(
+                      key: ValueKey(state.pathParameters['id']),
+                      hubId: HubId.parse(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
                     path: 'demo',
                     builder: (_, _) => const CoCreationDemoBrowseScreen(),
                   ),
@@ -1688,4 +1744,6 @@ class _UnknownRouteScreen extends StatelessWidget {
 
 // Exact, Auth-only exits expose no transcript or membership admission.
 bool isOwnConversationExitPath(String path) =>
-    isDiscussionExitPath(path) || isPeopleOwnExitPath(path);
+    isDiscussionExitPath(path) ||
+    isPeopleOwnExitPath(path) ||
+    isCoHubLeavePath(path);
