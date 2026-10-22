@@ -163,3 +163,9 @@ uses real local OTP sessions for admission/history/read/report/moderation and
 concurrent send/exit tests; it requires activation OFF and restores OFF in finally.
 See docs/development/cocreate-hubs.md for the owned engine, bounds and safety
 checks. No hosted provider or production command is involved.
+
+`verify-local-cocreate-numbered.mjs` exercises stable numbering, last-seat/capacity
+races, isolated episodes, moderation and hub-exit/erasure convergence.
+`verify-local-cocreate-recruitment.mjs` exercises structured General posting,
+one active card, canonical card admission races, lifecycle/replay and human-unread
+compatibility. Both require the same owned disposable target and restore OFF.

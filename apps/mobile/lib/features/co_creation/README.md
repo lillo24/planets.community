@@ -121,3 +121,10 @@ An exact intent without a confirmed receipt keeps its UUID even if a retry later
 hits a gate/access rejection: that rejection does not prove the earlier delivery
 failed. Changed intent is still forbidden while delivery is uncertain. Private
 text is discarded when the established actor changes.
+
+D01 adds presentation/co_creation_recruitment_screen.dart for distinct General
+cards, explicit history review/canonical join, creator post/retract and exact
+uncertain recovery. The room v2 parser owns human/structured separation and sender
+attribution; the contact parser keeps its existing closed human-only contract.
+See docs/development/cocreate-recruitment.md for lifecycle, limits, lock order,
+unread compatibility and reproduction. No card creates mass notifications.

@@ -1,3 +1,4 @@
+import '../../features/co_creation/presentation/co_creation_recruitment_screen.dart';
 import '../../features/co_creation/presentation/co_creation_numbered_screen.dart';
 import '../../features/co_creation/presentation/co_creation_hubs_screen.dart';
 import '../../features/co_creation/presentation/co_creation_general_screen.dart';
@@ -966,6 +967,19 @@ RoutingConfig _routingConfig(
                       ),
                     ),
                     routes: [
+                      GoRoute(
+                        path: 'recruitment/:id',
+                        builder: (_, state) => CoRecruitmentJoinScreen(
+                          hub: HubId.parse(state.pathParameters['hubId']),
+                          general: CoRoomId.parse(
+                            state.pathParameters['roomId'],
+                          ),
+                          episode: CoEpisodeId.parse(
+                            state.pathParameters['episodeId'],
+                          ),
+                          id: peopleUuid(state.pathParameters['id']),
+                        ),
+                      ),
                       GoRoute(
                         path: 'people',
                         builder: (_, state) => CoRoomPeopleScreen(

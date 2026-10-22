@@ -364,6 +364,10 @@ jobs:
         env:
           PLANETS_DISPOSABLE_QA: "1"
         run: npm run cocreate:numbered:verify:local
+      - name: Verify structured recruitment and stale card admission
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: npm run cocreate:recruitment:verify:local
 
       - name: Regenerate public database types
         run: npm run db:types

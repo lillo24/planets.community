@@ -2615,5 +2615,24 @@
         "type": "String"
       }
     }
+  },
+  "coRecruitmentTitle": "Ricerca di partecipanti",
+  "coRecruitmentSeeking": "Gruppo {number} cerca {seats} persone",
+  "coRecruitmentReview": "Esamina il gruppo e scegli se entrare",
+  "coRecruitmentExpired": "Ricerca scaduta",
+  "coRecruitmentRetracted": "Ricerca ritirata",
+  "coRecruitmentPost": "Pubblica la ricerca in General",
+  "coRecruitmentRetract": "Ritira la ricerca",
+  "coRecruitmentNotice": "Pubblica una scheda strutturata nel General di questa comunità. La disponibilità viene verificata al momento. Una scheda attiva per gruppo; si applica un intervallo di un’ora. Per impostazione iniziale le schede scadono dopo sette giorni. Nessuno viene iscritto o riceve una notifica push di massa.",
+  "coGroupsErasedSender": "Profilo non disponibile",
+  "@coRecruitmentSeeking": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "seats": {
+        "type": "int"
+      }
+    }
   }
 }

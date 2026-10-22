@@ -3698,7 +3698,26 @@ export type Database = {
         Returns: Json
       }
       get_cocreate_post: { Args: { p_post_id: string }; Returns: Json }
+      get_cocreate_recruitment: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_general_room_id: string
+          p_recruitment_id: string
+        }
+        Returns: Json
+      }
       get_cocreate_room_page: {
+        Args: {
+          p_before_sequence?: number
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      get_cocreate_room_page_v2: {
         Args: {
           p_before_sequence?: number
           p_episode_id: string
@@ -3933,6 +3952,14 @@ export type Database = {
       }
       get_own_cocreate_numbered_membership: {
         Args: { p_expected_profile_id: string; p_room_id: string }
+        Returns: Json
+      }
+      get_own_cocreate_recruitment: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_room_id: string
+        }
         Returns: Json
       }
       get_own_group: {
@@ -4920,6 +4947,16 @@ export type Database = {
       }
       issue_location_selections_v1: {
         Args: { p_batch: string; p_places: Json }
+        Returns: Json
+      }
+      join_cocreate_recruitment: {
+        Args: {
+          p_command_id: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_recruitment_id: string
+          p_room_id: string
+        }
         Returns: Json
       }
       join_group_discussion: {
@@ -7247,6 +7284,18 @@ export type Database = {
           p_expected_version?: number
           p_operation: string
           p_post_id?: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_recruitment: {
+        Args: {
+          p_command_id: string
+          p_episode_id?: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_operation: string
+          p_recruitment_id?: string
+          p_room_id: string
         }
         Returns: Json
       }

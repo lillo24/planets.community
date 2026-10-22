@@ -104,8 +104,9 @@ class CoRoomPage {
     String actor,
     CoRoomId room,
     CoEpisodeId episode,
-    int? before,
-  ) {
+    int? before, {
+    bool structured = false,
+  }) {
     final r = coCreationObject(value, {
       'profile_id',
       'room_id',
@@ -124,7 +125,9 @@ class CoRoomPage {
     if (raw is! List || raw.length > 30) {
       throw const FormatException('Invalid room message page.');
     }
-    messages = List.unmodifiable(raw.map(PeopleMessage.parse));
+    messages = List.unmodifiable(
+      raw.map((m) => CoRoomEntry.parse(m, structured: structured)),
+    );
     final ids = <String>{};
     int? previous = before;
     for (final m in messages) {
@@ -148,7 +151,7 @@ class CoRoomPage {
     readToken = token as String?;
   }
   late final bool closed;
-  late final List<PeopleMessage> messages;
+  late final List<CoRoomEntry> messages;
   late final String? readToken;
 }
 
@@ -273,3 +276,102 @@ String coNumberedRoute(HubId hub, CoRoomId room, CoEpisodeId episode) =>
     '/messages/cocreate/hubs/${hub.value}/groups/${room.value}/${episode.value}';
 String coNumberedLeaveRoute(HubId hub, CoRoomId room, CoEpisodeId episode) =>
     '${coNumberedRoute(hub, room, episode)}/leave';
+
+class CoRecruitment {
+  CoRecruitment.parse(Object? value) {
+    final r = coCreationObject(value, {
+      'recruitment_id',
+      'hub_id',
+      'room_id',
+      'number',
+      'capacity',
+      'occupied',
+      'available',
+      'state',
+      'expires_at',
+    });
+    id = peopleUuid(r['recruitment_id']);
+    hub = HubId.parse(r['hub_id']);
+    room = CoRoomId.parse(r['room_id']);
+    number = coPositive(r['number']);
+    available = peopleBool(r['available']);
+    state = peopleState(r['state'], {
+      'open',
+      'full',
+      'expired',
+      'retracted',
+      'unavailable',
+    });
+    expiresAt = coCreationDate(r['expires_at']);
+    capacity = r['capacity'] == null ? null : coCapacity(r['capacity']);
+    occupied = r['occupied'] == null ? null : peopleCount(r['occupied']);
+    if ((capacity == null) != (occupied == null) ||
+        capacity != null && occupied! > capacity! ||
+        available != (state == 'open') ||
+        {'open', 'full'}.contains(state) &&
+            (capacity == null || (state == 'full') != (occupied == capacity))) {
+      throw const FormatException(
+        'Inconsistent recruitment lifecycle/capacity.',
+      );
+    }
+  }
+  late final String id, state;
+  late final HubId hub;
+  late final CoRoomId room;
+  late final int number;
+  late final int? capacity, occupied;
+  late final bool available;
+  late final DateTime expiresAt;
+}
+
+/// Contact payloads stay human-only. Only the versioned room reader accepts
+/// structured references; text and references cannot impersonate one another.
+class CoRoomEntry {
+  CoRoomEntry.parse(Object? value, {bool structured = false}) {
+    final r = coCreationObject(value, {
+      'message_id',
+      'sender_id',
+      'sequence',
+      'body',
+      'created_at',
+      if (structured) ...['kind', 'sender_name', 'recruitment'],
+    });
+    human = PeopleMessage.parse({
+      for (final k in [
+        'message_id',
+        'sender_id',
+        'sequence',
+        'body',
+        'created_at',
+      ])
+        k: r[k],
+    });
+    name = structured && r['sender_name'] != null
+        ? peopleText(r['sender_name'], 120, empty: false)
+        : null;
+    final kind = structured
+        ? peopleState(r['kind'], {'human', 'recruitment'})
+        : 'human';
+    recruitment = kind == 'recruitment'
+        ? CoRecruitment.parse(r['recruitment'])
+        : null;
+    if (structured && kind == 'human' && r['recruitment'] != null) {
+      throw const FormatException('Human message has a card reference.');
+    }
+  }
+  late final PeopleMessage human;
+  late final String? name;
+  late final CoRecruitment? recruitment;
+  String get id => human.id;
+  String get senderId => human.senderId;
+  String get body => human.body;
+  int get sequence => human.sequence;
+  DateTime get createdAt => human.createdAt;
+}
+
+String coRecruitmentRoute(
+  HubId hub,
+  CoRoomId general,
+  CoEpisodeId episode,
+  String id,
+) => '${coGeneralRoute(hub, general, episode)}/recruitment/${peopleUuid(id)}';

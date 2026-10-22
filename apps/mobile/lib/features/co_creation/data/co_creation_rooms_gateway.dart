@@ -113,7 +113,7 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     CoEpisodeId episode, {
     int? before,
   }) async => CoRoomPage.parse(
-    await rpc('get_cocreate_room_page', {
+    await rpc('get_cocreate_room_page_v2', {
       'p_expected_profile_id': peopleUuid(actor),
       'p_room_id': room.value,
       'p_episode_id': episode.value,
@@ -124,7 +124,39 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     room,
     episode,
     before,
+    structured: true,
   );
+  Future<CoRecruitment?> recruitment(
+    String actor,
+    HubId hub,
+    CoRoomId room,
+    CoEpisodeId episode, {
+    String? id,
+  }) async {
+    final raw = await rpc(
+      id == null ? 'get_own_cocreate_recruitment' : 'get_cocreate_recruitment',
+      {
+        'p_expected_profile_id': peopleUuid(actor),
+        if (id == null)
+          'p_room_id': room.value
+        else
+          'p_general_room_id': room.value,
+        'p_episode_id': episode.value,
+        if (id != null) 'p_recruitment_id': peopleUuid(id),
+      },
+    );
+    if (raw == null) {
+      if (id != null) throw const FormatException('Exact recruitment omitted.');
+      return null;
+    }
+    final card = CoRecruitment.parse(raw);
+    if (card.hub.value != hub.value ||
+        (id == null ? card.room.value != room.value : card.id != id)) {
+      throw const FormatException('Recruitment reference scope mismatch.');
+    }
+    return card;
+  }
+
   Future<CoGeneralContext> context(
     String actor,
     HubId hub,
@@ -259,7 +291,27 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     Map<String, dynamic> args,
   ) async {
     final raw = await rpc(name, args);
-    if (name == 'mutate_cocreate_numbered_group') {
+    if (name == 'mutate_cocreate_recruitment') {
+      final r = coCreationObject(raw, {
+        'operation',
+        'hub_id',
+        'room_id',
+        'message_id',
+        'recruitment_id',
+      });
+      if (r['operation'] != args['p_operation'] ||
+          HubId.parse(r['hub_id']).value != args['p_hub_id'] ||
+          CoRoomId.parse(r['room_id']).value != args['p_room_id'] ||
+          args['p_recruitment_id'] != null &&
+              r['recruitment_id'] != args['p_recruitment_id']) {
+        throw const FormatException('Recruitment receipt mismatch.');
+      }
+      peopleUuid(r['recruitment_id']);
+      peopleUuid(r['message_id']);
+      return r;
+    }
+    if (name == 'mutate_cocreate_numbered_group' ||
+        name == 'join_cocreate_recruitment') {
       final row = coCreationObject(raw, {
         'operation',
         'hub_id',
@@ -270,7 +322,10 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
         'version',
         'archived',
       });
-      if (row['operation'] != args['p_operation'] ||
+      if (row['operation'] !=
+              (name == 'join_cocreate_recruitment'
+                  ? 'join'
+                  : args['p_operation']) ||
           HubId.parse(row['hub_id']).value != args['p_hub_id'] ||
           args['p_room_id'] != null && row['room_id'] != args['p_room_id'] ||
           args['p_episode_id'] != null &&

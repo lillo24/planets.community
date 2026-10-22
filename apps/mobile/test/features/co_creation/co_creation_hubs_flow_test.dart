@@ -148,7 +148,7 @@ class Fixture {
           'closed': !active.contains(actor),
           'muted': false,
         };
-      case 'get_cocreate_room_page':
+      case 'get_cocreate_room_page_v2':
         require(actor!, args);
         return {
           'profile_id': actor,
@@ -161,6 +161,9 @@ class Fixture {
               'sender_id': a,
               'sequence': sequence,
               'body': 'Synthetic General history',
+              'kind': 'human',
+              'sender_name': 'Synthetic Alex',
+              'recruitment': null,
               'created_at': '2026-10-22T10:00:00Z',
             },
           ],
@@ -377,7 +380,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(f.commands, isEmpty);
       expect(f.acks, isEmpty);
-      expect(f.calls.where((n) => n == 'get_cocreate_room_page'), isEmpty);
+      expect(f.calls.where((n) => n == 'get_cocreate_room_page_v2'), isEmpty);
       await tap(tester, find.text('Join this community'));
       expect(f.commands.single['p_operation'], 'join');
       expect(f.acks, isEmpty);

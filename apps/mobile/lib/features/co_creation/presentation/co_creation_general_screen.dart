@@ -17,8 +17,8 @@ import '../domain/co_creation_rooms.dart';
 import '../domain/co_creation_identity.dart';
 import '../../messages/application/message_unread_controller.dart';
 import '../application/people_signals.dart';
-import '../domain/people_private.dart';
 import 'people_widgets.dart';
+import 'co_creation_recruitment_screen.dart';
 
 import 'package:go_router/go_router.dart';
 
@@ -43,7 +43,7 @@ class _CoCreationGeneralScreenState
     extends ConsumerState<CoCreationGeneralScreen>
     with WidgetsBindingObserver {
   final body = TextEditingController(), scroll = ScrollController();
-  List<PeopleMessage> messages = [];
+  List<CoRoomEntry> messages = [];
   String? token;
   CoGeneralContext? roomContext;
   bool busy = true,
@@ -126,6 +126,13 @@ class _CoCreationGeneralScreenState
       final page = await ref
           .read(coCreationRoomsGatewayProvider)
           .feed(actor, widget.roomId, widget.episodeId, before: before);
+      if (page.messages.any(
+        (m) =>
+            m.recruitment != null &&
+            (widget.numbered || m.recruitment!.hub.value != widget.hubId.value),
+      )) {
+        throw const FormatException('Recruitment belongs to a different hub.');
+      }
       if (!mounted ||
           generation != epoch ||
           ref.read(authSessionProvider).identity?.id != actor) {
@@ -262,12 +269,26 @@ class _CoCreationGeneralScreenState
                 },
                 boundary: olderBusy ? null : token,
                 scrollController: scroll,
-                child: ConversationHistoryList<PeopleMessage>(
+                child: ConversationHistoryList<CoRoomEntry>(
                   items: messages,
                   itemKey: (m) => m.id,
                   itemBuilder: (context, m) => ListTile(
-                    title: Text(m.body),
-                    subtitle: Text(m.createdAt.toLocal().toString()),
+                    title: m.recruitment == null
+                        ? Text(m.body)
+                        : CoRecruitmentCard(
+                            card: m.recruitment!,
+                            onOpen: () => context.push(
+                              coRecruitmentRoute(
+                                widget.hubId,
+                                widget.roomId,
+                                widget.episodeId,
+                                m.recruitment!.id,
+                              ),
+                            ),
+                          ),
+                    subtitle: Text(
+                      '${m.name ?? l.coGroupsErasedSender} · ${m.createdAt.toLocal()}',
+                    ),
                     trailing: m.senderId == actor
                         ? null
                         : IconButton(

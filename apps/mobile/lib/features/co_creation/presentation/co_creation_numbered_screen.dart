@@ -13,6 +13,7 @@ import '../domain/co_creation_rooms.dart';
 import '../domain/people_post.dart';
 import '../domain/people_private.dart';
 import 'people_widgets.dart';
+import 'co_creation_recruitment_screen.dart';
 
 /// Public aggregate discovery; no roster/history fetch occurs here.
 class CoNumberedList extends StatefulWidget {
@@ -389,6 +390,11 @@ class _ControlsState extends State<CoNumberedControls> {
             extra: {'p_muted': !m.muted},
           ),
         if (m.isManager) ...[
+          CoRecruitmentManager(
+            hub: widget.hub,
+            room: widget.room,
+            episode: widget.episode,
+          ),
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 8,

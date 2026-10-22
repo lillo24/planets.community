@@ -3353,5 +3353,24 @@
         "type": "String"
       }
     }
+  },
+  "coRecruitmentTitle": "Group recruitment",
+  "coRecruitmentSeeking": "Group {number} is looking for {seats} people",
+  "coRecruitmentReview": "Review group and join",
+  "coRecruitmentExpired": "Recruitment expired",
+  "coRecruitmentRetracted": "Recruitment retracted",
+  "coRecruitmentPost": "Post recruitment in General",
+  "coRecruitmentRetract": "Retract recruitment",
+  "coRecruitmentNotice": "Post a structured card in this community’s General. Availability is checked live. One active card per group; a one-hour cooldown applies. Cards expire after seven days by default. Nobody is enrolled or sent a mass push notification.",
+  "coGroupsErasedSender": "Unavailable profile",
+  "@coRecruitmentSeeking": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "seats": {
+        "type": "int"
+      }
+    }
   }
 }
