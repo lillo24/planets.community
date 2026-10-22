@@ -357,6 +357,11 @@ jobs:
           PLANETS_DISPOSABLE_QA: "1"
         run: npm run cocreate:hubs:verify:local
 
+      - name: Verify experimental numbered-group capacity and exit races
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: npm run cocreate:numbered:verify:local
+
       - name: Regenerate public database types
         run: npm run db:types
 

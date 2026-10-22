@@ -3669,6 +3669,19 @@ export type Database = {
         Returns: Json
       }
       get_cocreate_hub: { Args: { p_hub_id: string }; Returns: Json }
+      get_cocreate_numbered_context: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      get_cocreate_numbered_group: {
+        Args: { p_room_id: string }
+        Returns: Json
+      }
       get_cocreate_post: { Args: { p_post_id: string }; Returns: Json }
       get_cocreate_room_page: {
         Args: {
@@ -3900,6 +3913,10 @@ export type Database = {
       }
       get_own_cocreate_hub_membership: {
         Args: { p_expected_profile_id: string; p_hub_id: string }
+        Returns: Json
+      }
+      get_own_cocreate_numbered_membership: {
+        Args: { p_expected_profile_id: string; p_room_id: string }
         Returns: Json
       }
       get_own_group: {
@@ -4957,6 +4974,15 @@ export type Database = {
         }
         Returns: Json
       }
+      list_cocreate_numbered_groups: {
+        Args: {
+          p_after_number?: number
+          p_hub_id: string
+          p_limit?: number
+          p_open_seats_only?: boolean
+        }
+        Returns: Json
+      }
       list_cocreate_posts: {
         Args: {
           p_before_created_at?: string
@@ -5423,6 +5449,15 @@ export type Database = {
         }
         Returns: Json
       }
+      list_own_cocreate_numbered_exits: {
+        Args: {
+          p_before_id?: string
+          p_before_joined_at?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_own_cocreate_posts: {
         Args: {
           p_before_created_at?: string
@@ -5433,6 +5468,15 @@ export type Database = {
         Returns: Json
       }
       list_own_cocreate_rooms: {
+        Args: {
+          p_before_id?: string
+          p_before_joined_at?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_rooms_v2: {
         Args: {
           p_before_id?: string
           p_before_joined_at?: string
@@ -7092,6 +7136,16 @@ export type Database = {
         }
         Returns: Json
       }
+      moderate_cocreate_numbered_group: {
+        Args: {
+          p_case_id: string
+          p_command_id: string
+          p_expected_staff_profile_id: string
+          p_expected_version: number
+          p_operation: string
+        }
+        Returns: Json
+      }
       moderate_cocreate_post: {
         Args: {
           p_case_id: string
@@ -7131,6 +7185,21 @@ export type Database = {
           p_note?: string
           p_operation: string
           p_post_id: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_numbered_group: {
+        Args: {
+          p_capacity?: number
+          p_command_id: string
+          p_episode_id?: string
+          p_expected_profile_id: string
+          p_expected_version?: number
+          p_hub_id: string
+          p_muted?: boolean
+          p_operation: string
+          p_room_id?: string
+          p_target_profile_id?: string
         }
         Returns: Json
       }

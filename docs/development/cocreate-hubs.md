@@ -129,3 +129,36 @@ C02 contract-fixture widget tests cover guest/auth return without auto-join,
 deliberate admission, lost-reply retry after canonical membership appears, A/B
 and same-actor episode changes, frozen former history, one Messages row and
 non-ACK People. Separate genuine backend testing remains the C01 OTP verifier.
+
+## C03 numbered rooms
+
+Migration 20261022110000 allocates a persistent per-hub number, room and creator
+episode in one transaction. Numbers never depend on visible rows or get reused.
+Capacity defaults to 5 (2–50), includes the creator and reserves suspended members'
+seats. Admission, capacity, removal, archive and hub departure serialize under the
+same hub lock. Leaving a managed room archives it and freezes all active episodes;
+hub departure ends only that hub's children. Explicit removal blocks self-rejoin
+until the manager/staff reverses it; reversal never enrolls anyone automatically.
+
+Experimental abuse defaults are 50 active numbered memberships (1–200) and 5
+creations per rolling 24 hours (1–50). They are private server configuration, not
+production policy. Public summaries deliberately expose aggregate occupied/capacity
+and stable numbers, never managers, episodes, rosters or messages. Private context
+binds actor/hub/room/episode. The versioned own-room reader adds kind/number while
+the existing General-only reader retains its exact shape.
+
+Scoped staff actions require an exact reported numbered-room message and current
+room version; staff gains no room browsing. Permanent Auth erasure/deletion ends
+co-creation episodes and archives creator orphans through the existing reviewed
+metadata hooks, preserving their OIDs/ACLs. It does not change profile creation,
+native retention or moderation evidence. Temporary suspension only denies access.
+
+Reproduce with `npm run cocreate:numbered:verify:local` on the same owned disposable
+backend. Fresh full database tests pass 165 files / 7,268 assertions; the numbered
+file contributes 74. Genuine OTP/concurrency checks pass 101 assertions, including
+last-seat and capacity races, stable concurrent numbering, frozen history,
+cross-room ACK rejection, removal/reversal, scoped moderation and soft/physical
+erasure. Existing post/contact (72) and hub (77) verifiers pass again. Lint/advisors
+are clean and activation is OFF. Physical erasure of a reported subject correctly
+hits native retained-case FK protection; the verifier asserts that protection and
+uses a separate unreported synthetic identity to qualify physical deletion.
