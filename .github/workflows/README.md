@@ -210,15 +210,27 @@ real-Auth verifier alongside group membership. The existing path classifier and
 required statuses remain unchanged. Requests/chat/unread compatibility and safety
 changes share the Database gate; schema changes also regenerate Web contracts.
 
-# RELEASE01 staged delivery
+# RELEASE01 and STAGING-AUTO01 staged delivery
 
-`staging-release.yml` is separate from Validation and is disabled unless
-`STAGING_RELEASE_ENABLED=true`. PRs touching release code run only its disposable
-populated predecessor rehearsal, with no hosted credentials. Main/dispatch runs
-use protected environments and a single non-cancelling writer; complete Validation,
-approved bootstrap migration hashes, recovery, backend checks and signing/track
-checks gate delivery. Main-push Android delivery additionally requires
-`STAGING_AUTO_PUBLISH=true`. No variable or secret is provisioned by merging.
-The [runbook](../../docs/development/release01-staging-play.md) documents exact
-triggers, initial approval and incident/retry behavior. This adds no deployment
-trigger to `validation.yml` and does not let plan/document-only commits deploy.
+`staging-release.yml` is separate from Validation and stays disabled unless
+`STAGING_RELEASE_ENABLED=true`. The existing always-present **Change
+classification** job in Validation now blocks unreviewed risky migration PRs
+and performs the populated semantic rehearsal for migration/release/baseline,
+workflow and dependency changes (and full manual Validation). Unrelated PRs skip
+that expensive step without leaving a required status pending. No duplicate PR
+rehearsal runs in the release workflow. SQL history edits/deletions fail closed.
+
+After one-time protected recovery/credential/environment setup, main pushes run
+exact-source complete Validation, populated rehearsal and serialized staging SQL
+only. Routine nullable-column candidates need real catalog/data preservation;
+other SQL needs owner proof bound to the pre-merge head/hash/predecessor. The
+writer independently rechecks that proof, so merging a failed gate cannot erase
+it. Fresh main, history parity, TLS, advisory lock and backend checks remain.
+
+Android/Play jobs require explicit manual `build`/`publish` dispatch, regardless
+of `STAGING_AUTO_PUBLISH`. Keep that variable false and the separate publication
+reviewer. No live variables, secrets or environment rules change by code merge.
+The [runbook](../../docs/development/release01-staging-play.md) owns classification,
+one-time activation, real encrypted DB **and Storage-object** recovery, bounded
+two-file reconciliation and incident steps. Current external blockers and the
+123/126 read-only observation are in the existing release status.

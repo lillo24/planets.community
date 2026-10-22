@@ -72,7 +72,7 @@ export function migrationDiff(local, remote, projectRef) {
   };
 }
 
-export function deploymentSet(diff, policy, approvalDigest) {
+export function deploymentSet(diff, policy, approvalDigest, reconciliation) {
   if (
     policy.project_ref !== STAGING_REF ||
     policy.migration_owner !== "github-actions"
@@ -83,6 +83,24 @@ export function deploymentSet(diff, policy, approvalDigest) {
   if (!/^\d{14}$/.test(policy.bootstrap_boundary ?? ""))
     throw new ReleaseError("Missing reviewed bootstrap boundary");
   if (!diff.pending.length) return [];
+  // STAGING-AUTO01 adds one bounded reconciliation; it does not move the
+  // original bootstrap boundary or extend its 26-file waiver/hash allowlist.
+  if (
+    reconciliation?.enabled === true &&
+    reconciliation.project_ref === STAGING_REF &&
+    reconciliation.predecessor_sha256 === diff.predecessor_sha256 &&
+    reconciliation.migrations?.length === 2 &&
+    JSON.stringify(reconciliation.migrations) ===
+      JSON.stringify(
+        diff.pending
+          .slice(0, 2)
+          .map(({ version, sha256 }) => ({ version, sha256 })),
+      ) &&
+    reconciliation.migrations[0].version === "20261021152141" &&
+    reconciliation.migrations[1].version === "20261021193500" &&
+    !diff.pending.slice(2).some((m) => m.historical)
+  )
+    return diff.pending;
   if (diff.pending.some((m) => m.version <= policy.bootstrap_boundary)) {
     // The digest binds approval to every byte and the exact observed predecessor.
     const digest = sha256(JSON.stringify(diff));

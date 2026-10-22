@@ -104,6 +104,7 @@ For shared/staging/production database history:
 
 - do not rewrite an already-applied production migration to change history; add a new migration;
 - destructive schema/data operations against staging or production require explicit authorization;
+- Validated backward-compatible migrations merged to `main` may auto-deploy to staging; destructive or unverified changes require explicit approval.
 - seed/test data must be deterministic and contain no real personal data;
 - authorization-sensitive database changes must preserve the repository's RLS/security model;
 - public access must be deliberate; do not expose private data and rely on the UI to hide it.

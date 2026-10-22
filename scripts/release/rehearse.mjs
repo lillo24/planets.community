@@ -7,6 +7,13 @@ import postgres from "postgres";
 import { parseLocalSupabaseStatus } from "../lib/local-supabase-status.mjs";
 import { readMigrations, migrationDiff, STAGING_REF } from "./migrations.mjs";
 import { historyQuery, summarizeHistory } from "./backend.mjs";
+import {
+  catalogQuery,
+  assertRoutineCatalog,
+  classifyMigration,
+  inventoryDigest,
+} from "./safety.mjs";
+import { githubClient, ownerReviewsForPr } from "./reviews.mjs";
 
 // This destructive rehearsal is confined to a fresh, credential-free Actions
 // runner. It never accepts a remote connection URL, target flag or project ref.
@@ -41,7 +48,7 @@ if (existing.status === 0)
   throw new ReleaseError("Rehearsal refuses to reuse an existing stack");
 const baseline = JSON.parse(
   readFileSync(
-    "docs/development/evidence/release01/migration-manifest.json",
+    "docs/development/evidence/release01/staging-auto01-predecessor.json",
     "utf8",
   ),
 );
@@ -55,6 +62,25 @@ for (const previous of baseline.applied_history) {
 }
 const applied = new Set(baseline.applied_history.map((m) => m.version));
 const pending = local.filter((m) => !applied.has(m.version));
+const event = process.env.GITHUB_EVENT_PATH
+  ? JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"))
+  : {};
+const changed = event.pull_request
+  ? new Set(
+      command("git", [
+        "diff",
+        "--no-renames",
+        "--name-only",
+        event.pull_request.base.sha,
+        event.pull_request.head.sha,
+        "--",
+        "supabase/migrations",
+      ])
+        .trim()
+        .split("\n"),
+    )
+  : new Set();
+const witnesses = [];
 const path = (m) => `supabase/migrations/${m.file}`;
 const restore = () => {
   for (const m of pending) writeFileSync(path(m), m.sql);
@@ -100,8 +126,77 @@ try {
     where n.nspname in ('public','private','auth','storage') and c.relkind in ('r','p') and a.attnum>0 and not a.attisdropped
     group by n.nspname,c.relname order by n.nspname,c.relname`;
   const before = await snapshot(tables);
-  restore();
-  command(cli, ["migration", "up", "--local", "--include-all"]);
+  const previousInventory = local.filter((m) => applied.has(m.version));
+  for (const migration of pending) {
+    const currentTables =
+      await sql`select n.nspname as schema,c.relname as name,array_agg(a.attname order by a.attnum) as columns from pg_class c join pg_namespace n on n.oid=c.relnamespace join pg_attribute a on a.attrelid=c.oid where n.nspname in ('public','private','auth','storage') and c.relkind in ('r','p') and a.attnum>0 and not a.attisdropped group by n.nspname,c.relname order by n.nspname,c.relname`;
+    const original = await snapshot(currentTables);
+    const priorCatalog = (await sql.unsafe(catalogQuery))[0].catalog;
+    writeFileSync(path(migration), migration.sql);
+    command(cli, ["migration", "up", "--local", "--include-all"]);
+    assert.deepEqual(
+      await snapshot(currentTables),
+      original,
+      "Per-file predecessor rows/columns changed",
+    );
+    const witness = {
+      version: migration.version,
+      sha256: migration.sha256,
+      predecessor_inventory_sha256: inventoryDigest(previousInventory),
+      preserved_rows: true,
+      routine_security_preserved: false,
+    };
+    const classification = classifyMigration(migration.sql);
+    if (classification.classification === "routine-candidate") {
+      try {
+        assertRoutineCatalog(
+          priorCatalog,
+          (await sql.unsafe(catalogQuery))[0].catalog,
+          classification.effects,
+        );
+        witness.routine_security_preserved = true;
+      } catch (error) {
+        if (!(error instanceof ReleaseError)) throw error;
+        if (changed.has(path(migration))) {
+          const needed = {
+            version: migration.version,
+            sha256: migration.sha256,
+            predecessor_inventory_sha256: witness.predecessor_inventory_sha256,
+          };
+          writeFileSync(
+            "build/release01/review-required.json",
+            JSON.stringify(
+              {
+                project_ref: STAGING_REF,
+                source_sha: event.pull_request.head.sha,
+                approvals: [needed],
+              },
+              null,
+              2,
+            ),
+          );
+          const reviews = await ownerReviewsForPr(
+            githubClient(process.env),
+            event.pull_request,
+          );
+          if (
+            !reviews.some(
+              (r) =>
+                r.version === needed.version &&
+                r.sha256 === needed.sha256 &&
+                r.predecessor_inventory_sha256 ===
+                  needed.predecessor_inventory_sha256,
+            )
+          )
+            throw new ReleaseError(
+              "Catalog semantics require pre-merge owner review: use the sanitized review-required artifact and rerun; SQL grammar alone is insufficient",
+            );
+        }
+      }
+    }
+    witnesses.push(witness);
+    previousInventory.push(migration);
+  }
   assert.deepEqual(
     await snapshot(tables),
     before,
@@ -123,9 +218,74 @@ try {
     "No-op retry changed predecessor data",
   );
   command("npm", ["run", "resource:listings:verify:local"]);
+  // Exercise the positive semantic proof against real pg_catalog even if the
+  // candidate PR adds no SQL. The fixture and its column are rolled back.
+  const rollback = new Error("rollback-only routine semantic fixture");
+  try {
+    await sql.begin(async (tx) => {
+      await tx.unsafe(
+        "create table private.staging_auto01_probe(id uuid); alter table private.staging_auto01_probe enable row level security; revoke all on private.staging_auto01_probe from public,anon,authenticated,service_role;",
+      );
+      const original = (await tx.unsafe(catalogQuery))[0].catalog;
+      const sample =
+        "set lock_timeout='5s'; set statement_timeout='60s'; alter table private.staging_auto01_probe add column note text null; reset lock_timeout; reset statement_timeout;";
+      await tx.unsafe(sample);
+      assertRoutineCatalog(
+        original,
+        (await tx.unsafe(catalogQuery))[0].catalog,
+        classifyMigration(sample).effects,
+      );
+      // Prove the real catalog query observes consequential changes, not only
+      // a hand-written unit-test catalog. All mutations roll back below.
+      for (const [change, undo] of [
+        [
+          "alter table private.staging_auto01_probe disable row level security",
+          "alter table private.staging_auto01_probe enable row level security",
+        ],
+        [
+          "grant select on private.staging_auto01_probe to anon",
+          "revoke select on private.staging_auto01_probe from anon",
+        ],
+        [
+          "create function private.staging_auto01_probe_fn() returns integer language sql as 'select 1'",
+          "drop function private.staging_auto01_probe_fn()",
+        ],
+        [
+          "create index staging_auto01_probe_idx on private.staging_auto01_probe(id)",
+          "drop index private.staging_auto01_probe_idx",
+        ],
+      ]) {
+        await tx.unsafe(change);
+        const altered = (await tx.unsafe(catalogQuery))[0].catalog;
+        assert.throws(
+          () =>
+            assertRoutineCatalog(
+              original,
+              altered,
+              classifyMigration(sample).effects,
+            ),
+          ReleaseError,
+        );
+        await tx.unsafe(undo);
+        assertRoutineCatalog(
+          original,
+          (await tx.unsafe(catalogQuery))[0].catalog,
+          classifyMigration(sample).effects,
+        );
+      }
+      throw rollback;
+    });
+  } catch (error) {
+    if (error !== rollback) throw error;
+  }
   command("npm", ["run", "db:types:check"]);
   const evidence = {
     source_sha: process.env.GITHUB_SHA,
+    workflow_run_id: process.env.GITHUB_RUN_ID,
+    inventory_sha256: inventoryDigest(local),
+    migration_safety: witnesses,
+    routine_catalog_probe: true,
+    routine_catalog_negative_probes: true,
     predecessor_migrations: predecessor.length,
     applied_migrations: first.length,
     pending: pending.map(({ sql, ...m }) => m),
