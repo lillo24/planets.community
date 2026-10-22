@@ -2876,6 +2876,10 @@ export type Database = {
         }
         Returns: number
       }
+      begin_external_activity_import: {
+        Args: { p_source_id: string }
+        Returns: Json
+      }
       block_user: {
         Args: {
           p_blocked_profile_id: string
@@ -3632,6 +3636,17 @@ export type Database = {
         }
         Returns: Json
       }
+      finish_external_activity_import: {
+        Args: {
+          p_error_code?: string
+          p_fetched?: number
+          p_records?: Json
+          p_rejected?: number
+          p_run_id: string
+          p_state: string
+        }
+        Returns: Json
+      }
       finish_location_preview_v1: {
         Args: { p_image_base64?: string; p_image_key: string; p_token: string }
         Returns: undefined
@@ -3710,6 +3725,7 @@ export type Database = {
           invite_token: string
         }[]
       }
+      get_external_activity: { Args: { p_activity_id: string }; Returns: Json }
       get_group_authority_invitation_preview: {
         Args: { p_token: string }
         Returns: {
@@ -5052,6 +5068,16 @@ export type Database = {
           profile_id: string
           role_rank: number
         }[]
+      }
+      list_external_activities: {
+        Args: {
+          p_category?: string
+          p_cursor?: Json
+          p_discipline?: string
+          p_limit?: number
+          p_query?: string
+        }
+        Returns: Json
       }
       list_group_authority_invitations: {
         Args: {

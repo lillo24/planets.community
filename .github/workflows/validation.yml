@@ -197,6 +197,9 @@ jobs:
       - name: Run database security tests
         run: npm run db:test
 
+      - name: Verify source-independent external activity pipeline
+        run: npm run activities:verify:local
+
       - name: Verify private avatar variants and legacy photo delivery
         run: npm run profile:photo:viewer:verify:local
 

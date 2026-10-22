@@ -1,5 +1,16 @@
 # Validation workflow
 
+`external-activities.yml` is a separate daily 04:20 UTC/dispatch Node runner,
+skipped unless `ACTIVITIES_IMPORT_ENABLED=true`. No PR/fork trigger receives
+its server-only credentials. Target-scoped concurrency and a ten-minute cap
+bound the one daily job after activation. The shipped municipal connector is
+still blocked on reuse clarification; a variable or secret cannot bypass it.
+No schedule is activated by this implementation. See the
+[ACTAPI01 setup and disable steps](../../docs/development/actapi01-infrastructure.md).
+Validation runs only synthetic tooling/pgTAP and the disposable local HTTP
+verifier. Shared workflow/package changes select all four existing areas;
+required checks, complete manual validation and main-push behavior are unchanged.
+
 `mock-hosted.yml` is an explicitly selected `qa-mock-hosted` same-repository
 label/manual operation for the disabled `planets-mock` environment. It runs the
 reviewed seed and read-only verifier with a private five-minute CLI database

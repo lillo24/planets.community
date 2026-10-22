@@ -1,0 +1,47 @@
+name: External activity refresh (opt-in)
+
+on:
+  schedule:
+    - cron: "20 4 * * *"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Apply a complete validated import (otherwise dry-run)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: external-activities-${{ vars.ACTIVITIES_TARGET || 'unconfigured' }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    # This gate does not confirm municipal reuse rights or provide a connector.
+    # The shipped CLI fails explicitly at that separate code-owned checkpoint.
+    if: ${{ github.repository == 'lillo24/planets.community' && vars.ACTIVITIES_IMPORT_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Run the bounded importer
+        env:
+          ACTIVITIES_TARGET: ${{ vars.ACTIVITIES_TARGET }}
+          ACTIVITIES_API_URL: ${{ secrets.ACTIVITIES_API_URL }}
+          ACTIVITIES_SERVICE_ROLE_KEY: ${{ secrets.ACTIVITIES_SERVICE_ROLE_KEY }}
+          IMPORT_APPLY: ${{ github.event_name == 'schedule' || inputs.apply }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$IMPORT_APPLY" == 'true' ]]; then
+            node scripts/import-external-activities.mjs --source agenda-trento --apply --target "$ACTIVITIES_TARGET"
+          else
+            node scripts/import-external-activities.mjs --source agenda-trento --dry-run
+          fi

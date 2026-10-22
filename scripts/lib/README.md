@@ -3,6 +3,11 @@
 This folder owns reusable Node.js helpers and their unit tests for repository
 tooling.
 
+- `external-activities/` separates bounded provider transport, canonical record
+  validation and atomic import orchestration. `external-activities.test.mjs`
+  uses synthetic data and fake transport; the municipal connector is blocked
+  pending the source-rights checkpoint and never falls back to examples.
+
 - `release01.test.mjs` covers the separate `scripts/release/` module: migration
   drift/approval and target guards, no-op retry, backend/Play failure boundaries,
   original signing inputs, code/track selection, mock Publisher calls and Python

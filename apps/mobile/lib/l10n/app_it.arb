@@ -2576,5 +2576,44 @@
     }
   },
   "coGroupsMute": "Silenzia gruppo",
-  "coGroupsUnmute": "Riattiva gruppo"
+  "coGroupsUnmute": "Riattiva gruppo",
+  "activitiesExternalTitle": "Calendari esterni · Trento",
+  "activitiesExternalScope": "Eventi da calendari esterni. Verifica condizioni e prenotazioni sul sito ufficiale. La copertura è limitata.",
+  "activitiesSearchExternal": "Cerca eventi esterni",
+  "activitiesPreviewExamples": "Anteprima degli esempi inventati",
+  "activitiesExamplesPreviewTitle": "Esempi inventati",
+  "activitiesExternalLoading": "Caricamento eventi esterni…",
+  "activitiesExternalEmpty": "Nessun evento esterno corrisponde ai filtri.",
+  "activitiesExternalUnconfigured": "Il catalogo esterno non è ancora configurato.",
+  "activitiesExternalNeverSynchronized": "La prima importazione del calendario esterno non è stata completata.",
+  "activitiesExternalStale": "Gli aggiornamenti del calendario sono in ritardo. Verifica la pagina ufficiale dell’evento.",
+  "activitiesExternalUnavailable": "Non è stato possibile aggiornare il calendario. Gli eventi già importati potrebbero essere ancora visibili.",
+  "activitiesExternalReadFailed": "Non è stato possibile leggere il catalogo. Riprova.",
+  "activitiesExternalDetail": "Evento esterno",
+  "activitiesExternalMissing": "Questo evento esterno non è disponibile.",
+  "activitiesExternalStaleRecord": "Ultima osservazione oltre 72 ore fa",
+  "activitiesOfficialEvent": "Vedi evento sul sito ufficiale",
+  "activitiesSourceLicense": "Licenza della fonte",
+  "activitiesLinkFailed": "Non è stato possibile aprire il collegamento. Riprova.",
+  "activitiesTimeNotProvided": "Orario non fornito",
+  "activitiesAllDay": "Tutto il giorno",
+  "activitiesExternalScheduleUnknown": "Calendario non fornito",
+  "activitiesExternalCancelled": "Annullato dalla fonte",
+  "activitiesExternalLoadMore": "Carica altri eventi esterni",
+  "activitiesSourceLabel": "Fonte: {source}",
+  "@activitiesSourceLabel": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "activitiesObservedAt": "Ultima osservazione da PLANETS: {date}",
+  "@activitiesObservedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }
