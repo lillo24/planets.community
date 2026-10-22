@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/application/auth_session_controller.dart';
+import '../../mock_mode/application/mock_mode_coordinator.dart';
 import '../data/activity_interest_sink.dart';
 import '../data/posthog_activity_interest_sink.dart';
 import '../domain/activity_interest_event.dart';
@@ -67,8 +68,9 @@ final activityInterestTrackerProvider = Provider<ActivityInterestTracker>((
   final config = ref.watch(activityInterestConfigurationProvider);
   final permission = ref.watch(activityInterestPermissionProvider);
   final sinkFactory = ref.watch(activityInterestSinkFactoryProvider);
+  final mock = ref.watch(activeMockRealmProvider);
   final tracker = ActivityInterestTracker(
-    isAllowed: () => config.configured && permission.allowed,
+    isAllowed: () => !mock && config.configured && permission.allowed,
     sinkFactory: sinkFactory,
   );
   // The identity is observed only to discard work; it never enters an event.
@@ -87,6 +89,7 @@ void recordActivityInterest(
   bool Function()? isCurrent,
 }) {
   try {
+    if (ref.read(activeMockRealmProvider)) return;
     ref
         .read(activityInterestTrackerProvider)
         .record(event, isCurrent: isCurrent);

@@ -224,8 +224,10 @@ Public controls remain mounted during idle/loading/error/empty results. Same-que
 refresh retains rows and reports progress/failure; changed filters clear previous
 rows. Owner/delegated loads settle independently, never refetch a completed peer
 because its sibling is pending, and clear private caches on readiness changes.
-The folder action opens `/drafts?types=project`; the hub's management menu retains
-this feature's published/history/co-organizer screen and DRAFT01 recovery.
+The folder action opens `/drafts?types=project`, the My activities hub with all
+statuses. It includes published/history and separate co-organized work. Non-draft
+owner rows focus the existing owner actions through `/proposals/mine?item=<id>`;
+unfiltered legacy routes and DRAFT01 recovery remain supported.
 
 ## UI-NEXT-03 creation and controls
 

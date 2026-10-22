@@ -1,3 +1,5 @@
+import '../../profile/presentation/person_preview_sheet.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -41,9 +43,11 @@ import '../../resource_saved_searches/presentation/resource_saved_search_routes.
 import '../application/resource_listing_controllers.dart';
 import '../domain/resource_listing_models.dart';
 import 'resource_listing_widgets.dart';
+import 'resource_category_field.dart';
 
 typedef _ResourceFilterTuple = ({
   ResourceListingMode? mode,
+  ResourceCategory? category,
   String locality,
   String query,
 });
@@ -67,6 +71,7 @@ class _PublicResourceListingsScreenState
   late final TextEditingController _queryController;
   late final TextEditingController _localityController;
   ResourceListingMode? _modeFilter;
+  ResourceCategory? _categoryFilter;
   bool _filtersExpanded = false;
   Timer? _filterTimer;
 
@@ -77,6 +82,7 @@ class _PublicResourceListingsScreenState
     _queryController = TextEditingController(text: current.query);
     _localityController = TextEditingController(text: current.locality);
     _modeFilter = current.modeFilter;
+    _categoryFilter = current.categoryFilter;
     if (current.phase == ResourceListingLoadPhase.idle) {
       Future<void>.microtask(
         () => ref.read(publicResourceListingsProvider.notifier).load(),
@@ -105,6 +111,7 @@ class _PublicResourceListingsScreenState
       publicResourceListingsProvider.select(
         (value) => (
           mode: value.modeFilter,
+          category: value.categoryFilter,
           locality: value.locality,
           query: value.query,
         ),
@@ -151,7 +158,12 @@ class _PublicResourceListingsScreenState
                 state.resultsMatchFilters,
             requestKey: (
               state.items.length,
-              (state.modeFilter, state.locality, state.query),
+              (
+                state.modeFilter,
+                state.categoryFilter,
+                state.locality,
+                state.query,
+              ),
               ref.watch(authSessionProvider).phase,
               ref.watch(authSessionProvider).identity?.id,
             ),
@@ -168,49 +180,6 @@ class _PublicResourceListingsScreenState
                   prepare: _flushFilters,
                 ),
                 const SizedBox(height: 8),
-                Semantics(
-                  label: l10n.resourceModeFilterLabel,
-                  child: SegmentedButton<ResourceListingMode>(
-                    key: const Key('resource-mode-filter'),
-                    multiSelectionEnabled: true,
-                    emptySelectionAllowed: true,
-                    selectedIcon: const Icon(Icons.check),
-                    segments: [
-                      ButtonSegment(
-                        value: ResourceListingMode.donate,
-                        label: Text(
-                          l10n.resourceModeDonate,
-                          key: const Key('resource-filter-mode-donate'),
-                        ),
-                      ),
-                      ButtonSegment(
-                        value: ResourceListingMode.exchange,
-                        label: Text(
-                          l10n.resourceModeExchange,
-                          key: const Key('resource-filter-mode-exchange'),
-                        ),
-                      ),
-                    ],
-                    selected: _modeFilter == null
-                        ? ResourceListingMode.values.toSet()
-                        : {_modeFilter!},
-                    onSelectionChanged: (selection) {
-                      setState(() {
-                        // Deselecting the last mode switches to the other
-                        // one, so an empty visual/filter state never exists.
-                        _modeFilter = selection.isEmpty
-                            ? (_modeFilter == ResourceListingMode.donate
-                                  ? ResourceListingMode.exchange
-                                  : ResourceListingMode.donate)
-                            : selection.length == 2
-                            ? null
-                            : selection.single;
-                      });
-                      _flushFilters();
-                    },
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.medium),
                 Row(
                   children: [
                     Expanded(
@@ -232,39 +201,10 @@ class _PublicResourceListingsScreenState
                         onSubmitted: (_) => _flushFilters(),
                       ),
                     ),
-                    BrowseFilterButton(
-                      key: const Key('resource-toggle-filters'),
-                      expanded: _filtersExpanded,
-                      hasActiveFilters: state.locality.trim().isNotEmpty,
-                      onPressed: () {
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        setState(() => _filtersExpanded = !_filtersExpanded);
-                      },
-                    ),
-                  ],
-                ),
-                if (_filtersExpanded) ...[
-                  const SizedBox(height: AppSpacing.small),
-                  TextField(
-                    key: const Key('resource-locality-filter'),
-                    controller: _localityController,
-                    maxLength: 120,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      labelText: l10n.resourceLocalityLabel,
-                    ),
-                    onChanged: (_) => _scheduleFilters(),
-                    onSubmitted: (_) => _flushFilters(),
-                  ),
-                ],
-                Wrap(
-                  alignment: WrapAlignment.end,
-                  spacing: AppSpacing.small,
-                  runSpacing: AppSpacing.small,
-                  children: [
                     if (expectedProfileId != null)
-                      OutlinedButton.icon(
+                      IconButton(
                         key: const Key('resource-save-search'),
+                        tooltip: l10n.resourceSavedSearchSaveAction,
                         onPressed:
                             state.isBusy ||
                                 savedSearches.isActing ||
@@ -281,10 +221,88 @@ class _PublicResourceListingsScreenState
                                 ),
                               )
                             : const Icon(Icons.bookmark_add_outlined),
-                        label: Text(l10n.resourceSavedSearchSaveAction),
                       ),
+                    BrowseFilterButton(
+                      key: const Key('resource-toggle-filters'),
+                      expanded: _filtersExpanded,
+                      hasActiveFilters:
+                          state.modeFilter != null ||
+                          state.categoryFilter != null ||
+                          state.locality.trim().isNotEmpty,
+                      onPressed: () {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        setState(() => _filtersExpanded = !_filtersExpanded);
+                      },
+                    ),
                   ],
                 ),
+                if (_filtersExpanded) ...[
+                  const SizedBox(height: AppSpacing.small),
+                  Semantics(
+                    label: l10n.resourceModeFilterLabel,
+                    child: SegmentedButton<ResourceListingMode>(
+                      key: const Key('resource-mode-filter'),
+                      multiSelectionEnabled: true,
+                      emptySelectionAllowed: true,
+                      selectedIcon: const Icon(Icons.check),
+                      segments: [
+                        ButtonSegment(
+                          value: ResourceListingMode.donate,
+                          label: Text(
+                            l10n.resourceModeDonate,
+                            key: const Key('resource-filter-mode-donate'),
+                          ),
+                        ),
+                        ButtonSegment(
+                          value: ResourceListingMode.exchange,
+                          label: Text(
+                            l10n.resourceModeExchange,
+                            key: const Key('resource-filter-mode-exchange'),
+                          ),
+                        ),
+                      ],
+                      selected: _modeFilter == null
+                          ? ResourceListingMode.values.toSet()
+                          : {_modeFilter!},
+                      onSelectionChanged: (selection) {
+                        setState(() {
+                          // Deselecting the last mode switches to the other
+                          // one, so an empty visual/filter state never exists.
+                          _modeFilter = selection.isEmpty
+                              ? (_modeFilter == ResourceListingMode.donate
+                                    ? ResourceListingMode.exchange
+                                    : ResourceListingMode.donate)
+                              : selection.length == 2
+                              ? null
+                              : selection.single;
+                        });
+                        _flushFilters();
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  ResourceCategoryField(
+                    key: const Key('resource-category-filter'),
+                    category: _categoryFilter,
+                    showAll: true,
+                    onChanged: (category) {
+                      setState(() => _categoryFilter = category);
+                      _flushFilters();
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  TextField(
+                    key: const Key('resource-locality-filter'),
+                    controller: _localityController,
+                    maxLength: 120,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      labelText: l10n.resourceLocalityLabel,
+                    ),
+                    onChanged: (_) => _scheduleFilters(),
+                    onSubmitted: (_) => _flushFilters(),
+                  ),
+                ],
                 if (state.phase == ResourceListingLoadPhase.loading &&
                     state.items.isNotEmpty)
                   Padding(
@@ -421,6 +439,7 @@ class _PublicResourceListingsScreenState
     // A failed request remains retryable; successful/in-flight tuples dedupe.
     if (current.phase != ResourceListingLoadPhase.failure &&
         current.modeFilter == input.mode &&
+        current.categoryFilter == input.category &&
         current.locality == (input.locality ?? '') &&
         current.query == (input.query ?? '')) {
       return;
@@ -429,6 +448,7 @@ class _PublicResourceListingsScreenState
         .read(publicResourceListingsProvider.notifier)
         .applyFilters(
           mode: input.mode,
+          category: input.category,
           locality: input.locality ?? '',
           query: input.query ?? '',
         );
@@ -438,6 +458,7 @@ class _PublicResourceListingsScreenState
       ResourceSavedSearchInput.normalized(
         query: _queryController.text,
         mode: _modeFilter,
+        category: _categoryFilter,
         locality: _localityController.text,
       );
 
@@ -447,6 +468,7 @@ class _PublicResourceListingsScreenState
     _localityController.text = filters.locality;
     setState(() {
       _modeFilter = filters.mode;
+      _categoryFilter = filters.category;
     });
   }
 
@@ -603,6 +625,8 @@ class _PublicResourceListingDetailScreenState
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       ResourceListingModeBadge(mode: detail.summary.mode),
+                      if (detail.summary.category case final category?)
+                        ResourceCategoryText(category: category),
                       Semantics(
                         container: true,
                         label: l10n.resourceInterestCount(
@@ -675,21 +699,45 @@ class _PublicResourceListingDetailScreenState
                     ),
                   ),
                   const SizedBox(height: AppSpacing.large),
-                  Row(
-                    key: const Key('resource-listing-owner'),
-                    children: [
-                      VisibleProfilePhotoAvatar(
-                        entry: ownerPhoto,
-                        imageSemanticsLabel:
-                            l10n.resourceListingOwnerPhotoLabel,
-                        placeholderSemanticsLabel:
-                            l10n.resourceListingOwnerPhotoLabel,
-                      ),
-                      if (detail.ownerDisplayName case final owner?) ...[
-                        const SizedBox(width: AppSpacing.small),
-                        Expanded(child: Text(l10n.resourceListedBy(owner))),
+                  InkWell(
+                    onTap: () => showPersonPreviewSheet(
+                      context,
+                      profileId: detail.ownerProfileId,
+                      contextDisplayName: detail.ownerDisplayName,
+                      listingId: widget.listingId,
+                      onChanged: (_) async {
+                        ref
+                            .read(resourceListingOwnerPhotoProvider.notifier)
+                            .invalidate(widget.listingId);
+                        await ref
+                            .read(resourceListingOwnerPhotoProvider.notifier)
+                            .load(widget.listingId, force: true);
+                        if (profileId != null) {
+                          await ref
+                              .read(resourceRequestHistoryProvider.notifier)
+                              .load(profileId, force: true);
+                          await ref
+                              .read(messagesInboxProvider.notifier)
+                              .load(profileId, refresh: true);
+                        }
+                      },
+                    ),
+                    child: Row(
+                      key: const Key('resource-listing-owner'),
+                      children: [
+                        VisibleProfilePhotoAvatar(
+                          entry: ownerPhoto,
+                          imageSemanticsLabel:
+                              l10n.resourceListingOwnerPhotoLabel,
+                          placeholderSemanticsLabel:
+                              l10n.resourceListingOwnerPhotoLabel,
+                        ),
+                        if (detail.ownerDisplayName case final owner?) ...[
+                          const SizedBox(width: AppSpacing.small),
+                          Expanded(child: Text(l10n.resourceListedBy(owner))),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                   if (profileId != null && !isOwner) ...[
                     const SizedBox(height: AppSpacing.large),

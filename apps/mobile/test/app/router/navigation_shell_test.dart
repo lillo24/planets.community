@@ -1,10 +1,15 @@
+import 'package:planets_mobile/features/recurring_activities/domain/recurring_activity_models.dart';
+import 'package:planets_mobile/features/resource_listings/domain/resource_listing_models.dart';
+import 'package:planets_mobile/core/widgets/tag_multi_select.dart';
 import 'package:planets_mobile/features/settings/application/activities_split_preference_controller.dart';
 import 'package:planets_mobile/features/settings/data/activities_split_preference_store.dart';
 import 'package:planets_mobile/features/settings/domain/activities_split_preference.dart';
 import 'package:planets_mobile/features/auth/application/auth_command_controller.dart';
 import 'package:planets_mobile/features/activities_sandbox/presentation/activity_example_widgets.dart';
+import 'package:planets_mobile/features/external_activities/data/external_activity_gateway.dart';
 
 import '../../support/rendered_evidence.dart';
+import '../../support/fake_external_activities.dart';
 import '../../support/fake_policy.dart';
 import '../../support/fake_group_discussions.dart';
 
@@ -178,8 +183,9 @@ void main() {
         await _tap(tester, 'browse-activities-button');
         expect(_path(app), '/activities');
         expect(find.byKey(const Key('nav-browse')), findsOneWidget);
-        expect(find.text('Example activities · Trento'), findsOneWidget);
+        expect(find.text('External calendars · Trento'), findsOneWidget);
         await RenderedEvidence.capture(tester, 'activities-all-$destination');
+        await _tap(tester, 'activities-preview-examples');
         await _tap(tester, 'activities-category-sports');
         expect(find.byKey(const Key('activities-native-tavoli')), findsNothing);
         await tester.enterText(
@@ -197,7 +203,7 @@ void main() {
         await RenderedEvidence.capture(tester, 'example-detail-$destination');
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
-        expect(_path(app), '/activities');
+        expect(_path(app), '/activities/examples');
         expect(
           tester
               .widget<TextField>(
@@ -214,7 +220,7 @@ void main() {
         expect(find.byKey(Key(preferredKey)), findsOneWidget);
         if (destination == BottomTabDestination.browse) {
           await _tap(tester, 'nav-browse');
-          expect(_path(app), '/activities');
+          expect(_path(app), '/activities/examples');
           expect(
             tester
                 .widget<TextField>(
@@ -281,6 +287,7 @@ void main() {
       );
       app.read(appRouterProvider).go('/activities');
       await tester.pumpAndSettle();
+      await _tap(tester, 'activities-preview-examples');
       await _tap(tester, 'activities-category-sports');
       await _activityTap(tester, 'example-acrobatics');
       expect(find.text('Course'), findsOneWidget);
@@ -291,7 +298,7 @@ void main() {
       expect(tavoli.calls, isEmpty);
       expect(participation.calls, isEmpty);
       await _tap(tester, 'page-close');
-      expect(_path(app), '/activities');
+      expect(_path(app), '/activities/examples');
       tester
           .state<ScrollableState>(find.byType(Scrollable).hitTestable().first)
           .position
@@ -337,11 +344,12 @@ void main() {
       router.go('/activities');
       await tester.pumpAndSettle();
       await tester.enterText(
-        find.byKey(const Key('activities-example-search')),
+        find.byKey(const Key('activities-external-search')),
         'no matching example',
       );
+      await tester.pump(const Duration(milliseconds: 350));
       await tester.pumpAndSettle();
-      // Example search never removes the independent native entry.
+      // External search never removes the independent native entry.
       await _tap(tester, 'activities-native-tavoli');
       expect(_path(app), '/tavoli');
       expect(tavoli.calls.where((call) => call == 'list-public'), hasLength(1));
@@ -353,7 +361,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(_path(app), '/activities');
       expect(
-        find.byKey(const Key('activities-examples-empty')),
+        find.byKey(const Key('external-activities-health')),
         findsOneWidget,
       );
       router.go('/tavoli/create');
@@ -383,7 +391,7 @@ void main() {
     );
     app.read(appRouterProvider).go('/activities');
     await tester.pumpAndSettle();
-    expect(find.text('Example activities · Trento'), findsOneWidget);
+    expect(find.text('External calendars · Trento'), findsOneWidget);
     await _tap(tester, 'activities-native-tavoli');
     expect(find.byType(ErrorState), findsOneWidget);
     expect(find.byType(ActivityExampleCard), findsNothing);
@@ -670,8 +678,10 @@ void main() {
       expect(router.routerDelegate.state.uri.path, '/drafts');
       expect(
         tester
-            .widget<FilterChip>(find.byKey(const Key('draft-type-project')))
-            .selected,
+            .widgetList<TagMultiSelect>(find.byType(TagMultiSelect))
+            .first
+            .selectedIds
+            .contains('project'),
         isTrue,
       );
       expect(find.text('Saved from the hub'), findsOneWidget);
@@ -682,6 +692,124 @@ void main() {
       );
     },
   );
+
+  for (final table in [true, false]) {
+    testWidgets(
+      'MYHUB01 ${table ? "Tavolo" : "Resource"} draft save returns to filtered hub',
+      (tester) async {
+        final resource = ownResourceListingFixture(
+          id: 'listing-hub',
+          ownerProfileId: 'user-1',
+        );
+        final app = await _pump(
+          tester,
+          recurringActivities: FakeRecurringActivityGateway()
+            ..ownItems = [ownRecurringActivityFixture(id: 'table-hub')],
+          resourceListings: FakeResourceListingGateway()..ownItems = [resource],
+        );
+        final router = app.read(appRouterProvider);
+        router.go(table ? '/drafts?types=table' : '/drafts?types=donate');
+        await tester.pumpAndSettle();
+        await _tap(
+          tester,
+          table ? 'draft-table-table-hub' : 'draft-donate-listing-hub',
+        );
+        await tester.scrollUntilVisible(
+          find.byKey(
+            Key(table ? 'tavoli-title-field' : 'resource-title-field'),
+          ),
+          200,
+          scrollable: find.byType(Scrollable).hitTestable().first,
+        );
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(
+            Key(table ? 'tavoli-title-field' : 'resource-title-field'),
+          ),
+          'Saved hub activity',
+        );
+        final save = find.byKey(
+          Key(table ? 'tavoli-save-draft' : 'resource-save-draft'),
+        );
+        await tester.scrollUntilVisible(
+          save,
+          300,
+          scrollable: find.byType(Scrollable).hitTestable().first,
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(save);
+        await tester.pumpAndSettle();
+        expect(_path(app), '/drafts');
+        expect(find.text('Saved hub activity'), findsOneWidget);
+        expect(
+          tester
+              .widgetList<TagMultiSelect>(find.byType(TagMultiSelect))
+              .first
+              .selectedIds,
+          {table ? 'table' : 'donate'},
+        );
+      },
+    );
+  }
+
+  for (final path in [
+    '/proposals/mine?item=focused',
+    '/tavoli/mine?item=focused',
+    '/resources/mine?item=focused',
+  ]) {
+    testWidgets('MYHUB01 focused owner route preserves actions: $path', (
+      tester,
+    ) async {
+      final app = await _pump(
+        tester,
+        proposalNow: DateTime.utc(2026, 9, 3),
+        proposals: FakeProposalGateway()
+          ..ownItems = [
+            ownProposalFixture(
+              id: 'focused',
+              lifecycle: ProposalLifecycle.published,
+            ),
+            ownProposalFixture(id: 'other'),
+          ],
+        recurringActivities: FakeRecurringActivityGateway()
+          ..ownItems = [
+            ownRecurringActivityFixture(
+              id: 'focused',
+              lifecycle: RecurringActivityLifecycle.paused,
+            ),
+            ownRecurringActivityFixture(id: 'other'),
+          ],
+        resourceListings: FakeResourceListingGateway()
+          ..ownItems = [
+            ownResourceListingFixture(
+              id: 'focused',
+              ownerProfileId: 'user-1',
+              lifecycle: ResourceListingLifecycle.closed,
+            ),
+            ownResourceListingFixture(id: 'other', ownerProfileId: 'user-1'),
+          ],
+      );
+      app.read(appRouterProvider).go(path);
+      await tester.pumpAndSettle();
+      if (path.startsWith('/proposals')) {
+        expect(find.byKey(const Key('proposal-publish-other')), findsNothing);
+        await _activityTap(tester, 'proposal-edit-focused');
+        expect(_path(app), '/proposals/focused/edit');
+      } else if (path.startsWith('/tavoli')) {
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('tavoli-resume-focused')),
+          250,
+          scrollable: find.byType(Scrollable).hitTestable().first,
+        );
+        expect(find.byKey(const Key('tavoli-resume-focused')), findsOneWidget);
+        expect(find.byKey(const Key('tavoli-publish-other')), findsNothing);
+      } else {
+        await _activityTap(tester, 'resource-edit-focused');
+        expect(_path(app), '/resources/focused/edit');
+        expect(find.byKey(const Key('resource-save-changes')), findsNothing);
+      }
+    });
+  }
 
   testWidgets(
     'draft hub keeps Browse selected and retains contextual filters across Home',
@@ -700,7 +828,10 @@ void main() {
         2,
       );
       expect(find.byKey(const Key('nav-browse')), findsOneWidget);
-      await tester.tap(find.byKey(const Key('draft-type-donate')));
+      await tester.tap(find.byKey(const Key('activity-type-trigger')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('activity-type-option-donate')));
+      await tester.tap(find.byKey(const Key('activity-type-apply')));
       await tester.pump();
       await _tap(tester, 'nav-home');
       expect(router.routerDelegate.state.uri.path, '/');
@@ -713,8 +844,10 @@ void main() {
       );
       expect(
         tester
-            .widget<FilterChip>(find.byKey(const Key('draft-type-table')))
-            .selected,
+            .widgetList<TagMultiSelect>(find.byType(TagMultiSelect))
+            .first
+            .selectedIds
+            .contains('table'),
         isTrue,
       );
       await tester.binding.handlePopRoute();
@@ -747,8 +880,10 @@ void main() {
     expect(router.routerDelegate.state.uri.path, '/drafts');
     expect(
       tester
-          .widget<FilterChip>(find.byKey(const Key('draft-type-project')))
-          .selected,
+          .widgetList<TagMultiSelect>(find.byType(TagMultiSelect))
+          .first
+          .selectedIds
+          .contains('project'),
       isTrue,
     );
   });
@@ -2111,6 +2246,9 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        externalActivityGatewayProvider.overrideWithValue(
+          FakeExternalActivityGateway(),
+        ),
         if (contactRpc != null) ...[
           groupContactGatewayProvider.overrideWithValue(
             GroupContactGateway(contactRpc),

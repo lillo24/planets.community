@@ -6,6 +6,7 @@ import '../../auth/application/auth_session_controller.dart';
 import '../../activity_interest/application/activity_interest_tracker.dart';
 import '../../activity_interest/domain/activity_interest_event.dart';
 import '../../participation/domain/participation_models.dart';
+import '../../mock_mode/application/mock_mode_coordinator.dart';
 import '../../project_delegates/application/project_invite_sharing.dart';
 import 'participant_invitation_routes.dart';
 
@@ -44,7 +45,7 @@ class _ShareLinkButtonsState extends ConsumerState<ShareLinkButtons> {
   }
 
   Future<void> _disclose(bool native, BuildContext buttonContext) async {
-    if (_busy) return;
+    if (_busy || ref.read(activeMockRealmProvider)) return;
     final revision = ++_revision;
     final account = ref.read(authSessionProvider).identity?.id;
     final publicActivity = widget.publicActivity;
@@ -122,6 +123,9 @@ class _ShareLinkButtonsState extends ConsumerState<ShareLinkButtons> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    if (ref.watch(activeMockRealmProvider)) {
+      return Text(l10n.mockExternalUnavailable);
+    }
     ref.listen(authSessionProvider.select((s) => s.identity?.id), (_, _) {
       _revision++;
       if (mounted) {

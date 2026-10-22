@@ -1,0 +1,16 @@
+{
+  "enabled": false,
+  "project_ref": "cllpvruvrrvxczjitlqd",
+  "observed_at": "2026-10-22",
+  "predecessor_sha256": "497dacab3bb7d905e8ef6ca7666cc05b82b3165bb8bf4d742edda2da8fdd9b38",
+  "migrations": [
+    {
+      "version": "20261021152141",
+      "sha256": "a79fb44d09a12fa9289d68d652c33850232b2bfb74b7974a27fff93b4a95eafc"
+    },
+    {
+      "version": "20261021193500",
+      "sha256": "9c812abdf8c423d9e395b3c47cc8b958f73186cba62c106792c029cc043a6c14"
+    }
+  ]
+}

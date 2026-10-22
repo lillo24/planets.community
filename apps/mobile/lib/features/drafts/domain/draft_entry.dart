@@ -3,6 +3,8 @@ enum DraftEditorOrigin { hub }
 
 enum DraftKind { project, table, donate, exchange }
 
+enum ActivityStatus { draft, published, paused, finished, closed, cancelled }
+
 /// Presentation identity keeps IDs from different canonical domains distinct.
 class DraftEntry {
   const DraftEntry({
@@ -11,6 +13,7 @@ class DraftEntry {
     required this.title,
     required this.updatedAt,
     this.coverObjectPath,
+    this.status = ActivityStatus.draft,
   });
 
   final DraftKind kind;
@@ -18,6 +21,18 @@ class DraftEntry {
   final String? title;
   final DateTime updatedAt;
   final String? coverObjectPath;
+  final ActivityStatus status;
+
+  String get destination => status == ActivityStatus.draft
+      ? editPath
+      : Uri(
+          path: switch (kind) {
+            DraftKind.project => '/proposals/mine',
+            DraftKind.table => '/tavoli/mine',
+            DraftKind.donate || DraftKind.exchange => '/resources/mine',
+          },
+          queryParameters: {'item': id},
+        ).toString();
 
   String get editPath => switch (kind) {
     DraftKind.project => '/proposals/$id/edit',

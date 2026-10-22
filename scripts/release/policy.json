@@ -1,0 +1,74 @@
+{
+  "project_ref": "cllpvruvrrvxczjitlqd",
+  "migration_owner": "github-actions",
+  "bootstrap_approvals": {
+    "20261014072939": "ed53495ba18c39c19eee61f9fcfe91147be85b4d1bbf6b90a8acfce04ce3dfa3",
+    "20261014073229": "24dd64e364b0b0f282a2f0d2f0e9809bc24da8c87471f55c8e56bf1245559ebe",
+    "20261014074055": "9e95cacbda77416be49c2be01371e77a4e23148d33d0cfd18fbff8cb1bba27f6",
+    "20261014074255": "bb4fcb3395d7c1fe541082f9323706730eb12f3b7973ebeea30f06780029e380",
+    "20261014074651": "f9b5a13d5853867e0eb6b5faf490918e019290849e0303d231d83e3cb3616732",
+    "20261014075208": "b29d8a63809fdc5e2ffa60bcb9f40603de9223aea82042d280676e26c9925710",
+    "20261014085233": "a000b116615bbd7673cbdf15f061d9a95da1319a25130e580c5cb73d42f78e2f",
+    "20261014092339": "50b485502c1af402acae3d7a7c2924ce6c1fec91b62d2f7fea6aed5b25861170",
+    "20261014100704": "28036bfbfafbbd39ae8b33c4dd0f0e0755ab5efe79cb5cbb7bdec1c38f4bfc4d",
+    "20261014113958": "18b8db348eca2265adfa3c2f9d1b714fb95a630bb2473b1019ecef5a94ba14af",
+    "20261014122236": "f8f50f55717fef1c786cea300017029366d43efe92275389ad84351e87dadd2e",
+    "20261014123208": "36bdfd3343f947716c51533ea4c0ec3fd94c78a1b4bbf7ab26be0d3cd7a206b5",
+    "20261014124500": "af0018d7b342b1de4f61f047dfd4691cecc9ee6a3e08c11dff5cae7018601823",
+    "20261014125000": "4e28fe460f52b49909292792fc4f491e4f34c66c8cef7eff4babd429372d9976",
+    "20261015094229": "e5ad2cff7eaf80e2ee75f3e87903701457f0a3718f150c6a4ad016c4a3a33ba9",
+    "20261015094324": "fde77fb10496d31978e8736a33a4b4e9dfd3ca70f4309eb8134cdf9c15385b77",
+    "20261015095004": "231af40341a54de2ba033651fcd255465b362f97c069115aa6879b3cb138481b",
+    "20261015095020": "8f7ed5400b68a353854cc62a46f642c97bc04bdb98b18cae23a64232120478d8",
+    "20261015095042": "d2fc71f7b43d499ba15d14bd2b2eca4356c20a4b963e3051336131ab3fc17546",
+    "20261015095248": "70f6b95a756204e2055730fff652b09141784f93ab9ec251ffaa9a90fa2df8f9",
+    "20261015110945": "967a423af53a6a9df83b02fb8156eb1e4ecfe2308fde587a676cfa1d659ab7b0",
+    "20261015114510": "6452ff140fc122c7a015460faafe68a7b809f1816371891338f3e192c4e35a97",
+    "20261019073011": "b4579e653fa7c1cbbaef423c6648f1620f5c55862964cb67eae84e6f655dc3d5",
+    "20261020123403": "524f2eb1c341f55a6512fcd587eb48255825d084fd278b522eb31f5b0f6a3d87",
+    "20261020144145": "5134f40f33052820255d1d8db209d022fdb03e90ef8830365869096b90ae3787",
+    "20261021155653": "16c5a35e4d14c8fbe8a78c91ffbfebbc274aad4a853835bb3afbf71135feac71"
+  },
+  "recovery_reference": "RELEASE01 owner approval 2026-10-21: all 26 manifest files approved for staging; explicit task-specific backup waiver: No backup is fine. No backup exists or is claimed.",
+  "rehearsal_reference": "https://github.com/lillo24/planets.community/actions/runs/39665967950 (97 to 123, 160 tables and 1378 original rows preserved; no-op retry; Resource Auth/REST and generated types)",
+  "package": "community.planets.app",
+  "closed_track": "alpha",
+  "closed_track_verified_reference": "docs/development/evidence/release01/assessment.md",
+  "historical_version_code_floor": 13,
+  "upload_certificate_sha256": "f9362ed9f6f7be7c59a6eacfd8aae99426af98935ff1197f65e8207cc0fd22c0",
+  "budget_basemap": true,
+  "approved_function_source_sha256": {
+    "location-search/handler.mjs": "b51813066aa7e4a1c7a6d68b894c6ba8073491aa084ff551ed8afe321c97d0e7",
+    "location-search/index.ts": "d39792cbfb755442bda528b9c1e6ce066f08c832ca45912f99e09280728e7991",
+    "location-search/provider.mjs": "dce9359a044cebb40d8370d1d5b5d7cf23e5f67305b841b8a3d2e0abfd4d0e8a",
+    "location-preview/handler.mjs": "fbee2f92a2f8f33e71eb6287bd6ba66412858facde28cc8dc82fb3a8c8f5a6c3",
+    "location-preview/index.ts": "f0ff48f15eb0db5b9ec2f685e536fb881aeccbe9fcc86bf177f044aa2d0b829b",
+    "location-preview/provider.mjs": "4348a18ef22214f9284771138861b43bd899a297954a677bfc44570da7497885",
+    "map-provider/basemap.mjs": "163f0150162e364184fb3505f15d5a55a5ec058df383232fa9c70e41a3f60841",
+    "map-provider/handler.mjs": "b2d8c21b2ffc2307f97973fe1f5f3cbf25233b83b52951f2177a2f2c7005035f",
+    "map-provider/index.ts": "58aed220cb7e1e9a0cea4827611ae2f4d73f01e094c998839a124361a5aa5571",
+    "map-provider/provider.mjs": "7621c2352742702da6729d8e607f2e57234dac9e5b05327acb8c146299bf8e65"
+  },
+  "approved_functions": [
+    {
+      "slug": "map-provider",
+      "version": 5,
+      "verify_jwt": true,
+      "ezbr_sha256": "afbba54efcce958ac5416d5e0eb9a9874827da7a931886d8d3181e917fc8b7b3"
+    },
+    {
+      "slug": "location-search",
+      "version": 5,
+      "verify_jwt": true,
+      "ezbr_sha256": "c85211f868e39caab986cb6f6b164d5233a749038692ea49deac68b151535f66"
+    },
+    {
+      "slug": "location-preview",
+      "version": 4,
+      "verify_jwt": false,
+      "ezbr_sha256": "7cf99298e81fc3cfd070065fa97946441731f7f5ac3759ee9c57264e8f3bf83f"
+    }
+  ],
+  "bootstrap_boundary": "20261021155653",
+  "staging_safety_version": 1
+}

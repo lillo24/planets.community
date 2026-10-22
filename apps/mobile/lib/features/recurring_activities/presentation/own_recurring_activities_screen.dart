@@ -1,3 +1,5 @@
+import '../../drafts/domain/draft_entry.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,7 +25,14 @@ import '../domain/recurring_activity_models.dart';
 import 'recurring_activity_widgets.dart';
 
 class OwnRecurringActivitiesScreen extends ConsumerStatefulWidget {
-  const OwnRecurringActivitiesScreen({super.key});
+  const OwnRecurringActivitiesScreen({
+    this.itemId,
+    this.returnToHub = false,
+    super.key,
+  });
+
+  final String? itemId;
+  final bool returnToHub;
 
   @override
   ConsumerState<OwnRecurringActivitiesScreen> createState() =>
@@ -82,6 +91,10 @@ class _OwnRecurringActivitiesScreenState
     final state = ref.watch(ownRecurringActivitiesProvider);
     final items = state.expectedCreatorId == identity?.id
         ? state.items
+              .where(
+                (item) => widget.itemId == null || item.id == widget.itemId,
+              )
+              .toList(growable: false)
         : const <OwnRecurringActivity>[];
     final delegatedState = ref.watch(delegatedProjectsProvider);
     final delegated = delegatedState.expectedProfileId == identity?.id
@@ -96,6 +109,36 @@ class _OwnRecurringActivitiesScreenState
             delegatedState.phase == ProjectDelegateLoadPhase.idle)) {
       Future<void>.microtask(_loadMissing);
     }
+    if (widget.itemId != null) {
+      return Scaffold(
+        appBar: pageAppBar(context, title: Text(l10n.projectManageTitle)),
+        body: identity == null
+            ? const SizedBox.shrink()
+            : state.phase == RecurringActivityLoadPhase.failure
+            ? ErrorState(
+                message: l10n.tavoliSafeError,
+                onRetry: () => _load(force: true),
+              )
+            : items.isEmpty
+            ? state.phase == RecurringActivityLoadPhase.ready
+                  ? EmptyState(
+                      title: l10n.projectManageUnavailable,
+                      message: l10n.tavoliMyEmptyMessage,
+                    )
+                  : LoadingState(message: l10n.draftsLoading)
+            : ListView(
+                padding: const EdgeInsets.all(AppSpacing.medium),
+                children: [
+                  _OwnTavoloCard(
+                    activity: items.single,
+                    returnToHub: widget.returnToHub,
+                    identityId: identity.id,
+                  ),
+                ],
+              ),
+      );
+    }
+
     return Scaffold(
       appBar: pageAppBar(context, title: Text(l10n.tavoliMyTitle)),
       body: SafeArea(
@@ -277,9 +320,14 @@ String _roleLabel(AppLocalizations l10n, ProjectDelegatedAuthorityRole role) =>
     };
 
 class _OwnTavoloCard extends ConsumerWidget {
-  const _OwnTavoloCard({required this.activity, required this.identityId});
+  const _OwnTavoloCard({
+    required this.activity,
+    required this.identityId,
+    this.returnToHub = false,
+  });
   final OwnRecurringActivity activity;
   final String identityId;
+  final bool returnToHub;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -354,8 +402,10 @@ class _OwnTavoloCard extends ConsumerWidget {
                     if (activity.isEditable)
                       OutlinedButton(
                         key: Key('tavoli-edit-${activity.id}'),
-                        onPressed: () =>
-                            context.push('/tavoli/${activity.id}/edit'),
+                        onPressed: () => context.push(
+                          '/tavoli/${activity.id}/edit',
+                          extra: returnToHub ? DraftEditorOrigin.hub : null,
+                        ),
                         child: Text(l10n.tavoliEdit),
                       ),
                     if (activity.canPublish)

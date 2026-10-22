@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../mock_mode/application/mock_mode_coordinator.dart';
+
 /// Founder-approved public mailbox, also published in apps/site/src/site-content.ts.
 /// Null disables email handoff while retaining local drafting and copying.
 final publicSupportEmailProvider = Provider<String?>(
@@ -34,6 +36,19 @@ class ExternalSupportMailLauncher implements SupportMailLauncher {
       launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 
-final supportMailLauncherProvider = Provider<SupportMailLauncher>(
-  (ref) => const ExternalSupportMailLauncher(),
-);
+final supportMailLauncherProvider = Provider<SupportMailLauncher>((ref) {
+  return ref.watch(activeMockRealmProvider)
+      ? const _MockSupportMailLauncher()
+      : const ExternalSupportMailLauncher();
+});
+
+class _MockSupportMailLauncher implements SupportMailLauncher {
+  const _MockSupportMailLauncher();
+  @override
+  Future<bool> open(Uri uri) async {
+    // Public policy documents may still be read. Persona support/account mail
+    // is intercepted by routing and denied here as a second boundary.
+    if (uri.scheme == 'mailto') return false;
+    return const ExternalSupportMailLauncher().open(uri);
+  }
+}

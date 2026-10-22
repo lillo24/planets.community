@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
-class ProfilePhotoAvatar extends StatelessWidget {
+class ProfilePhotoAvatar extends StatefulWidget {
   const ProfilePhotoAvatar({
     required this.imageBytes,
     required this.imageSemanticsLabel,
@@ -17,11 +17,37 @@ class ProfilePhotoAvatar extends StatelessWidget {
   final double radius;
 
   @override
+  State<ProfilePhotoAvatar> createState() => _ProfilePhotoAvatarState();
+}
+
+class _ProfilePhotoAvatarState extends State<ProfilePhotoAvatar> {
+  void _evict(Uint8List? bytes) {
+    if (bytes != null) MemoryImage(bytes).evict();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProfilePhotoAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.imageBytes, widget.imageBytes)) {
+      _evict(oldWidget.imageBytes);
+    }
+  }
+
+  @override
+  void dispose() {
+    _evict(widget.imageBytes);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final bytes = imageBytes;
+    final bytes = widget.imageBytes;
+    final radius = widget.radius;
     return Semantics(
       image: true,
-      label: bytes == null ? placeholderSemanticsLabel : imageSemanticsLabel,
+      label: bytes == null
+          ? widget.placeholderSemanticsLabel
+          : widget.imageSemanticsLabel,
       child: ExcludeSemantics(
         child: CircleAvatar(
           key: const Key('profile-photo-avatar'),

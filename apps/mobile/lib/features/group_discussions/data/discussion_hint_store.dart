@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../mock_mode/application/mock_mode_coordinator.dart';
+
 /// One General-workspace introduction per account on this installation.
 ///
 /// This local boolean contains no Group, room, link or participation state.
@@ -12,12 +14,15 @@ abstract interface class DiscussionHintStore {
 }
 
 class SharedPreferencesDiscussionHintStore implements DiscussionHintStore {
-  SharedPreferencesDiscussionHintStore({SharedPreferencesAsync? preferences})
-    : _preferences = preferences ?? SharedPreferencesAsync();
+  SharedPreferencesDiscussionHintStore({
+    SharedPreferencesAsync? preferences,
+    this.namespace = '',
+  }) : _preferences = preferences ?? SharedPreferencesAsync();
   final SharedPreferencesAsync _preferences;
+  final String namespace;
   String _key(String actor) {
     if (actor.isEmpty) throw ArgumentError.value(actor, 'actor');
-    return 'planets.discussions.generalWorkspaceHint.$actor';
+    return '${namespace}planets.discussions.generalWorkspaceHint.$actor';
   }
 
   @override
@@ -29,5 +34,7 @@ class SharedPreferencesDiscussionHintStore implements DiscussionHintStore {
 }
 
 final discussionHintStoreProvider = Provider<DiscussionHintStore>(
-  (ref) => SharedPreferencesDiscussionHintStore(),
+  (ref) => SharedPreferencesDiscussionHintStore(
+    namespace: ref.watch(realmPreferenceNamespaceProvider),
+  ),
 );

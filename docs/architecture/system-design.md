@@ -117,8 +117,10 @@ PostgreSQL is the canonical record for accounts, profiles, proposals, standalone
 
 External systems such as FCM, Resend, Sentry, and PostHog are delivery or observation tools. They must not become the only record of product state.
 
-ACTMET01 adds explicit mobile public-Tavolo card navigation and ordinary public
-copy/share-handoff signals behind a denied analytics permission gate. They are
+ACTMET01 adds explicit mobile public-Tavolo and ACTAPI01 catalogue card navigation
+and public copy/share-handoff signals behind a denied analytics permission gate.
+Imported handoffs share only their validated official source URL, with its
+canonical database ID used in metrics; Mock mode is excluded. They are
 internal attention metrics, never attendance, capacity or public popularity.
 Production PostHog transport remains absent/blocked because the inspected Flutter
 SDK cannot meet the no-persistent-identity contract; configuration alone cannot

@@ -1,5 +1,14 @@
 # CT-01: release plumbing and deferred Play closed test
 
+For current releases, use [RELEASE01](release01-staging-play.md). Its live
+assessment supersedes the historical codes/migration counts below: Alpha serves
+code 12 (0.1.8), while staging lacks 26 current-main migrations. The guarded
+Actions pipeline verifies backend readiness before signing or delivery, keeps the
+original upload certificate and provides a manual-artifact route when Publisher
+credentials are absent. It is disabled until explicit bootstrap scope/recovery
+and protected-environment setup are complete. Never generate a replacement upload
+key or apply the historical empty-backend instructions to existing staging.
+
 MAP-LIVE01 provides a separate explicit staging map QA build command and current
 artifact/runtime evidence in the [activation runbook](map-live01-android-activation.md).
 Its five map defines belong on the build command, **not** in `staging.json`.

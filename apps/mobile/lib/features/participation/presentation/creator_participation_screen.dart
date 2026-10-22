@@ -1,3 +1,5 @@
+import '../../profile/presentation/person_preview_sheet.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -238,6 +240,7 @@ class _CreatorParticipationScreenState
                     subtitle: Text(
                       '${_membershipStatusLabel(l10n, member.status)} · ${_formatDate(context, member.joinedAt)}',
                     ),
+                    onTap: () => _historyActions(member),
                     onLongPress: () => _historyActions(member),
                     trailing: IconButton(
                       key: Key('people-history-actions-${member.id}'),
@@ -516,9 +519,10 @@ class _CreatorParticipationScreenState
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  person.displayName,
-                  style: Theme.of(context).textTheme.titleLarge,
+                PersonPreviewContent(
+                  profileId: person.profileId,
+                  contextDisplayName: person.displayName,
+                  showBlocking: false,
                 ),
                 if (person.profileId != _expectedProfileId) ...[
                   Text(
@@ -695,7 +699,11 @@ class _CreatorParticipationScreenState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(title: Text(member.participantDisplayName)),
+              PersonPreviewContent(
+                profileId: member.participantProfileId,
+                contextDisplayName: member.participantDisplayName,
+                showBlocking: false,
+              ),
               if (member.participantProfileId != _expectedProfileId) ...[
                 Text(l10n.peopleSafety),
                 Text(l10n.peopleSafetyHelp),

@@ -20,12 +20,16 @@ class VisibleProfilePhoto {
     required this.profileId,
     required this.objectPath,
     required this.updatedAt,
+    this.thumbnailObjectPath,
   });
 
   factory VisibleProfilePhoto.fromRpcRow(Map<String, dynamic> row) {
     const expectedKeys = {'profile_id', 'object_path', 'updated_at'};
-    if (row.length != expectedKeys.length ||
-        !row.keys.every(expectedKeys.contains)) {
+    if (!row.keys.toSet().containsAll(expectedKeys) ||
+        row.keys.any(
+          (key) =>
+              !expectedKeys.contains(key) && key != 'thumbnail_object_path',
+        )) {
       throw const FormatException(
         'Visible profile photo metadata has an unexpected shape.',
       );
@@ -49,18 +53,32 @@ class VisibleProfilePhoto {
       throw const FormatException('Invalid visible profile photo timestamp.');
     }
 
+    final thumbnail = row['thumbnail_object_path'];
+    if (thumbnail != null &&
+        (thumbnail is! String ||
+            !isVisibleProfilePhotoPath(thumbnail, profileId: profileId) ||
+            thumbnail == objectPath)) {
+      throw const FormatException('Invalid visible profile thumbnail path.');
+    }
+
     return VisibleProfilePhoto(
       profileId: profileId,
       objectPath: objectPath,
+      thumbnailObjectPath: thumbnail as String?,
       updatedAt: updatedAt,
     );
   }
 
   final String profileId;
   final String objectPath;
+  final String? thumbnailObjectPath;
+
+  // Legacy full-only objects deliberately fall back without a rewrite or retry.
+  String get smallObjectPath => thumbnailObjectPath ?? objectPath;
   final DateTime updatedAt;
 
-  String get versionKey => '$objectPath|${updatedAt.toUtc().toIso8601String()}';
+  String get versionKey =>
+      '$objectPath|$thumbnailObjectPath|${updatedAt.toUtc().toIso8601String()}';
 }
 
 enum VisibleProfilePhotoPhase { loading, ready, failure }

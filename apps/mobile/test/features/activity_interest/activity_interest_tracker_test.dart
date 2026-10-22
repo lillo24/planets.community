@@ -9,6 +9,7 @@ import 'package:planets_mobile/features/activities_sandbox/data/activity_example
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
+import 'package:planets_mobile/features/mock_mode/application/mock_mode_coordinator.dart';
 
 import '../../support/fake_activity_interest.dart';
 import '../../support/fake_auth.dart';
@@ -18,6 +19,62 @@ final _item = PublicActivityInterestItem.tavolo(_id)!;
 Future<void> _settle() => Future<void>.delayed(Duration.zero);
 
 void main() {
+  test(
+    'imported vocabulary stays typed and deduplication includes item kind',
+    () async {
+      final imported = PublicActivityInterestItem.importedActivity(_id)!;
+      expect(
+        PublicActivityInterestItem.importedActivity('example-trail'),
+        isNull,
+      );
+      final event = ActivityInterestEvent.cardOpened(imported);
+      expect(event.properties['item_kind'], 'imported_activity');
+      expect(event.properties['origin_surface'], 'activities_list');
+      expect(
+        ActivityInterestEvent.publicShare(
+          imported,
+          ActivityShareAction.linkCopied,
+        ).properties['origin_surface'],
+        'imported_activity_detail',
+      );
+      final sink = MemoryActivityInterestSink();
+      final tracker = memoryActivityInterestTracker(sink);
+      addTearDown(tracker.dispose);
+      tracker.tavoloCardOpened(_id);
+      tracker.record(event);
+      await _settle();
+      expect(sink.events, hasLength(2));
+    },
+  );
+
+  test('Mock realm denies the sink even with valid config and approved test permission', () async {
+    final auth = FakeAuthGateway();
+    addTearDown(auth.close);
+    var factories = 0;
+    final container = ProviderContainer(
+      overrides: [
+        authGatewayProvider.overrideWithValue(auth),
+        activeMockRealmProvider.overrideWithValue(true),
+        activityInterestConfigurationProvider.overrideWithValue(
+          const ActivityInterestConfiguration(
+            enabled: 'true',
+            projectToken: 'phc_localtest1234',
+          ),
+        ),
+        activityInterestPermissionProvider.overrideWithValue(
+          FakeActivityInterestPermission(),
+        ),
+        activityInterestSinkFactoryProvider.overrideWithValue(() {
+          factories++;
+          return MemoryActivityInterestSink();
+        }),
+      ],
+    );
+    addTearDown(container.dispose);
+    container.read(activityInterestTrackerProvider).tavoloCardOpened(_id);
+    await _settle();
+    expect(factories, 0);
+  });
   test('strict public vocabulary and immutable property allowlist', () {
     expect(activityExamples, hasLength(12));
     for (final example in activityExamples) {

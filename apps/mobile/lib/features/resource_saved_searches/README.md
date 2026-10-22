@@ -6,7 +6,8 @@ Scambio-Dona Browse filters. It does not own a second results screen.
 - `domain/resource_saved_search_models.dart` owns saved definitions, normalized
   mutable input, paired keyset cursors, pages, and safe failure kinds.
 - `data/resource_saved_search_gateway.dart` is the only backend adapter. It
-  calls the five 04C4F1 RPCs and never reads `resource_saved_searches` directly.
+  calls category-aware V2 create/update/get/list RPCs and the original delete
+  RPC; it never reads `resource_saved_searches` directly.
 - `application/resource_saved_search_controller.dart` owns identity-scoped
   paging, busy guards, stale-response rejection, and canonical first-page
   reloads after create, update, or delete.
@@ -16,8 +17,13 @@ Scambio-Dona Browse filters. It does not own a second results screen.
 - `presentation/resource_saved_search_routes.dart` owns the protected static
   route contract.
 
-Open applies the saved tuple through the existing public Resource Browse
+The tuple contains keyword, nullable mode, locality and nullable category.
+Category alone is valid; summaries and Edit include it, and All clears it.
+Existing NULL-category definitions keep their unrestricted meaning. See the
+[CAT01 rollout/legacy contract](../../../../../docs/development/resource-cat01-categories.md).
+
+Open applies the complete saved tuple through the existing public Resource Browse
 controller and then returns to `/resources`. Later Browse edits do not mutate
 the saved definition. Saved searches are independent from Project resource
 matching and do not create notifications, preview listings, result snapshots,
-or delivery-frequency settings; 04C4F3 owns future notification delivery.
+or delivery-frequency settings; the existing 04C4F3 backend owns notification delivery.

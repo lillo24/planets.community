@@ -1,5 +1,53 @@
 # Validation workflow
 
+`external-activities.yml` is a separate daily 04:20 UTC/dispatch Node runner,
+skipped unless `ACTIVITIES_IMPORT_ENABLED=true`. No PR/fork trigger receives
+its server-only credentials. Target-scoped concurrency and a ten-minute cap
+bound the one daily job after activation. The shipped municipal connector is
+still blocked on reuse clarification; a variable or secret cannot bypass it.
+No schedule is activated by this implementation. See the
+[ACTAPI01 setup and disable steps](../../docs/development/actapi01-infrastructure.md).
+Validation runs only synthetic tooling/pgTAP and the disposable local HTTP
+verifier. Shared workflow/package changes select all four existing areas;
+required checks, complete manual validation and main-push behavior are unchanged.
+
+`mock-hosted.yml` is an explicitly selected `qa-mock-hosted` same-repository
+label/manual operation for the disabled `planets-mock` environment. It runs the
+reviewed seed and read-only verifier with a private five-minute CLI database
+login and mock-only server credential, bound to the exact source SHA. It never
+receives a management token or normal staging credential. It cannot enroll or
+activate; artifacts contain counts/provenance only. Remove the temporary
+`PLANETS_MOCK_OPERATOR` secret after each operation. This occasional job is
+bounded to ten minutes and does not change required Validation checks/triggers.
+
+`mock-native.yml` is an explicit `qa-mock-native` same-repository label gate
+(remove/reapply after executable source changes), or manual dispatch after merge.
+It uses the exact PR head, two independently keyed disposable Supabase stacks,
+the reviewed broker runtime and a CI-owned Android emulator. A release-mode APK
+uses a temporary fixture signing key through the existing signing guard. It is
+never upload-ready and neither that key nor the APK is exported. The journey
+uses ordinary OTP, three personas, canonical interaction, a forced process
+restart and full logout. No test Auth gateway is injected. Narrow loopback
+proxies record request families/operations without headers, tokens or payloads.
+The job is bounded to 50 minutes, runs only on explicit request and supplements
+required Validation without changing required-status/path classification.
+Only synthetic PNGs, hashes, safe outcomes and artifact-scan metadata are retained
+for seven days. This is local/CI proof, never hosted deployment or Play readiness.
+The fixture is Android x64, stops its compiler daemon before the emulator, and
+explicitly opts into the native integration plugin excluded by Flutter release
+defaults. That Gradle opt-in requires the exact test target and GitHub-owned
+Linux environment and never bypasses release-signing checks.
+
+`mock-qualification.yml` is an opt-in isolated-backend gate. Apply
+`qa-mock-backend` to a same-repository draft/integration PR (remove/reapply after
+source changes) or dispatch manually after merge. It creates two owned disposable
+loopback stacks with independent private signing keys, exercises standard Auth,
+canonical fixture RPCs/Storage, same-persona sessions and tester offboarding, then
+stops only those stacks. CLI status/secrets are captured privately and never
+uploaded. It uses no hosted credentials and does not replace required Validation.
+The bounded 25-minute job runs only at the requested stack checkpoints; it is
+not an ordinary push trigger. Native qualification is reported separately.
+
 `contact-native.yml` is an opt-in Android review, separate from required Validation
 checks. Adding `qa-contact-native` to a same-repository PR runs its exact head;
 remove/reapply the label after a source change. It does not run on ordinary pushes
@@ -138,6 +186,14 @@ PR. No recurring deployment or hosted database job is introduced.
 
 # MAP01 location validation
 
+IMG01 runs the existing `profile:photo:viewer:verify:local` command after pgTAP
+in Database CI, matching the full `check:db` gate. It verifies real local
+Auth/Storage small/full permissions, Project/Tavolo/Resource context isolation,
+Block, immutable replacement/removal and legacy RPC behavior. SQL-only tests
+cannot verify Storage HTTP operation scope. This bounded fixture check makes no
+external provider requests; trigger classification and required checks stay
+unchanged. The shared workflow edit selects every area for its own PR.
+
 C03 adds the room-owned named-link Auth verifier after discussion checks in the
 same database job and full `check:db`. It runs against the disposable local stack
 with fictional OTP actors and makes no external provider requests. The existing
@@ -153,3 +209,28 @@ Batch D adds one populated upgrade check before fresh replay and one bounded
 real-Auth verifier alongside group membership. The existing path classifier and
 required statuses remain unchanged. Requests/chat/unread compatibility and safety
 changes share the Database gate; schema changes also regenerate Web contracts.
+
+# RELEASE01 and STAGING-AUTO01 staged delivery
+
+`staging-release.yml` is separate from Validation and stays disabled unless
+`STAGING_RELEASE_ENABLED=true`. The existing always-present **Change
+classification** job in Validation now blocks unreviewed risky migration PRs
+and performs the populated semantic rehearsal for migration/release/baseline,
+workflow and dependency changes (and full manual Validation). Unrelated PRs skip
+that expensive step without leaving a required status pending. No duplicate PR
+rehearsal runs in the release workflow. SQL history edits/deletions fail closed.
+
+After one-time protected recovery/credential/environment setup, main pushes run
+exact-source complete Validation, populated rehearsal and serialized staging SQL
+only. Routine nullable-column candidates need real catalog/data preservation;
+other SQL needs owner proof bound to the pre-merge head/hash/predecessor. The
+writer independently rechecks that proof, so merging a failed gate cannot erase
+it. Fresh main, history parity, TLS, advisory lock and backend checks remain.
+
+Android/Play jobs require explicit manual `build`/`publish` dispatch, regardless
+of `STAGING_AUTO_PUBLISH`. Keep that variable false and the separate publication
+reviewer. No live variables, secrets or environment rules change by code merge.
+The [runbook](../../docs/development/release01-staging-play.md) owns classification,
+one-time activation, real encrypted DB **and Storage-object** recovery, bounded
+two-file reconciliation and incident steps. Current external blockers and the
+123/126 read-only observation are in the existing release status.

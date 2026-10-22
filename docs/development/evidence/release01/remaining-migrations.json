@@ -1,0 +1,36 @@
+{
+  "source_main": "09d379f5b613bacc609b0d7cdf22188127034f77",
+  "canonical_migrations": 125,
+  "staging_applied": 123,
+  "original_26": "Applied with all original records/row digests preserved; see hosted-26-execution.json",
+  "pending": [
+    {
+      "file": "20261021152141_profile_avatar_variants.sql",
+      "version": "20261021152141",
+      "sha256": "a79fb44d09a12fa9289d68d652c33850232b2bfb74b7974a27fff93b4a95eafc",
+      "domain": "Profile photo thumbnail variants",
+      "effects": [
+        "Private RLS-enabled thumbnail metadata; existing photos are not backfilled",
+        "V2 photo RPCs and exact object reads reuse current full-photo audience/block checks",
+        "Legacy photo calls and original objects remain supported"
+      ],
+      "staging_approval": "Pending; outside original 26-file approval",
+      "recovery": "Needs explicit extension of task-specific no-backup waiver"
+    },
+    {
+      "file": "20261021193500_notification_projection_atomic_claim.sql",
+      "version": "20261021193500",
+      "sha256": "9c812abdf8c423d9e395b3c47cc8b958f73186cba62c106792c029cc043a6c14",
+      "domain": "Notification projection idempotency",
+      "effects": [
+        "Strictly checks the existing notification-worker definition before replacement",
+        "Claims the existing unique receipt under the event lock before notification projection",
+        "Preserves worker OID, resolver, shared budget and grants; no data backfill"
+      ],
+      "staging_approval": "Pending; outside original 26-file approval",
+      "recovery": "Needs explicit extension of task-specific no-backup waiver"
+    }
+  ],
+  "first_aab": "Blocked until current-main required backend parity; no Play upload or publication is authorized",
+  "note": "Supersedes the earlier avatar-only scope question; no approval inferred from elapsed time"
+}

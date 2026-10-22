@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../mock_mode/application/mock_mode_coordinator.dart';
+
 import 'package:intl/intl.dart';
 
 import '../../../core/widgets/page_app_bar.dart';
@@ -479,6 +482,14 @@ class _InvitationResultSheet extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final role = _roleLabel(l10n, result.requestedAuthorityRole);
     final shareText = l10n.projectDelegateShareRoleText(role, result.url);
+    if (ref.watch(activeMockRealmProvider)) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.large),
+          child: Text(l10n.mockExternalUnavailable),
+        ),
+      );
+    }
     ref.listen(authSessionProvider.select((value) => value.identity?.id), (
       _,
       identityId,

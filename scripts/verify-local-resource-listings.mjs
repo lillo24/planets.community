@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import postgres from "postgres";
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 
 import { readLocalSupabaseStatus } from "./lib/local-supabase-status.mjs";
 import { ensureLocalProfilePhoto } from "./lib/local-profile-photo.mjs";
@@ -407,9 +409,191 @@ async function verifyResourceListings() {
     }
   }
 
+  await verifyCategoryContracts(userA, userB, anonymous);
+
   console.log(
     "Confirmed two-owner resource listing identity, private drafts, publish/edit/close lifecycle, rough-location privacy, display-name visibility, public mode/locality/keyword filters, stable keyset pagination, and identifier-only audit/outbox events.",
   );
+}
+
+async function verifyCategoryContracts(owner, reader, anonymous) {
+  const token = `CAT01 ${randomUUID()}`;
+  const requestId = randomUUID();
+  const content = {
+    listingMode: "donate",
+    title: token,
+    description: "Synthetic category API verification",
+    countryCode: "IT",
+    locality: "Trento",
+    publicLocationLabel: "Trento",
+  };
+  const creation = {
+    ...listingParams(owner.id, null, content),
+    p_client_request_id: requestId,
+    p_category_slug: " Tools_DIY ",
+  };
+  const published = [];
+  let savedId;
+  try {
+    const first = await categoryRpc(
+      owner.client,
+      "create_editor_resource_listing_draft_v2",
+      creation,
+    );
+    assert.equal(
+      await categoryRpc(
+        owner.client,
+        "create_editor_resource_listing_draft_v2",
+        creation,
+      ),
+      first,
+      "Category-aware lost-response retry must retain the draft ID",
+    );
+    const second = await categoryRpc(
+      owner.client,
+      "create_resource_listing_draft_v2",
+      {
+        ...listingParams(owner.id, null, content),
+        p_category_slug: "tools_diy",
+      },
+    );
+    for (const id of [first, second]) {
+      await publish(owner, id);
+      published.push(id);
+    }
+    const params = {
+      ...publicListParams({ limit: 1, query: token }),
+      p_category_slug: "TOOLS_DIY",
+    };
+    const firstPage = await categoryRpc(
+      anonymous,
+      "list_public_resource_listings_v2",
+      params,
+    );
+    assert.equal(firstPage.length, 1);
+    const secondPage = await categoryRpc(
+      anonymous,
+      "list_public_resource_listings_v2",
+      {
+        ...params,
+        p_cursor_published_at: firstPage[0].published_at,
+        p_cursor_id: firstPage[0].listing_id,
+      },
+    );
+    assert.deepEqual(
+      new Set([...firstPage, ...secondPage].map((row) => row.listing_id)),
+      new Set([first, second]),
+      "Category filtering must precede keyset pagination",
+    );
+    assert.ok(
+      [...firstPage, ...secondPage].every(
+        (row) => row.category_slug === "tools_diy",
+      ),
+    );
+    assert.deepEqual(
+      await categoryRpc(anonymous, "list_public_resource_listings_v2", {
+        ...params,
+        p_category_slug: "materials",
+      }),
+      [],
+    );
+    await updateListing(owner, first, content);
+    const detail = await categoryRpc(
+      anonymous,
+      "get_public_resource_listing_v2",
+      { p_listing_id: first },
+    );
+    assert.equal(
+      detail[0].category_slug,
+      "tools_diy",
+      "An old-client content update must preserve category",
+    );
+    const denied = await reader.client.rpc("update_own_resource_listing_v2", {
+      ...listingParams(reader.id, first, content),
+      p_category_slug: "other",
+    });
+    assert.equal(denied.error?.code, "42501");
+    const invalid = await anonymous.rpc("list_public_resource_listings_v2", {
+      ...params,
+      p_category_slug: "unknown",
+    });
+    assert.equal(invalid.error?.code, "22023");
+
+    const save = {
+      p_expected_profile_id: reader.id,
+      p_query: null,
+      p_listing_mode: null,
+      p_locality: null,
+      p_category_slug: "tools_diy",
+    };
+    savedId = await categoryRpc(
+      reader.client,
+      "create_resource_saved_search_v2",
+      save,
+    );
+    const duplicate = await reader.client.rpc(
+      "create_resource_saved_search_v2",
+      save,
+    );
+    assert.equal(duplicate.error?.code, "PT409");
+    const target = {
+      p_expected_profile_id: reader.id,
+      p_saved_search_id: savedId,
+    };
+    const definition = await categoryRpc(
+      reader.client,
+      "get_own_resource_saved_search_v2",
+      target,
+    );
+    assert.equal(definition[0].category_slug, "tools_diy");
+    assert.deepEqual(
+      await categoryRpc(reader.client, "get_own_resource_saved_search", target),
+      [],
+      "V1 readers must not misrepresent a category-only definition",
+    );
+    assert.deepEqual(
+      await categoryRpc(owner.client, "get_own_resource_saved_search_v2", {
+        ...target,
+        p_expected_profile_id: owner.id,
+      }),
+      [],
+    );
+    await categoryRpc(reader.client, "update_resource_saved_search_v2", {
+      ...save,
+      ...target,
+      p_query: token,
+      p_category_slug: null,
+    });
+    const legacyReadable = await categoryRpc(
+      reader.client,
+      "get_own_resource_saved_search",
+      target,
+    );
+    assert.equal(
+      legacyReadable[0].query,
+      token,
+      "Clearing category restores V1 representability",
+    );
+  } finally {
+    if (savedId)
+      await categoryRpc(reader.client, "delete_resource_saved_search", {
+        p_expected_profile_id: reader.id,
+        p_saved_search_id: savedId,
+      });
+    for (const id of published) await closeListing(owner, id);
+  }
+  console.log(
+    "Confirmed CAT01 versioned RPCs, creation receipts, category-only save/duplicate/edit, old-client compatibility, owner isolation and category keyset filtering over PostgREST.",
+  );
+}
+
+async function categoryRpc(client, name, params) {
+  const { data, error } = await client.rpc(name, params);
+  if (error)
+    throw new Error(`CAT01 ${name} failed: ${error.code} ${error.message}`, {
+      cause: error,
+    });
+  return data;
 }
 
 async function createDraft(user, input) {

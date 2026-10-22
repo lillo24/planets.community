@@ -394,3 +394,14 @@ readable PNGs: `--dart-define=PEOPLE_UI_CAPTURE_DIR=<absolute-output-directory>`
 The opt-in capture harness loads the SDK's Roboto/Material Icons fonts and restores
 painting debug settings after each capture. PNGs are local evidence, not generated
 application assets. Widget evidence does not replace native phone or TalkBack QA.
+
+## COUNT01 public totals
+
+`ProjectCapacityLabel` uses one public people total: `socialPeopleCount` over
+`registrationCapacity + (countOrganizersTowardCapacity ? 0 : organizerCount)`.
+The existing 05E2 reveal threshold still uses registration capacity, and Full
+still reveals exact totals. Below threshold only combined capacity is shown;
+no organizer breakdown or hidden count is exposed in semantics. Unset capacity
+shows no fraction. Manager mode keeps exact registration-slot usage and a second
+organizer line, with organizers included/excluded according to the canonical
+setting. This changes presentation only, never admission or database counts.

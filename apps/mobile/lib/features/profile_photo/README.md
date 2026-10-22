@@ -13,7 +13,7 @@ non-owner delivery over the private Supabase Storage and RPC boundary.
 - `data/profile_photo_picker.dart` selects one gallery image without requesting
   camera access or durable app storage.
 - `application/profile_photo_processor.dart` normalizes orientation, strips
-  metadata, creates an exact 512×512 lossy WebP off the UI isolate, targets
+  metadata, creates full (up to 512×512) and small (up to 160×160) lossy WebP off the UI isolate, targets
   about 100 KiB, and enforces the 256000-byte client ceiling.
 - `application/profile_photo_path_generator.dart` creates immutable
   `<profile-id>/<uuid-v4>.webp` object paths.
@@ -110,3 +110,53 @@ Native/package notes:
   intentionally absent. The existing iOS 15 deployment target is unchanged.
 - `crop_your_image` supplies the fixed 1:1 interactive crop UI, `image`
   performs the deterministic WebP pipeline, and `uuid` creates object versions.
+
+
+## IMG01 small/full variants
+
+New crops produce two lossy, metadata-free WebP objects in the same isolate:
+full up to 512 square (100 KiB target, 256000-byte ceiling), small up to 160
+square (20 KiB target, 32768-byte ceiling). Sources smaller than either bound
+are never upscaled. Both use independent immutable UUID paths and one atomic
+`set_own_profile_photo_v2` metadata commit after both uploads. A partial upload or
+failed commit retains the previous canonical photo and attempts cleanup of both
+new paths. Replacement returns both old paths for best-effort Storage cleanup;
+clear cascades the small metadata and the current client cleans its known old
+small path. Concurrent/older-client replacement or deletion may leave a private
+orphan, as in the existing deferred physical cleanup/account-deletion contract.
+
+The private `profile_photo_thumbnails` relation binds one small path to the
+exact current full path. V2 owner/viewer/batch/Project/Resource RPCs append nullable
+`thumbnail_object_path`; all legacy RPC signatures and shapes remain unchanged.
+Storage reuses the full object's canonical audience/context/block checks for the
+small object, allows authenticated exact GET only, and never adds listing or
+upsert access. Unregistered, replaced and cleared small objects are unreadable
+to non-owners. The database verifies small owner, path, MIME and byte ceiling;
+client processor tests verify actual decoded dimensions and metadata stripping.
+
+List controllers download `smallObjectPath`; legacy photos explicitly fall back
+to their existing full object without retrying, mass rewriting or requiring a
+re-upload. A declared small-object failure is an explicit failure, never a hidden
+full download. The person preview reauthorizes the exact target in its source
+context and downloads full bytes into an auto-disposed provider. It never copies
+Project-context permission into the generic cache. Block/unblock and owner
+replace/remove/audience changes invalidate generic and contextual caches, cancel
+in-flight reads, and both avatar variants evict decoded memory on replacement or
+disposal. Identity changes clear all viewer bytes. No files or URLs are persisted.
+
+Apply migration `20261021152141_profile_avatar_variants.sql` before activating
+these mobile V2 reads. No hosted migration or rollout is performed by this PR.
+Old clients continue full-only reads/writes; their next replacement removes any
+old small reference. Reverting clients leaves the additive schema safe in place.
+
+Validation: `flutter test test/features/profile test/features/profile_photo`;
+`npm run profile:photo:viewer:verify:local` also exercises real small/full Storage
+permissions, Project/Tavolo context, Block, legacy replacement/removal and the
+32768-byte ceiling through `scripts/lib/profile-avatar-variant-verifier.mjs`.
+`supabase test db --local` includes `148_profile_avatar_variants.test.sql`.
+The deterministic textured 900x700 input measured 23538 full bytes at 512x512
+and 2164 small bytes at 160x160, quality 82. The repository's garden tutorial
+photo measured 48702 full bytes at 512x512 and 8220 small bytes at 160x160,
+quality 82; both outputs were visually inspected. No personal photo is archived.
+Physical Android/iOS gallery, pixel-density, VoiceOver and
+TalkBack review remain separate native QA.

@@ -11,6 +11,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/widgets/page_app_bar.dart';
 import '../../features/activities_sandbox/presentation/activities_screen.dart';
+import '../../features/external_activities/presentation/external_activities_screen.dart';
+import '../../features/external_activities/presentation/external_activity_detail_screen.dart';
 import '../../features/activities_sandbox/presentation/activity_example_detail_screen.dart';
 import '../../features/settings/application/activities_split_preference_controller.dart';
 import '../../features/geographic_discovery/domain/map_discovery.dart';
@@ -107,6 +109,10 @@ import '../../features/resource_requests/presentation/resource_request_screen.da
 import '../../features/resource_saved_searches/presentation/resource_saved_search_routes.dart';
 import '../../features/resource_saved_searches/presentation/resource_saved_searches_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/mock_mode/application/mock_mode_coordinator.dart';
+import '../../features/mock_mode/presentation/mock_accounts_screen.dart';
+import '../../features/mock_mode/presentation/mock_boundary_screen.dart';
+import '../../features/mock_mode/presentation/mock_mode_routes.dart';
 import '../../features/profile/presentation/profile_visibility_screen.dart';
 import '../../features/settings/presentation/navigation_selection_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -161,6 +167,8 @@ RoutingConfig _routingConfig(
   StartupFlow? startupFlow,
   bool Function()? readPolicyAccepted,
   bool Function()? readActivitiesSplit,
+  MockModeCoordinator? mockCoordinator,
+  bool activeMock = false,
 ]) {
   final sessionReader =
       readAuthSession ?? () => const AuthSessionState.signedOut();
@@ -170,7 +178,9 @@ RoutingConfig _routingConfig(
     onEnter: (context, current, next, router) async {
       VoidCallback? committedNativeCancellation;
       if (next.uri.hasScheme || next.uri.hasAuthority) {
-        final destination = nativeProjectDestination(next.uri);
+        final destination = activeMock
+            ? null
+            : nativeProjectDestination(next.uri);
         var continuation = current.uri.path == '/auth/verify'
             ? pendingReader()?.returnTo
             : current.uri.queryParameters['returnTo'];
@@ -215,11 +225,29 @@ RoutingConfig _routingConfig(
     },
     redirect: (context, state) {
       if (state.uri.hasScheme || state.uri.hasAuthority) {
+        if (activeMock) return MockModeRoutes.normalLink;
         return nativeProjectDestination(state.uri) ?? '/link-unavailable';
       }
       final session = sessionReader();
       final pending = pendingReader();
       final path = state.uri.path;
+      if (path == MockModeRoutes.accounts &&
+          (mockCoordinator == null ||
+              (!activeMock && !mockCoordinator.selectionRequested))) {
+        return '/settings';
+      }
+      if (activeMock &&
+          (AuthRoutes.isAuthPath(path) ||
+              path == accountDeletionPath ||
+              path == HelpRoutes.contact ||
+              path == HelpRoutes.bug)) {
+        return MockModeRoutes.unavailableAction;
+      }
+      if (!activeMock &&
+          (path == MockModeRoutes.normalLink ||
+              path == MockModeRoutes.unavailableAction)) {
+        return '/settings';
+      }
       if ((path == '/activities' || path.startsWith('/activities/')) &&
           !(readActivitiesSplit?.call() ?? false)) {
         return '/proposals';
@@ -492,6 +520,18 @@ RoutingConfig _routingConfig(
       return null;
     },
     routes: [
+      GoRoute(
+        path: MockModeRoutes.accounts,
+        builder: (context, state) => const MockAccountsScreen(),
+      ),
+      GoRoute(
+        path: MockModeRoutes.normalLink,
+        builder: (context, state) => const MockBoundaryScreen(normalLink: true),
+      ),
+      GoRoute(
+        path: MockModeRoutes.unavailableAction,
+        builder: (context, state) => const MockBoundaryScreen(),
+      ),
       GoRoute(
         path: policyAcceptancePath,
         builder: (context, state) => const PolicyAcceptanceScreen(),
@@ -1084,7 +1124,10 @@ RoutingConfig _routingConfig(
                   ),
                   GoRoute(
                     path: 'mine',
-                    builder: (context, state) => const OwnProposalsScreen(),
+                    builder: (context, state) => OwnProposalsScreen(
+                      itemId: state.uri.queryParameters['item'],
+                      returnToHub: state.extra == DraftEditorOrigin.hub,
+                    ),
                   ),
                   GoRoute(
                     path: 'create',
@@ -1213,9 +1256,19 @@ RoutingConfig _routingConfig(
                 path: '/activities',
                 pageBuilder: (context, state) => NoTransitionPage<void>(
                   key: state.pageKey,
-                  child: const ActivitiesScreen(),
+                  child: const ExternalActivitiesScreen(),
                 ),
                 routes: [
+                  GoRoute(
+                    path: 'examples',
+                    builder: (context, state) => const ActivitiesScreen(),
+                  ),
+                  GoRoute(
+                    path: 'external/:activityId',
+                    builder: (context, state) => ExternalActivityDetailScreen(
+                      activityId: state.pathParameters['activityId']!,
+                    ),
+                  ),
                   GoRoute(
                     path: 'examples/:exampleId',
                     builder: (context, state) => ActivityExampleDetailScreen(
@@ -1233,8 +1286,10 @@ RoutingConfig _routingConfig(
                 routes: [
                   GoRoute(
                     path: 'mine',
-                    builder: (context, state) =>
-                        const OwnRecurringActivitiesScreen(),
+                    builder: (context, state) => OwnRecurringActivitiesScreen(
+                      itemId: state.uri.queryParameters['item'],
+                      returnToHub: state.extra == DraftEditorOrigin.hub,
+                    ),
                   ),
                   GoRoute(
                     path: 'create',
@@ -1266,6 +1321,7 @@ RoutingConfig _routingConfig(
                         builder: (context, state) =>
                             RecurringActivityEditorScreen(
                               activityId: state.pathParameters['id'],
+                              returnToHub: state.extra == DraftEditorOrigin.hub,
                             ),
                       ),
                       GoRoute(
@@ -1332,8 +1388,10 @@ RoutingConfig _routingConfig(
                 routes: [
                   GoRoute(
                     path: 'mine',
-                    builder: (context, state) =>
-                        const OwnResourceListingsScreen(),
+                    builder: (context, state) => OwnResourceListingsScreen(
+                      itemId: state.uri.queryParameters['item'],
+                      returnToHub: state.extra == DraftEditorOrigin.hub,
+                    ),
                   ),
                   GoRoute(
                     path: 'create',
@@ -1357,6 +1415,7 @@ RoutingConfig _routingConfig(
                         builder: (context, state) =>
                             ResourceListingEditorScreen(
                               listingId: state.pathParameters['listingId'],
+                              returnToHub: state.extra == DraftEditorOrigin.hub,
                             ),
                       ),
                       GoRoute(
@@ -1388,6 +1447,8 @@ bool _isResourceManagementPath(String destination) {
       (segments.last == 'edit' || segments.last == 'loan-schedule');
 }
 
+final initialAppLocationProvider = Provider<String>((ref) => '/');
+
 final appRouterProvider = Provider<GoRouter>((ref) {
   final startup = ref.read(startupFlowProvider);
   RoutingConfig configuration() => _routingConfig(
@@ -1403,6 +1464,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ref.read(policyVersionProvider),
         ),
     () => ref.read(activitiesSplitPreferenceProvider).enabled,
+    ref.read(mockModeCoordinatorProvider),
+    ref.read(activeMockRealmProvider),
   );
   final routes = _NativeRoutingConfig(
     configuration(),
@@ -1410,7 +1473,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
   final router = GoRouter.routingConfig(
     routingConfig: routes,
-    initialLocation: '/',
+    initialLocation: ref.read(initialAppLocationProvider),
     errorBuilder: (context, state) => const _UnknownRouteScreen(),
   );
   routes.readIncomingUri = () => router.routeInformationProvider.value.uri;

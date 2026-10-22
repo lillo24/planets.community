@@ -25,7 +25,8 @@ select columns_are(
     'listing_mode',
     'locality',
     'created_at',
-    'updated_at'
+    'updated_at',
+    'category_slug'
   ],
   'saved searches persist only owner, current browse filters, and timestamps'
 );

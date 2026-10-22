@@ -1,3 +1,5 @@
+import '../../profile/presentation/person_preview_sheet.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -423,46 +425,56 @@ class _CounterpartyHeader extends ConsumerWidget {
         vertical: AppSpacing.small,
       ),
       color: Theme.of(context).colorScheme.surfaceContainerLow,
-      child: Row(
-        children: [
-          VisibleProfilePhotoAvatar(
-            key: const Key('resource-chat-counterparty-photo'),
-            entry: photo,
-            imageSemanticsLabel: l10n.resourceChatCounterpartyPhotoLabel(
-              summary.counterpartyDisplayName,
-            ),
-            placeholderSemanticsLabel: l10n.resourceChatCounterpartyPhotoLabel(
-              summary.counterpartyDisplayName,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.small),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Tooltip(
-                  message: summary.counterpartyDisplayName,
-                  child: Text(
+      child: InkWell(
+        onTap: () => showPersonPreviewSheet(
+          context,
+          profileId: summary.counterpartyProfileId,
+          contextDisplayName: summary.counterpartyDisplayName,
+          consequence: BlockingContextConsequence.acceptedResourceCoordination,
+          onChanged: (_) => onBlockingChanged(),
+        ),
+        child: Row(
+          children: [
+            VisibleProfilePhotoAvatar(
+              key: const Key('resource-chat-counterparty-photo'),
+              entry: photo,
+              imageSemanticsLabel: l10n.resourceChatCounterpartyPhotoLabel(
+                summary.counterpartyDisplayName,
+              ),
+              placeholderSemanticsLabel: l10n
+                  .resourceChatCounterpartyPhotoLabel(
                     summary.counterpartyDisplayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall,
                   ),
-                ),
-                Text(role, style: Theme.of(context).textTheme.bodySmall),
-              ],
             ),
-          ),
-          BlockingActionButton(
-            targetProfileId: summary.counterpartyProfileId,
-            targetDisplayName: summary.counterpartyDisplayName,
-            consequence:
-                BlockingContextConsequence.acceptedResourceCoordination,
-            compact: true,
-            buttonKey: const Key('resource-chat-blocking-action'),
-            onChanged: (_) => onBlockingChanged(),
-          ),
-        ],
+            const SizedBox(width: AppSpacing.small),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Tooltip(
+                    message: summary.counterpartyDisplayName,
+                    child: Text(
+                      summary.counterpartyDisplayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ),
+                  Text(role, style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+            BlockingActionButton(
+              targetProfileId: summary.counterpartyProfileId,
+              targetDisplayName: summary.counterpartyDisplayName,
+              consequence:
+                  BlockingContextConsequence.acceptedResourceCoordination,
+              compact: true,
+              buttonKey: const Key('resource-chat-blocking-action'),
+              onChanged: (_) => onBlockingChanged(),
+            ),
+          ],
+        ),
       ),
     );
   }

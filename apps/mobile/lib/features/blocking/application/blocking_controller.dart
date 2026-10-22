@@ -1,3 +1,6 @@
+import '../../profile_photo/application/project_creator_photo_controller.dart';
+import '../../profile_photo/application/resource_listing_owner_photo_controller.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -345,6 +348,10 @@ class BlockingController extends Notifier<BlockingState> {
       ref
           .read(visibleProfilePhotoProvider.notifier)
           .invalidate(targetProfileId);
+      // Context caches can contain the same private image under Project/Resource
+      // keys; cancel their in-flight reads as well as clearing both variants.
+      ref.read(projectCreatorPhotoProvider.notifier).invalidateAll();
+      ref.read(resourceListingOwnerPhotoProvider.notifier).invalidateAll();
       return BlockingMutationOutcome.success;
     } catch (error) {
       if (!_isCurrentTarget(

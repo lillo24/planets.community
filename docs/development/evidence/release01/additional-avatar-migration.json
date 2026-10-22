@@ -1,0 +1,20 @@
+{
+  "source_main": "82ace622331b97ca39dca5876e2dbb12ae92045b",
+  "source_pr": "https://github.com/lillo24/planets.community/pull/281",
+  "file": "supabase/migrations/20261021152141_profile_avatar_variants.sql",
+  "version": "20261021152141",
+  "name": "profile_avatar_variants",
+  "sha256": "a79fb44d09a12fa9289d68d652c33850232b2bfb74b7974a27fff93b4a95eafc",
+  "domain": "Profile photo thumbnail variants",
+  "required_for_current_app_release": true,
+  "effects": [
+    "Adds a private RLS-enabled thumbnail metadata table; no existing-photo backfill",
+    "Adds V2 photo RPCs and exact object reads that reuse the current full photo audience/block rules",
+    "Preserves legacy full-only RPCs; replacing a full photo invalidates the corresponding thumbnail",
+    "Owner-bound WebP thumbnail commit is limited to 32768 bytes; raw table access is revoked"
+  ],
+  "original_26_approval": "Still valid for the unchanged original 26 hashes",
+  "additional_staging_approval": "Pending; not authorized by the earlier 26-file approval",
+  "recovery": "Extending the task-specific no-backup waiver to this additional file requires owner approval",
+  "expected_history_after_all_approved": 124
+}

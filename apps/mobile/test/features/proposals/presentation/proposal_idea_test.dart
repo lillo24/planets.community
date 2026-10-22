@@ -41,9 +41,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('12:00 – 14:00'), 200);
-    expect(find.text('September 10, 2026'), findsOneWidget);
-    expect(find.text('Europe/Rome'), findsOneWidget);
+    await tester.scrollUntilVisible(find.textContaining('12:00–14:00'), 200);
+    expect(find.textContaining('Sep 10, 2026'), findsOneWidget);
+    expect(find.text('Europe/Rome'), findsNothing);
     expect(find.byKey(const Key('proposal-status-idea')), findsOneWidget);
     expect(find.text('Upcoming'), findsNothing);
     expect(summary.isIdea, isTrue);

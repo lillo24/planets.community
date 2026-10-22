@@ -1,3 +1,5 @@
+import 'package:planets_mobile/features/profile/presentation/person_preview_sheet.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -28,6 +30,41 @@ const _coverPath =
     'c3000000-0000-4000-8000-000000000001.webp';
 
 void main() {
+  for (final locale in ['en', 'it']) {
+    testWidgets(
+      'guest Project organizer opens a reusable profile over detail $locale',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              proposalGatewayProvider.overrideWithValue(
+                FakeProposalGateway()..publicDetail = proposalDetailFixture(),
+              ),
+              projectResourceNeedsGatewayProvider.overrideWithValue(
+                FakeProjectResourceNeedsGateway(),
+              ),
+            ],
+            child: _localized(
+              const ProposalDetailScreen(proposalId: 'proposal-1'),
+              locale: locale,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final identity = find.byKey(const Key('proposal-organizer-identity'));
+        await tester.scrollUntilVisible(identity, 350);
+        await tester.tap(identity);
+        await tester.pumpAndSettle();
+        expect(find.byType(PersonPreviewContent), findsOneWidget);
+        expect(find.byKey(const Key('proposal-blocking-action')), findsNothing);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(PersonPreviewContent), findsNothing);
+        expect(find.byType(ProposalDetailScreen), findsOneWidget);
+      },
+    );
+  }
+
   for (final locale in ['en', 'it']) {
     for (final scale in [1.0, 2.0]) {
       testWidgets(
@@ -172,15 +209,9 @@ void main() {
       ),
     );
 
-    expect(
-      find.text(
-        '3 / 4 participant spots used · +1 organizers · '
-        '4 unique people involved',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('4/5 people'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('Registration capacity not set · +1 organizers'),
+      find.text('Registration capacity not set'),
       300,
       scrollable: find.byType(Scrollable).first,
     );
@@ -230,10 +261,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Paint the square'), findsOneWidget);
-      expect(
-        find.text('Up to 20 participants · +1 organizers'),
-        findsOneWidget,
-      );
+      expect(find.text('Up to 21 people'), findsOneWidget);
       expect(find.textContaining('people involved'), findsNothing);
       expect(find.byKey(const Key('proposal-requested-section')), findsNothing);
       expect(gateway.calls, isNot(contains('list-requested')));
@@ -252,14 +280,8 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('A full proposal description.'), findsOneWidget);
-      await tester.scrollUntilVisible(
-        find.text('Up to 20 participants · +1 organizers'),
-        200,
-      );
-      expect(
-        find.text('Up to 20 participants · +1 organizers'),
-        findsOneWidget,
-      );
+      await tester.scrollUntilVisible(find.text('Up to 21 people'), 200);
+      expect(find.text('Up to 21 people'), findsOneWidget);
       expect(find.textContaining(' / 20'), findsNothing);
       expect(find.textContaining('people involved'), findsNothing);
       expect(gateway.calls, contains('public-detail:proposal-1'));
@@ -455,9 +477,9 @@ void main() {
     expect(gateway.calls, ['public-detail:proposal-1']);
     await tester.scrollUntilVisible(find.text('Schedule'), 200);
     expect(find.text('Schedule'), findsOneWidget);
-    expect(find.text('September 10, 2026'), findsOneWidget);
-    expect(find.text('12:00 – 14:00'), findsOneWidget);
-    expect(find.text('Europe/Rome'), findsOneWidget);
+    expect(find.textContaining('Sep 10, 2026'), findsOneWidget);
+    expect(find.textContaining('12:00–14:00'), findsOneWidget);
+    expect(find.text('Europe/Rome'), findsNothing);
     await tester.scrollUntilVisible(find.text('Gardening'), 200);
     expect(find.text('Skills'), findsOneWidget);
     expect(find.text('Required'), findsOneWidget);
