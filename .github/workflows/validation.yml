@@ -417,6 +417,11 @@ jobs:
           PLANETS_DISPOSABLE_QA: "1"
         run: npm run cocreate:events:verify:local
 
+      - name: Verify proposed communities, meeting places and filling notifications
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: npm run cocreate:communities:verify:local
+
       - name: Verify continuous co-creation journey and retained socket
         # The continuous journey uses the same disposable backend; no extra reset.
         # Its finally restores the experimental gate even on an assertion failure.

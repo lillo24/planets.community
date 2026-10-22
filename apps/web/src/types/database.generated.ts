@@ -3684,6 +3684,10 @@ export type Database = {
         Returns: Json
       }
       get_cocreate_availability: { Args: never; Returns: Json }
+      get_cocreate_community_proposal: {
+        Args: { p_proposal_id: string }
+        Returns: Json
+      }
       get_cocreate_contact_group: {
         Args: { p_contact_id: string; p_expected_profile_id: string }
         Returns: Json
@@ -3694,6 +3698,14 @@ export type Database = {
           p_contact_id: string
           p_expected_profile_id: string
           p_limit?: number
+        }
+        Returns: Json
+      }
+      get_cocreate_current_meeting: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_room_id: string
         }
         Returns: Json
       }
@@ -3879,6 +3891,10 @@ export type Database = {
         Returns: Json
       }
       get_moderation_case_cocreate: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: Json
+      }
+      get_moderation_case_cocreate_proposal: {
         Args: { p_case_id: string; p_expected_staff_profile_id: string }
         Returns: Json
       }
@@ -4603,6 +4619,10 @@ export type Database = {
         Args: { p_expected_profile_id: string }
         Returns: number
       }
+      get_own_unread_notification_count_with_cocreate: {
+        Args: { p_expected_profile_id: string }
+        Returns: number
+      }
       get_own_unread_notification_count_with_contacts: {
         Args: { p_expected_profile_id: string }
         Returns: number
@@ -5047,6 +5067,18 @@ export type Database = {
           p_membership_id: string
         }
         Returns: string
+      }
+      list_cocreate_categories: { Args: never; Returns: Json }
+      list_cocreate_communities: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_category_id: string
+          p_limit?: number
+          p_locality?: string
+          p_search?: string
+        }
+        Returns: Json
       }
       list_cocreate_group_projects: {
         Args: {
@@ -5500,6 +5532,15 @@ export type Database = {
           blocked_profile_id: string
         }[]
       }
+      list_own_cocreate_community_interests: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_own_cocreate_contact_exits: {
         Args: {
           p_before_created_at?: string
@@ -5925,6 +5966,15 @@ export type Database = {
           resource_listing_title: string
           resource_request_id: string
         }[]
+      }
+      list_own_notifications_with_cocreate: {
+        Args: {
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
       }
       list_own_notifications_with_contacts: {
         Args: {
@@ -7235,6 +7285,10 @@ export type Database = {
         Args: { p_expected_profile_id: string }
         Returns: number
       }
+      mark_all_notifications_with_cocreate_read: {
+        Args: { p_expected_profile_id: string }
+        Returns: number
+      }
       mark_all_notifications_with_contacts_read: {
         Args: { p_expected_profile_id: string }
         Returns: number
@@ -7250,6 +7304,20 @@ export type Database = {
       mark_notification_read: {
         Args: { p_expected_profile_id: string; p_notification_id: string }
         Returns: string
+      }
+      mark_notification_with_cocreate_read: {
+        Args: { p_expected_profile_id: string; p_notification_id: string }
+        Returns: string
+      }
+      moderate_cocreate_community_proposal: {
+        Args: {
+          p_case_id: string
+          p_command_id: string
+          p_expected_staff_profile_id: string
+          p_expected_version: number
+          p_operation: string
+        }
+        Returns: Json
       }
       moderate_cocreate_hub: {
         Args: {
@@ -7278,6 +7346,15 @@ export type Database = {
           p_expected_staff_profile_id: string
           p_expected_version: number
           p_suppressed: boolean
+        }
+        Returns: Json
+      }
+      mutate_cocreate_community_interest: {
+        Args: {
+          p_command_id: string
+          p_expected_profile_id: string
+          p_operation: string
+          p_proposal_id: string
         }
         Returns: Json
       }
@@ -7310,6 +7387,18 @@ export type Database = {
           p_note?: string
           p_operation: string
           p_post_id: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_meeting: {
+        Args: {
+          p_command_id: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_meeting_id: string
+          p_operation: string
+          p_room_id: string
         }
         Returns: Json
       }
@@ -7466,6 +7555,17 @@ export type Database = {
       promote_proposal_idea: {
         Args: { p_expected_profile_id: string; p_proposal_id: string }
         Returns: string
+      }
+      propose_cocreate_community: {
+        Args: {
+          p_category_id: string
+          p_command_id: string
+          p_expected_profile_id: string
+          p_explanation?: string
+          p_locality: string
+          p_name: string
+        }
+        Returns: Json
       }
       propose_resource_exchange_terms: {
         Args: {
@@ -7969,6 +8069,18 @@ export type Database = {
           p_workspace_url: string
         }
         Returns: string
+      }
+      schedule_cocreate_meeting: {
+        Args: {
+          p_capacity: number
+          p_command_id: string
+          p_episode_id?: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_room_id?: string
+          p_starts_at: string
+        }
+        Returns: Json
       }
       search_public_geography_v1: {
         Args: { p_cursor?: Json; p_limit?: number; p_query: Json }

@@ -17,7 +17,14 @@ import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 
 // Actual immutable parent of A00, including its precise backdated inventory.
 // Materialize separately: never rename/remove the working migration directory.
-const base = "675bc5929c79332d1f4dcaf3446780c3020ef214";
+const originalBase = "675bc5929c79332d1f4dcaf3446780c3020ef214";
+const runallBase = "a0e810d0678cfd17b0124eb103e68974e932474b";
+const base = process.env.PLANETS_COCREATE_UPGRADE_BASE ?? originalBase;
+assert.ok(
+  [originalBase, runallBase].includes(base),
+  "Only the reviewed original or selected RUNALL base is supported",
+);
+const followup = base === runallBase;
 const root = await realpath(process.cwd());
 const config = await readFile(path.join(root, "supabase/config.toml"), "utf8");
 const project = config.match(/^project_id\s*=\s*"([^"]+)"/m)?.[1];
@@ -80,7 +87,7 @@ const files = run("git", [
   .trim()
   .split(/\r?\n/);
 assert.ok(
-  files.length === 123 &&
+  files.length === (followup ? 137 : 123) &&
     files.every((f) => /^supabase\/migrations\/\d{14}_[\w-]+\.sql$/.test(f)),
   "Exact base inventory required",
 );
@@ -247,6 +254,44 @@ try {
     p_administrative_area: null,
     p_public_location_label: null,
   });
+  let cocreate;
+  if (followup) {
+    const topic = randomUUID(),
+      hub = randomUUID();
+    await sql`update private.cocreate_settings set enabled=true`;
+    await sql`insert into private.cocreate_topics(id,label,active) values(${topic}::uuid,'Synthetic opaque pre-COMM01 topic',true)`;
+    await sql`insert into private.cocreate_hubs(id,topic_id,locality,active) values(${hub}::uuid,${topic}::uuid,'Synthetic legacy locality',true)`;
+    const general = await rpc(u, "mutate_cocreate_hub", {
+      p_expected_profile_id: u.id,
+      p_command_id: randomUUID(),
+      p_hub_id: hub,
+      p_operation: "join",
+    });
+    const numbered = await rpc(u, "mutate_cocreate_numbered_group", {
+      p_expected_profile_id: u.id,
+      p_command_id: randomUUID(),
+      p_hub_id: hub,
+      p_operation: "create",
+      p_capacity: 3,
+    });
+    await rpc(u, "send_cocreate_room_message", {
+      p_expected_profile_id: u.id,
+      p_command_id: randomUUID(),
+      p_room_id: numbered.room_id,
+      p_episode_id: numbered.episode_id,
+      p_body: "Synthetic retained chat before meetings",
+    });
+    const recruitment = await rpc(u, "mutate_cocreate_recruitment", {
+      p_expected_profile_id: u.id,
+      p_command_id: randomUUID(),
+      p_hub_id: hub,
+      p_room_id: numbered.room_id,
+      p_episode_id: numbered.episode_id,
+      p_operation: "post",
+    });
+    cocreate = { topic, hub, general, numbered, recruitment };
+    await sql`update private.cocreate_settings set enabled=false`;
+  }
   const tables =
     await sql`select table_schema||'.'||table_name name,array_agg(column_name order by ordinal_position) columns from information_schema.columns where table_schema in ('public','private') and table_name in(select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','private') and c.relkind='r') group by table_schema,table_name order by 1`;
   const snapshot = async (table) =>
@@ -259,10 +304,20 @@ try {
     "public.create_editor_proposal_draft(uuid,uuid,text,text,text,timestamptz,timestamptz,text,text,text,text,text,text,text,uuid[],text[],integer,boolean)",
     "public.get_own_message_unread_summary_with_contacts_and_discussions(uuid)",
   ];
+  if (followup)
+    signatures.push(
+      "public.process_notification_outbox_batch(integer)",
+      "public.get_cocreate_room_page(uuid,uuid,uuid,integer,bigint)",
+      "public.join_cocreate_recruitment(uuid,uuid,uuid,uuid,uuid)",
+    );
   const identities = () =>
     sql`select p.oid,p.oid::regprocedure::text signature,p.proacl::text acl,pg_get_function_result(p.oid) result_shape from pg_proc p where p.oid in(select to_regprocedure(value) from jsonb_array_elements_text(${sql.json(signatures)}) a(value)) order by p.oid`;
   const before = await identities();
-  equal(before.length, 3, "Critical native identities exist at actual base");
+  equal(
+    before.length,
+    signatures.length,
+    "Critical native and selected dependency identities exist at actual base",
+  );
   manifest.snapshot = tables.map((t) => ({
     name: t.name,
     columns: t.columns,
@@ -334,11 +389,59 @@ try {
       1,
       `${name} still authorizes the original native owner with co-creation OFF`,
     );
+  if (cocreate) {
+    equal(
+      (
+        await sql`select category_id from private.cocreate_topics where id=${cocreate.topic}::uuid`
+      )[0].category_id,
+      "other",
+      "Existing opaque taxonomy uses deliberate Other fallback",
+    );
+    await sql`update private.cocreate_settings set enabled=true`;
+    const context = await rpc(u, "get_cocreate_numbered_context", {
+      p_expected_profile_id: u.id,
+      p_hub_id: cocreate.hub,
+      p_room_id: cocreate.numbered.room_id,
+      p_episode_id: cocreate.numbered.episode_id,
+    });
+    equal(
+      context.capacity,
+      3,
+      "Existing room capacity is not silently converted",
+    );
+    const page = await rpc(u, "get_cocreate_room_page_v2", {
+      p_expected_profile_id: u.id,
+      p_room_id: cocreate.numbered.room_id,
+      p_episode_id: cocreate.numbered.episode_id,
+    });
+    equal(
+      page.messages[0].body,
+      "Synthetic retained chat before meetings",
+      "Existing episode retains exact history",
+    );
+    const card = await rpc(u, "get_own_cocreate_recruitment", {
+      p_expected_profile_id: u.id,
+      p_room_id: cocreate.numbered.room_id,
+      p_episode_id: cocreate.numbered.episode_id,
+    });
+    equal(
+      Object.keys(card).length,
+      9,
+      "Legacy recruitment retains its closed nine-field shape",
+    );
+    equal(
+      card.recruitment_id,
+      cocreate.recruitment.recruitment_id,
+      "Legacy card identity survives upgrade",
+    );
+    await sql`update private.cocreate_settings set enabled=false`;
+  }
   manifest.checks = checks;
   await save("native-snapshots-preserved-current-schema");
   console.log(
     `Q00 populated actual-base upgrade passed: ${checks} assertions, ${tables.length} native table snapshots; activation OFF.`,
   );
 } finally {
+  if (followup) await sql`update private.cocreate_settings set enabled=false`;
   await sql.end();
 }

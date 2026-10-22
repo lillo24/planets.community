@@ -1,5 +1,9 @@
 # COCREATE-RUNALL progress
 
+Current active follow-up: [COMM01/FILL01 contract and resumable progress](cocreate-fill01.md),
+on separate unmerged `codex/cocreate-fill01`, integrating RUNALL and VIS01 under
+the user's latest request. The RUNALL ledger below records its original scope.
+
 Authority: [RUNALL pack](../../history-implementations/PLANETS_COCREATE_RUNALL_autonomous_implementation.md).
 Pre-programme base: `675bc592`. Latest integrated main: `217ce73e`
 (fetched 2026-10-22; final docs-only reconciliation `a2da724a`).
@@ -296,3 +300,17 @@ unimplemented live features must never be reported as verified.
 - Rendered EN/IT narrow/large-text evidence remains under `docs/development/evidence/cocreate`; these are actual component/contract-fixture renders, not live phone screenshots. The real backend/socket journey is separate. No Android device was attached. Five pre-existing PLANETS QA AVDs were inventoried but not booted or modified. Physical-phone/accessibility/founder visual review and iOS build remain unrun; they did not stop eligible implementation. Real provider rights/configuration and production policy/identity decisions remain their separate owner work.
 - QA restoration is complete. Verified server activation OFF, stopped named project **with backup**, restored original `supabase/config.toml` bytes only after checking overlay hash `242091c90891b9f290e02655142f371bebd63af535efc0867bba50e21f60608f`. Restored SHA256 is **2e67b7a5cda9ffc671c31b4461c1c8b896cc75c3bf727f6e406ee573eefbd8f6**; Git confirms no config diff. Original and named project backups remain intact/stopped; after confirming zero running owned containers, the task-owned `planets-cocreate-qa` VM was stopped. Other machines/worktrees untouched. `.local/qa-api-overlay/journal.json` records restoration. Local diagnostics/manifests are retained untracked, never staged.
 - **Exact remaining blocker/next action:** final GitHub validation is gated by STAGING-AUTO01's repository-owner migration review. CI 39777384536 demonstrated this gate before area jobs; the final pushed head will produce its own `staging-migration-review-<run-id>` artifact containing `review-required.json`. The repository owner must inspect the concrete SQL diff and post `STAGING-AUTO01-REVIEW` followed by that exact JSON object for the final head, then rerun the existing gate. Its source SHA, migration hashes and predecessor digests must match; do not post/forge owner approval from this agent or use another workflow to evade the control. Final PR body supplies the final-run link and exact request. Full GitHub CI is therefore **not claimed passed** for the final head. Keep the cumulative PR draft/unmerged; no production/hosted migration, deployment, store submission, real delivery, destructive unrelated cleanup or automatic main merge occurred.
+## COMM01/FILL01 follow-up (2026-10-23, active)
+
+New explicitly requested branch/worktree `codex/cocreate-fill01` builds on RUNALL
+`a0e810d0` and, under the user's later instruction to combine related unfinished
+work, includes VIS01 `512192ec`. Existing branches/worktrees and primary untracked
+work are preserved. The draft follow-up will target RUNALL and remain unmerged.
+
+The user supplied COMM01 in chat and combined it with meeting-time filling,
+persistent group chats, separate per-meeting attendance, General notifications,
+mutually exclusive Activities/Find people presentations, independent mode-specific
+mock accounts/data, and a final button-only Crazy Ideas entry. The detailed
+contract, bounds, current evidence and precise next action are in
+[cocreate-fill01.md](cocreate-fill01.md). Historical RUNALL evidence below remains
+unchanged. This follow-up is not complete or ready for production.

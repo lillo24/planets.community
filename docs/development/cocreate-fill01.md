@@ -35,15 +35,103 @@ worktrees are untouched. Keep the cumulative PR unmerged as requested.
 - After the flow is complete, add only a Home Crazy Ideas button beside Find
   People. Do not connect Projects or create Crazy Ideas mock data.
 
-## COMM01 dependency
+## COMM01 and selected dependencies
 
-The user explicitly included COCREATE-COMM01. No matching file, commit or
-implementation was found in fetched main, RUNALL, VIS01 or local Markdown.
-The related “Propose community groups” discussion confirms category → topic →
-numbered-group navigation and proposing/supporting topics. Its assistant prompt
-is unavailable through the conversation reader. Requested the exact prompt/path
-asynchronously; continue independent meeting/mock work meanwhile. Do not invent
-its approval threshold or moderation rules.
+The user supplied the complete COMM01 prompt in this chat and explicitly combined
+it with FILL01. Its required category → topic/local hub → General/numbered rooms
+hierarchy, three-person activation and deliberate Join are part of this task.
+The later instruction to combine related unfinished work explicitly authorizes
+integrating VIS01. Its source is preserved on this branch; #287 and #292 and their
+worktrees remain untouched. The focused dependent draft targets
+`codex/cocreate-runall`, while the combined source also contains VIS01. Do not
+merge it. Independent ACTMET01 is not needed for community support or meetings.
+
+### Canonical community contract
+
+- Seven server-curated categories have stable slugs, EN/IT names, icons and
+  ordering. Existing topic/hub/room/episode IDs remain intact. Every existing
+  topic deliberately defaults to Other; no inferred production taxonomy.
+- A new proposal contains bounded name (2–80), broad locality (1–100) and optional
+  explanation (0–500). Normalize case and repeated whitespace for identity.
+  A private normalized registry and catalog advisory lock coordinate proposals
+  and activation, including matching legacy hubs. Pre-existing ambiguous hubs
+  are preserved, never destructively merged. An unavailable/suppressed matching
+  hub cannot be bypassed by proposing a duplicate.
+- Proposer plus two other distinct current eligible interests activates one hub
+  and its existing canonical INSERT trigger creates one General. No numbered
+  group, membership or chat grant is created by support. Interested rows provide
+  persistent actor-private ready-to-join invitations in Your interests.
+- Configurable defaults in private.cocreate_settings: activation threshold 3
+  (3–10); 3 proposals/rolling day (1–20); 50 current pending interests (1–200);
+  pending lifetime 30 days (1–90). Withdraw/cancel only while pending. Expiry,
+  suppression, disabled category, unavailable proposer, policy, block and account
+  eligibility are checked canonically. Later interest loss never destroys an
+  activated hub. Category disability also denies new hub admission via old IDs.
+- Public pages contain aggregates, never proposer/supporter identities. Own
+  interests bind Auth to the expected actor. No public count grants transcript
+  access. Moderation reuses immutable exact report evidence, current staff,
+  case scope, version checks, command receipts and identifier-only audit. Staff
+  proposal suppression/rejection does not suppress an already activated hub.
+- Flat hub readers and the legacy nine-field recruitment projection retain their
+  shape. New categorized readers and scheduled card fields are additive. Public
+  TypeScript types use the established generator.
+
+### Meeting and notice contract
+
+- Only the current numbered-group creator schedules/reposts/cancels. A General
+  member may create a new persistent numbered chat and publish its first meeting
+  atomically. Ordinary existing group creation remains available independently.
+- One future non-cancelled meeting per chat; 2–50 meeting places include the
+  creator. Only the creator is initially attending each new occurrence. Existing
+  chat members can confirm attendance without a recruitment card. Nonmembers
+  use card Join, which atomically obtains the canonical C03 chat episode and
+  meeting place under the same hub lock. Exit/removal ends that episode's RSVP.
+- Meeting time is immutable, finite, future and within 366 days on first write.
+  Exact accepted retries recover their original receipt, even after time passes.
+  Local input and rendered time carry an offset; a daylight-saving gap is rejected.
+- Scheduling discloses the persistent chat's existing 50-member maximum;
+  meeting limits are independent. Legacy clients cannot subsequently lower that
+  ceiling and create a hidden second attendance limit. Existing unscheduled
+  rooms retain their configured capacity and behavior.
+- Manual refilling keeps the meeting/time and creates another immutable General
+  card, retracting the prior card. Existing 3,600-second cooldown applies. Cards
+  expire at the earlier of meeting start and the existing seven-day lifetime.
+  Full/past/cancelled meetings do not delete or archive the chat. Existing creator
+  departure/orphan archival rules remain in force.
+- A new scheduled card queues one identifier-only outbox event. The existing
+  service-only notification projector expands at most 25 recipient episodes per
+  page with a durable cursor and one shared worker budget. It preserves legacy
+  atomic receipt claims, resolver, OID and ACL. No unbounded synchronous notice
+  fanout or automatic reposting.
+- In-app filling notices include the exact meeting instant, topic, group number
+  and current meeting occupancy. Only General episodes existing at posting may
+  receive them. Revalidate exact active episode, mute, preference, policy, block,
+  account, suppression, card and meeting lifecycle at projection and every read.
+  No self-notice or notice restored by rejoining a different episode. Existing
+  notification inbox/count/read composition stays canonical; actor-only Realtime
+  invalidates the bell/inbox without broadcasting dates, counts or room IDs.
+- This implements durable in-app notifications using the existing service
+  projector. It does not configure Firebase/APNs, external push delivery or a
+  hosted worker schedule. Existing provider and approval controls still apply.
+
+### Mock and presentation contract
+
+- Mock stays an independent realm. Settings serialize selections: persist the
+  other presentation OFF before enabling Activities or Find people. If storage
+  fails, show failure; do not enable both optimistically. Legacy installations
+  with both old flags saved retain Find people precedence until a new selection.
+- Help's account picker filters the ten broker personas by dataset: existing
+  Giulia/Marco/Sara/Dario/Elena for Activities; Luca/Maya/Nora/Teo/Iris for Find
+  people. Legacy catalog rows without a dataset mean Activities. Selecting a
+  presentation does not silently impersonate another account: choose the desired
+  profile through the existing login/departure/session-fencing flow.
+- The guarded mock operator creates requested topics through ordinary proposal,
+  three-account support, explicit General join, schedule and card-join RPCs. It
+  supplies 4/7 Valorant, full Lupus, persistent messages, a newcomer and pending
+  interest scenarios. Fixture receipts preserve tester edits across repeat seed.
+  Mock controls remain outside canonical normal migrations. No hosted setup was
+  run by this task; the owner must approve/apply the schema and mock control/seed
+  update before this data exists on the hosted mock.
 
 ## Progress and next action
 
@@ -55,9 +143,30 @@ its approval threshold or moderation rules.
 - Read current architecture, tooling, recruitment, room membership, notification
   composition and mock control code. Existing recruitment has no meeting time
   or durable notification, and mock personas currently serve one shared catalog.
-- Next: implement additive meeting/attendance/card RPCs with atomic canonical
-  chat admission, bounded notification fanout and negative/concurrency tests;
-  then mobile UI, mode-specific mock fixtures/catalogs, COMM01 and Home button.
+- Implemented additive meeting/attendance/card RPCs, canonical atomic admission,
+  bounded in-app notice fanout, categories, normalized proposals/support and scoped
+  moderation. UI and mock work is in progress, not yet fully qualified.
+- Initial checks: 85 genuine OTP assertions passed; new pgTAP passed 286; populated
+  upgrade from selected RUNALL a0e810d0 passed 216 assertions and preserved 187
+  original native/co-creation table snapshots plus six critical function
+  OID/ACL/result contracts. Exact manifest is retained in task-owned .local.
+- Full fresh replay and all 170 pgTAP files passed 8,234 assertions after repairing
+  the worker composition and removing a duplicate General insertion (the existing
+  hub trigger already creates it). No predecessor assertion was weakened.
+- Final additional persistent-chat capacity assertion passes with all 287 scoped
+  assertions. Genuine Auth verification now passes 90, including explicit RSVP
+  and exact retry from a retained chat member for the next occurrence. Standard
+  public type generation completed (112 additive lines). Backend source is
+  locally qualified; final aggregate checks and owner CI gates remain pending.
+- Mobile initial regression: 298 passed / one new cross-preference fixture lacked
+  its second store. Added the missing fake store; that test passes. New flow
+  matrix passes 19 tests, including 320dp EN/IT, light/dark, 1x/2x, deliberate Join,
+  exact lost-reply retry and account-input clearing. New parser/mode/notice tests
+  passed except a widget lazy-scroll issue repaired in the 19-test rerun. A full
+  final aggregate, captures, analysis, build and actual mock replay remain pending.
+- Next: finish RSVP/manager/mock/admin negative tests and final qualification;
+  inspect rendered evidence; commit each qualified stage, then add only the Crazy
+  Ideas Home button and complete the final cumulative draft PR/checkpoint.
 - No hosted migrations, deployment, provider activation, approval bypass or
   automatic merge is authorized/performed. RUNALL owner migration review remains
   an inherited CI gate, to be refreshed for the exact cumulative head.

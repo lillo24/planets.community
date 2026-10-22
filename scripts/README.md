@@ -192,6 +192,12 @@ UUID for that one product write. Probes cannot satisfy that assertion. The exit
 negative check also verifies the retained socket stays subscribed and responsive
 for its independent actor context. No Realtime quota/authentication is relaxed.
 
+`cocreate:communities:verify:local` tests three-account community activation,
+normalized duplicates, private ready-to-join state, no automatic enrollment,
+atomic meeting/chat admission and last-place races, timed in-app notifications,
+mute/exit revocation, persistent-chat RSVP and next-meeting reuse with real OTP.
+It uses the same owned-target guard and restores the gate OFF.
+
 `cocreate:upgrade:verify:local` resets ONLY an explicitly named disposable local
 project (`PLANETS_DISPOSABLE_QA=1`, `PLANETS_UPGRADE_QA_PROJECT` equal to its
 non-default config project). It materializes the exact pre-A00 Git inventory
@@ -202,3 +208,9 @@ OID/ACL/result shapes, then applies the current combined inventory including
 backdated main migrations. Manifests remain for recovery; working migrations
 are never moved. Run serially with all other database mutators, then run the
 programme verifier and scoped co-creation pgTAP against the populated upgrade.
+For COMM01/FILL01, the explicit `PLANETS_COCREATE_UPGRADE_BASE` value
+`a0e810d0678cfd17b0124eb103e68974e932474b` selects the reviewed RUNALL base
+(137 immutable migrations). It additionally warms a General, numbered chat,
+membership, human message and legacy card before upgrading. The only other
+accepted base is the original default; arbitrary refs are refused. The same
+non-default-project and loopback opt-ins remain mandatory.
