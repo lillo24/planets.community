@@ -50,6 +50,9 @@ diagnostics stay out of public Actions output.
   local/shared/remote targets. Its result is evidence, never rollout approval.
 - `validation.mjs` reuses or dispatches the complete existing `Validation` suite
   on the exact main SHA. All four areas must succeed; skipped checks do not count.
+- `config.mjs` validates explicit `staging` (Mock off) and `closed-test-mock`
+  (fixed isolated Mock on) variants; production is rejected. Normal backend
+  verification continues to use only the original staging configuration.
 - `android.mjs build` rechecks hosted readiness, selects a verified fresh
   code, creates temporary signing/config files without overwriting owner inputs,
   calls the existing Dart map builder and verifies/persists the AAB. Its `finally` removes only files it
@@ -60,7 +63,8 @@ diagnostics stay out of public Actions output.
   here, after preparation.
 - `artifact.py` inspects package/code/SDK/debug flags, upload signature and every
   signed payload, original certificate, source/backend/map flags, compiled origin
-  and 64-bit ELF alignment using checksum-pinned bundletool and the installed JDK.
+  and the effective compiled Mock marker in every ABI, scans every payload for
+  privileged keys/JWTs, and checks 64-bit ELF alignment using checksum-pinned bundletool and the installed JDK.
   The original upload certificate is self-signed: its known JDK trust-chain warning
   is accepted only alongside successful signature verification and the pinned
   certificate; unsigned payloads, expiry and disabled algorithms still fail.

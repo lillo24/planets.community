@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 import { ReleaseError, reportFailure } from "./errors.mjs";
 import { sha256 } from "./sql-fingerprint.mjs";
+import { releaseVariant } from "./config.mjs";
 import { stagingRelease } from "./staging.mjs";
 import {
   playAccessToken,
@@ -18,6 +19,7 @@ export function verifyPersistedArtifact(
   bundle,
   validation,
   sourceSha,
+  variant = "staging",
 ) {
   if (
     !/^[a-f0-9]{40}$/.test(sourceSha ?? "") ||
@@ -27,7 +29,23 @@ export function verifyPersistedArtifact(
     evidence.backend !== "https://cllpvruvrrvxczjitlqd.supabase.co" ||
     evidence.debuggable !== false ||
     evidence.demos_enabled !== false ||
-    evidence.mock_capability !== false ||
+    evidence.release_variant !== variant ||
+    !["staging", "closed-test-mock"].includes(variant) ||
+    evidence.mock_capability !== (variant === "closed-test-mock") ||
+    evidence.all_payloads_scanned !== true ||
+    !evidence.compiled_capabilities ||
+    Object.keys(evidence.compiled_capabilities).sort().join(",") !==
+      [
+        "base/lib/arm64-v8a/libapp.so",
+        "base/lib/armeabi-v7a/libapp.so",
+        "base/lib/x86_64/libapp.so",
+      ]
+        .sort()
+        .join(",") ||
+    Object.values(evidence.compiled_capabilities).some(
+      (marker) =>
+        marker !== `PLANETS_COMPILED_MOCK_V1=${variant === "closed-test-mock"}`,
+    ) ||
     !Number.isSafeInteger(evidence.target_sdk) ||
     evidence.target_sdk < 36 ||
     !Number.isSafeInteger(evidence.version_code) ||
@@ -62,7 +80,14 @@ export async function publishExisting(env = process.env) {
   // Select only the known generated name; no artifact-controlled filesystem path.
   const name = `planets-staging-${Number(evidence.version_code)}-${env.GITHUB_SHA.slice(0, 12)}.aab`;
   const bundle = readFileSync(`build/release01/${name}`);
-  verifyPersistedArtifact(policy, evidence, bundle, validation, env.GITHUB_SHA);
+  verifyPersistedArtifact(
+    policy,
+    evidence,
+    bundle,
+    validation,
+    env.GITHUB_SHA,
+    releaseVariant(env),
+  );
   const current = spawnSync("git", ["ls-remote", "origin", "refs/heads/main"], {
     encoding: "utf8",
     timeout: 60000,

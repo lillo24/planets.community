@@ -38,7 +38,7 @@ final class AppConfig {
   });
 
   factory AppConfig.fromCompileTime() {
-    return AppConfig.fromValues(
+    final config = AppConfig.fromValues(
       appEnvironment: const String.fromEnvironment('APP_ENV'),
       supabaseUrl: const String.fromEnvironment('SUPABASE_URL'),
       supabasePublishableKey: const String.fromEnvironment(
@@ -61,7 +61,23 @@ final class AppConfig {
         'MOCK_FIXTURE_GENERATION',
       ),
     );
+    if (config.closedTestMockEnabled != compiledMockCapability) {
+      throw const AppConfigException('Compiled capability contract mismatch.');
+    }
+    // Public, release-retained diagnostic. The AAB inspector checks the single
+    // constant selected by AOT in every ABI; runtime checks the same config gate.
+    // ignore: avoid_print
+    print(compiledMockMarker);
+    return config;
   }
+
+  static const compiledMockCapability =
+      String.fromEnvironment('APP_ENV') != 'production' &&
+      !kIsWeb &&
+      String.fromEnvironment('ENABLE_CLOSED_TEST_MOCK') == 'true';
+  static const compiledMockMarker = compiledMockCapability
+      ? 'PLANETS_COMPILED_MOCK_V1=true'
+      : 'PLANETS_COMPILED_MOCK_V1=false';
 
   factory AppConfig.fromValues({
     required String appEnvironment,
