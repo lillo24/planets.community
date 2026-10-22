@@ -1,3 +1,4 @@
+import 'package:planets_mobile/features/co_creation/data/co_creation_sources_gateway.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -67,6 +68,14 @@ class Fixture {
   Future<Object?> rpc(String name, Map<String, dynamic> args) async {
     if (failRead) throw StateError('Offline');
     switch (name) {
+      case 'get_cocreate_contact_group':
+        return {
+          'profile_id': args['p_expected_profile_id'],
+          'contact_id': args['p_contact_id'],
+          'link': null,
+        };
+      case 'list_cocreate_group_projects':
+        return [];
       case 'get_cocreate_availability':
         return {'enabled': enabled};
       case 'list_cocreate_topics':
@@ -149,6 +158,9 @@ Future<(ProviderContainer, GoRouter)> pump(
     overrides: [
       authSessionProvider.overrideWith(Session.new),
       policyAcceptanceProvider.overrideWith(Policy.new),
+      coCreationSourcesGatewayProvider.overrideWithValue(
+        CoCreationSourcesGateway(fixture.rpc),
+      ),
       peoplePostsGatewayProvider.overrideWithValue(
         PeoplePostsGateway(fixture.rpc),
       ),

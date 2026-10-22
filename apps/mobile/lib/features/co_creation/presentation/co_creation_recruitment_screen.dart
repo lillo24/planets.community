@@ -60,7 +60,7 @@ class CoRecruitmentJoinScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final pending =
-        ref.watch(peopleAttemptsProvider)['recruitment-join/$id']?.uncertain ==
+        ref.watch(peopleAttemptsProvider)['recruitment-join/$id']?.pending ==
         true;
     return PeoplePage(
       title: l.coRecruitmentTitle,

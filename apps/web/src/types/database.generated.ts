@@ -3056,6 +3056,16 @@ export type Database = {
         }
         Returns: number
       }
+      create_cocreate_project_draft: {
+        Args: {
+          p_command_id: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
       create_editor_proposal_draft: {
         Args: {
           p_administrative_area: string
@@ -3665,6 +3675,10 @@ export type Database = {
         Returns: Json
       }
       get_cocreate_availability: { Args: never; Returns: Json }
+      get_cocreate_contact_group: {
+        Args: { p_contact_id: string; p_expected_profile_id: string }
+        Returns: Json
+      }
       get_cocreate_contact_page: {
         Args: {
           p_before_sequence?: number
@@ -3952,6 +3966,10 @@ export type Database = {
       }
       get_own_cocreate_numbered_membership: {
         Args: { p_expected_profile_id: string; p_room_id: string }
+        Returns: Json
+      }
+      get_own_cocreate_post_link: {
+        Args: { p_expected_profile_id: string; p_post_id: string }
         Returns: Json
       }
       get_own_cocreate_recruitment: {
@@ -5016,6 +5034,17 @@ export type Database = {
         }
         Returns: string
       }
+      list_cocreate_group_projects: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
       list_cocreate_hubs: {
         Args: {
           p_before_created_at?: string
@@ -5519,6 +5548,15 @@ export type Database = {
           p_expected_profile_id: string
           p_limit?: number
           p_post_id?: string
+        }
+        Returns: Json
+      }
+      list_own_cocreate_manageable_groups: {
+        Args: {
+          p_before_id?: string
+          p_before_joined_at?: string
+          p_expected_profile_id: string
+          p_limit?: number
         }
         Returns: Json
       }
@@ -7284,6 +7322,19 @@ export type Database = {
           p_expected_version?: number
           p_operation: string
           p_post_id?: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_post_group: {
+        Args: {
+          p_command_id: string
+          p_episode_id?: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_hub_id?: string
+          p_operation: string
+          p_post_id: string
+          p_room_id?: string
         }
         Returns: Json
       }

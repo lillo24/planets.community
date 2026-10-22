@@ -128,3 +128,13 @@ uncertain recovery. The room v2 parser owns human/structured separation and send
 attribution; the contact parser keeps its existing closed human-only contract.
 See docs/development/cocreate-recruitment.md for lifecycle, limits, lock order,
 unread compatibility and reproduction. No card creates mass notifications.
+
+D02 adds data/co_creation_sources_gateway.dart (strict post/contact references,
+source/native draft receipts and published Project cursors) and
+presentation/co_creation_sources_screen.dart (author selection, accepted-contact
+review and ordinary native editor entry/return). It uses current creator-only
+server selection, never a user-entered database ID. Public native reads still
+decide Project visibility; a private source reference grants no new audience.
+See docs/development/cocreate-source-links.md for authority and exact retry rules.
+Acknowledged receipts remain pending until the UI completion succeeds; callback
+recovery does not resend the write. Late completion cannot clear another attempt.

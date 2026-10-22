@@ -16,6 +16,7 @@ import '../data/people_private_gateway.dart';
 import '../application/people_signals.dart';
 import '../domain/people_private.dart';
 import 'people_widgets.dart';
+import 'co_creation_sources_screen.dart';
 
 import 'package:go_router/go_router.dart';
 
@@ -155,7 +156,7 @@ class _PeopleContactScreenState extends ConsumerState<PeopleContactScreen>
     final attempt = ref.watch(
       peopleAttemptsProvider,
     )['contact/${widget.contactId}/send'];
-    final locked = attempt?.uncertain == true || attempt?.busy == true;
+    final locked = attempt?.pending == true || attempt?.busy == true;
     final l = AppLocalizations.of(context),
         actor = ref.watch(authSessionProvider).identity?.id;
     return PeoplePage(
@@ -165,6 +166,7 @@ class _PeopleContactScreenState extends ConsumerState<PeopleContactScreen>
           children: [
             if (busy) const LinearProgressIndicator(),
             if (failed) Text(l.coPeopleError),
+            if (!closed) CoContactGroupAction(contact: widget.contactId),
             Wrap(
               spacing: 8,
               children: [

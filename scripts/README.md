@@ -169,3 +169,8 @@ races, isolated episodes, moderation and hub-exit/erasure convergence.
 `verify-local-cocreate-recruitment.mjs` exercises structured General posting,
 one active card, canonical card admission races, lifecycle/replay and human-unread
 compatibility. Both require the same owned disposable target and restore OFF.
+
+`verify-local-cocreate-links.mjs` exercises accepted-contact source review,
+explicit hub/group admission, concurrent source versioning and ordinary native
+personal draft creation/recovery without copied content or membership. It uses
+the same owned-target guard and restores activation OFF.

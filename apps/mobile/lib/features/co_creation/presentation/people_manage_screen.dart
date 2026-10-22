@@ -38,6 +38,11 @@ class PeopleOwnPostsScreen extends StatelessWidget {
                       if (p.suppressed) Text(l.coPeopleUnavailable),
                       Text(p.body),
                       Text(p.locality),
+                      TextButton(
+                        onPressed: () =>
+                            context.push('/people/posts/${p.id.value}/group'),
+                        child: Text(l.coSourceLink),
+                      ),
                       if (p.state != 'closed')
                         TextButton(
                           onPressed: () async {
@@ -141,7 +146,7 @@ class _PeopleComposerState extends ConsumerState<PeopleComposerScreen> {
     final attempt = ref.watch(
       peopleAttemptsProvider,
     )[p == null ? 'post/create' : 'post/${p.id.value}'];
-    final locked = attempt?.uncertain == true || attempt?.busy == true;
+    final locked = attempt?.pending == true || attempt?.busy == true;
     return PeoplePage(
       title: l.coPeopleCompose,
       child: ListView(

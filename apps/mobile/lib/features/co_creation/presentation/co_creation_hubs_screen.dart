@@ -213,8 +213,7 @@ class _HubMembershipState extends ConsumerState<_HubMembership> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (m?.active != true ||
-            (prior?.uncertain == true &&
-                prior!.intent['p_operation'] == 'join'))
+            (prior?.pending == true && prior!.intent['p_operation'] == 'join'))
           PeopleCommand(
             slot: 'hub/${widget.hub.value}',
             rpc: 'mutate_cocreate_hub',

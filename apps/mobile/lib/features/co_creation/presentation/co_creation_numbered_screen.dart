@@ -14,6 +14,7 @@ import '../domain/people_post.dart';
 import '../domain/people_private.dart';
 import 'people_widgets.dart';
 import 'co_creation_recruitment_screen.dart';
+import 'co_creation_sources_screen.dart';
 
 /// Public aggregate discovery; no roster/history fetch occurs here.
 class CoNumberedList extends StatefulWidget {
@@ -99,7 +100,7 @@ class _CreateState extends ConsumerState<CoNumberedCreateScreen> {
               for (var n = 2; n <= 50; n++)
                 DropdownMenuItem(value: n, child: Text('$n')),
             ],
-            onChanged: pending?.uncertain == true
+            onChanged: pending?.pending == true
                 ? null
                 : (n) => setState(() => capacity = n!),
           ),
@@ -164,7 +165,9 @@ class CoNumberedDetailScreen extends ConsumerWidget {
                 Text(l.coGroupsDisclosure),
                 Text(l.coGroupsHubRequired),
                 TextButton(
-                  onPressed: () => context.push(CoCreationRoutes.hub(hub)),
+                  onPressed: () => context.push(
+                    '/messages/cocreate/hubs/${hub.value}/review',
+                  ),
                   child: Text(l.coCreationHubs),
                 ),
                 PeopleAccess(
@@ -191,7 +194,7 @@ class CoNumberedDetailScreen extends ConsumerWidget {
                                     .watch(
                                       peopleAttemptsProvider,
                                     )['numbered/${room.value}']
-                                    ?.uncertain ==
+                                    ?.pending ==
                                 true)
                           PeopleCommand(
                             slot: 'numbered/${room.value}',
@@ -246,13 +249,24 @@ class CoNumberedManageScreen extends StatelessWidget {
                   .read(coCreationRoomsGatewayProvider)
                   .context(actor!, hub, room, episode, numbered: true),
             ],
-            row: (context, m, refresh) => CoNumberedControls(
-              key: ValueKey(m.version),
-              hub: hub,
-              room: room,
-              episode: episode,
-              meta: m,
-              refresh: refresh,
+            row: (context, m, refresh) => Column(
+              children: [
+                CoNumberedControls(
+                  key: ValueKey(m.version),
+                  hub: hub,
+                  room: room,
+                  episode: episode,
+                  meta: m,
+                  refresh: refresh,
+                ),
+                CoGroupProjects(
+                  hub: hub,
+                  room: room,
+                  episode: episode,
+                  manager: m.isManager,
+                  active: !m.closed,
+                ),
+              ],
             ),
           ),
         ),

@@ -3372,5 +3372,14 @@
         "type": "int"
       }
     }
-  }
+  },
+  "coSourceLink": "Link a small group",
+  "coSourceNotice": "Choose a numbered group you currently manage. This adds a reference for accepted contacts to review. It does not enroll anyone or copy private notes or chat.",
+  "coSourceCreateGroup": "Join a community and deliberately create a group",
+  "coSourceClear": "Remove group reference",
+  "coSourceChoose": "Link this group",
+  "coSourceReview": "Review shared group",
+  "coSourceProject": "Start a personal Project draft",
+  "coSourceProjectNotice": "Open an ordinary personal Project draft. No messages, notes, members, capacity or location are copied. You review and publish it through the normal editor. Group members are not enrolled.",
+  "coSourcePublishedProject": "View published Project"
 }

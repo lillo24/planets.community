@@ -368,6 +368,10 @@ jobs:
         env:
           PLANETS_DISPOSABLE_QA: "1"
         run: npm run cocreate:recruitment:verify:local
+      - name: Verify explicit source links and native personal drafts
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: npm run cocreate:links:verify:local
 
       - name: Regenerate public database types
         run: npm run db:types

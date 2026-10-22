@@ -320,13 +320,13 @@ class _PeopleCommandState extends ConsumerState<PeopleCommand> {
     try {
       final store = ref.read(peopleAttemptsProvider.notifier);
       final prior = ref.read(peopleAttemptsProvider)[widget.slot];
-      if (prior?.uncertain == true &&
+      if (prior?.pending == true &&
           (prior!.actor != actor ||
               prior.rpc != widget.rpc ||
               prior.intent['p_operation'] != widget.intent['p_operation'])) {
         throw StateError('Resolve the original co-creation operation first.');
       }
-      final attempt = prior?.uncertain == true
+      final attempt = prior?.pending == true
           ? prior!
           : store.acquire(widget.slot, actor, widget.rpc, widget.intent);
       final result = await attempt.deliver(
@@ -335,8 +335,14 @@ class _PeopleCommandState extends ConsumerState<PeopleCommand> {
       if (!mounted || ref.read(authSessionProvider).identity?.id != actor) {
         return;
       }
-      store.clear(widget.slot);
-      await widget.onSuccess(result);
+      attempt.busy = true;
+      try {
+        await widget.onSuccess(result);
+        attempt.completionPending = false;
+        store.clear(widget.slot, expected: attempt);
+      } finally {
+        attempt.busy = false;
+      }
     } catch (_) {
       if (mounted && ref.read(authSessionProvider).identity?.id == actor) {
         setState(() => failed = true);
@@ -353,7 +359,7 @@ class _PeopleCommandState extends ConsumerState<PeopleCommand> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final prior = ref.watch(peopleAttemptsProvider)[widget.slot];
-    final pending = prior?.uncertain == true;
+    final pending = prior?.pending == true;
     final matching =
         !pending ||
         (prior!.rpc == widget.rpc &&

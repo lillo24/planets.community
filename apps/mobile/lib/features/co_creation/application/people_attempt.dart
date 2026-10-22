@@ -27,10 +27,14 @@ class PeopleAttempt {
        intent = _frozen(jsonDecode(jsonEncode(intent))) as Map<String, dynamic>;
   final String actor, rpc, commandId;
   final Map<String, dynamic> intent;
-  bool uncertain = false, busy = false;
+  bool uncertain = false, busy = false, completionPending = false;
+  bool get pending => uncertain || completionPending;
   Map<String, Object?>? receipt;
   Future<Map<String, Object?>> deliver(CoCreationCommandGateway gateway) async {
     if (busy) throw StateError('Command is already being delivered.');
+    // An acknowledged write whose UI completion failed is never sent again.
+    // Its identifier-only receipt is not an access grant; destinations reread.
+    if (completionPending && receipt != null) return receipt!;
     busy = true;
     uncertain = true;
     try {
@@ -41,6 +45,7 @@ class PeopleAttempt {
       });
       receipt = result;
       uncertain = false;
+      completionPending = true;
       return result;
     } on PostgrestException catch (e) {
       uncertain = !{
@@ -72,7 +77,7 @@ class PeopleAttempts extends Notifier<Map<String, PeopleAttempt>> {
     Map<String, dynamic> intent,
   ) {
     final previous = state[slot];
-    if (previous?.uncertain == true) {
+    if (previous?.pending == true) {
       if (previous!.actor != actor ||
           previous.rpc != rpc ||
           jsonEncode(previous.intent) != jsonEncode(intent)) {
@@ -94,7 +99,10 @@ class PeopleAttempts extends Notifier<Map<String, PeopleAttempt>> {
     return attempt;
   }
 
-  void clear(String slot) {
+  void clear(String slot, {PeopleAttempt? expected}) {
+    if (!ref.mounted || expected != null && !identical(state[slot], expected)) {
+      return;
+    }
     state = {...state}..remove(slot);
   }
 

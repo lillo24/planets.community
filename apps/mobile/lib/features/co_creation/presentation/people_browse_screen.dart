@@ -135,7 +135,7 @@ class _PeoplePostScreenState extends ConsumerState<PeoplePostScreen> {
     final attempt = ref.watch(
       peopleAttemptsProvider,
     )['interest/${widget.postId.value}'];
-    final locked = attempt?.uncertain == true || attempt?.busy == true;
+    final locked = attempt?.pending == true || attempt?.busy == true;
     final l = AppLocalizations.of(context);
     return PeoplePage(
       title: l.coPeopleLive,

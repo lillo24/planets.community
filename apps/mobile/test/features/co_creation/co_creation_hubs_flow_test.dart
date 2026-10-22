@@ -1,3 +1,5 @@
+import 'package:planets_mobile/features/co_creation/data/co_creation_sources_gateway.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -101,6 +103,14 @@ class Fixture {
     final actor = args['p_expected_profile_id'] as String?;
     switch (name) {
       case 'list_cocreate_numbered_groups':
+        return [];
+      case 'get_cocreate_contact_group':
+        return {
+          'profile_id': args['p_expected_profile_id'],
+          'contact_id': args['p_contact_id'],
+          'link': null,
+        };
+      case 'list_cocreate_group_projects':
         return [];
       case 'get_cocreate_availability':
         return {'enabled': enabled};
@@ -215,6 +225,9 @@ Future<(ProviderContainer, GoRouter)> pump(
     overrides: [
       authSessionProvider.overrideWith(Session.new),
       policyAcceptanceProvider.overrideWith(Policy.new),
+      coCreationSourcesGatewayProvider.overrideWithValue(
+        CoCreationSourcesGateway(f.rpc),
+      ),
       peoplePostsGatewayProvider.overrideWithValue(PeoplePostsGateway(f.rpc)),
       coCreationRoomsGatewayProvider.overrideWithValue(
         CoCreationRoomsGateway(f.rpc),

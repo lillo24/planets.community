@@ -187,7 +187,7 @@ class _CoCreationGeneralScreenState
     final attempt = ref.watch(
       peopleAttemptsProvider,
     )['room/${widget.roomId.value}/${widget.episodeId.value}/send'];
-    final locked = attempt?.uncertain == true || attempt?.busy == true;
+    final locked = attempt?.pending == true || attempt?.busy == true;
     final l = AppLocalizations.of(context),
         actor = ref.watch(authSessionProvider).identity?.id;
     return PeoplePage(

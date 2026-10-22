@@ -83,9 +83,12 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
   Future<List<CoRoomSummary>> rooms(
     String actor, {
     CoRoomSummary? before,
+    bool manageable = false,
   }) async {
     final rows = await _page(
-      'list_own_cocreate_rooms_v2',
+      manageable
+          ? 'list_own_cocreate_manageable_groups'
+          : 'list_own_cocreate_rooms_v2',
       {
         'p_expected_profile_id': peopleUuid(actor),
         'p_limit': 25,
@@ -100,6 +103,9 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     );
     final ids = <String>{};
     for (final r in rows) {
+      if (manageable && (!r.numbered || r.closed)) {
+        throw const FormatException('Invalid manageable numbered projection.');
+      }
       if (!ids.add(r.roomId.value)) {
         throw const FormatException('Duplicate canonical room.');
       }

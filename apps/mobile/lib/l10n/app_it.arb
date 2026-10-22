@@ -2634,5 +2634,14 @@
         "type": "int"
       }
     }
-  }
+  },
+  "coSourceLink": "Collega un piccolo gruppo",
+  "coSourceNotice": "Scegli un gruppo numerato che gestisci attualmente. Aggiunge un riferimento che i contatti accettati possono esaminare. Non iscrive nessuno e non copia note o chat private.",
+  "coSourceCreateGroup": "Entra in una comunità e scegli di creare un gruppo",
+  "coSourceClear": "Rimuovi il riferimento al gruppo",
+  "coSourceChoose": "Collega questo gruppo",
+  "coSourceReview": "Esamina il gruppo condiviso",
+  "coSourceProject": "Avvia una bozza personale di Progetto",
+  "coSourceProjectNotice": "Apri una normale bozza personale di Progetto. Non vengono copiati messaggi, note, membri, capienza o posizione. La esamini e pubblichi con l’editor ordinario. I membri del gruppo non vengono iscritti.",
+  "coSourcePublishedProject": "Vedi il Progetto pubblicato"
 }

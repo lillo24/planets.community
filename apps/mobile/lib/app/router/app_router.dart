@@ -1,3 +1,4 @@
+import '../../features/co_creation/presentation/co_creation_sources_screen.dart';
 import '../../features/co_creation/presentation/co_creation_recruitment_screen.dart';
 import '../../features/co_creation/presentation/co_creation_numbered_screen.dart';
 import '../../features/co_creation/presentation/co_creation_hubs_screen.dart';
@@ -895,6 +896,12 @@ RoutingConfig _routingConfig(
                 builder: (context, state) => const MessagesLandingScreen(),
                 routes: [
                   GoRoute(
+                    path: 'cocreate/hubs/:hubId/review',
+                    builder: (_, state) => CoCreationHubScreen(
+                      hubId: HubId.parse(state.pathParameters['hubId']),
+                    ),
+                  ),
+                  GoRoute(
                     path: 'cocreate/hubs/:hubId/:episodeId/leave',
                     builder: (_, state) => CoHubLeaveScreen(
                       key: state.pageKey,
@@ -902,6 +909,13 @@ RoutingConfig _routingConfig(
                       episodeId: CoEpisodeId.parse(
                         state.pathParameters['episodeId'],
                       ),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/hubs/:hubId/groups/:roomId/join',
+                    builder: (_, state) => CoNumberedDetailScreen(
+                      hub: HubId.parse(state.pathParameters['hubId']),
+                      room: CoRoomId.parse(state.pathParameters['roomId']),
                     ),
                   ),
                   GoRoute(
@@ -1006,6 +1020,12 @@ RoutingConfig _routingConfig(
                     path: 'cocreate/contacts/:id/close',
                     builder: (_, state) => PeopleContactCloseScreen(
                       contactId: peopleUuid(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/contacts/:id/group',
+                    builder: (_, state) => CoContactGroupScreen(
+                      contact: peopleUuid(state.pathParameters['id']),
                     ),
                   ),
                   GoRoute(
@@ -1445,6 +1465,12 @@ RoutingConfig _routingConfig(
                   GoRoute(
                     path: 'mine',
                     builder: (_, _) => const PeopleOwnPostsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'posts/:id/group',
+                    builder: (_, state) => CoPostGroupLinkScreen(
+                      post: PostId.parse(state.pathParameters['id']),
+                    ),
                   ),
                   GoRoute(
                     path: 'posts/:id',
