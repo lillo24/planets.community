@@ -1,5 +1,6 @@
 import "server-only";
 import { parseDiscussionEvidence } from "./discussion-evidence";
+import { parseCoProposalReview } from "./cocreate-proposal-models";
 import { parseGroupReview } from "./group-moderation-models";
 import { parseGroupContactEvidence } from "./group-contact-moderation-models";
 
@@ -174,6 +175,7 @@ export async function readModerationCase(
     groupResult,
     contactResult,
     discussionResult,
+    coProposalResult,
   ] = await Promise.all([
     detail.projectContextId
       ? access.client.rpc("get_moderation_case_corroboration", {
@@ -215,7 +217,15 @@ export async function readModerationCase(
           p_case_id: caseId,
         })
       : Promise.resolve(null),
+    detail.targetKind === "cocreate_community_proposal"
+      ? access.client.rpc("get_moderation_case_cocreate_proposal", {
+          p_expected_staff_profile_id: access.profileId,
+          p_case_id: caseId,
+        })
+      : Promise.resolve(null),
   ]);
+  if (coProposalResult?.error)
+    throw new Error("The proposal report evidence could not be loaded.");
   if (contactResult?.error)
     throw new Error("The contact case evidence could not be loaded.");
   const groupContact = contactResult
@@ -289,6 +299,9 @@ export async function readModerationCase(
     staffRole: access.role,
     detail: {
       ...detail,
+      coProposal: coProposalResult
+        ? parseCoProposalReview(coProposalResult.data)
+        : null,
       groupContact,
       group: groupResult ? parseGroupReview(groupResult.data) : null,
       template,

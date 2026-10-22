@@ -343,3 +343,14 @@ unchanged. This follow-up is not complete or ready for production.
   then full mobile qualification and combined-path regression, inspect final
   captures/diff, push and refresh PR #297's exact owner-review gate. Preserve all
   other branches/worktrees. No hosted operation, merge or provider activation.
+
+### Follow-up staff review stage verified
+
+- Added the real admin case-only proposal snapshot and suppress/restore/reject
+  controls. Current staff is rechecked for each read/write; exact command/CAS
+  retries are retained. This grants neither supporter roster nor chat access.
+- New staff/parser/component tests pass **4**; complete Web **405 pass / two
+  existing skips**, lint/typecheck/build/invitation check pass. Scope and model
+  documentation are current. Backend qualification is `2225a88f` + `e6fdf8f5`.
+- Next: commit qualified mock/mobile stages, integrate merged latest main, finish
+  mobile aggregate and final draft-PR evidence. Keep all PRs unmerged.
