@@ -55,7 +55,7 @@ class PeopleTopicPicker extends ConsumerWidget {
           loading: () => const LinearProgressIndicator(),
           error: (_, _) => TextButton(
             onPressed: () => ref.invalidate(peopleTopicsProvider),
-            child: Text(l.peopleError),
+            child: Text(l.coPeopleError),
           ),
           data: (topics) {
             if (topics == null) return const SizedBox.shrink();

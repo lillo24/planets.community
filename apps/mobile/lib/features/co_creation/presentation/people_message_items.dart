@@ -38,7 +38,7 @@ class PeopleRequestItems extends ConsumerWidget {
                     Text(i.postTitle),
                     Text(peopleStateLabel(l, i.state)),
                     Text(i.note),
-                    Text(l.peopleConsent),
+                    Text(l.coPeopleConsent),
                     if (i.state == 'pending')
                       for (final operation
                           in i.requesterId == actor
@@ -53,9 +53,9 @@ class PeopleRequestItems extends ConsumerWidget {
                             'p_interest_id': i.id,
                           },
                           label: switch (operation) {
-                            'accept' => l.peopleAccept,
-                            'decline' => l.peopleDecline,
-                            _ => l.peopleWithdraw,
+                            'accept' => l.coPeopleAccept,
+                            'decline' => l.coPeopleDecline,
+                            _ => l.coPeopleWithdraw,
                           },
                           onSuccess: (_) => refresh(),
                         ),
@@ -64,7 +64,7 @@ class PeopleRequestItems extends ConsumerWidget {
                         onPressed: () => context.push(
                           '/messages/cocreate/contacts/${i.contactId}',
                         ),
-                        child: Text(l.peopleChat),
+                        child: Text(l.coPeopleChat),
                       ),
                     if (i.requesterId != actor)
                       TextButton(
@@ -73,10 +73,10 @@ class PeopleRequestItems extends ConsumerWidget {
                           ModerationReportTarget(
                             kind: ModerationTargetKind.cocreateInterest,
                             id: i.id,
-                            label: l.peopleRequests,
+                            label: l.coPeopleRequests,
                           ),
                         ),
-                        child: Text(l.peopleReport),
+                        child: Text(l.coPeopleReport),
                       ),
                   ],
                 ),
@@ -107,12 +107,12 @@ class PeopleContactItems extends StatelessWidget {
               child: ListTile(
                 title: Text(c.postTitle),
                 subtitle: Text(
-                  c.closedAt == null ? l.peopleContacts : l.peopleClosed,
+                  c.closedAt == null ? l.coPeopleContacts : l.coPeopleClosed,
                 ),
                 trailing: c.unread == 0
                     ? null
                     : Semantics(
-                        label: l.peopleUnread,
+                        label: l.coPeopleUnread,
                         child: Text('${c.unread}'),
                       ),
                 onTap: () async {
@@ -134,7 +134,7 @@ class PeopleRequestsScreen extends StatelessWidget {
   final PostId? postId;
   @override
   Widget build(BuildContext context) => PeoplePage(
-    title: AppLocalizations.of(context).peopleRequests,
+    title: AppLocalizations.of(context).coPeopleRequests,
     child: ListView(
       padding: const EdgeInsets.all(16),
       children: [PeopleRequestItems(postId: postId)],

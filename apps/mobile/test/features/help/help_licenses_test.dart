@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planets_mobile/features/help/presentation/help_screen.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
@@ -13,7 +14,8 @@ void main() {
             locale: Locale(language),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: const HelpScreen(),
+            // Help now reads the active realm for its conditional account entry.
+            home: const ProviderScope(child: HelpScreen()),
           ),
         );
         await t.pumpAndSettle();

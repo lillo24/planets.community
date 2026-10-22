@@ -35,43 +35,43 @@ class _PeopleBrowseScreenState extends ConsumerState<PeopleBrowseScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return PeoplePage(
-      title: l.peopleLive,
+      title: l.coPeopleLive,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           TextButton(
             onPressed: () => context.push('/people/demo'),
-            child: Text(l.peopleDemo),
+            child: Text(l.coPeopleDemo),
           ),
           Wrap(
             spacing: 8,
             children: [
               TextButton(
                 onPressed: () => context.push('/people/compose'),
-                child: Text(l.peopleCompose),
+                child: Text(l.coPeopleCompose),
               ),
               TextButton(
                 onPressed: () => context.push('/people/mine'),
-                child: Text(l.peopleOwn),
+                child: Text(l.coPeopleOwn),
               ),
             ],
           ),
           TextField(
             controller: search,
             maxLength: 120,
-            decoration: InputDecoration(labelText: l.peopleSearch),
+            decoration: InputDecoration(labelText: l.coPeopleSearch),
           ),
           TextField(
             controller: locality,
             maxLength: 100,
-            decoration: InputDecoration(labelText: l.peopleLocality),
+            decoration: InputDecoration(labelText: l.coPeopleLocality),
           ),
           FilledButton(
             onPressed: () => setState(() {
               query = search.text.trim();
               place = locality.text.trim();
             }),
-            child: Text(l.peopleSearch),
+            child: Text(l.coPeopleSearch),
           ),
           PeopleTopicPicker(
             selected: topic,
@@ -134,7 +134,7 @@ class _PeoplePostScreenState extends ConsumerState<PeoplePostScreen> {
     final locked = attempt?.uncertain == true || attempt?.busy == true;
     final l = AppLocalizations.of(context);
     return PeoplePage(
-      title: l.peopleLive,
+      title: l.coPeopleLive,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -152,7 +152,7 @@ class _PeoplePostScreenState extends ConsumerState<PeoplePostScreen> {
                 Text(p.title, style: Theme.of(context).textTheme.headlineSmall),
                 Text(p.locality),
                 Text(p.body),
-                Text(l.peopleConsent),
+                Text(l.coPeopleConsent),
                 TextButton(
                   onPressed: () => ModerationRoutes.openReport(
                     context,
@@ -162,7 +162,7 @@ class _PeoplePostScreenState extends ConsumerState<PeoplePostScreen> {
                       label: p.title,
                     ),
                   ),
-                  child: Text(l.peopleReport),
+                  child: Text(l.coPeopleReport),
                 ),
                 PeopleAccess(
                   child: Column(
@@ -172,7 +172,7 @@ class _PeoplePostScreenState extends ConsumerState<PeoplePostScreen> {
                         enabled: !locked,
                         maxLength: 500,
                         maxLines: 3,
-                        decoration: InputDecoration(labelText: l.peopleNote),
+                        decoration: InputDecoration(labelText: l.coPeopleNote),
                       ),
                       ListenableBuilder(
                         listenable: note,
@@ -184,7 +184,7 @@ class _PeoplePostScreenState extends ConsumerState<PeoplePostScreen> {
                             'p_post_id': p.id.value,
                             'p_note': note.text,
                           },
-                          label: l.peopleInterest,
+                          label: l.coPeopleInterest,
                           onSuccess: (_) async {
                             note.clear();
                             await context.push('/messages/cocreate/requests');

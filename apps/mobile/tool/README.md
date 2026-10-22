@@ -3,6 +3,13 @@
 This folder owns closed-test build preflight and offline reference-data updates,
 separate from runtime config.
 
+[RELEASE01](../../../docs/development/release01-staging-play.md) wraps the existing
+map-enabled Dart builder in guarded staging deployment, exact-source validation,
+original upload signing/artifact inspection and optional Closed-testing Publisher
+delivery. The Dart tool still only builds; it does not reserve a Play code or prove
+hosted schema compatibility. CI code allocation and explicit manual Console checks
+belong to `scripts/release/`; plan archival does not trigger a release.
+
 - `staging_distribution.dart` rejects local/example backends, non-publishable
   keys, extra config keys and enabled/omitted demo tools without logging values.
   The optional public `GOOGLE_WEB_CLIENT_ID` is shape-validated; empty/omitted

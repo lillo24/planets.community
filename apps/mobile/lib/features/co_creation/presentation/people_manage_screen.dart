@@ -18,7 +18,7 @@ class PeopleOwnPostsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return PeoplePage(
-      title: l.peopleOwn,
+      title: l.coPeopleOwn,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -35,7 +35,7 @@ class PeopleOwnPostsScreen extends StatelessWidget {
                     children: [
                       Text(p.title),
                       Text(peopleStateLabel(l, p.state)),
-                      if (p.suppressed) Text(l.peopleUnavailable),
+                      if (p.suppressed) Text(l.coPeopleUnavailable),
                       Text(p.body),
                       Text(p.locality),
                       if (p.state != 'closed')
@@ -44,7 +44,7 @@ class PeopleOwnPostsScreen extends StatelessWidget {
                             await context.push('/people/compose', extra: p);
                             await refresh();
                           },
-                          child: Text(l.peopleEdit),
+                          child: Text(l.coPeopleEdit),
                         ),
                       for (final operation in [
                         if (p.state == 'draft') 'publish',
@@ -60,9 +60,9 @@ class PeopleOwnPostsScreen extends StatelessWidget {
                             'p_expected_version': p.version,
                           },
                           label: switch (operation) {
-                            'publish' => l.peoplePublish,
-                            'close' => l.peopleClose,
-                            _ => l.peopleRenew,
+                            'publish' => l.coPeoplePublish,
+                            'close' => l.coPeopleClose,
+                            _ => l.coPeopleRenew,
                           },
                           onSuccess: (_) => refresh(),
                         ),
@@ -71,7 +71,7 @@ class PeopleOwnPostsScreen extends StatelessWidget {
                           '/messages/cocreate/requests',
                           extra: p.id,
                         ),
-                        child: Text(l.peopleRequests),
+                        child: Text(l.coPeopleRequests),
                       ),
                     ],
                   ),
@@ -133,23 +133,26 @@ class _PeopleComposerState extends ConsumerState<PeopleComposerScreen> {
     });
     final l = AppLocalizations.of(context), p = widget.post;
     if (invalidated) {
-      return PeoplePage(title: l.peopleOwn, child: Text(l.peopleUnavailable));
+      return PeoplePage(
+        title: l.coPeopleOwn,
+        child: Text(l.coPeopleUnavailable),
+      );
     }
     final attempt = ref.watch(
       peopleAttemptsProvider,
     )[p == null ? 'post/create' : 'post/${p.id.value}'];
     final locked = attempt?.uncertain == true || attempt?.busy == true;
     return PeoplePage(
-      title: l.peopleCompose,
+      title: l.coPeopleCompose,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(l.peopleGuidance),
+          Text(l.coPeopleGuidance),
           TextField(
             controller: title,
             enabled: !locked,
             maxLength: 120,
-            decoration: InputDecoration(labelText: l.peopleTitle),
+            decoration: InputDecoration(labelText: l.coPeopleTitle),
           ),
           TextField(
             controller: body,
@@ -157,13 +160,13 @@ class _PeopleComposerState extends ConsumerState<PeopleComposerScreen> {
             maxLength: 1000,
             minLines: 3,
             maxLines: 8,
-            decoration: InputDecoration(labelText: l.peopleBody),
+            decoration: InputDecoration(labelText: l.coPeopleBody),
           ),
           TextField(
             controller: locality,
             enabled: !locked,
             maxLength: 100,
-            decoration: InputDecoration(labelText: l.peopleLocality),
+            decoration: InputDecoration(labelText: l.coPeopleLocality),
           ),
           PeopleTopicPicker(
             selected: topic,
@@ -187,7 +190,7 @@ class _PeopleComposerState extends ConsumerState<PeopleComposerScreen> {
                     'topic_id': topic?.value,
                   },
                 },
-                label: l.peopleSave,
+                label: l.coPeopleSave,
                 onSuccess: (_) async {
                   title.clear();
                   body.clear();

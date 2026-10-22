@@ -1,5 +1,14 @@
 # Continuous integration
 
+RELEASE01 adds a separate, initially disabled
+[staging/closed-test workflow](release01-staging-play.md). It preserves this
+change-scoped Validation workflow. Real release runs reuse or explicitly dispatch
+complete Validation on the exact main SHA and require all four areas to pass.
+Its extra disposable 97→current populated rehearsal runs on release-plumbing PR
+changes and initial release runs; it has no hosted secrets and proves the unusual
+non-contiguous staging upgrade and no-op retry. Plan/document archival alone does
+not deploy. See [current blockers](evidence/release01/assessment.md).
+
 The `Validation` GitHub Actions workflow always starts for pull requests, then
 uses one short `Change classification` job to map changed paths to four independent
 validation areas. Expensive jobs use job-level conditions instead of workflow

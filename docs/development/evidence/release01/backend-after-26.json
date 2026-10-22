@@ -1,0 +1,51 @@
+{
+  "observed_at": "2026-10-21T22:02:26Z",
+  "source_main": "7134a57b4d1fffe517cb7014dce9959806945401",
+  "project_ref": "cllpvruvrrvxczjitlqd",
+  "canonical_applied": 123,
+  "canonical_required": 125,
+  "fully_current_main_ready": false,
+  "checks": {
+    "missing_rpcs": [
+      "can_read_profile_photo_thumbnail_object",
+      "get_own_profile_photo_v2",
+      "get_profile_photo_for_viewer_v2",
+      "get_project_creator_profile_photo_for_viewer_v2",
+      "get_resource_listing_owner_profile_photo_for_viewer_v2",
+      "list_profile_photos_for_viewer_v2",
+      "set_own_profile_photo_v2"
+    ],
+    "unsafe_tables": [],
+    "storage_safe": true,
+    "grants_safe": true,
+    "map_safe": true
+  },
+  "functions": [
+    {
+      "slug": "location-search",
+      "version": 5,
+      "verify_jwt": true,
+      "status": "ACTIVE",
+      "ezbr_sha256": "c85211f868e39caab986cb6f6b164d5233a749038692ea49deac68b151535f66"
+    },
+    {
+      "slug": "location-preview",
+      "version": 4,
+      "verify_jwt": false,
+      "status": "ACTIVE",
+      "ezbr_sha256": "7cf99298e81fc3cfd070065fa97946441731f7f5ac3759ee9c57264e8f3bf83f"
+    },
+    {
+      "slug": "map-provider",
+      "version": 5,
+      "verify_jwt": true,
+      "status": "ACTIVE",
+      "ezbr_sha256": "afbba54efcce958ac5416d5e0eb9a9874827da7a931886d8d3181e917fc8b7b3"
+    }
+  ],
+  "limitations": [
+    "Avatar and notification migrations outside original approval remain unapplied",
+    "Hosted authenticated and Play-device smoke unrun",
+    "No RELEASE01 AAB built or Play upload/submission performed"
+  ]
+}

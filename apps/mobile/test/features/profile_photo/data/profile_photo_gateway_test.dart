@@ -33,7 +33,7 @@ void main() {
         final bytes = await gateway.downloadOwnPhoto('user-1/version.webp');
 
         expect(photo?.audience, ProfilePhotoAudience.interactions);
-        expect(remote.rpcNames, ['get_own_profile_photo']);
+        expect(remote.rpcNames, ['get_own_profile_photo_v2']);
         expect(remote.rpcParams.single, {'p_expected_profile_id': 'user-1'});
         expect(bytes, remote.downloadResult);
         expect(remote.downloads, [('profile-photos', 'user-1/version.webp')]);
@@ -52,7 +52,7 @@ void main() {
 
       expect(photo?.profileId, _viewerA);
       expect(photo?.objectPath, '$_viewerA/$_versionA.webp');
-      expect(remote.rpcNames.single, 'get_profile_photo_for_viewer');
+      expect(remote.rpcNames.single, 'get_profile_photo_for_viewer_v2');
       expect(remote.rpcParams.single, {'p_profile_id': _viewerA});
       expect(remote.downloads, isEmpty);
 
@@ -97,7 +97,7 @@ void main() {
         ]);
 
         expect(photos.map((photo) => photo.profileId), [_viewerA, _viewerB]);
-        expect(remote.rpcNames.single, 'list_profile_photos_for_viewer');
+        expect(remote.rpcNames.single, 'list_profile_photos_for_viewer_v2');
         expect(remote.rpcParams.single, {
           'p_profile_ids': [_viewerA, _viewerA, _viewerB, _viewerC],
         });
@@ -113,7 +113,7 @@ void main() {
       expect(photo?.profileId, _viewerA);
       expect(
         remote.rpcNames.single,
-        'get_project_creator_profile_photo_for_viewer',
+        'get_project_creator_profile_photo_for_viewer_v2',
       );
       expect(remote.rpcParams.single, {'p_project_id': _viewerC});
       expect(remote.downloads, isEmpty);
@@ -130,7 +130,7 @@ void main() {
       expect(photo?.profileId, _viewerA);
       expect(
         remote.rpcNames.single,
-        'get_resource_listing_owner_profile_photo_for_viewer',
+        'get_resource_listing_owner_profile_photo_for_viewer_v2',
       );
       expect(remote.rpcParams.single, {'p_listing_id': _viewerC});
       expect(remote.downloads, isEmpty);

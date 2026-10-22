@@ -9,6 +9,8 @@ import '../domain/profile_photo_models.dart';
 
 const profilePhotoTargetBytes = 100 * 1024;
 const profilePhotoOutputDimension = 512;
+const profilePhotoThumbnailDimension = 160;
+const profilePhotoThumbnailTargetBytes = 20 * 1024;
 const profilePhotoQualitySequence = <int>[82, 74, 66, 58, 50, 42];
 
 abstract interface class ProfilePhotoProcessor {
@@ -44,8 +46,8 @@ ProcessedProfilePhoto processProfilePhoto(Uint8List croppedBytes) {
     );
     final resized = image.copyResize(
       square,
-      width: profilePhotoOutputDimension,
-      height: profilePhotoOutputDimension,
+      width: squareSide.clamp(1, profilePhotoOutputDimension),
+      height: squareSide.clamp(1, profilePhotoOutputDimension),
       interpolation: image.Interpolation.cubic,
     );
 
@@ -55,6 +57,29 @@ ProcessedProfilePhoto processProfilePhoto(Uint8List croppedBytes) {
     resized.iccProfile = null;
     resized.textData = null;
     resized.extraChannels = null;
+
+    final thumbnail = image.copyResize(
+      resized,
+      width: resized.width.clamp(1, profilePhotoThumbnailDimension),
+      height: resized.height.clamp(1, profilePhotoThumbnailDimension),
+      interpolation: image.Interpolation.cubic,
+    );
+    Uint8List? thumbnailBytes;
+    for (final quality in profilePhotoQualitySequence) {
+      thumbnailBytes = image.encodeWebP(
+        thumbnail,
+        lossless: false,
+        quality: quality,
+        method: 4,
+        exact: false,
+        singleFrame: true,
+      );
+      if (thumbnailBytes.length <= profilePhotoThumbnailTargetBytes) break;
+    }
+    if (thumbnailBytes == null ||
+        thumbnailBytes.length > profilePhotoThumbnailMaxBytes) {
+      throw const ProfilePhotoTooLargeException();
+    }
 
     Uint8List? lastEncoded;
     var attempts = 0;
@@ -74,6 +99,7 @@ ProcessedProfilePhoto processProfilePhoto(Uint8List croppedBytes) {
       if (encoded.length <= profilePhotoTargetBytes) {
         return ProcessedProfilePhoto(
           bytes: encoded,
+          thumbnailBytes: thumbnailBytes,
           width: resized.width,
           height: resized.height,
           quality: quality,
@@ -87,6 +113,7 @@ ProcessedProfilePhoto processProfilePhoto(Uint8List croppedBytes) {
     }
     return ProcessedProfilePhoto(
       bytes: lastEncoded,
+      thumbnailBytes: thumbnailBytes,
       width: resized.width,
       height: resized.height,
       quality: lastQuality,

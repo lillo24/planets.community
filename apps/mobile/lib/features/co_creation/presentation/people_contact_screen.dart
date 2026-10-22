@@ -159,12 +159,12 @@ class _PeopleContactScreenState extends ConsumerState<PeopleContactScreen>
     final l = AppLocalizations.of(context),
         actor = ref.watch(authSessionProvider).identity?.id;
     return PeoplePage(
-      title: l.peopleChat,
+      title: l.coPeopleChat,
       child: PeopleAccess(
         child: Column(
           children: [
             if (busy) const LinearProgressIndicator(),
-            if (failed) Text(l.peopleError),
+            if (failed) Text(l.coPeopleError),
             Wrap(
               spacing: 8,
               children: [
@@ -172,11 +172,11 @@ class _PeopleContactScreenState extends ConsumerState<PeopleContactScreen>
                   onPressed: () => context.push(
                     '/messages/cocreate/contacts/${widget.contactId}/close',
                   ),
-                  child: Text(l.peopleClose),
+                  child: Text(l.coPeopleClose),
                 ),
                 TextButton(
                   onPressed: () => load(),
-                  child: Text(l.peopleRefresh),
+                  child: Text(l.coPeopleRefresh),
                 ),
               ],
             ),
@@ -196,7 +196,7 @@ class _PeopleContactScreenState extends ConsumerState<PeopleContactScreen>
                     trailing: m.senderId == actor
                         ? null
                         : IconButton(
-                            tooltip: l.peopleReport,
+                            tooltip: l.coPeopleReport,
                             icon: const Icon(Icons.flag_outlined),
                             onPressed: () => ModerationRoutes.openReport(
                               context,
@@ -204,7 +204,7 @@ class _PeopleContactScreenState extends ConsumerState<PeopleContactScreen>
                                 kind:
                                     ModerationTargetKind.cocreateContactMessage,
                                 id: m.id,
-                                label: l.peopleChat,
+                                label: l.coPeopleChat,
                               ),
                             ),
                           ),
@@ -215,14 +215,14 @@ class _PeopleContactScreenState extends ConsumerState<PeopleContactScreen>
                   loading: olderBusy,
                   failed: olderFailed,
                   onLoadOlder: () => load(older: true),
-                  fallbackLabel: l.peopleMore,
+                  fallbackLabel: l.coPeopleMore,
                   buttonKey: const Key('people-contact-older'),
-                  empty: Text(l.peopleEmpty),
+                  empty: Text(l.coPeopleEmpty),
                 ),
               ),
             ),
             if (closed)
-              Text(l.peopleClosed)
+              Text(l.coPeopleClosed)
             else
               Padding(
                 padding: const EdgeInsets.all(12),
@@ -234,7 +234,7 @@ class _PeopleContactScreenState extends ConsumerState<PeopleContactScreen>
                       maxLength: 2000,
                       minLines: 1,
                       maxLines: 4,
-                      decoration: InputDecoration(labelText: l.peopleMessage),
+                      decoration: InputDecoration(labelText: l.coPeopleMessage),
                     ),
                     ListenableBuilder(
                       listenable: body,
@@ -246,7 +246,7 @@ class _PeopleContactScreenState extends ConsumerState<PeopleContactScreen>
                           'p_contact_id': widget.contactId,
                           'p_body': body.text,
                         },
-                        label: l.peopleSend,
+                        label: l.coPeopleSend,
                         onSuccess: (_) async {
                           body.clear();
                           await load();

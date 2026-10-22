@@ -11,6 +11,37 @@ Map<String, dynamic> validConfig() => {
 };
 
 void main() {
+  test(
+    'closed capability validates exact mock origin, generation and public keys',
+    () {
+      final config = validConfig()
+        ..addAll({
+          'SUPABASE_URL': 'https://cllpvruvrrvxczjitlqd.supabase.co',
+          'ENABLE_CLOSED_TEST_MOCK': 'true',
+          'MOCK_SUPABASE_URL': 'https://pnolarmzxmmjtguligfc.supabase.co',
+          'MOCK_SUPABASE_PUBLISHABLE_KEY':
+              'sb_publishable_mock_fixture_12345678901',
+          'MOCK_PERSONA_BROKER_URL': 'https://pnolarmzxmmjtguligfc.supabase.co/functions/v1/mock-personas',
+          'MOCK_FIXTURE_GENERATION': 'mock-world-2026-10-21-v1',
+        });
+      expect(() => validateStagingDistribution(config), returnsNormally);
+      for (final patch in [
+        {'ENABLE_CLOSED_TEST_MOCK': 'yes'},
+        {'MOCK_SUPABASE_URL': 'https://cllpvruvrrvxczjitlqd.supabase.co'},
+        {
+          'MOCK_PERSONA_BROKER_URL':
+              'https://foreign.test/functions/v1/mock-personas',
+        },
+        {'MOCK_SUPABASE_PUBLISHABLE_KEY': 'sb_secret_test_fixture_do_not_echo'},
+        {'MOCK_FIXTURE_GENERATION': 'obsolete-world'},
+      ]) {
+        expect(
+          () => validateStagingDistribution({...config, ...patch}),
+          throwsFormatException,
+        );
+      }
+    },
+  );
   test('accepts an explicit staging distribution configuration', () {
     expect(() => validateStagingDistribution(validConfig()), returnsNormally);
   });

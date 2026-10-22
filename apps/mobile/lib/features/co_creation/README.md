@@ -69,3 +69,9 @@ empty/inactive outside explicit synthetic local fixtures.
 See docs/development/cocreate-posts-contacts.md for local setup, exact RPCs,
 canonical blocking/moderation, migration and qualification evidence. Native phone
 review and the final integrated programme Q00 remain separate evidence.
+
+B02 localization uses only coPeople-prefixed keys; native Project People keys
+retain current-main values. The saved Sandbox preference is shared like Activities
+Split, while MockRealmHost recreates all private co-creation providers/attempts
+with the selected backend root. Co-creation always uses that root’s canonical
+Supabase client; Demo remains a separate tree and no fixture token is persisted.

@@ -57,7 +57,7 @@ class PeopleAccess extends ConsumerWidget {
             },
           ).toString(),
         ),
-        child: Text(l.peopleLogin),
+        child: Text(l.coPeopleLogin),
       );
     }
     final policy = ref.watch(policyAcceptanceProvider);
@@ -67,7 +67,7 @@ class PeopleAccess extends ConsumerWidget {
         onPressed: () => context.push(
           policyAcceptanceDestination(GoRouterState.of(context).uri.toString()),
         ),
-        child: Text(l.peoplePolicy),
+        child: Text(l.coPeoplePolicy),
       );
     }
     return KeyedSubtree(key: ValueKey(s.identity!.id), child: child);
@@ -215,27 +215,27 @@ class _PeopleListState<T> extends ConsumerState<PeopleList<T>>
       children: [
         widget.header,
         if (busy) const LinearProgressIndicator(),
-        if (error != null) Text(l.peopleError),
+        if (error != null) Text(l.coPeopleError),
         if (!busy && error == null && !available && widget.emptyVisible)
-          Text(l.peopleBackendOff),
+          Text(l.coPeopleBackendOff),
         if (!busy &&
             error == null &&
             available &&
             items.isEmpty &&
             widget.emptyVisible)
-          Text(l.peopleEmpty),
+          Text(l.coPeopleEmpty),
         for (final item in items) widget.row(context, item, refresh),
         if (error != null)
-          TextButton(onPressed: refresh, child: Text(l.peopleRetry)),
+          TextButton(onPressed: refresh, child: Text(l.coPeopleRetry)),
         if (more)
           TextButton(
             onPressed: busy ? null : () => load(true),
-            child: Text(l.peopleMore),
+            child: Text(l.coPeopleMore),
           ),
         if (widget.emptyVisible && error == null)
           TextButton(
             onPressed: busy ? null : refresh,
-            child: Text(l.peopleRefresh),
+            child: Text(l.coPeopleRefresh),
           ),
       ],
     );
@@ -322,11 +322,11 @@ class _PeopleCommandState extends ConsumerState<PeopleCommand> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (failed) Text(l.peopleError),
-        if (pending && matching) Text(l.peoplePending),
+        if (failed) Text(l.coPeopleError),
+        if (pending && matching) Text(l.coPeoplePending),
         FilledButton(
           onPressed: busy || !matching || prior?.busy == true ? null : send,
-          child: Text(pending && matching ? l.peopleRetry : widget.label),
+          child: Text(pending && matching ? l.coPeopleRetry : widget.label),
         ),
       ],
     );
@@ -334,12 +334,12 @@ class _PeopleCommandState extends ConsumerState<PeopleCommand> {
 }
 
 String peopleStateLabel(AppLocalizations l, String state) => switch (state) {
-  'draft' => l.peopleDraft,
-  'open' => l.peopleOpen,
-  'closed' => l.peopleStateClosed,
-  'pending' => l.peopleStatePending,
-  'accepted' => l.peopleAccepted,
-  'declined' => l.peopleDeclined,
-  'withdrawn' => l.peopleWithdrawn,
+  'draft' => l.coPeopleDraft,
+  'open' => l.coPeopleOpen,
+  'closed' => l.coPeopleStateClosed,
+  'pending' => l.coPeopleStatePending,
+  'accepted' => l.coPeopleAccepted,
+  'declined' => l.coPeopleDeclined,
+  'withdrawn' => l.coPeopleWithdrawn,
   _ => throw const FormatException('Unsupported people state.'),
 };

@@ -1,3 +1,5 @@
+import 'package:planets_mobile/features/profile/presentation/person_preview_sheet.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -28,6 +30,41 @@ const _coverPath =
     'c3000000-0000-4000-8000-000000000001.webp';
 
 void main() {
+  for (final locale in ['en', 'it']) {
+    testWidgets(
+      'guest Project organizer opens a reusable profile over detail $locale',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              proposalGatewayProvider.overrideWithValue(
+                FakeProposalGateway()..publicDetail = proposalDetailFixture(),
+              ),
+              projectResourceNeedsGatewayProvider.overrideWithValue(
+                FakeProjectResourceNeedsGateway(),
+              ),
+            ],
+            child: _localized(
+              const ProposalDetailScreen(proposalId: 'proposal-1'),
+              locale: locale,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final identity = find.byKey(const Key('proposal-organizer-identity'));
+        await tester.scrollUntilVisible(identity, 350);
+        await tester.tap(identity);
+        await tester.pumpAndSettle();
+        expect(find.byType(PersonPreviewContent), findsOneWidget);
+        expect(find.byKey(const Key('proposal-blocking-action')), findsNothing);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(PersonPreviewContent), findsNothing);
+        expect(find.byType(ProposalDetailScreen), findsOneWidget);
+      },
+    );
+  }
+
   for (final locale in ['en', 'it']) {
     for (final scale in [1.0, 2.0]) {
       testWidgets(

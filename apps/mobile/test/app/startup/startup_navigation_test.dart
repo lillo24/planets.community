@@ -32,6 +32,19 @@ import '../../support/fake_profile.dart';
 
 void main() {
   testWidgets(
+    'committed guest realm return opens Home while explicit logout reopens Welcome',
+    (tester) async {
+      final app = await _pump(tester, entered: true);
+      final router = app.read(appRouterProvider);
+      expect(router.state.uri.path, '/');
+      expect(find.byKey(const Key('welcome-screen')), findsNothing);
+      await app.read(authCommandProvider.notifier).signOut();
+      await tester.pumpAndSettle();
+      expect(router.state.uri.path, '/welcome');
+      expect(find.byKey(const Key('welcome-screen')), findsOneWidget);
+    },
+  );
+  testWidgets(
     'direct email entry retains first-run tutorial and exact continuation',
     (tester) async {
       tester.platformDispatcher.defaultRouteNameTestValue =
@@ -723,6 +736,7 @@ Future<ProviderContainer> _pump(
   FakeMessageChatsGateway? chats,
   BottomTabDestination destination = BottomTabDestination.messages,
   bool settle = true,
+  bool entered = false,
 }) async {
   final gateway = auth ?? FakeAuthGateway();
   addTearDown(gateway.close);
@@ -730,6 +744,7 @@ Future<ProviderContainer> _pump(
     ProviderScope(
       overrides: [
         preacceptedPolicyFixture,
+        initialStartupEnteredProvider.overrideWithValue(entered),
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(
             appEnvironment: 'local',

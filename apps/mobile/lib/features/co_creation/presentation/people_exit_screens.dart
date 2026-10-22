@@ -29,7 +29,7 @@ class PeopleContactCloseScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return PeoplePage(
-      title: l.peopleClose,
+      title: l.coPeopleClose,
       child: PeopleAccess(
         requirePolicy: false,
         child: Padding(
@@ -38,7 +38,7 @@ class PeopleContactCloseScreen extends StatelessWidget {
             slot: 'contact/$contactId/close',
             rpc: 'mutate_cocreate_contact',
             intent: {'p_operation': 'close', 'p_contact_id': contactId},
-            label: l.peopleClose,
+            label: l.coPeopleClose,
             onSuccess: (_) async {
               context.go('/messages');
             },
@@ -129,8 +129,8 @@ class PeopleContactExits extends ConsumerWidget {
           return rows;
         },
         row: (context, row, refresh) => ListTile(
-          title: Text(interest ? l.peopleRequests : l.peopleChat),
-          subtitle: Text(interest ? l.peopleWithdraw : l.peopleClose),
+          title: Text(interest ? l.coPeopleRequests : l.coPeopleChat),
+          subtitle: Text(interest ? l.coPeopleWithdraw : l.coPeopleClose),
           onTap: () => context.push(
             interest
                 ? '/messages/cocreate/posts/${row.postId!.value}/interests/${row.id}/withdraw'
@@ -154,7 +154,7 @@ class PeopleInterestWithdrawScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return PeoplePage(
-      title: l.peopleWithdraw,
+      title: l.coPeopleWithdraw,
       child: PeopleAccess(
         requirePolicy: false,
         child: Padding(
@@ -167,7 +167,7 @@ class PeopleInterestWithdrawScreen extends StatelessWidget {
               'p_post_id': postId.value,
               'p_interest_id': interestId,
             },
-            label: l.peopleWithdraw,
+            label: l.coPeopleWithdraw,
             onSuccess: (_) async {
               context.go('/messages');
             },

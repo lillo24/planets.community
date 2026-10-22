@@ -197,6 +197,9 @@ jobs:
       - name: Run database security tests
         run: npm run db:test
 
+      - name: Verify private avatar variants and legacy photo delivery
+        run: npm run profile:photo:viewer:verify:local
+
       - name: Verify authenticated MAP01 receipts and location concurrency
         env:
           MAILPIT_URL: http://127.0.0.1:54324

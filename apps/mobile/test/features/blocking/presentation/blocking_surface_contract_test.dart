@@ -32,7 +32,22 @@ void main() {
 
     for (final entry in contracts.entries) {
       final source = File(entry.key).readAsStringSync();
-      expect(source, contains('BlockingActionButton'));
+      final organizerPreview =
+          entry.key.contains('/proposals/') ||
+          entry.key.contains('/recurring_activities/');
+      expect(
+        source,
+        contains(
+          organizerPreview ? 'showPersonPreviewSheet' : 'BlockingActionButton',
+        ),
+      );
+      if (organizerPreview) {
+        expect(
+          File('lib/features/profile/presentation/person_preview_sheet.dart')
+              .readAsStringSync(),
+          contains('BlockingActionButton'),
+        );
+      }
       for (final marker in entry.value) {
         expect(source, contains(marker), reason: '${entry.key}: $marker');
       }

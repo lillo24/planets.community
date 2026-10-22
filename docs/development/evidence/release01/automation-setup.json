@@ -1,0 +1,59 @@
+{
+  "observed_at": "2026-10-21T22:02:26.678181+00:00",
+  "environments": [
+    {
+      "name": "planets-staging",
+      "can_admins_bypass": false,
+      "branch_policies": [
+        {
+          "name": "main",
+          "type": "branch"
+        }
+      ],
+      "required_reviewers": ["lillo24"],
+      "secret_names": ["STAGING_CONFIG_JSON", "STAGING_DB_URL"]
+    },
+    {
+      "name": "planets-android-build",
+      "can_admins_bypass": false,
+      "branch_policies": [
+        {
+          "name": "main",
+          "type": "branch"
+        }
+      ],
+      "required_reviewers": [],
+      "secret_names": [
+        "ANDROID_UPLOAD_KEYSTORE_BASE64",
+        "ANDROID_UPLOAD_KEY_ALIAS",
+        "ANDROID_UPLOAD_KEY_PASSWORD",
+        "ANDROID_UPLOAD_STORE_PASSWORD",
+        "STAGING_CONFIG_JSON"
+      ]
+    },
+    {
+      "name": "planets-play-closed",
+      "can_admins_bypass": false,
+      "branch_policies": [
+        {
+          "name": "main",
+          "type": "branch"
+        }
+      ],
+      "required_reviewers": ["lillo24"],
+      "secret_names": ["STAGING_CONFIG_JSON"]
+    }
+  ],
+  "repo_switches": {
+    "STAGING_RELEASE_ENABLED": "false",
+    "STAGING_AUTO_PUBLISH": "false"
+  },
+  "direct_database_probe": {
+    "result": "ENOTFOUND on this computer",
+    "tls_validation_disabled": false,
+    "Actions_transport_verified": false
+  },
+  "native_supabase_migration_owner_verified": false,
+  "app_publication_authorized": false,
+  "repo_deployment_credential_names": []
+}

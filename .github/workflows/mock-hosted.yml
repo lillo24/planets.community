@@ -1,0 +1,44 @@
+name: Mock hosted setup
+
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mock-hosted-setup
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    name: Disabled planets-mock seed and verification
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.label.name == 'qa-mock-hosted' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24.20.0
+          cache: npm
+      - run: npm ci
+      - name: Seed and verify exact disabled mock environment
+        env:
+          PLANETS_MOCK_OPERATOR: ${{ secrets.PLANETS_MOCK_OPERATOR }}
+        run: node scripts/mock/hosted-setup.mjs
+      - name: Retain counts and source only
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: mock-hosted-setup-${{ github.event.pull_request.head.sha || github.sha }}
+          path: mock-hosted-evidence/setup.json
+          if-no-files-found: warn
+          retention-days: 7

@@ -1,3 +1,5 @@
+import '../../profile/presentation/person_preview_sheet.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,7 +31,9 @@ String memberContactStatusLabel(AppLocalizations l, String status) =>
 
 /// Receives only the private People projection.
 ///
-/// It fetches no public profile, photo or unrelated Group affiliation.
+/// Person preview reads the sanitized public profile and generic authorized photo
+/// independently; Group membership grants neither additional profile fields nor
+/// photo visibility. No unrelated Group affiliation is fetched.
 /// C independently authorizes its
 /// target-bound Idea invitation action; member request eligibility grants none.
 class MemberContactPersonSheet extends ConsumerStatefulWidget {
@@ -99,9 +103,10 @@ class _PersonSheetState extends ConsumerState<MemberContactPersonSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            value?.recipientName ?? l.memberContactPersonActions,
-            style: Theme.of(context).textTheme.titleLarge,
+          PersonPreviewContent(
+            profileId: widget.person.id,
+            contextDisplayName: value?.recipientName,
+            showBlocking: false,
           ),
           if (value != null) Text(groupRoleLabel(l, widget.person.authority)),
           const SizedBox(height: 12),
