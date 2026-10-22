@@ -28,10 +28,10 @@ class MemoryIntroStore implements PeopleIntroPreferenceStore {
   int reads = 0, writes = 0;
   Completer<bool>? pendingRead;
   @override
-  Future<bool> readSeen() async {
+  Future<bool> readSeen() {
     reads++;
     if (failRead) throw StateError('Synthetic read failure');
-    return pendingRead == null ? seen : pendingRead!.future;
+    return pendingRead?.future ?? Future.value(seen);
   }
 
   @override
@@ -210,9 +210,9 @@ void main() {
           ),
           peoplePostsGatewayProvider.overrideWithValue(
             PeoplePostsGateway((name, _) async {
-                if (name == 'get_cocreate_availability') {
+              if (name == 'get_cocreate_availability') {
                 return {'enabled': false};
-                }
+              }
               throw StateError('Unexpected VIS01 domain call: $name');
             }),
           ),

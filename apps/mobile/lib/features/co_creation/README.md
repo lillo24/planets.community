@@ -162,8 +162,8 @@ gate; OFF→ON does not reset the preference. Messages and own exits are unchang
 `data/people_intro_preference.dart` owns installation-local boolean
 `planets.coCreation.interestsIntroSeen.v1` through SharedPreferencesAsync, plus
 a process-session claim to prevent duplicate automatic presentations. The
-preference is marked when the intro opens, independently of account/backend and
-startup tutorial state. Storage failure is explicitly reported while browsing
+preference is marked when the automatic intro opens, independently of
+account/backend and startup tutorial state. Storage failure is explicitly reported while browsing
 and replay remain usable. No interests, analytics or domain records are stored.
 For QA, use Replay intro repeatedly, or clear that single preference (app data
 reset also clears it) and restart to exercise first entry. Provider overrides

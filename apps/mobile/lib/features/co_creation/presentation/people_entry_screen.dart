@@ -34,7 +34,11 @@ class _PeopleEntryScreenState extends ConsumerState<PeopleEntryScreen> {
         ref.read(coCreationPreferenceProvider).enabled &&
         !ref.read(peopleIntroSessionProvider)) {
       _loading = true;
-      _prepare();
+      // Platform-store construction can fail synchronously. Start after build
+      // so its explicit error UI can safely update the ScaffoldMessenger too.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _prepare();
+      });
     }
   }
 
