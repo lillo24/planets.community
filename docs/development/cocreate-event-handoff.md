@@ -44,10 +44,14 @@ before paging. No clicks, popularity or imported attendance alter eligibility.
 Canonical entity/episode route keys prevent state from crossing source changes.
 
 `npm run cocreate:events:verify:local` retains ACTAPI01's explicit disposable,
-non-default API requirement. The owned stack currently uses API 54821, DB 54322
-and Mailpit 54324 on the documented Podman pipe. Its temporary API-only overlay
-is journalled under `.local/qa-api-overlay` and never committed. Restore only
-matching overlay bytes. GitHub ephemeral CI keeps its existing approved setup.
+non-default API requirement. Q00 used the owned disposable project
+`planets-cocreate-runall-qa`, API 54821, DB 54322 and Mailpit 54324 on the
+documented Podman pipe. Its temporary project/API overlay is journalled under
+`.local/qa-api-overlay` and was never committed. After qualification the project
+was stopped with backup, and the original config bytes restored after a hash
+check. Both project backups remain intact. Reproduction requires a separately
+named disposable local project and the matching explicit opt-ins documented in
+the progress record. GitHub ephemeral CI keeps its existing approved setup.
 
 D03 evidence: fresh database 169 files / 7,640 assertions; genuine event handoff
 38 assertions; inherited ACTAPI01 service/public pipeline passed with its guard

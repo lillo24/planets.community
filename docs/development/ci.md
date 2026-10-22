@@ -121,3 +121,11 @@ OTP/concurrency verifier with PLANETS_DISPOSABLE_QA=1. It checks loopback target
 uses synthetic identities, and restores server activation OFF even on failure.
 It follows rolled-back tests and precedes exact public type generation; no CI
 trigger/path boundary or required-status policy changed.
+
+Q00 also runs the continuous `cocreate:programme:verify:local` journey in the
+same Database job and disposable stack, after the individual co-creation checks.
+It adds no reset or trigger. The separate destructive actual-pre-A00 upgrade
+command requires an explicitly named local QA project; its exact inventory and
+native snapshot evidence are recorded in cocreate-progress.md. STAGING-AUTO01's
+owner migration review/rehearsal gate remains unchanged and may prevent area
+jobs from starting until the exact-content review exists.

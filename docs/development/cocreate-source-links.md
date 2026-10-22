@@ -49,3 +49,10 @@ It uses genuine OTP accounts and verifies explicit consent, no enrollment,
 concurrent source CAS, immutable retries, ordinary empty native drafts, private
 unpublished results, creator departure and backend-OFF native ownership. Gate
 activation always returns OFF. See cocreate-progress.md for final counts.
+
+Q00 adds a narrow signal correction: closed accepted contacts no longer receive
+later linked-group seat/capacity/lifecycle hints. Current room memberships keep
+their independent identifier-only invalidations. The integrated programme holds
+the real actor socket open across contact closure and hub exit, changes capacity
+and sends later child/General messages, and checks both absent hints and the
+frozen HTTP episode boundary.

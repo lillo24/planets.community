@@ -179,3 +179,26 @@ the same owned-target guard and restores activation OFF.
 a synthetic licensed local fixture, exact unpublished handoff retries and current
 cancellation/source withdrawal. It keeps the non-default API guard, cleans only
 its exact source, and restores co-creation OFF.
+
+`cocreate:programme:verify:local` runs one continuous real local OTP journey
+through post/contact consent, source review, hub/numbered admission, human unread,
+structured recruitment/last-seat race, removal/rejoin, exact staff evidence,
+retained socket/HTTP exit boundaries, native personal draft and account erasure.
+It restores activation OFF even on failure. It does not simulate a phone UI.
+The pinned local Realtime server may acknowledge a subscription before its idle
+tenant broadcast handler reconnects. Bounded actor-only transport probes precede
+the real send; its positive assertion matches the independently queued delivery
+UUID for that one product write. Probes cannot satisfy that assertion. The exit
+negative check also verifies the retained socket stays subscribed and responsive
+for its independent actor context. No Realtime quota/authentication is relaxed.
+
+`cocreate:upgrade:verify:local` resets ONLY an explicitly named disposable local
+project (`PLANETS_DISPOSABLE_QA=1`, `PLANETS_UPGRADE_QA_PROJECT` equal to its
+non-default config project). It materializes the exact pre-A00 Git inventory
+675bc592 in `.local/cocreate-upgrade-<UUID>` with only project/API-port overlays,
+populates native Project/Tavolo/registered Group/Resource drafts via authenticated
+contracts, snapshots every original public/private table and critical native
+OID/ACL/result shapes, then applies the current combined inventory including
+backdated main migrations. Manifests remain for recovery; working migrations
+are never moved. Run serially with all other database mutators, then run the
+programme verifier and scoped co-creation pgTAP against the populated upgrade.
