@@ -3166,7 +3166,10 @@ Future<ProviderContainer> _pump(
         ),
         coCreationRoomsGatewayProvider.overrideWithValue(
           CoCreationRoomsGateway((name, args) async {
-            if (name == 'list_own_cocreate_hub_exits') return [];
+            if (name == 'list_own_cocreate_hub_exits' ||
+                name == 'list_own_cocreate_numbered_exits') {
+              return [];
+            }
             throw StateError('Disabled co-creation room read: $name');
           }),
         ),

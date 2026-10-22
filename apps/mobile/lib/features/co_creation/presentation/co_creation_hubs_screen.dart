@@ -11,6 +11,7 @@ import '../domain/co_creation_identity.dart';
 import '../domain/co_creation_rooms.dart';
 import 'people_topic_picker.dart';
 import 'people_widgets.dart';
+import 'co_creation_numbered_screen.dart';
 
 class CoCreationHubsScreen extends ConsumerStatefulWidget {
   const CoCreationHubsScreen({super.key});
@@ -124,6 +125,7 @@ class CoCreationHubScreen extends StatelessWidget {
                 Text(h.label, style: Theme.of(context).textTheme.headlineSmall),
                 Text(l.coRoomsHistory),
                 PeopleAccess(child: _HubMembership(hub: hubId)),
+                CoNumberedList(hub: hubId),
               ],
             ),
           ),

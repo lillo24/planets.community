@@ -85,14 +85,14 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     CoRoomSummary? before,
   }) async {
     final rows = await _page(
-      'list_own_cocreate_rooms',
+      'list_own_cocreate_rooms_v2',
       {
         'p_expected_profile_id': peopleUuid(actor),
         'p_limit': 25,
         'p_before_joined_at': before?.joinedAt.toUtc().toIso8601String(),
         'p_before_id': before?.episodeId.value,
       },
-      CoRoomSummary.parse,
+      (r) => CoRoomSummary.parse(r, versioned: true),
       (r) => r.joinedAt,
       (r) => r.episodeId.value,
       before?.joinedAt,
@@ -129,19 +129,85 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     String actor,
     HubId hub,
     CoRoomId room,
-    CoEpisodeId episode,
-  ) async => CoGeneralContext.parse(
-    await rpc('get_cocreate_general_context', {
-      'p_expected_profile_id': peopleUuid(actor),
-      'p_hub_id': hub.value,
-      'p_room_id': room.value,
-      'p_episode_id': episode.value,
-    }),
+    CoEpisodeId episode, {
+    bool numbered = false,
+  }) async => CoGeneralContext.parse(
+    await rpc(
+      numbered
+          ? 'get_cocreate_numbered_context'
+          : 'get_cocreate_general_context',
+      {
+        'p_expected_profile_id': peopleUuid(actor),
+        'p_hub_id': hub.value,
+        'p_room_id': room.value,
+        'p_episode_id': episode.value,
+      },
+    ),
     actor,
     hub,
     room,
     episode,
+    numbered: numbered,
   );
+
+  Future<List<PublicCoNumbered>> numbered(
+    HubId hub, {
+    bool openOnly = false,
+    PublicCoNumbered? before,
+  }) async {
+    final raw = await rpc('list_cocreate_numbered_groups', {
+      'p_hub_id': hub.value,
+      'p_open_seats_only': openOnly,
+      'p_limit': 25,
+      'p_after_number': before?.number,
+    });
+    if (raw is! List || raw.length > 25) {
+      throw const FormatException('Invalid numbered page.');
+    }
+    final rows = raw.map(PublicCoNumbered.parse).toList(growable: false),
+        ids = <String>{};
+    var prior = before?.number ?? 0;
+    for (final row in rows) {
+      if (row.hubId.value != hub.value ||
+          row.number <= prior ||
+          !ids.add(row.roomId.value) ||
+          openOnly && !row.available) {
+        throw const FormatException('Invalid numbered cursor/scope.');
+      }
+      prior = row.number;
+    }
+    return List.unmodifiable(rows);
+  }
+
+  Future<PublicCoNumbered?> numberedDetail(HubId hub, CoRoomId room) async {
+    final raw = await rpc('get_cocreate_numbered_group', {
+      'p_room_id': room.value,
+    });
+    if (raw == null) return null;
+    final row = PublicCoNumbered.parse(raw);
+    if (row.hubId.value != hub.value || row.roomId.value != room.value) {
+      throw const FormatException('Numbered detail scope mismatch.');
+    }
+    return row;
+  }
+
+  Future<CoHubMembership?> numberedMembership(
+    String actor,
+    HubId hub,
+    CoRoomId room,
+  ) async {
+    final raw = await rpc('get_own_cocreate_numbered_membership', {
+      'p_expected_profile_id': peopleUuid(actor),
+      'p_room_id': room.value,
+    });
+    if (raw == null) return null;
+    final row = CoHubMembership.parse(raw, hub);
+    if (row.roomId.value != room.value) {
+      throw const FormatException('Numbered membership scope mismatch.');
+    }
+    return row;
+  }
+
   Future<void> acknowledge(
     String actor,
     CoRoomId room,
@@ -161,14 +227,18 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     CoRoomId room,
     CoEpisodeId episode, {
     CoRoomPerson? before,
+    bool removed = false,
   }) async {
-    final raw = await rpc('list_cocreate_room_people', {
-      'p_expected_profile_id': peopleUuid(actor),
-      'p_room_id': room.value,
-      'p_episode_id': episode.value,
-      'p_limit': 25,
-      'p_after_profile_id': before?.id,
-    });
+    final raw = await rpc(
+      removed ? 'list_cocreate_numbered_removed' : 'list_cocreate_room_people',
+      {
+        'p_expected_profile_id': peopleUuid(actor),
+        'p_room_id': room.value,
+        'p_episode_id': episode.value,
+        'p_limit': 25,
+        'p_after_profile_id': before?.id,
+      },
+    );
     if (raw is! List || raw.length > 25) {
       throw const FormatException('Invalid room People page.');
     }
@@ -189,6 +259,32 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     Map<String, dynamic> args,
   ) async {
     final raw = await rpc(name, args);
+    if (name == 'mutate_cocreate_numbered_group') {
+      final row = coCreationObject(raw, {
+        'operation',
+        'hub_id',
+        'room_id',
+        'episode_id',
+        'number',
+        'capacity',
+        'version',
+        'archived',
+      });
+      if (row['operation'] != args['p_operation'] ||
+          HubId.parse(row['hub_id']).value != args['p_hub_id'] ||
+          args['p_room_id'] != null && row['room_id'] != args['p_room_id'] ||
+          args['p_episode_id'] != null &&
+              row['episode_id'] != args['p_episode_id']) {
+        throw const FormatException('Numbered receipt scope mismatch.');
+      }
+      CoRoomId.parse(row['room_id']);
+      CoEpisodeId.parse(row['episode_id']);
+      coPositive(row['number']);
+      coCapacity(row['capacity']);
+      coPositive(row['version']);
+      peopleBool(row['archived']);
+      return row;
+    }
     if (name == 'mutate_cocreate_hub') {
       final row = coCreationObject(raw, {
         'operation',

@@ -1,3 +1,4 @@
+import '../../features/co_creation/presentation/co_creation_numbered_screen.dart';
 import '../../features/co_creation/presentation/co_creation_hubs_screen.dart';
 import '../../features/co_creation/presentation/co_creation_general_screen.dart';
 import '../../features/co_creation/presentation/co_creation_room_items.dart';
@@ -901,6 +902,54 @@ RoutingConfig _routingConfig(
                     ),
                   ),
                   GoRoute(
+                    path: 'cocreate/hubs/:hubId/groups/:roomId/:episodeId',
+                    builder: (_, state) => CoCreationGeneralScreen(
+                      key: ValueKey((
+                        state.pathParameters['hubId'],
+                        state.pathParameters['roomId'],
+                        state.pathParameters['episodeId'],
+                      )),
+                      numbered: true,
+                      hubId: HubId.parse(state.pathParameters['hubId']),
+                      roomId: CoRoomId.parse(state.pathParameters['roomId']),
+                      episodeId: CoEpisodeId.parse(
+                        state.pathParameters['episodeId'],
+                      ),
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'manage',
+                        builder: (_, state) => CoNumberedManageScreen(
+                          hub: HubId.parse(state.pathParameters['hubId']),
+                          room: CoRoomId.parse(state.pathParameters['roomId']),
+                          episode: CoEpisodeId.parse(
+                            state.pathParameters['episodeId'],
+                          ),
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'leave',
+                        builder: (_, state) => CoNumberedLeaveScreen(
+                          hub: HubId.parse(state.pathParameters['hubId']),
+                          room: CoRoomId.parse(state.pathParameters['roomId']),
+                          episode: CoEpisodeId.parse(
+                            state.pathParameters['episodeId'],
+                          ),
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'people',
+                        builder: (_, state) => CoNumberedRosterScreen(
+                          hub: HubId.parse(state.pathParameters['hubId']),
+                          room: CoRoomId.parse(state.pathParameters['roomId']),
+                          episode: CoEpisodeId.parse(
+                            state.pathParameters['episodeId'],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
                     path: 'cocreate/hubs/:hubId/general/:roomId/:episodeId',
                     builder: (_, state) => CoCreationGeneralScreen(
                       key: ValueKey((
@@ -1348,6 +1397,19 @@ RoutingConfig _routingConfig(
                     builder: (_, _) => const CoCreationHubsScreen(),
                   ),
                   GoRoute(
+                    path: 'hubs/:id/create-group',
+                    builder: (_, state) => CoNumberedCreateScreen(
+                      hub: HubId.parse(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'hubs/:id/groups/:roomId',
+                    builder: (_, state) => CoNumberedDetailScreen(
+                      hub: HubId.parse(state.pathParameters['id']),
+                      room: CoRoomId.parse(state.pathParameters['roomId']),
+                    ),
+                  ),
+                  GoRoute(
                     path: 'hubs/:id',
                     builder: (_, state) => CoCreationHubScreen(
                       key: ValueKey(state.pathParameters['id']),
@@ -1746,4 +1808,5 @@ class _UnknownRouteScreen extends StatelessWidget {
 bool isOwnConversationExitPath(String path) =>
     isDiscussionExitPath(path) ||
     isPeopleOwnExitPath(path) ||
-    isCoHubLeavePath(path);
+    isCoHubLeavePath(path) ||
+    isCoNumberedLeavePath(path);

@@ -55,9 +55,13 @@ select is(public.get_cocreate_numbered_group(current_setting('cocreate.number.ro
 select public.send_cocreate_room_message('cc030000-0000-4000-8000-000000000010',gen_random_uuid(),current_setting('cocreate.number.room')::uuid,current_setting('cocreate.number.a_episode')::uuid,'Synthetic before removal');
 select public.mutate_cocreate_numbered_group('cc030000-0000-4000-8000-000000000010',gen_random_uuid(),current_setting('cocreate.number.hub')::uuid,'remove',
  current_setting('cocreate.number.room')::uuid,current_setting('cocreate.number.a_episode')::uuid,null,'cc030000-0000-4000-8000-000000000011',4);
+select is(jsonb_array_length(public.list_cocreate_numbered_removed('cc030000-0000-4000-8000-000000000010',current_setting('cocreate.number.room')::uuid,current_setting('cocreate.number.a_episode')::uuid)),1,'Only current creator can recover one explicit removal');
+select is((select count(*) from jsonb_object_keys(public.list_cocreate_numbered_removed('cc030000-0000-4000-8000-000000000010',current_setting('cocreate.number.room')::uuid,current_setting('cocreate.number.a_episode')::uuid)->0)),2::bigint,'Removal recovery reveals only profile ID and already admitted display name');
+select throws_ok($$select public.list_cocreate_numbered_removed('cc030000-0000-4000-8000-000000000010',current_setting('cocreate.number.room')::uuid,current_setting('cocreate.number.b_episode')::uuid)$$,'42501',null,'Foreign episode cannot inspect removal recovery');
 select set_config('request.jwt.claim.sub','cc030000-0000-4000-8000-000000000011',true);
 select throws_ok($$select public.mutate_cocreate_numbered_group('cc030000-0000-4000-8000-000000000011',gen_random_uuid(),current_setting('cocreate.number.hub')::uuid,'join',current_setting('cocreate.number.room')::uuid)$$,
  '42501',null,'Removed numbered member cannot self-rejoin');
+select throws_ok($$select public.list_cocreate_numbered_removed('cc030000-0000-4000-8000-000000000011',current_setting('cocreate.number.room')::uuid,current_setting('cocreate.number.b_episode')::uuid)$$,'42501',null,'Removed participant cannot review manager removal barriers');
 select is(jsonb_array_length(public.get_cocreate_room_page('cc030000-0000-4000-8000-000000000011',current_setting('cocreate.number.room')::uuid,current_setting('cocreate.number.b_episode')::uuid)->'messages'),1,'Removed history freezes at committed removal sequence');
 select set_config('request.jwt.claim.sub','cc030000-0000-4000-8000-000000000010',true);
 select public.send_cocreate_room_message('cc030000-0000-4000-8000-000000000010',gen_random_uuid(),current_setting('cocreate.number.room')::uuid,current_setting('cocreate.number.a_episode')::uuid,'Synthetic future after removal');

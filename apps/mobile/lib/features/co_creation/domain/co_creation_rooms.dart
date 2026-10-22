@@ -57,7 +57,7 @@ class CoHubMembership {
 }
 
 class CoRoomSummary {
-  CoRoomSummary.parse(Object? value) {
+  CoRoomSummary.parse(Object? value, {bool versioned = false}) {
     final r = coCreationObject(value, {
       'room_id',
       'hub_id',
@@ -68,6 +68,7 @@ class CoRoomSummary {
       'muted',
       'joined_at',
       'unread_count',
+      if (versioned) ...['kind', 'number'],
     });
     roomId = CoRoomId.parse(r['room_id']);
     hubId = HubId.parse(r['hub_id']);
@@ -78,6 +79,13 @@ class CoRoomSummary {
     muted = peopleBool(r['muted']);
     joinedAt = coCreationDate(r['joined_at']);
     unread = peopleCount(r['unread_count']);
+    numbered = versioned && r['kind'] == 'numbered';
+    number = numbered ? coPositive(r['number']) : null;
+    if (versioned &&
+        (r['kind'] != 'general' && r['kind'] != 'numbered' ||
+            !numbered && r['number'] != null)) {
+      throw const FormatException('Invalid room kind/number.');
+    }
   }
   late final CoRoomId roomId;
   late final HubId hubId;
@@ -86,6 +94,8 @@ class CoRoomSummary {
   late final bool closed, muted;
   late final int unread;
   late final DateTime joinedAt;
+  late final bool numbered;
+  late final int? number;
 }
 
 class CoRoomPage {
@@ -157,8 +167,9 @@ class CoGeneralContext {
     String actor,
     HubId hub,
     CoRoomId room,
-    CoEpisodeId episode,
-  ) {
+    CoEpisodeId episode, {
+    bool numbered = false,
+  }) {
     final r = coCreationObject(value, {
       'profile_id',
       'hub_id',
@@ -168,6 +179,15 @@ class CoGeneralContext {
       'locality',
       'closed',
       'muted',
+      if (numbered) ...[
+        'number',
+        'capacity',
+        'occupied',
+        'version',
+        'archived',
+        'manager_profile_id',
+        'is_manager',
+      ],
     });
     if (peopleUuid(r['profile_id']) != actor ||
         HubId.parse(r['hub_id']).value != hub.value ||
@@ -179,9 +199,25 @@ class CoGeneralContext {
     locality = peopleText(r['locality'], 100, empty: false);
     closed = peopleBool(r['closed']);
     muted = peopleBool(r['muted']);
+    if (numbered) {
+      number = coPositive(r['number']);
+      capacity = coCapacity(r['capacity']);
+      occupied = peopleCount(r['occupied']);
+      version = coPositive(r['version']);
+      archived = peopleBool(r['archived']);
+      manager = peopleUuid(r['manager_profile_id']);
+      isManager = peopleBool(r['is_manager']);
+      if (occupied! > capacity! ||
+          isManager && (manager != actor || closed || archived)) {
+        throw const FormatException('Invalid numbered management context.');
+      }
+    }
   }
   late final String topic, locality;
   late final bool closed, muted;
+  int? number, capacity, occupied, version;
+  String? manager;
+  bool isManager = false, archived = false;
   String get label => '$topic · $locality';
 }
 
@@ -189,3 +225,51 @@ String coGeneralRoute(HubId hub, CoRoomId room, CoEpisodeId episode) =>
     '/messages/cocreate/hubs/${hub.value}/general/${room.value}/${episode.value}';
 String coHubLeaveRoute(HubId hub, CoEpisodeId episode) =>
     '/messages/cocreate/hubs/${hub.value}/${episode.value}/leave';
+
+int coPositive(Object? value) {
+  final n = peopleCount(value);
+  if (n < 1) throw const FormatException('Expected positive integer.');
+  return n;
+}
+
+int coCapacity(Object? value) {
+  final n = coPositive(value);
+  if (n < 2 || n > 50) throw const FormatException('Invalid capacity.');
+  return n;
+}
+
+class PublicCoNumbered {
+  PublicCoNumbered.parse(Object? value) {
+    final r = coCreationObject(value, {
+      'room_id',
+      'hub_id',
+      'number',
+      'capacity',
+      'occupied',
+      'available',
+      'created_at',
+    });
+    roomId = CoRoomId.parse(r['room_id']);
+    hubId = HubId.parse(r['hub_id']);
+    number = coPositive(r['number']);
+    capacity = coCapacity(r['capacity']);
+    occupied = peopleCount(r['occupied']);
+    available = peopleBool(r['available']);
+    createdAt = coCreationDate(r['created_at']);
+    if (occupied > capacity || available != (occupied < capacity)) {
+      throw const FormatException('Inconsistent numbered occupancy.');
+    }
+  }
+  late final CoRoomId roomId;
+  late final HubId hubId;
+  late final int number, capacity, occupied;
+  late final bool available;
+  late final DateTime createdAt;
+}
+
+String coNumberedDetailRoute(HubId hub, CoRoomId room) =>
+    '/people/hubs/${hub.value}/groups/${room.value}';
+String coNumberedRoute(HubId hub, CoRoomId room, CoEpisodeId episode) =>
+    '/messages/cocreate/hubs/${hub.value}/groups/${room.value}/${episode.value}';
+String coNumberedLeaveRoute(HubId hub, CoRoomId room, CoEpisodeId episode) =>
+    '${coNumberedRoute(hub, room, episode)}/leave';

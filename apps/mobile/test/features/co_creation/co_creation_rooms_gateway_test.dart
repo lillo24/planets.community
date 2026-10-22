@@ -17,6 +17,8 @@ Map<String, Object?> summary() => {
   'muted': false,
   'joined_at': '2026-10-22T10:00:00Z',
   'unread_count': 1,
+  'kind': 'general',
+  'number': null,
 };
 Map<String, Object?> context() => {
   'profile_id': actor,

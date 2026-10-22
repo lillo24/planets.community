@@ -100,3 +100,24 @@ The normal inbox projection mounts only after server availability is ON. Own
 recovery is separate; pending availability never duplicates a normal row as an
 exit row. Existing native test fixtures explicitly model default-OFF plus empty
 own exits, and still reject unexpected co-creation calls.
+
+C04 extends the closed projections with numbered public occupancy, private
+creator/CAS context and the versioned mixed own-room reader. One row per canonical
+room selects its General or numbered route, including frozen episodes. Numbered
+scope keys include actor, room and episode; Sandbox OFF preserves Messages.
+
+- presentation/co_creation_numbered_screen.dart owns open-seat discovery,
+  explicit capacity/create/join, scrollable settings, creator removal/reversal,
+  archive, admitted People and exact Auth-only own leave. Hub membership is a
+  separate deliberate action. A receipt navigates to a fresh canonical reader;
+  it never becomes a cached grant. Full groups stay visible unless filtered.
+- The shared General history screen also renders numbered chat with its own
+  context/episode and ACK. No second transcript or read implementation exists.
+- Migration 20261022120000 exposes only current creator removal recovery (ID and
+  admitted display name), with bounded cursor and fresh room/episode authority.
+  Former/noncreator members and disabled-domain callers cannot inspect barriers.
+
+An exact intent without a confirmed receipt keeps its UUID even if a retry later
+hits a gate/access rejection: that rejection does not prove the earlier delivery
+failed. Changed intent is still forbidden while delivery is uncertain. Private
+text is discarded when the established actor changes.

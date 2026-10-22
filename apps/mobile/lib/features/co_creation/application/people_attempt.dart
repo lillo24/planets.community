@@ -80,6 +80,15 @@ class PeopleAttempts extends Notifier<Map<String, PeopleAttempt>> {
       }
       return previous;
     }
+    // A later gate/access rejection cannot prove an earlier lost reply did not
+    // commit. Reuse the original UUID until this exact intent has a receipt.
+    if (previous != null &&
+        previous.receipt == null &&
+        previous.actor == actor &&
+        previous.rpc == rpc &&
+        jsonEncode(previous.intent) == jsonEncode(intent)) {
+      return previous;
+    }
     final attempt = PeopleAttempt(actor, rpc, intent);
     state = {...state, slot: attempt};
     return attempt;

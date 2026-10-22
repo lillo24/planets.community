@@ -2547,5 +2547,34 @@
   "coRoomsUnmute": "Riattiva General",
   "coRoomsMuted": "Silenziato",
   "coRoomsOpenGeneral": "Apri General",
-  "coRoomsGeneral": "General"
+  "coRoomsGeneral": "General",
+  "coGroupsTitle": "Piccoli gruppi",
+  "coGroupsNumber": "Gruppo {number}",
+  "coGroupsDisclosure": "Entrare in questo gruppo è una scelta separata. I membri possono leggere la cronologia precedente della chat. Il creatore conta nella capienza. Non entri automaticamente in altri gruppi.",
+  "coGroupsHubRequired": "Entra prima in questa comunità, poi scegli se entrare in un piccolo gruppo o crearne uno.",
+  "coGroupsOpenOnly": "Solo gruppi con posti disponibili",
+  "coGroupsAvailable": "Posti disponibili",
+  "coGroupsFull": "Completo",
+  "coGroupsCreate": "Crea un gruppo numerato",
+  "coGroupsCapacity": "Capienza",
+  "coGroupsSaveCapacity": "Aggiorna capienza",
+  "coGroupsOpen": "Apri la chat del gruppo",
+  "coGroupsJoin": "Entra in questo gruppo",
+  "coGroupsArchive": "Archivia gruppo",
+  "coGroupsArchiveWarning": "Archiviare termina tutte le adesioni e congela l’accesso alla cronologia. Non viene nominato automaticamente un nuovo responsabile.",
+  "coGroupsLeaveWarning": "Se sei il creatore, uscire archivia questo gruppo per tutti. Gli altri tuoi gruppi non cambiano.",
+  "coGroupsLeave": "Esci da un piccolo gruppo",
+  "coGroupsManage": "Impostazioni del gruppo",
+  "coGroupsRemove": "Rimuovi membro",
+  "coGroupsRemoveWarning": "La rimozione termina l’accesso futuro e impedisce di rientrare fino a una revoca esplicita.",
+  "coGroupsRestore": "Consenti a questo membro di rientrare",
+  "@coGroupsNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "coGroupsMute": "Silenzia gruppo",
+  "coGroupsUnmute": "Riattiva gruppo"
 }

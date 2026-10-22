@@ -3285,5 +3285,34 @@
   "coRoomsUnmute": "Unmute General",
   "coRoomsMuted": "Muted",
   "coRoomsOpenGeneral": "Open General",
-  "coRoomsGeneral": "General"
+  "coRoomsGeneral": "General",
+  "coGroupsTitle": "Small groups",
+  "coGroupsNumber": "Group {number}",
+  "coGroupsDisclosure": "Joining this group is a separate choice. Members can read its earlier chat history. The creator counts toward capacity. No other group is joined automatically.",
+  "coGroupsHubRequired": "Join this community first, then choose whether to join or create a small group.",
+  "coGroupsOpenOnly": "Only groups with available seats",
+  "coGroupsAvailable": "Seats available",
+  "coGroupsFull": "Full",
+  "coGroupsCreate": "Create a numbered group",
+  "coGroupsCapacity": "Capacity",
+  "coGroupsSaveCapacity": "Update capacity",
+  "coGroupsOpen": "Open group chat",
+  "coGroupsJoin": "Join this group",
+  "coGroupsArchive": "Archive group",
+  "coGroupsArchiveWarning": "Archiving ends every membership and freezes access to its history. No manager is appointed automatically.",
+  "coGroupsLeaveWarning": "If you are the creator, leaving archives this group for everyone. Your other groups are unchanged.",
+  "coGroupsLeave": "Leave a small group",
+  "coGroupsManage": "Group settings",
+  "coGroupsRemove": "Remove member",
+  "coGroupsRemoveWarning": "Removal ends future access and prevents rejoining until explicitly reversed.",
+  "coGroupsRestore": "Allow this member to rejoin",
+  "@coGroupsNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "coGroupsMute": "Mute group",
+  "coGroupsUnmute": "Unmute group"
 }

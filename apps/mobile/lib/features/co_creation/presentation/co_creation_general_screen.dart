@@ -27,8 +27,10 @@ class CoCreationGeneralScreen extends ConsumerStatefulWidget {
     required this.hubId,
     required this.roomId,
     required this.episodeId,
+    this.numbered = false,
     super.key,
   });
+  final bool numbered;
   final HubId hubId;
   final CoRoomId roomId;
   final CoEpisodeId episodeId;
@@ -114,7 +116,13 @@ class _CoCreationGeneralScreenState
     try {
       final meta = await ref
           .read(coCreationRoomsGatewayProvider)
-          .context(actor, widget.hubId, widget.roomId, widget.episodeId);
+          .context(
+            actor,
+            widget.hubId,
+            widget.roomId,
+            widget.episodeId,
+            numbered: widget.numbered,
+          );
       final page = await ref
           .read(coCreationRoomsGatewayProvider)
           .feed(actor, widget.roomId, widget.episodeId, before: before);
@@ -176,7 +184,11 @@ class _CoCreationGeneralScreenState
     final l = AppLocalizations.of(context),
         actor = ref.watch(authSessionProvider).identity?.id;
     return PeoplePage(
-      title: l.coRoomsGeneral,
+      title: widget.numbered
+          ? roomContext == null
+                ? l.coGroupsTitle
+                : l.coGroupsNumber(roomContext!.number!)
+          : l.coRoomsGeneral,
       child: PeopleAccess(
         child: Column(
           children: [
@@ -192,14 +204,20 @@ class _CoCreationGeneralScreenState
               children: [
                 TextButton(
                   onPressed: () => context.push(
-                    coHubLeaveRoute(widget.hubId, widget.episodeId),
+                    widget.numbered
+                        ? coNumberedLeaveRoute(
+                            widget.hubId,
+                            widget.roomId,
+                            widget.episodeId,
+                          )
+                        : coHubLeaveRoute(widget.hubId, widget.episodeId),
                   ),
                   child: Text(l.coRoomsLeave),
                 ),
                 if (!closed)
                   TextButton(
                     onPressed: () => context.push(
-                      '${coGeneralRoute(widget.hubId, widget.roomId, widget.episodeId)}/people',
+                      '${widget.numbered ? coNumberedRoute(widget.hubId, widget.roomId, widget.episodeId) : coGeneralRoute(widget.hubId, widget.roomId, widget.episodeId)}/people',
                     ),
                     child: Text(l.coRoomsPeople),
                   ),
@@ -209,6 +227,13 @@ class _CoCreationGeneralScreenState
                 ),
               ],
             ),
+            if (widget.numbered && roomContext != null)
+              TextButton(
+                onPressed: () => context.push(
+                  '${coNumberedRoute(widget.hubId, widget.roomId, widget.episodeId)}/manage',
+                ),
+                child: Text(l.coGroupsManage),
+              ),
             Expanded(
               child: MessageReadViewport(
                 profileId: actor,

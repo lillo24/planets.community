@@ -11,6 +11,7 @@ import '../domain/co_creation_identity.dart';
 import '../domain/co_creation_rooms.dart';
 import '../domain/people_post.dart';
 import 'people_widgets.dart';
+import 'co_creation_numbered_screen.dart';
 
 class CoCreationRoomItems extends StatelessWidget {
   const CoCreationRoomItems({super.key});
@@ -29,7 +30,7 @@ class CoCreationRoomItems extends StatelessWidget {
               row: (context, r, refresh) => Card(
                 child: ListTile(
                   title: Text(
-                    '${l.coRoomsGeneral} · ${r.topic} · ${r.locality}',
+                    '${r.numbered ? l.coGroupsNumber(r.number!) : l.coRoomsGeneral} · ${r.topic} · ${r.locality}',
                   ),
                   subtitle: r.closed
                       ? Text(l.coPeopleClosed)
@@ -44,7 +45,9 @@ class CoCreationRoomItems extends StatelessWidget {
                         ),
                   onTap: () async {
                     await context.push(
-                      coGeneralRoute(r.hubId, r.roomId, r.episodeId),
+                      r.numbered
+                          ? coNumberedRoute(r.hubId, r.roomId, r.episodeId)
+                          : coGeneralRoute(r.hubId, r.roomId, r.episodeId),
                     );
                     await refresh();
                   },
@@ -54,6 +57,7 @@ class CoCreationRoomItems extends StatelessWidget {
           ),
         ),
         const _HubExits(),
+        const CoNumberedExits(),
       ],
     );
   }
@@ -110,8 +114,10 @@ class CoRoomPeopleScreen extends StatelessWidget {
     required this.hubId,
     required this.roomId,
     required this.episodeId,
+    this.numbered = false,
     super.key,
   });
+  final bool numbered;
   final HubId hubId;
   final CoRoomId roomId;
   final CoEpisodeId episodeId;
@@ -125,7 +131,13 @@ class CoRoomPeopleScreen extends StatelessWidget {
           child: PeopleList<CoRoomPerson>(
             load: (ref, actor, before) async {
               final g = ref.read(coCreationRoomsGatewayProvider);
-              await g.context(actor!, hubId, roomId, episodeId);
+              await g.context(
+                actor!,
+                hubId,
+                roomId,
+                episodeId,
+                numbered: numbered,
+              );
               return g.people(actor, roomId, episodeId, before: before);
             },
             row: (context, p, refresh) => ListTile(title: Text(p.name)),

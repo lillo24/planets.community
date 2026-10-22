@@ -100,6 +100,8 @@ class Fixture {
     calls.add(name);
     final actor = args['p_expected_profile_id'] as String?;
     switch (name) {
+      case 'list_cocreate_numbered_groups':
+        return [];
       case 'get_cocreate_availability':
         return {'enabled': enabled};
       case 'list_cocreate_topics':
@@ -174,7 +176,7 @@ class Fixture {
           {'profile_id': a, 'display_name': 'Synthetic Alex'},
           {'profile_id': b, 'display_name': 'Synthetic Blair'},
         ];
-      case 'list_own_cocreate_rooms':
+      case 'list_own_cocreate_rooms_v2':
         return !ever.contains(actor)
             ? []
             : [
@@ -188,6 +190,8 @@ class Fixture {
                   'muted': false,
                   'joined_at': '2026-10-22T10:00:00Z',
                   'unread_count': 1,
+                  'kind': 'general',
+                  'number': null,
                 },
               ];
       default:
@@ -202,6 +206,7 @@ Future<(ProviderContainer, GoRouter)> pump(
   String language = 'en',
   bool large = false,
   String path = '/people/hubs/$hub',
+  List<RouteBase> extraRoutes = const [],
 }) async {
   final app = ProviderContainer(
     overrides: [
@@ -219,6 +224,7 @@ Future<(ProviderContainer, GoRouter)> pump(
   final router = GoRouter(
     initialLocation: path,
     routes: [
+      ...extraRoutes,
       GoRoute(
         path: '/people/hubs',
         builder: (_, _) => const CoCreationHubsScreen(),

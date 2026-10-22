@@ -4983,6 +4983,16 @@ export type Database = {
         }
         Returns: Json
       }
+      list_cocreate_numbered_removed: {
+        Args: {
+          p_after_profile_id?: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
       list_cocreate_posts: {
         Args: {
           p_before_created_at?: string
