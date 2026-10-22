@@ -3,7 +3,7 @@
 ## STAGING-AUTO01 update — 22 October 2026
 
 Repository safety implementation is ready for exact-head CI; activation is **disabled**.
-Local focused release tests: **40 passed**. Full tooling tests: **177 passed**.
+Local focused release tests: **41 passed**. Full tooling tests: **178 passed**.
 Formatting and actionlint 1.7.12 passed. Local Docker is unavailable; the
 disposable populated rehearsal and complete four-area Validation run in CI.
 A fresh read-only observation at main `97a215ca60dc35c30b4b9f652441bdb7c35937ba`

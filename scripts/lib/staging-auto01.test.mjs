@@ -31,6 +31,7 @@ import {
   STAGING_REF,
 } from "../release/migrations.mjs";
 import { sha256 } from "../release/sql-fingerprint.mjs";
+import { assertDatabaseUrl } from "../release/staging.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const json = (path) => JSON.parse(readFileSync(resolve(root, path), "utf8"));
@@ -599,4 +600,13 @@ test("semantic safety lives in the always-present required classification check 
     validation.split("\n  mobile:\n")[0],
     /node scripts\/release\/rehearse.mjs/,
   );
+});
+test("session lock cannot silently use the transaction pooler port", () => {
+  const route = `postgres://postgres.${STAGING_REF}:fictional@aws-1-eu-west-1.pooler.supabase.com`;
+  assert.match(
+    assertDatabaseUrl(`${route}:5432/postgres`),
+    /sslmode=verify-full/,
+  );
+  assert.throws(() => assertDatabaseUrl(`${route}:6543/postgres`));
+  assert.throws(() => assertDatabaseUrl(`${route}/postgres#unexpected`));
 });

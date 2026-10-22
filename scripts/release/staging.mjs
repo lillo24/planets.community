@@ -37,6 +37,9 @@ export function assertDatabaseUrl(value) {
     (!direct && !pooler) ||
     url.pathname !== "/postgres" ||
     !url.password ||
+    // Port 6543 is the transaction pooler; it cannot hold our session lock.
+    (url.port && url.port !== "5432") ||
+    url.hash ||
     [...url.searchParams.keys()].some((key) => key !== "sslmode")
   )
     throw new ReleaseError("Database URL is not the verified staging target");

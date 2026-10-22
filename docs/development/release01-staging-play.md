@@ -105,7 +105,8 @@ owner reviewer; those are activation blockers, not settings changed by this PR.
    `gh secret set NAME --env ENV` with protected stdin; never paste values into
    chat/history/issues. All three use `SUPABASE_ACCESS_TOKEN` (legitimate scoped
    management access) and `STAGING_CONFIG_JSON`. Staging additionally needs
-   `STAGING_DB_URL` (original direct/session-pooler route, verified TLS).
+   `STAGING_DB_URL` (original direct/session-pooler route on port 5432, verified TLS;
+   transaction-pooler port 6543 is rejected because the advisory lock is session-scoped).
    Android retains `ANDROID_UPLOAD_KEYSTORE_BASE64`,
    `ANDROID_UPLOAD_STORE_PASSWORD`, `ANDROID_UPLOAD_KEY_PASSWORD`,
    `ANDROID_UPLOAD_KEY_ALIAS`; build/publication retain
