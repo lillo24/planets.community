@@ -24,14 +24,17 @@ class MockPersona {
     required this.name,
     required this.email,
     required this.scenario,
+    this.dataset = 'activities',
   });
   final String key, userId, name, email, scenario;
+  final String dataset;
   factory MockPersona.fromJson(Map<String, dynamic> value) {
     final key = value['key'],
         id = value['user_id'],
         name = value['name'],
         email = value['email'],
-        scenario = value['scenario'];
+        scenario = value['scenario'],
+        dataset = value['dataset'] ?? 'activities';
     if (key is! String ||
         !RegExp(r'^[a-z]{2,20}$').hasMatch(key) ||
         id is! String ||
@@ -43,7 +46,8 @@ class MockPersona {
         email != '$key@personas.planets.invalid' ||
         scenario is! String ||
         scenario.isEmpty ||
-        scenario.length > 240) {
+        scenario.length > 240 ||
+        !{'activities', 'people'}.contains(dataset)) {
       throw const MockFailure(MockFailureKind.unavailable);
     }
     return MockPersona(
@@ -52,6 +56,7 @@ class MockPersona {
       name: name,
       email: email,
       scenario: scenario,
+      dataset: dataset as String,
     );
   }
 }

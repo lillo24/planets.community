@@ -19,6 +19,7 @@ import '../../messages/application/message_unread_controller.dart';
 import '../application/people_signals.dart';
 import 'people_widgets.dart';
 import 'co_creation_recruitment_screen.dart';
+import 'co_creation_meeting_screen.dart';
 
 import 'package:go_router/go_router.dart';
 
@@ -323,6 +324,13 @@ class _CoCreationGeneralScreenState
                 padding: const EdgeInsets.all(12),
                 child: Column(
                   children: [
+                    if (!widget.numbered)
+                      TextButton.icon(
+                        onPressed: () =>
+                            context.push(coMeetingScheduleRoute(widget.hubId)),
+                        icon: const Icon(Icons.group_add_outlined),
+                        label: Text(l.coMeetingPublish),
+                      ),
                     TextField(
                       controller: body,
                       enabled: !locked,

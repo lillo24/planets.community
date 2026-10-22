@@ -5,6 +5,7 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../application/co_creation_preference_controller.dart';
 import '../domain/co_creation_preference.dart';
+import '../application/presentation_mode_selection.dart';
 
 class CoCreationSetting extends ConsumerStatefulWidget {
   const CoCreationSetting({super.key});
@@ -24,8 +25,8 @@ class _CoCreationSettingState extends ConsumerState<CoCreationSetting> {
       _failedMode = null;
     });
     final saved = await ref
-        .read(coCreationPreferenceProvider.notifier)
-        .select(mode);
+        .read(presentationModeSelectionProvider.notifier)
+        .select(people: true, enabled: mode == CoCreationMode.on);
     if (!mounted) return;
     setState(() {
       _saving = false;
@@ -47,7 +48,7 @@ class _CoCreationSettingState extends ConsumerState<CoCreationSetting> {
             title: Text(l.coCreationSetting),
             subtitle: Text(l.coCreationHelp),
             value: state.enabled,
-            onChanged: _saving
+            onChanged: _saving || ref.watch(presentationModeSelectionProvider)
                 ? null
                 : (enabled) =>
                       _save(enabled ? CoCreationMode.on : CoCreationMode.off),

@@ -13,7 +13,7 @@ import '../domain/co_creation_rooms.dart';
 import '../domain/people_post.dart';
 import '../domain/people_private.dart';
 import 'people_widgets.dart';
-import 'co_creation_recruitment_screen.dart';
+import 'co_creation_meeting_screen.dart';
 import 'co_creation_sources_screen.dart';
 
 /// Public aggregate discovery; no roster/history fetch occurs here.
@@ -52,9 +52,8 @@ class _NumberedListState extends State<CoNumberedList> {
               .numbered(widget.hub, openOnly: openOnly, before: before),
           row: (context, r, refresh) => ListTile(
             title: Text(l.coGroupsNumber(r.number)),
-            subtitle: Text(
-              '${r.occupied}/${r.capacity} · ${r.available ? l.coGroupsAvailable : l.coGroupsFull}',
-            ),
+            trailing: Text(l.coCommunityMembers(r.occupied, r.capacity)),
+            subtitle: Text(r.available ? l.coGroupsAvailable : l.coGroupsFull),
             onTap: () async {
               await context.push(coNumberedDetailRoute(r.hubId, r.roomId));
               await refresh();
@@ -396,19 +395,21 @@ class _ControlsState extends State<CoNumberedControls> {
     );
     return Column(
       children: [
-        Text('${m.occupied}/${m.capacity}'),
+        Text(l.coCommunityMembers(m.occupied!, m.capacity!)),
         if (!m.closed)
           command(
             'mute',
             m.muted ? l.coGroupsUnmute : l.coGroupsMute,
             extra: {'p_muted': !m.muted},
           ),
-        if (m.isManager) ...[
-          CoRecruitmentManager(
+        if (!m.closed)
+          CoMeetingPanel(
             hub: widget.hub,
             room: widget.room,
             episode: widget.episode,
+            manager: m.isManager,
           ),
+        if (m.isManager) ...[
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 8,

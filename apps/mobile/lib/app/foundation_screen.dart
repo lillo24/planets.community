@@ -152,6 +152,14 @@ class FoundationScreen extends ConsumerWidget {
                                   onTap: () => context.go('/people'),
                                 ),
                                 const SizedBox(height: AppSpacing.small),
+                                _HomePillarCard(
+                                  key: const Key('crazy-ideas-button'),
+                                  icon: Icons.lightbulb_outline,
+                                  title: l10n.crazyIdeasTitle,
+                                  message: l10n.crazyIdeasComingLater,
+                                  onTap: null,
+                                ),
+                                const SizedBox(height: AppSpacing.small),
                               ],
                               _HomePillarCard(
                                 key: const Key('browse-proposals-button'),
@@ -210,32 +218,36 @@ class _HomePillarCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String message;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => Card(
-    color: Theme.of(context).colorScheme.surfaceContainerLow,
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.medium),
-        child: Row(
-          children: [
-            Icon(icon, size: 32),
-            const SizedBox(width: AppSpacing.medium),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: AppSpacing.xSmall),
-                  Text(message),
-                ],
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    enabled: onTap != null,
+    child: Card(
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.medium),
+          child: Row(
+            children: [
+              Icon(icon, size: 32),
+              const SizedBox(width: AppSpacing.medium),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: AppSpacing.xSmall),
+                    Text(message),
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.chevron_right),
-          ],
+              if (onTap != null) const Icon(Icons.chevron_right),
+            ],
+          ),
         ),
       ),
     ),

@@ -15,6 +15,7 @@ import 'package:planets_mobile/features/auth/application/auth_session_controller
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/co_creation/application/people_signals.dart';
 import 'package:planets_mobile/features/co_creation/data/co_creation_rooms_gateway.dart';
+import 'package:planets_mobile/features/co_creation/data/co_creation_communities_gateway.dart';
 import 'package:planets_mobile/features/co_creation/data/people_posts_gateway.dart';
 import 'package:planets_mobile/features/co_creation/domain/co_creation_identity.dart';
 import 'package:planets_mobile/features/co_creation/domain/co_creation_rooms.dart';
@@ -223,6 +224,7 @@ Future<(ProviderContainer, GoRouter)> pump(
   Fixture f, {
   String language = 'en',
   bool large = false,
+  bool dark = false,
   bool coCreation = false,
   String path = '/people/hubs/$hub',
   List<RouteBase> extraRoutes = const [],
@@ -245,6 +247,9 @@ Future<(ProviderContainer, GoRouter)> pump(
       peoplePostsGatewayProvider.overrideWithValue(PeoplePostsGateway(f.rpc)),
       coCreationRoomsGatewayProvider.overrideWithValue(
         CoCreationRoomsGateway(f.rpc),
+      ),
+      coCreationCommunitiesGatewayProvider.overrideWithValue(
+        CoCreationCommunitiesGateway(f.rpc),
       ),
       peopleSignalsProvider.overrideWith((ref) => f.hints.stream),
       discussionSignalsProvider.overrideWith((ref) => const Stream.empty()),
@@ -313,7 +318,7 @@ Future<(ProviderContainer, GoRouter)> pump(
       child: RenderedEvidence.wrap(
         MaterialApp.router(
           routerConfig: router,
-          theme: AppTheme.light,
+          theme: dark ? AppTheme.dark : AppTheme.light,
           locale: Locale(language),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,

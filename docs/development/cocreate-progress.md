@@ -384,3 +384,26 @@ unchanged. This follow-up is not complete or ready for production.
 - Next: commit the tested mobile hierarchy/meeting/settings/picker/Home stage,
   merge only latest committed main, run complete combined mobile qualification,
   then final evidence/PR update. Backend/admin/mock commits remain intact.
+
+### Follow-up mobile flow stage verified locally; final aggregate pending
+
+- Mobile now provides lazy category discovery, duplicate suggestions and safe
+  proposal preview, private interests/ready CTA and deliberate existing hub Join.
+  General publishes dated requests; Join reserves a meeting place and opens the
+  persistent chat. Existing members RSVP/decline separately, and creators
+  schedule/refill/cancel. Current time and place count are shown before joining.
+- Unconfirmed proposal/schedule/support/RSVP commands retain their original UUID
+  and intent across remount, activation and current-meeting replacement. Account
+  changes clear private drafts and attempts. All **23** latest community/meeting
+  tests pass; previous **36** flow/render tests and the picker **nine** pass.
+  Presentation selection **three**, strict parsers **six**, format and analysis
+  pass. Full mobile is still pending; earlier test-authoring and missing-store
+  fixture failures were repaired without reducing assertions.
+- Settings serializes mutually exclusive Activities/Find people choices; Mock
+  remains independent. Help offers different login catalogs, without silently
+  impersonating another account. Crazy Ideas is only an accessible disabled
+  Home button with localized coming-later text and no destination/Project/data.
+- VIS01 intro/replay/filter behavior is preserved. EN/IT 320dp light/dark 1x/2x
+  captures were rendered/inspected, including large Italian category and meeting
+  copy plus the disabled Home button. Next: integrate origin/main `d735bb88`,
+  complete combined mobile tests/debug APK and final docs/evidence/PR checks.

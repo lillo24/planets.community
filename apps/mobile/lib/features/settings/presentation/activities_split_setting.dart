@@ -5,6 +5,8 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../application/activities_split_preference_controller.dart';
 import '../domain/activities_split_preference.dart';
+import '../application/co_creation_preference_controller.dart';
+import '../application/presentation_mode_selection.dart';
 
 class ActivitiesSplitSetting extends ConsumerStatefulWidget {
   const ActivitiesSplitSetting({super.key});
@@ -26,8 +28,8 @@ class _ActivitiesSplitSettingState
       _failedMode = null;
     });
     final saved = await ref
-        .read(activitiesSplitPreferenceProvider.notifier)
-        .select(mode);
+        .read(presentationModeSelectionProvider.notifier)
+        .select(people: false, enabled: mode == ActivitiesSplitMode.on);
     if (!mounted) return;
     setState(() {
       _saving = false;
@@ -48,8 +50,10 @@ class _ActivitiesSplitSettingState
             key: const Key('settings-activities-split'),
             title: Text(l.activitiesSplitSetting),
             subtitle: Text(l.activitiesSplitHelp),
-            value: state.enabled,
-            onChanged: _saving
+            value:
+                state.enabled &&
+                !ref.watch(coCreationPreferenceProvider).enabled,
+            onChanged: _saving || ref.watch(presentationModeSelectionProvider)
                 ? null
                 : (enabled) => _save(
                     enabled ? ActivitiesSplitMode.on : ActivitiesSplitMode.off,

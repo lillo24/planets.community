@@ -12,14 +12,29 @@ registered Groups and imported events.
   ephemeral and clears when account identity changes.
 
 Settings owns the separate `planets.sandbox.coCreation` preference, default OFF,
-restored before app launch. Co-Creation takes Home precedence over the saved
-Activities Split preference without rewriting it. Tutorial renders the baseline.
+restored before app launch. COMM01/FILL01 Settings now persists the other
+presentation OFF before enabling Co-Creation or Activities Split. Mock Mode is
+independent. Legacy installations with both old flags saved retain Find people
+precedence until their next selection. Tutorial renders the baseline.
 The router gates `/people` and its `demo/` descendants; changing the setting
 refreshes the existing router without replacing protected native editor stacks.
 All demo screens independently hide when disabled. Turning this mode off has
 no backend effect. Native routes and the bottom-right shortcut are unchanged.
 
 See [programme progress](../../../../../docs/development/cocreate-progress.md).
+
+COMM01/FILL01 adds `domain/co_creation_communities.dart` and
+`data/co_creation_communities_gateway.dart` for strict category, normalized
+proposal, support and private ready-to-join projections. The community screens
+lazy-load only expanded categories, keep broad locality as a filter, preview
+public proposals and route activation invitations through deliberate existing
+hub admission. `co_creation_meeting_screen.dart` owns local-date/time input,
+schedule/retry recovery and separate per-occurrence RSVP/refilling controls.
+Structured recruitment renders occupancy and the meeting instant before Join.
+The existing room gateway still owns canonical chat admission and episode
+validation. Notifications reuse the sole inbox and actor-only signal stream.
+See the [combined contract](../../../../../docs/development/cocreate-fill01.md)
+for capacities, cooldowns, compatibility, mock catalogs and qualification.
 
 A01 adds domain/co_creation_identity.dart: strict, mutually distinct canonical
 PostId, HubId and NumberedGroupId UUID wrappers and domain route builders.
@@ -127,7 +142,8 @@ cards, explicit history review/canonical join, creator post/retract and exact
 uncertain recovery. The room v2 parser owns human/structured separation and sender
 attribution; the contact parser keeps its existing closed human-only contract.
 See docs/development/cocreate-recruitment.md for lifecycle, limits, lock order,
-unread compatibility and reproduction. No card creates mass notifications.
+unread compatibility and reproduction. Legacy unscheduled cards do not queue
+notifications; FILL01 scheduled cards use the bounded actor-private projector.
 
 D02 adds data/co_creation_sources_gateway.dart (strict post/contact references,
 source/native draft receipts and published Project cursors) and

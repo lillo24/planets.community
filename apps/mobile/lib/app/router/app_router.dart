@@ -3,6 +3,8 @@ import '../../features/co_creation/presentation/co_creation_sources_screen.dart'
 import '../../features/co_creation/presentation/co_creation_recruitment_screen.dart';
 import '../../features/co_creation/presentation/co_creation_numbered_screen.dart';
 import '../../features/co_creation/presentation/co_creation_hubs_screen.dart';
+import '../../features/co_creation/presentation/co_creation_community_screens.dart';
+import '../../features/co_creation/presentation/co_creation_meeting_screen.dart';
 import '../../features/co_creation/presentation/co_creation_general_screen.dart';
 import '../../features/co_creation/presentation/co_creation_room_items.dart';
 import '../../features/co_creation/domain/co_creation_rooms.dart';
@@ -899,6 +901,24 @@ RoutingConfig _routingConfig(
                 builder: (context, state) => const MessagesLandingScreen(),
                 routes: [
                   GoRoute(
+                    path: 'cocreate/hubs/:hubId/schedule',
+                    builder: (_, state) => CoMeetingScheduleScreen(
+                      key: state.pageKey,
+                      hub: HubId.parse(state.pathParameters['hubId']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/hubs/:hubId/groups/:roomId/:episodeId/schedule',
+                    builder: (_, state) => CoMeetingScheduleScreen(
+                      key: state.pageKey,
+                      hub: HubId.parse(state.pathParameters['hubId']),
+                      room: CoRoomId.parse(state.pathParameters['roomId']),
+                      episode: CoEpisodeId.parse(
+                        state.pathParameters['episodeId'],
+                      ),
+                    ),
+                  ),
+                  GoRoute(
                     path: 'cocreate/hubs/:hubId/review',
                     builder: (_, state) => CoCreationHubScreen(
                       key: ValueKey(state.pathParameters['hubId']),
@@ -1474,6 +1494,27 @@ RoutingConfig _routingConfig(
                       onExplore: () => context.pop(),
                       onClose: () => context.pop(),
                     ),
+                  ),
+                  GoRoute(
+                    path: 'categories/:category/propose',
+                    builder: (_, state) => CoCommunityComposeScreen(
+                      key: state.pageKey,
+                      category: state.pathParameters['category']!,
+                      initialName: state.uri.queryParameters['name'] ?? '',
+                      initialLocality:
+                          state.uri.queryParameters['locality'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'community-proposals/:id',
+                    builder: (_, state) => CoCommunityProposalScreen(
+                      key: ValueKey(state.pathParameters['id']),
+                      id: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'community-interests',
+                    builder: (_, _) => const CoCommunityInterestsScreen(),
                   ),
                   GoRoute(
                     path: 'hubs',

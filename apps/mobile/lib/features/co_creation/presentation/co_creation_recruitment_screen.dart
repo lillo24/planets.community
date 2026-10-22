@@ -8,6 +8,7 @@ import '../domain/co_creation_identity.dart';
 import '../domain/co_creation_rooms.dart';
 import '../application/people_attempt.dart';
 import 'people_widgets.dart';
+import 'co_creation_meeting_screen.dart';
 
 class CoRecruitmentCard extends StatelessWidget {
   const CoRecruitmentCard({required this.card, this.onOpen, super.key});
@@ -28,6 +29,9 @@ class CoRecruitmentCard extends StatelessWidget {
               : l.coGroupsNumber(card.number),
         ),
         Text(coRecruitmentState(l, card.state)),
+        if (card.capacity != null)
+          Text(l.coMeetingPlaces(card.occupied!, card.capacity!)),
+        if (card.startsAt != null) Text(coMeetingTime(context, card.startsAt!)),
         if (card.available && onOpen != null)
           TextButton(onPressed: onOpen, child: Text(l.coRecruitmentReview)),
       ],
@@ -123,48 +127,11 @@ class CoRecruitmentManager extends StatelessWidget {
   final CoEpisodeId episode;
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    return PeopleList<CoRecruitment?>(
-      load: (ref, actor, before) async => [
-        await ref
-            .read(coCreationRoomsGatewayProvider)
-            .recruitment(actor!, hub, room, episode),
-      ],
-      row: (context, c, refresh) => Column(
-        children: [
-          Text(l.coRecruitmentNotice),
-          if (c != null) CoRecruitmentCard(card: c),
-          // Keep the exact post retry available even if its canonical card appeared
-          // after a lost response. The server rejects any second active posting.
-          PeopleCommand(
-            slot: 'recruitment/${room.value}',
-            rpc: 'mutate_cocreate_recruitment',
-            gateway: (ref) => ref.read(coCreationRoomsGatewayProvider),
-            intent: {
-              'p_hub_id': hub.value,
-              'p_room_id': room.value,
-              'p_operation': 'post',
-              'p_episode_id': episode.value,
-            },
-            label: l.coRecruitmentPost,
-            onSuccess: (_) => refresh(),
-          ),
-          if (c != null)
-            PeopleCommand(
-              slot: 'recruitment/${room.value}',
-              rpc: 'mutate_cocreate_recruitment',
-              gateway: (ref) => ref.read(coCreationRoomsGatewayProvider),
-              intent: {
-                'p_hub_id': hub.value,
-                'p_room_id': room.value,
-                'p_operation': 'retract',
-                'p_recruitment_id': c.id,
-              },
-              label: l.coRecruitmentRetract,
-              onSuccess: (_) => refresh(),
-            ),
-        ],
-      ),
+    return CoMeetingPanel(
+      hub: hub,
+      room: room,
+      episode: episode,
+      manager: true,
     );
   }
 }

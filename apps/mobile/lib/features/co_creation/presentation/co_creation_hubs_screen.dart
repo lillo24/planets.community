@@ -9,7 +9,7 @@ import '../application/people_attempt.dart';
 import '../data/co_creation_rooms_gateway.dart';
 import '../domain/co_creation_identity.dart';
 import '../domain/co_creation_rooms.dart';
-import 'people_topic_picker.dart';
+import 'co_creation_community_screens.dart';
 import 'people_widgets.dart';
 import 'co_creation_numbered_screen.dart';
 
@@ -22,7 +22,6 @@ class CoCreationHubsScreen extends ConsumerStatefulWidget {
 class _CoHubsState extends ConsumerState<CoCreationHubsScreen> {
   final search = TextEditingController(), locality = TextEditingController();
   String query = '', place = '';
-  TopicId? topic;
   @override
   void dispose() {
     search.dispose();
@@ -49,6 +48,10 @@ class _CoHubsState extends ConsumerState<CoCreationHubsScreen> {
                 onPressed: () => context.push('/people/demo'),
                 child: Text(l.coPeopleDemo),
               ),
+              TextButton(
+                onPressed: () => context.push('/people/community-interests'),
+                child: Text(l.coCommunityYourInterests),
+              ),
             ],
           ),
           TextField(
@@ -68,31 +71,10 @@ class _CoHubsState extends ConsumerState<CoCreationHubsScreen> {
             }),
             child: Text(l.coPeopleSearch),
           ),
-          PeopleTopicPicker(
-            selected: topic,
-            onChanged: (t) => setState(() => topic = t),
-          ),
-          PeopleList<PublicCoHub>(
-            key: ValueKey((query, place, topic?.value)),
-            private: false,
-            load: (ref, actor, before) => ref
-                .read(coCreationRoomsGatewayProvider)
-                .hubs(
-                  search: query,
-                  locality: place,
-                  topic: topic,
-                  before: before,
-                ),
-            row: (context, h, refresh) => Card(
-              child: ListTile(
-                title: Text(h.topic),
-                subtitle: Text(h.locality),
-                onTap: () async {
-                  await context.push(CoCreationRoutes.hub(h.id));
-                  await refresh();
-                },
-              ),
-            ),
+          CoCommunityCategories(
+            key: ValueKey((query, place)),
+            search: query,
+            locality: place,
           ),
         ],
       ),

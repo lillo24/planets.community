@@ -11,6 +11,7 @@ import 'package:planets_mobile/features/settings/application/activities_split_pr
 import 'package:planets_mobile/features/settings/domain/activities_split_preference.dart';
 import 'package:planets_mobile/features/settings/application/co_creation_preference_controller.dart';
 import 'package:planets_mobile/features/settings/data/co_creation_preference_store.dart';
+import 'package:planets_mobile/features/settings/data/activities_split_preference_store.dart';
 import 'package:planets_mobile/features/settings/domain/co_creation_preference.dart';
 import 'package:planets_mobile/features/settings/presentation/co_creation_setting.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
@@ -80,6 +81,27 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
+          final crazyIdeas = find.byKey(const Key('crazy-ideas-button'));
+          await tester.ensureVisible(crazyIdeas);
+          await tester.pumpAndSettle();
+          expect(
+            tester
+                .widget<InkWell>(
+                  find.descendant(
+                    of: crazyIdeas,
+                    matching: find.byType(InkWell),
+                  ),
+                )
+                .onTap,
+            isNull,
+          );
+          await tester.tap(crazyIdeas);
+          await tester.pumpAndSettle();
+          expect(router.routeInformationProvider.value.uri.path, '/');
+          await RenderedEvidence.capture(
+            tester,
+            'crazy-ideas-home-$language-$dark-2x',
+          );
           for (final entry in {
             'browse-people-button': '/people',
             'browse-proposals-button': '/proposals',
@@ -353,7 +375,12 @@ void main() {
       final store = FakeCoCreationPreferenceStore()
         ..writeError = StateError('disk');
       final app = ProviderContainer(
-        overrides: [coCreationPreferenceStoreProvider.overrideWithValue(store)],
+        overrides: [
+          coCreationPreferenceStoreProvider.overrideWithValue(store),
+          activitiesSplitPreferenceStoreProvider.overrideWithValue(
+            FakeActivitiesSplitPreferenceStore(),
+          ),
+        ],
       );
       addTearDown(app.dispose);
       await tester.pumpWidget(

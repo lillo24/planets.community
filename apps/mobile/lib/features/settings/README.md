@@ -76,7 +76,11 @@ fixture boundaries and rollback. Turning the mode off restores normal discovery.
 COCREATE A00 adds the parallel `co_creation_preference` model/store/controller
 and `co_creation_setting.dart`, using `planets.sandbox.coCreation` with the same
 default-off, bootstrap restoration and recoverable-write semantics.
-It takes Home precedence over Activities Split without writing that preference.
+COMM01/FILL01 adds `application/presentation_mode_selection.dart`, the serialized
+owner of both Settings selections. Enabling either presentation persists the
+other OFF first; a failed save never enables both. Mock realm selection is
+independent. Previously saved dual-ON values retain Find people precedence until
+the next selection. Neither storage key changes.
 This device setting survives account changes but grants no backend authority.
 See [Co-creation](../co_creation/README.md) and the
 [progress record](../../../../../docs/development/cocreate-progress.md).

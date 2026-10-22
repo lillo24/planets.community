@@ -28,6 +28,7 @@ enum ModerationCategory {
 enum ModerationTargetKind {
   cocreatePost('cocreate_post'),
   cocreateRoomMessage('cocreate_room_message'),
+  cocreateCommunityProposal('cocreate_community_proposal'),
   cocreateInterest('cocreate_interest'),
   cocreateContactMessage('cocreate_contact_message'),
   profile('profile'),
@@ -52,6 +53,8 @@ enum ModerationTargetKind {
   static ModerationTargetKind fromWire(String value) => switch (value) {
     'cocreate_post' => ModerationTargetKind.cocreatePost,
     'cocreate_room_message' => ModerationTargetKind.cocreateRoomMessage,
+    'cocreate_community_proposal' =>
+      ModerationTargetKind.cocreateCommunityProposal,
     'cocreate_interest' => ModerationTargetKind.cocreateInterest,
     'cocreate_contact_message' => ModerationTargetKind.cocreateContactMessage,
     'profile' => ModerationTargetKind.profile,
