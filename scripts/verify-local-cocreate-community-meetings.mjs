@@ -175,6 +175,102 @@ try {
   equal(otherCity.hub_id, null, "A different city does not share the hub");
   assert.notEqual(otherCity.proposal_id, id);
   checks++;
+  const duplicateArgs = {
+    p_category_id: "boardgames",
+    p_name: `Synthetic ${run} Catan`,
+    p_locality: "Synthetic Bolzano",
+  };
+  const competing = await Promise.all(
+    [c, d].map((p) =>
+      rpc(p, "propose_cocreate_community", {
+        ...command(p),
+        ...duplicateArgs,
+        p_name:
+          p === c
+            ? duplicateArgs.p_name
+            : `  ${duplicateArgs.p_name.toUpperCase()} `,
+      }),
+    ),
+  );
+  equal(
+    competing[0].proposal_id,
+    competing[1].proposal_id,
+    "Different accounts racing normalized proposals reuse one identity",
+  );
+  const racingId = competing[0].proposal_id;
+  await rpc(a, "mutate_cocreate_community_interest", {
+    ...command(a),
+    p_proposal_id: racingId,
+    p_operation: "interest",
+  });
+  const withdrawalRace = await Promise.all([
+    b.client.rpc("mutate_cocreate_community_interest", {
+      ...command(b),
+      p_proposal_id: racingId,
+      p_operation: "interest",
+    }),
+    a.client.rpc("mutate_cocreate_community_interest", {
+      ...command(a),
+      p_proposal_id: racingId,
+      p_operation: "withdraw",
+    }),
+  ]);
+  equal(
+    withdrawalRace[0].error,
+    null,
+    "Last support remains a valid serialized action",
+  );
+  const racing = await rpc(c, "get_cocreate_community_proposal", {
+    p_proposal_id: racingId,
+  });
+  equal(
+    racing.state,
+    withdrawalRace[1].error ? "activated" : "pending",
+    "Withdrawal-vs-activation has one canonical ordering",
+  );
+  equal(
+    racing.interested_count,
+    withdrawalRace[1].error ? 3 : 2,
+    "Only currently eligible distinct pending interests count",
+  );
+  if (withdrawalRace[1].error)
+    equal(
+      withdrawalRace[1].error.code,
+      "PT409",
+      "Activated support cannot retroactively deactivate the hub",
+    );
+  const reuse = await rpc(c, "propose_cocreate_community", {
+    ...command(c),
+    p_category_id: "art",
+    p_name: `Synthetic reuse ${run}`,
+    p_locality: "Synthetic Merano",
+  });
+  await rpc(a, "mutate_cocreate_community_interest", {
+    ...command(a),
+    p_proposal_id: reuse.proposal_id,
+    p_operation: "interest",
+  });
+  const existingTopic = randomUUID(),
+    existingHub = randomUUID();
+  await sql`insert into private.cocreate_topics(id,label,active,category_id) values(${existingTopic}::uuid,${`SYNTHETIC REUSE ${run.toUpperCase()}`},true,'art')`;
+  await sql`insert into private.cocreate_hubs(id,topic_id,locality,active) values(${existingHub}::uuid,${existingTopic}::uuid,'SYNTHETIC MERANO',true)`;
+  const reused = await rpc(b, "mutate_cocreate_community_interest", {
+    ...command(b),
+    p_proposal_id: reuse.proposal_id,
+    p_operation: "interest",
+  });
+  equal(
+    reused.hub_id,
+    existingHub,
+    "Activation reuses an operator-added matching active hub",
+  );
+  equal(
+    (
+      await sql`select count(*)::int n from private.cocreate_rooms where hub_id=${existingHub}::uuid and kind='general'`
+    )[0].n,
+    1,
+    "Existing-hub reuse preserves its one General",
+  );
   const joinHub = (p) =>
     rpc(p, "mutate_cocreate_hub", {
       ...command(p),

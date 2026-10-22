@@ -93,5 +93,44 @@ select set_config('request.jwt.claim.sub','cc080000-0000-4000-8000-000000000001'
 update private.cocreate_community_proposals set expires_at=clock_timestamp()-interval '1 second',created_at=clock_timestamp()-interval '2 days' where id=current_setting('cc.pending')::uuid;
 select is(public.get_cocreate_community_proposal(current_setting('cc.pending')::uuid),null::jsonb,'expired pending text is not public');
 select throws_ok($$select public.mutate_cocreate_community_interest('cc080000-0000-4000-8000-000000000001',gen_random_uuid(),current_setting('cc.pending')::uuid,'interest')$$,'PT409',null,'expired proposal cannot activate');
+insert into private.moderation_staff_roles(profile_id,staff_role) values('cc080000-0000-4000-8000-000000000003','moderator');
+select set_config('request.jwt.claim.sub','cc080000-0000-4000-8000-000000000003',true);
+select is(public.get_moderation_case_cocreate_proposal('cc080000-0000-4000-8000-000000000003',current_setting('cc.case')::uuid)->'evidence'->>'name','Synthetic Valorant','staff sees exact reported proposal only');
+select set_config('cc.staffcmd',gen_random_uuid()::text,true);
+select set_config('cc.version',(select version::text from private.cocreate_community_proposals where id=current_setting('cc.proposal')::uuid),true);
+select set_config('cc.staffresult',public.moderate_cocreate_community_proposal('cc080000-0000-4000-8000-000000000003',current_setting('cc.staffcmd')::uuid,current_setting('cc.case')::uuid,current_setting('cc.version')::bigint,'suppress')::text,true);
+select is(public.moderate_cocreate_community_proposal('cc080000-0000-4000-8000-000000000003',current_setting('cc.staffcmd')::uuid,current_setting('cc.case')::uuid,current_setting('cc.version')::bigint,'suppress'),current_setting('cc.staffresult')::jsonb,'staff exact retry recovers immutable scoped result');
+select ok(private.cocreate_hub_public(current_setting('cc.hub')::uuid),'suppressing the proposal does not suppress its activated hub');
+select throws_ok($$select public.moderate_cocreate_community_proposal('cc080000-0000-4000-8000-000000000003',gen_random_uuid(),current_setting('cc.case')::uuid,current_setting('cc.version')::bigint,'restore')$$,'PT409',null,'stale staff version cannot mutate');
+select throws_ok($$select public.moderate_cocreate_community_proposal('cc080000-0000-4000-8000-000000000003',gen_random_uuid(),gen_random_uuid(),1,'suppress')$$,'42501',null,'staff requires exact reported proposal scope');
+select throws_ok($$select public.moderate_cocreate_community_proposal('cc080000-0000-4000-8000-000000000003',gen_random_uuid(),current_setting('cc.case')::uuid,current_setting('cc.version')::bigint+1,'reject')$$,'PT409',null,'reject never deactivates an activated community');
+update private.cocreate_community_proposals set expires_at=clock_timestamp()+interval '1 day' where id=current_setting('cc.pending')::uuid;
+select set_config('request.jwt.claim.sub','cc080000-0000-4000-8000-000000000002',true);
+select set_config('cc.pendingcase',(select case_id::text from public.submit_moderation_report('cc080000-0000-4000-8000-000000000002',gen_random_uuid(),'spam','Synthetic pending proposal report','cocreate_community_proposal',current_setting('cc.pending')::uuid)),true);
+select set_config('request.jwt.claim.sub','cc080000-0000-4000-8000-000000000003',true);
+select public.moderate_cocreate_community_proposal('cc080000-0000-4000-8000-000000000003',gen_random_uuid(),current_setting('cc.pendingcase')::uuid,(select version from private.cocreate_community_proposals where id=current_setting('cc.pending')::uuid),'reject');
+select is(public.get_cocreate_community_proposal(current_setting('cc.pending')::uuid),null::jsonb,'rejected pending proposal is no longer public');
+
+-- More than one worker page of real synthetic eligible General episodes.
+select * from private.process_cocreate_filling_batch(100);
+insert into auth.users(id,email) select ('cc090000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'filling-page-'||n||'@planets.invalid' from generate_series(1,30)n;
+insert into public.profiles(id,display_name) select id,'Synthetic bounded fanout' from auth.users where id::text like 'cc090000%';
+insert into private.policy_acceptances(account_id,bundle_version) select id,'POLICY01-2026-10-08-v1' from auth.users where id::text like 'cc090000%';
+do $$ declare person uuid;begin
+ for person in select id from auth.users where id::text like 'cc090000%' order by id loop
+ perform set_config('request.jwt.claim.sub',person::text,true);
+ perform public.mutate_cocreate_hub(person,gen_random_uuid(),current_setting('cc.hub')::uuid,'join');end loop;
+end; $$;
+update private.cocreate_room_episodes set muted=true where actor_id='cc090000-0000-4000-8000-000000000001';
+update private.cocreate_recruitments set created_at=created_at-interval '2 hours' where room_id=(current_setting('cc.meeting')::jsonb->>'room_id')::uuid;
+select set_config('request.jwt.claim.sub','cc080000-0000-4000-8000-000000000001',true);
+select public.mutate_cocreate_meeting('cc080000-0000-4000-8000-000000000001',gen_random_uuid(),current_setting('cc.hub')::uuid,(current_setting('cc.meeting')::jsonb->>'room_id')::uuid,(current_setting('cc.meeting')::jsonb->>'episode_id')::uuid,(current_setting('cc.meeting')::jsonb->>'meeting_id')::uuid,'repost');
+select set_config('cc.newcard',(select id::text from private.cocreate_recruitments where room_id=(current_setting('cc.meeting')::jsonb->>'room_id')::uuid and retracted_at is null),true);
+select ok((select notifications_created between 0 and 25 from private.process_cocreate_filling_batch(1)),'one worker item never expands more than 25 recipients');
+select is((select count(*)::int from private.outbox_consumer_receipts where outbox_event_id=(select id from private.outbox_events where payload->>'recruitment_id'=current_setting('cc.newcard')) and consumer_key='notifications.v1'),0,'unfinished fanout has no completion receipt');
+select * from private.process_cocreate_filling_batch(1);
+select is((select count(*)::int from private.cocreate_filling_notifications where recruitment_id=current_setting('cc.newcard')::uuid),29,'second page completes all eligible recipients and honors mute');
+select is((select processed_count from private.process_cocreate_filling_batch(1)),0,'completed multi-page fanout is idempotent');
+select is((select count(*)::int from private.cocreate_room_episodes where room_id=(current_setting('cc.meeting')::jsonb->>'room_id')::uuid),1,'notifications never enroll General readers in the small chat');
 select * from finish();
 rollback;

@@ -135,6 +135,11 @@ merge it. Independent ACTMET01 is not needed for community support or meetings.
 
 ## Progress and next action
 
+- Crazy Ideas is a disabled, accessible Home button beside Find people in the
+  same presentation, with localized coming-later copy. It has no destination,
+  Project connection, write action or fixture data. Existing native Home entries
+  remain available.
+
 - Inspected local/unpushed state before changes: RUNALL has only its preserved
   untracked `.local/`; VIS01 is clean/pushed; primary main has preserved
   untracked `.vis01/`. Fetched origin safely; main remains `217ce73e`.
@@ -170,3 +175,73 @@ merge it. Independent ACTMET01 is not needed for community support or meetings.
 - No hosted migrations, deployment, provider activation, approval bypass or
   automatic merge is authorized/performed. RUNALL owner migration review remains
   an inherited CI gate, to be refreshed for the exact cumulative head.
+
+## Access, privacy and rollback
+
+| Surface                              | Authority and exposed data                                                                                                                                  |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Categories/communities/proposals     | Deliberately public bounded summaries only while the server experiment is ON; eligible, unsuppressed entries and aggregate interest counts.                 |
+| Propose/support/schedule/admit       | Auth-bound expected actor, current policy/profile/account eligibility, server gate, block/moderation checks and immutable command receipt.                  |
+| Your interests/ready invitations     | Actor-private durable rows; supporting never grants a transcript or membership.                                                                             |
+| General/numbered chat and attendance | Existing exact room/episode authority; meeting Join uses canonical atomic chat admission and separate place reservation.                                    |
+| Filling inbox/read/count             | Current eligible General episode, notice/card/meeting lifecycle, mute and preferences rechecked on every read; no supporter roster or private message text. |
+| Proposal moderation                  | Current staff plus exact report case, immutable evidence and current CAS version; no unrelated transcript access.                                           |
+| Private tables/functions             | RLS and explicit revocations; API roles cannot write tables directly or invoke internal functions.                                                          |
+
+Actor provenance uses the predecessor's private raw UUID convention, adding no
+Auth/Profile deletion-blocking foreign keys. Permanent identity erasure ends the
+existing chat episodes, so their attendance stops counting; deleted/banned
+supporters stop contributing, and an unavailable proposer cannot activate or
+publish pending text. Existing scoped report retention/identity restrictions
+remain in force. Expiry is an availability rule, not a new deletion or indefinite
+retention promise; production retention policy remains owner work. Free-text
+preview warns against phone numbers, exact private addresses and sensitive data.
+
+Rollback is the existing private server switch OFF; the independent device
+switch only changes presentation. Neither switch deletes chats, resets history
+or enrolls people. Auth-only established exits remain available. Do not roll back
+by deleting/recreating existing hubs or editing applied migrations.
+
+## Reproduction and qualified checkpoints
+
+Use an identified disposable loopback Supabase stack with `MAILPIT_URL` pointing
+to its own mailbox; never run reset/fixtures against a hosted/shared database.
+The backend commands used here were `npm run db:reset`, `npm run db:test`,
+`npm run db:lint`, `npm run db:advisors`,
+`npm run cocreate:communities:verify:local`,
+`npm run cocreate:programme:verify:local`, `npm run db:types` and
+`npm run db:types:check`. The populated upgrade uses
+`PLANETS_COCREATE_UPGRADE_BASE=a0e810d0678cfd17b0124eb103e68974e932474b`
+with `npm run cocreate:upgrade:verify:local`; the script only accepts its two
+documented immutable bases and still requires its owned-project guard.
+
+- Final strengthened backend tests: **299 pgTAP** and **104 genuine Auth**
+  assertions pass, including normalized concurrent proposals from different
+  accounts, withdrawal versus activation, existing-hub reuse, scoped staff CAS,
+  and more than one bounded notification-recipient page. Clean aggregate remains
+  **170 files / 8,234 assertions** before these twelve additional assertions.
+- Populated selected-base upgrade: **216 pass**, 137 immutable migrations,
+  **187 table snapshots / six warmed function OID/ACL/result contracts**
+  preserved. The integrated predecessor OTP/socket programme passes **139**.
+- `node scripts/mock/qualify-local.mjs` with `PLANETS_DISPOSABLE_QA=1` passes
+  **382 checks / ten personas / zero normal-realm calls**, real notification
+  worker rollback/concurrency, populated mock-control replay and repeat seed.
+  Source schema digest: `838382e1803838ee880ea19ea18a3dd5876fcb1a317bac0bbf7cb8a76c4e2478`.
+  The script owns two new stacks with unique private signing/API keys and cleans
+  up only those stacks. Mock target/broker/people fixture unit tests pass **14**.
+- Complete Web: `npm run test --workspace @planets/web -- --pool=forks` passes
+  **405 / two existing skips**; lint, typecheck, production build and static
+  invitation check pass. Default-thread aggregate was stopped after stalling;
+  the fork pool ran identical coverage. Existing build-size/Vite future-config
+  warnings are retained. Root `npm run test:tooling` passes **181**.
+- Mobile community/meeting/Home renders pass **36 targeted tests** with EN/IT,
+  320dp, light/dark and 1x/2x text. Captures under `evidence/cocreate-fill01`
+  are actual contract-fixture renders, not live-device screenshots. Italian
+  category headings now give large text its own line. Final retry extensions,
+  full aggregate/analysis/debug APK and latest-main reconciliation are in progress.
+- `adb devices -l` finds no attached device. Physical Android/accessibility and
+  iOS qualification are unrun. No emulator belonging to another task was booted.
+  QA activation is OFF, the owned project is stopped with backup, root config
+  restored byte-for-byte (`2e67b7a5cda9ffc671c31b4461c1c8b896cc75c3bf727f6e406ee573eefbd8f6`),
+  both new mock stacks cleaned up, and the owned QA VM stopped. Recovery state
+  and private diagnostics remain untracked in `.local`.

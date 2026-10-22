@@ -300,12 +300,14 @@ unimplemented live features must never be reported as verified.
 - Rendered EN/IT narrow/large-text evidence remains under `docs/development/evidence/cocreate`; these are actual component/contract-fixture renders, not live phone screenshots. The real backend/socket journey is separate. No Android device was attached. Five pre-existing PLANETS QA AVDs were inventoried but not booted or modified. Physical-phone/accessibility/founder visual review and iOS build remain unrun; they did not stop eligible implementation. Real provider rights/configuration and production policy/identity decisions remain their separate owner work.
 - QA restoration is complete. Verified server activation OFF, stopped named project **with backup**, restored original `supabase/config.toml` bytes only after checking overlay hash `242091c90891b9f290e02655142f371bebd63af535efc0867bba50e21f60608f`. Restored SHA256 is **2e67b7a5cda9ffc671c31b4461c1c8b896cc75c3bf727f6e406ee573eefbd8f6**; Git confirms no config diff. Original and named project backups remain intact/stopped; after confirming zero running owned containers, the task-owned `planets-cocreate-qa` VM was stopped. Other machines/worktrees untouched. `.local/qa-api-overlay/journal.json` records restoration. Local diagnostics/manifests are retained untracked, never staged.
 - **Exact remaining blocker/next action:** final GitHub validation is gated by STAGING-AUTO01's repository-owner migration review. CI 39777384536 demonstrated this gate before area jobs; the final pushed head will produce its own `staging-migration-review-<run-id>` artifact containing `review-required.json`. The repository owner must inspect the concrete SQL diff and post `STAGING-AUTO01-REVIEW` followed by that exact JSON object for the final head, then rerun the existing gate. Its source SHA, migration hashes and predecessor digests must match; do not post/forge owner approval from this agent or use another workflow to evade the control. Final PR body supplies the final-run link and exact request. Full GitHub CI is therefore **not claimed passed** for the final head. Keep the cumulative PR draft/unmerged; no production/hosted migration, deployment, store submission, real delivery, destructive unrelated cleanup or automatic main merge occurred.
+
 ## COMM01/FILL01 follow-up (2026-10-23, active)
 
 New explicitly requested branch/worktree `codex/cocreate-fill01` builds on RUNALL
 `a0e810d0` and, under the user's later instruction to combine related unfinished
 work, includes VIS01 `512192ec`. Existing branches/worktrees and primary untracked
-work are preserved. The draft follow-up will target RUNALL and remain unmerged.
+work are preserved. Draft [PR #297](https://github.com/lillo24/planets.community/pull/297)
+targets RUNALL and remains unmerged.
 
 The user supplied COMM01 in chat and combined it with meeting-time filling,
 persistent group chats, separate per-meeting attendance, General notifications,
@@ -314,3 +316,30 @@ mock accounts/data, and a final button-only Crazy Ideas entry. The detailed
 contract, bounds, current evidence and precise next action are in
 [cocreate-fill01.md](cocreate-fill01.md). Historical RUNALL evidence below remains
 unchanged. This follow-up is not complete or ready for production.
+
+### Follow-up backend qualification checkpoint
+
+- Canonical schema/security stage is committed/pushed as `2225a88f`. Final
+  additional race, existing-hub reuse, scoped staff and paged-fanout tests pass:
+  **104 real Auth assertions / 299 scoped pgTAP assertions**. Fresh full schema
+  replay previously passed **170 files / 8,234 assertions**, before twelve newly
+  added assertions. No canonical migration changed after that replay.
+- Selected actual RUNALL-base populated upgrade passes **216**, preserving
+  **187 table snapshots / six function OID/ACL/result contracts**. Public types
+  were generated with the standard command and drift check passes. Existing
+  continuous programme passes **139**; lint/advisors clean.
+- The backend is stopped with backup, activation OFF. Original config SHA256
+  `2e67b7a5cda9ffc671c31b4461c1c8b896cc75c3bf727f6e406ee573eefbd8f6` is restored.
+  Owned two-realm mock qualification passes **382** and cleans only its own new
+  stacks; zero running containers were confirmed before stopping the owned VM.
+- Current source remains uncommitted for mobile/admin/mock stages. Complete Web
+  **405 pass / two skips**, lint/typecheck/build/invitation check and tooling
+  **181 pass**; 36 mobile flow/render tests pass. Analyzer reported three new
+  brace-style infos, repaired; full mobile has not run yet. New retry tests cover
+  activation/current-meeting replacement before the final aggregate.
+- Latest origin/main advanced to `d735bb88` with merged ACTMET01 and an Activities
+  planning queue; RUNALL/VIS01 heads remain unchanged. Next: commit qualified
+  follow-up stages, integrate only these merged main commits on this branch,
+  then full mobile qualification and combined-path regression, inspect final
+  captures/diff, push and refresh PR #297's exact owner-review gate. Preserve all
+  other branches/worktrees. No hosted operation, merge or provider activation.
