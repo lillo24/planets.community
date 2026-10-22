@@ -250,6 +250,10 @@ try {
           "create function private.staging_auto01_probe_fn() returns integer language sql as 'select 1'",
           "drop function private.staging_auto01_probe_fn()",
         ],
+        [
+          "create index staging_auto01_probe_idx on private.staging_auto01_probe(id)",
+          "drop index private.staging_auto01_probe_idx",
+        ],
       ]) {
         await tx.unsafe(change);
         const altered = (await tx.unsafe(catalogQuery))[0].catalog;

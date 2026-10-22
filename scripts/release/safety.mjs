@@ -102,6 +102,9 @@ export function classifyMigration(sql) {
 }
 
 // Only metadata/hashes leave the server; no Auth records or routine bodies.
+// Indexes cover the owned product/Auth/Storage schemas. PostgreSQL may create
+// an internal pg_toast index when a table gains its first variable-width column;
+// that implementation detail is not an application index/authorization change.
 export const catalogQuery = `select jsonb_build_object(
  'tables',(select coalesce(jsonb_agg(x order by x->>'name'),'[]') from (
  select jsonb_build_object('name',n.nspname||'.'||c.relname,'owner',pg_get_userbyid(c.relowner),'kind',c.relkind,'rls',c.relrowsecurity,
@@ -115,7 +118,7 @@ export const catalogQuery = `select jsonb_build_object(
  union all select 'policy:'||oid||':'||polrelid||':'||md5(polname::text||polpermissive::text||polroles::text||polcmd::text||coalesce(pg_get_expr(polqual,polrelid),'')||coalesce(pg_get_expr(polwithcheck,polrelid),'')) from pg_policy
  union all select 'trigger:'||oid||':'||md5(pg_get_triggerdef(oid)||tgenabled::text) from pg_trigger where not tgisinternal
  union all select 'constraint:'||oid||':'||md5(pg_get_constraintdef(oid)) from pg_constraint
- union all select 'index:'||indexrelid||':'||md5(pg_get_indexdef(indexrelid)) from pg_index
+ union all select 'index:'||i.indexrelid||':'||md5(pg_get_indexdef(i.indexrelid)) from pg_index i join pg_class c on c.oid=i.indrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','private','auth','storage')
  union all select 'view:'||c.oid||':'||md5(pg_get_viewdef(c.oid,true)||coalesce(c.relacl::text,'')) from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind in ('v','m') and n.nspname in ('public','private','auth','storage')
  ) s)) as catalog`;
 
