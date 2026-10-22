@@ -25,6 +25,8 @@ The existing local staging password authenticated through the authoritative
 5432 session route with verified TLS after supplying Supabase's public CA;
 its independent history matched the Management API. The GitHub secret's value
 is unreadable and is not claimed verified by that local credential check.
+The pinned Supabase CLI also passed a read-only `inspect db role-stats` through
+that credential with `verify-full` and the public CA; raw role output was not retained.
 The same reviewed CA is now supplied to both Node and CLI clients. Exact SQL
 owner review, protected-run credential verification and readiness activation
 remain separate prerequisites. No hosted migration write was performed here.

@@ -223,7 +223,7 @@ export async function writeStaging({
             encoding: "utf8",
             timeout: 600000,
             maxBuffer: 8 * 1024 * 1024,
-            // CLI/libpq uses the same reviewed CA as the session-lock client.
+            // CLI uses the same reviewed CA as the session-lock client.
             env: { ...process.env, PGSSLROOTCERT: stagingCaPath },
           },
         );
