@@ -26,6 +26,9 @@ enum ModerationCategory {
 }
 
 enum ModerationTargetKind {
+  cocreatePost('cocreate_post'),
+  cocreateInterest('cocreate_interest'),
+  cocreateContactMessage('cocreate_contact_message'),
   profile('profile'),
   group('group'),
   project('project'),
@@ -46,6 +49,9 @@ enum ModerationTargetKind {
   final String wireValue;
 
   static ModerationTargetKind fromWire(String value) => switch (value) {
+    'cocreate_post' => ModerationTargetKind.cocreatePost,
+    'cocreate_interest' => ModerationTargetKind.cocreateInterest,
+    'cocreate_contact_message' => ModerationTargetKind.cocreateContactMessage,
     'profile' => ModerationTargetKind.profile,
     'group' => ModerationTargetKind.group,
     'project' => ModerationTargetKind.project,

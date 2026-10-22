@@ -127,3 +127,32 @@ synthetic local data until the next explicitly authorized disposable reset.
 Fresh replay, populated upgrade, complete negative/race coverage and generated
 public types must pass before B01 is marked verified. B02 and the final Q00
 journey must not mistake these API tests for completed live mobile UI.
+
+## B02 mobile projection and recovery
+
+Migration `20261022080000_cocreate_mobile_projections.sql` adds a bounded active
+topic catalogue, versioned own interest/contact readers with the source title,
+complete unread composition, and actor-only private invalidation. Installed B01
+read shapes and native Messages readers are preserved. Native plus co-creation
+conversation counts come from `get_own_message_unread_summary_with_cocreate`;
+two incoming messages in one contact count as one unread conversation.
+
+`list_own_cocreate_contact_exits` and `list_own_cocreate_interest_exits` require
+only the matching authenticated identity. They expose own open anchors and
+creation timestamps (plus the request's source ID), never bodies/notes or titles.
+They support exact protected close/withdraw routes while the experiment is OFF
+or policies need acceptance. They cannot grant read/send/new contact access.
+
+The `cocreate:profile:<actor UUID>` channel carries only `profile_id` with event
+`cocreate.changed`. Its SELECT policy accepts only that authenticated actor's
+exact topic. Clients have no send/helper grants. Post/request/contact changes,
+blocks, suppression, ban/deletion and configuration changes invalidate affected
+actors; broadcasts occur transactionally and contain no private domain content.
+No new push delivery or external notification provider is activated.
+
+The existing Auth-trigger assertion now has exact allow-listed AFTER UPDATE
+(`banned_until`, `deleted_at` only) and AFTER DELETE metadata hooks. It still
+rejects all INSERT/BEFORE hooks and checks the new functions contain no
+INSERT/UPDATE/DELETE statement. The hooks do not create profiles, change Auth,
+erase records or establish a new retention policy. Unrelated actors emit no
+co-creation signal. This is the reason for the narrow existing-test update.

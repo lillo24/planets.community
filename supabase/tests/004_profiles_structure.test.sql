@@ -134,13 +134,31 @@ select ok(
     where t.tgrelid = 'auth.users'::regclass
       and not t.tgisinternal
       and n.nspname in ('public', 'private')
-      -- D02 adds one reviewed AFTER DELETE cache-invalidation trigger. It
-      -- cannot create profiles; still reject every other application trigger.
+      -- Reviewed metadata-only invalidation triggers cannot create profiles.
+      -- Keep exact event/column/function checks; reject INSERT/BEFORE hooks.
       and not (
         t.tgname = 'group_contact_auth_delete_access'
         and n.nspname = 'private'
         and p.proname = 'group_contact_identity_access'
         and t.tgtype = 9 -- ROW + DELETE, AFTER (no INSERT/UPDATE/BEFORE bits)
+      )
+      and not (
+        t.tgname = 'cocreate_account_signal'
+        and n.nspname = 'private'
+        and p.proname = 'cocreate_access_change_signal'
+        and t.tgtype = 17 -- ROW + UPDATE, AFTER (no INSERT/DELETE/BEFORE bits)
+        and t.tgqual is not null
+        and (select array_agg(a.attname::text order by a.attname)
+          from pg_attribute a where a.attrelid=t.tgrelid and a.attnum=any(t.tgattr))
+          = array['banned_until','deleted_at']::text[]
+        and p.prosrc !~* '\m(insert|update|delete)\M'
+      )
+      and not (
+        t.tgname = 'cocreate_account_delete_signal'
+        and n.nspname = 'private'
+        and p.proname = 'cocreate_deleted_account_signal'
+        and t.tgtype = 9 -- ROW + DELETE, AFTER; metadata-only, no profile writes
+        and p.prosrc !~* '\m(insert|update|delete)\M'
       )
   ),
   'PLANETS installs no automatic profile-creation trigger on Auth users'

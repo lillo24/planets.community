@@ -18,7 +18,7 @@ String _text(Object? value, int maximum) {
   return value;
 }
 
-DateTime _date(Object? value) {
+DateTime coCreationDate(Object? value) {
   if (value is! String || !RegExp(r'(Z|[+-]\d{2}:\d{2})$').hasMatch(value)) {
     throw const FormatException('An absolute post timestamp is required.');
   }
@@ -67,8 +67,8 @@ class PublicPeoplePost {
     body = _text(row['body'], 1000);
     locality = _text(row['locality'], 100);
     topicId = row['topic_id'] == null ? null : TopicId.parse(row['topic_id']);
-    createdAt = _date(row['created_at']);
-    expiresAt = _date(row['expires_at']);
+    createdAt = coCreationDate(row['created_at']);
+    expiresAt = coCreationDate(row['expires_at']);
     if (!expiresAt.isAfter(createdAt)) {
       throw const FormatException('Invalid post expiry interval.');
     }

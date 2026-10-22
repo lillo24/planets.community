@@ -22,3 +22,12 @@ flutter test --no-pub --concurrency=1 --dart-define=UI_POLISH_CAPTURE_DIR=<absol
 No Android/iOS device, installation, screen-reader or founder phone QA is
 claimed. See [the progress ledger](../../cocreate-progress.md) for actual stage
 status and backend qualification. No production deployment occurred.
+
+B02 adds people-live-detail-en-320-2x.png and people-live-detail-it-320-2x.png.
+These render the real mobile detail component with a deterministic gateway
+contract fixture, real fonts and 2x text at 320dp. The fixture public text is
+synthetic English user content in both locales; labels/consent/actions localize.
+The Italian capture was visually inspected: body/consent wrap, Report and the
+sign-in continuation remain reachable by scrolling, with no overflow. These are
+widget render evidence, not phone screenshots or a claim of a live UI session.
+The genuine two-account backend is separately verified through OTP/RPC tests.

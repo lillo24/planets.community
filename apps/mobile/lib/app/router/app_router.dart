@@ -1,3 +1,10 @@
+import '../../features/co_creation/presentation/people_exit_screens.dart';
+import '../../features/co_creation/presentation/people_browse_screen.dart';
+import '../../features/co_creation/presentation/people_manage_screen.dart';
+import '../../features/co_creation/presentation/people_message_items.dart';
+import '../../features/co_creation/presentation/people_contact_screen.dart';
+import '../../features/co_creation/domain/co_creation_identity.dart';
+import '../../features/co_creation/domain/people_private.dart';
 import '../../features/member_contact/presentation/member_contact_routes.dart';
 import '../../features/member_contact/presentation/member_contact_compose_screen.dart';
 import '../../features/member_contact/presentation/member_contact_request_screen.dart';
@@ -341,7 +348,7 @@ RoutingConfig _routingConfig(
             pending?.returnTo ??
             sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
         final destinationPath = Uri.parse(destination).path;
-        if (isDiscussionExitPath(destinationPath) ||
+        if (isOwnConversationExitPath(destinationPath) ||
             destinationPath == '/settings' ||
             destinationPath == '/groups' ||
             destinationPath.startsWith('/groups/') ||
@@ -367,7 +374,7 @@ RoutingConfig _routingConfig(
           ParticipantInvitationRoutes.isInvitePath(path) ||
           ProjectDelegateRoutes.isInvitePath(path);
       final needsPolicy =
-          !isDiscussionExitPath(path) &&
+          !isOwnConversationExitPath(path) &&
           (isProfileEditRoute ||
               path == profileVisibilityPath ||
               isInvite ||
@@ -403,7 +410,7 @@ RoutingConfig _routingConfig(
               isProjectResourceNeedManagementRoute ||
               isProjectDelegateManagementRoute ||
               isProjectWorkspaceManagementRoute ||
-              (isMessagesRoute && !isDiscussionExitPath(path)) ||
+              (isMessagesRoute && !isOwnConversationExitPath(path)) ||
               isNotificationsRoute)) {
         return Uri(
           path: '/profile/edit',
@@ -432,7 +439,7 @@ RoutingConfig _routingConfig(
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
           isActivityManagementRoute &&
           !isModerationRoute &&
-          !isDiscussionExitPath(path)) {
+          !isOwnConversationExitPath(path)) {
         return Uri(
           path: '/profile/edit',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -842,6 +849,30 @@ RoutingConfig _routingConfig(
                 builder: (context, state) => const MessagesLandingScreen(),
                 routes: [
                   GoRoute(
+                    path: 'cocreate/posts/:postId/interests/:id/withdraw',
+                    builder: (_, state) => PeopleInterestWithdrawScreen(
+                      postId: PostId.parse(state.pathParameters['postId']),
+                      interestId: peopleUuid(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/contacts/:id/close',
+                    builder: (_, state) => PeopleContactCloseScreen(
+                      contactId: peopleUuid(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/contacts/:id',
+                    builder: (_, state) => PeopleContactScreen(
+                      contactId: peopleUuid(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/requests',
+                    builder: (_, state) =>
+                        PeopleRequestsScreen(postId: state.extra as PostId?),
+                  ),
+                  GoRoute(
                     path: 'discussions/groups/:groupId',
                     builder: (context, state) => DiscussionGroupScreen(
                       key: state.pageKey,
@@ -1226,9 +1257,29 @@ RoutingConfig _routingConfig(
                 path: '/people',
                 pageBuilder: (context, state) => NoTransitionPage<void>(
                   key: state.pageKey,
-                  child: const CoCreationDemoBrowseScreen(),
+                  child: const PeopleBrowseScreen(),
                 ),
                 routes: [
+                  GoRoute(
+                    path: 'demo',
+                    builder: (_, _) => const CoCreationDemoBrowseScreen(),
+                  ),
+                  GoRoute(
+                    path: 'compose',
+                    builder: (_, state) => PeopleComposerScreen(
+                      post: state.extra as OwnPeoplePost?,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'mine',
+                    builder: (_, _) => const PeopleOwnPostsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'posts/:id',
+                    builder: (_, state) => PeoplePostScreen(
+                      postId: PostId.parse(state.pathParameters['id']),
+                    ),
+                  ),
                   GoRoute(
                     path: 'demo/compose',
                     builder: (_, _) => const CoCreationDemoComposer(),
@@ -1592,3 +1643,7 @@ class _UnknownRouteScreen extends StatelessWidget {
     );
   }
 }
+
+// Exact, Auth-only exits expose no transcript or membership admission.
+bool isOwnConversationExitPath(String path) =>
+    isDiscussionExitPath(path) || isPeopleOwnExitPath(path);

@@ -2890,6 +2890,10 @@ export type Database = {
         Args: { p_object_path: string }
         Returns: boolean
       }
+      can_receive_cocreate_signal: {
+        Args: { p_topic: string }
+        Returns: boolean
+      }
       can_receive_group_contact_signal: {
         Args: { p_topic: string }
         Returns: boolean
@@ -4000,6 +4004,10 @@ export type Database = {
         Args: { p_expected_profile_id: string }
         Returns: Json
       }
+      get_own_message_unread_summary_with_cocreate: {
+        Args: { p_expected_profile_id: string }
+        Returns: Json
+      }
       get_own_message_unread_summary_with_contacts_and_discussions: {
         Args: { p_expected_profile_id: string }
         Returns: Json
@@ -4870,6 +4878,7 @@ export type Database = {
         }
         Returns: Json
       }
+      list_cocreate_topics: { Args: never; Returns: Json }
       list_current_group_people: {
         Args: {
           p_after_profile_id?: string
@@ -5249,6 +5258,15 @@ export type Database = {
           blocked_profile_id: string
         }[]
       }
+      list_own_cocreate_contact_exits: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_own_cocreate_contacts: {
         Args: {
           p_before_created_at?: string
@@ -5258,7 +5276,35 @@ export type Database = {
         }
         Returns: Json
       }
+      list_own_cocreate_contacts_v2: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_interest_exits: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_own_cocreate_interests: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_post_id?: string
+        }
+        Returns: Json
+      }
+      list_own_cocreate_interests_v2: {
         Args: {
           p_before_created_at?: string
           p_before_id?: string

@@ -27,9 +27,45 @@ These are not Demo IDs; live routes are registered by their later UI stages.
 The server gate and access matrix are documented in
 [the experimental contract](../../../../../docs/development/cocreate-experimental-contract.md).
 
-B02's independently testable read foundation adds `domain/people_post.dart`
-and `data/people_posts_gateway.dart`: strict public allow-list parsing, absolute
-timestamps, typed topic IDs, deterministic paired cursors and explicit
-availability. Errors propagate; no failed read becomes empty content or Demo.
-This gateway is not wired to a live screen yet. The composer and all currently
-registered Trova persone routes still belong to the explicit A00 Demo tree.
+B02 adds the live route tree while preserving the explicit /people/demo entry.
+
+- domain/people_post.dart owns the seven-field public allow-list and absolute
+  timestamp/cursor contracts; domain/people_private.dart owns closed, typed
+  own-post, interest, accepted-contact and human-message projections.
+- data/people_posts_gateway.dart and data/people_private_gateway.dart own bounded
+  reads, exact identity/order checks and command receipts. v2 own readers add only
+  the source post title; installed readers retain their original shape.
+- application/people_attempt.dart owns one RAM-only actor/command UUID and deeply
+  immutable intent per slot. Ambiguous delivery or malformed success freezes the
+  original action. Retry never changes its intent; canonical rejection permits
+  review/correction. Nothing submits automatically on auth/policy return.
+- application/people_signals.dart owns one shared actor-only private metadata
+  channel. It carries no room IDs, bodies, roster, capability or read ACK.
+- presentation/people_browse_screen.dart owns live discovery/detail and private
+  Interested consent; people_topic_picker.dart owns the curated topic selector.
+- presentation/people_manage_screen.dart owns draft create/edit and My posts,
+  with deliberate publication/renewal/closure and private author response review.
+- presentation/people_message_items.dart adds typed rows to the existing Messages
+  Private and Requests surfaces. It creates no second inbox or navigation tab.
+  The existing unread controller uses the complete canonical composed count,
+  including unloaded co-creation conversations; it never sums loaded pages.
+- presentation/people_contact_screen.dart reuses the chronological history list
+  and rendered-newest-viewport ACK. Explicit older paging never acknowledges.
+- presentation/people_exit_screens.dart owns exact Auth-only close/withdraw paths
+  and bounded own-anchor recovery. Gate OFF or outdated policy exposes no body,
+  source title, roster or new admission. The router exception matches only exact
+  canonical UUID exit routes, never transcript/send routes.
+- presentation/people_widgets.dart owns shared loading/empty/error and command
+  controls. Private bodies clear on identity/readiness/policy, metadata signal,
+  disconnect and background; resume/reconnect rereads canonical authority.
+
+The HTTP fallback refresh interval is 20 seconds for lists and 10 seconds for
+an open contact. It does not grant socket access to transcripts or persist data.
+Catalogue availability and every command are server-controlled, independently
+of the local Sandbox preference. Turning Sandbox off preserves Messages/exit
+routes. Backend disabled/error never injects Demo rows. Curated topics remain
+empty/inactive outside explicit synthetic local fixtures.
+
+See docs/development/cocreate-posts-contacts.md for local setup, exact RPCs,
+canonical blocking/moderation, migration and qualification evidence. Native phone
+review and the final integrated programme Q00 remain separate evidence.
