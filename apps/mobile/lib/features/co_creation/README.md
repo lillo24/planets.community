@@ -146,3 +146,35 @@ detail action, source review and safe links in co_creation_event_widgets.dart.
 They reuse the external domain/schedule/URL primitives and never import or mutate
 events. Source changes clear prior input while a new public read is pending.
 See docs/development/cocreate-event-handoff.md for filters and qualification.
+
+## Planetary interests introduction (VIS01)
+
+`presentation/people_entry_screen.dart` wraps only ordinary, exact `/people`
+entries while Settings > Sandbox > Co-Creation Mode is ON. The first entry
+shows `presentation/people_interests_intro.dart`, a finite six-second native
+illustration. Explore and Skip open the existing browse immediately; completion
+does not navigate. Close/Back follows native navigation. The browse info action
+pushes `/people/intro` for replay, preserving its search, filters and scroll.
+Deep destinations, query-bearing continuations and restored protected screens
+do not claim the automatic intro. Turning Sandbox OFF uses the existing router
+gate; OFF→ON does not reset the preference. Messages and own exits are unchanged.
+
+`data/people_intro_preference.dart` owns installation-local boolean
+`planets.coCreation.interestsIntroSeen.v1` through SharedPreferencesAsync, plus
+a process-session claim to prevent duplicate automatic presentations. The
+preference is marked when the intro opens, independently of account/backend and
+startup tutorial state. Storage failure is explicitly reported while browsing
+and replay remain usable. No interests, analytics or domain records are stored.
+For QA, use Replay intro repeatedly, or clear that single preference (app data
+reset also clears it) and restart to exercise first entry. Provider overrides
+exercise empty, seen and failed storage without touching a device installation.
+
+The three areas and proper-name examples are illustrative, not a topic taxonomy,
+available rooms, memberships or partnerships. Text wraps in a scrollable body;
+Skip/Explore remain outside it. Large text reduces decorative artwork. One static
+semantics description replaces the animated labels. Reduced motion settles
+immediately without ticks; background, covered route and disabled TickerMode
+pause the finite clock without advancing phase. No looping or network assets.
+
+Reproduce evidence with `flutter test --dart-define=UI_POLISH_CAPTURE_DIR=../../docs/development/evidence/cocreate-vis01 test/features/co_creation/people_interests_intro_test.dart`.
+See `docs/development/cocreate-vis01.md` for dependency, exact validation and limits.

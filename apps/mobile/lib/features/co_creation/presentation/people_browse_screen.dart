@@ -37,6 +37,13 @@ class _PeopleBrowseScreenState extends ConsumerState<PeopleBrowseScreen> {
     final l = AppLocalizations.of(context);
     return PeoplePage(
       title: l.coPeopleLive,
+      actions: [
+        IconButton(
+          tooltip: l.coIntroReplay,
+          onPressed: () => context.push('/people/intro'),
+          icon: const Icon(Icons.info_outline),
+        ),
+      ],
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
