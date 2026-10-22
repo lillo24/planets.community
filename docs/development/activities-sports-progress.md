@@ -6,18 +6,18 @@ Pack: `ACTSPORTS-2026-10-23`. Runner: Codex thread
 READY. The file-watching heartbeat was deleted after detection. No competing
 runner for this queue was found in current tasks, worktrees or open PRs.
 
-| Step            | Status                                                 | Dependency base / PR / merge                                                                                   |
-| --------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| 002 ACTCAT02    | Validated locally; exact owner review required         | Base `d735bb88decbc845ee27d1f5812941a233b61b3f`; branch `codex/actcat02-catalogue-kinds`; PR pending; unmerged |
-| 003 ACTUI02     | Waiting for merged 002                                 | Not started                                                                                                    |
-| 004 SPORTUI01   | Waiting for merged 002, 003                            | Not started                                                                                                    |
-| 005 ACTSRC02    | Waiting for merged 002                                 | Not started                                                                                                    |
-| 006 SPORTDATA01 | Waiting for merged 002, 005 and source re-verification | Not started; no current live counts asserted                                                                   |
-| 007 ACTGEO01    | Waiting for merged 002, 005                            | Not started; does not depend on live 006 data                                                                  |
-| 008 ACTMAP01    | Waiting for merged 003, 004, 007                       | Not started                                                                                                    |
-| 009 SPORTAPI02  | Waiting for merged 002, 005 and source verification    | Not started; sports/course coverage unverified                                                                 |
-| 010 ACTOPS01    | Waiting for merged 005                                 | Not started                                                                                                    |
-| 011 ACTQA01     | Waiting for merged implemented portions                | Not started                                                                                                    |
+| Step            | Status                                                 | Dependency base / PR / merge                                                                                                                                                         |
+| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 002 ACTCAT02    | Validated locally; exact owner review required         | Base `d735bb88decbc845ee27d1f5812941a233b61b3f`; branch `codex/actcat02-catalogue-kinds`; [#298](https://github.com/lillo24/planets.community/pull/298); unmerged; merge SHA pending |
+| 003 ACTUI02     | Waiting for merged 002                                 | Not started                                                                                                                                                                          |
+| 004 SPORTUI01   | Waiting for merged 002, 003                            | Not started                                                                                                                                                                          |
+| 005 ACTSRC02    | Waiting for merged 002                                 | Not started                                                                                                                                                                          |
+| 006 SPORTDATA01 | Waiting for merged 002, 005 and source re-verification | Not started; no current live counts asserted                                                                                                                                         |
+| 007 ACTGEO01    | Waiting for merged 002, 005                            | Not started; does not depend on live 006 data                                                                                                                                        |
+| 008 ACTMAP01    | Waiting for merged 003, 004, 007                       | Not started                                                                                                                                                                          |
+| 009 SPORTAPI02  | Waiting for merged 002, 005 and source verification    | Not started; sports/course coverage unverified                                                                                                                                       |
+| 010 ACTOPS01    | Waiting for merged 005                                 | Not started                                                                                                                                                                          |
+| 011 ACTQA01     | Waiting for merged implemented portions                | Not started                                                                                                                                                                          |
 
 ## 002 implementation and evidence
 
@@ -35,7 +35,7 @@ warmed importer calls and stable function/record identities; real
 service/anonymous V1/V2 HTTP checks; web typecheck; eight inspected IT/EN rendered
 widget captures at 320/360 dp and 2× text in both themes. After the full mobile
 run, the final localized detail presentation passed fresh scoped analysis and
-all 36 external catalogue tests. Generated types come from the disposable schema.
+all 36 external catalogue tests. Generated types come from the disposable schema; the post-commit `db:types:check` passed.
 The Windows Store Python alias caused one initial tooling check to fail;
 re-running with bundled Python on the process PATH passed all 185 tests.
 WSL container lifecycle timeouts required explicit real health probes; all six
@@ -52,8 +52,8 @@ Worktree:
 `C:\Users\utente\.codex\worktrees\actcat02-catalogue-kinds\planets.community`.
 Task branch: `codex/actcat02-catalogue-kinds`.
 
-Finish final validation, inspect the diff, commit/push only intended files and
-open the focused 002 PR. The existing pre-merge migration policy at
+PR #298 is open. The changes are committed and pushed on the task branch;
+required CI awaits the exact owner review. The existing pre-merge policy at
 `scripts/release/reviews.mjs` requires a repository-owner-authored
 `STAGING-AUTO01-REVIEW` comment containing the exact `review-required.json` for
 the final head. This is a function/grant migration outside the routine nullable
