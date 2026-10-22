@@ -235,6 +235,40 @@ try {
         (await tx.unsafe(catalogQuery))[0].catalog,
         classifyMigration(sample).effects,
       );
+      // Prove the real catalog query observes consequential changes, not only
+      // a hand-written unit-test catalog. All mutations roll back below.
+      for (const [change, undo] of [
+        [
+          "alter table private.staging_auto01_probe disable row level security",
+          "alter table private.staging_auto01_probe enable row level security",
+        ],
+        [
+          "grant select on private.staging_auto01_probe to anon",
+          "revoke select on private.staging_auto01_probe from anon",
+        ],
+        [
+          "create function private.staging_auto01_probe_fn() returns integer language sql as 'select 1'",
+          "drop function private.staging_auto01_probe_fn()",
+        ],
+      ]) {
+        await tx.unsafe(change);
+        const altered = (await tx.unsafe(catalogQuery))[0].catalog;
+        assert.throws(
+          () =>
+            assertRoutineCatalog(
+              original,
+              altered,
+              classifyMigration(sample).effects,
+            ),
+          ReleaseError,
+        );
+        await tx.unsafe(undo);
+        assertRoutineCatalog(
+          original,
+          (await tx.unsafe(catalogQuery))[0].catalog,
+          classifyMigration(sample).effects,
+        );
+      }
       throw rollback;
     });
   } catch (error) {
@@ -247,6 +281,7 @@ try {
     inventory_sha256: inventoryDigest(local),
     migration_safety: witnesses,
     routine_catalog_probe: true,
+    routine_catalog_negative_probes: true,
     predecessor_migrations: predecessor.length,
     applied_migrations: first.length,
     pending: pending.map(({ sql, ...m }) => m),

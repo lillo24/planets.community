@@ -112,8 +112,8 @@ export const catalogQuery = `select jsonb_build_object(
  from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','private','auth','storage') and c.relkind in ('r','p')) t),
  'security',(select md5(coalesce(string_agg(x,E'\\n' order by x),'')) from (
  select 'routine:'||p.oid::text||':'||md5(pg_get_functiondef(p.oid)||coalesce(p.proacl::text,'')) x from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','private','auth','storage') and p.prokind in ('f','p')
- union all select 'policy:'||oid||':'||polrelid||':'||md5(polname||polpermissive::text||polroles::text||polcmd||coalesce(pg_get_expr(polqual,polrelid),'')||coalesce(pg_get_expr(polwithcheck,polrelid),'')) from pg_policy
- union all select 'trigger:'||oid||':'||md5(pg_get_triggerdef(oid)||tgenabled) from pg_trigger where not tgisinternal
+ union all select 'policy:'||oid||':'||polrelid||':'||md5(polname::text||polpermissive::text||polroles::text||polcmd::text||coalesce(pg_get_expr(polqual,polrelid),'')||coalesce(pg_get_expr(polwithcheck,polrelid),'')) from pg_policy
+ union all select 'trigger:'||oid||':'||md5(pg_get_triggerdef(oid)||tgenabled::text) from pg_trigger where not tgisinternal
  union all select 'constraint:'||oid||':'||md5(pg_get_constraintdef(oid)) from pg_constraint
  union all select 'index:'||indexrelid||':'||md5(pg_get_indexdef(indexrelid)) from pg_index
  union all select 'view:'||c.oid||':'||md5(pg_get_viewdef(c.oid,true)||coalesce(c.relacl::text,'')) from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind in ('v','m') and n.nspname in ('public','private','auth','storage')

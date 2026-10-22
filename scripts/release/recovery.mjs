@@ -84,6 +84,11 @@ export function assertRecovery(policy, receipt, predecessor, now = Date.now()) {
   assertRecoveryPolicy(policy);
   const age = now - Date.parse(receipt?.completed_at);
   if (
+    !receipt ||
+    typeof receipt !== "object" ||
+    Array.isArray(receipt) ||
+    Object.keys(receipt).sort().join(",") !==
+      "access_controlled,completed_at,database_restored,database_sha256,encrypted,policy_id,predecessor_inventory_sha256,project_ref,storage_objects_restored,storage_objects_sha256" ||
     receipt?.project_ref !== STAGING_REF ||
     receipt.policy_id !== policy.policy_id ||
     receipt.predecessor_inventory_sha256 !== predecessor ||

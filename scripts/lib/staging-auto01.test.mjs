@@ -440,6 +440,9 @@ test("recovery needs fresh restore evidence for BOTH encrypted DB and actual Sto
     (r) => {
       r.project_ref = "production";
     },
+    (r) => {
+      r.unexpected_private_payload = "fictional private data";
+    },
   ]) {
     const r = receipt();
     mutate(r);
