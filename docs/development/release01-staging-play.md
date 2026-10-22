@@ -103,12 +103,14 @@ merged PR, re-fetches the owner's proof and the file at that original PR head,
 and hashes those bytes. Merging despite failed CI cannot erase the missing proof.
 Routine verified migrations need no comment or ongoing safe-manifest ritual.
 
-## One-time owner activation (not performed by this implementation)
+## One-time owner activation
 
 Keep `STAGING_RELEASE_ENABLED=false`, `STAGING_AUTOMATION_READY` unset/false and
-`STAGING_AUTO_PUBLISH=false` until all items below are verified. As observed on
-22 October, main had **no branch protection** and `planets-staging` retained its
-owner reviewer; those are activation blockers, not settings changed by this PR.
+`STAGING_AUTO_PUBLISH=false` until the prerequisites below are verified. On
+22 October, active Protect main ruleset #25636573 required PRs and all five
+Validation checks, with up-to-date checks and no bypass actors. The staging
+environment retained its owner reviewer, selected `main` branch only and no
+admin bypass. Recheck live settings before activation; code merge changes none.
 
 1. In GitHub **Settings → Rules → Rulesets** (or Branches), protect `main`:
    require PRs, no force pushes/deletion, no bypass for the automation identity,
@@ -119,16 +121,22 @@ owner reviewer; those are activation blockers, not settings changed by this PR.
    changes owner-reviewed; standing routine authorization never authorizes
    weakening its own guard. Do not require the separately triggered post-merge
    workflow as a universal PR status. Review exact final-head logs before merge.
-2. Establish the trusted recovery route below. Verify credentials, restore
-   evidence and main-only environment restrictions before removing any reviewer.
+2. Set protected **planets-staging** environment variable
+   `STAGING_RECOVERY_MODE=development-no-backup` for the current deliberately
+   expendable development data. This accepts possible data loss, independently
+   of readiness and SQL review. Alternatively choose `verified-backup` after the
+   genuine recovery route below exists. Missing/unknown modes block SQL.
 3. In Supabase **Project Settings → Integrations**, confirm native GitHub
    migration deployment is disabled for `planets-staging`. Keep one writer:
    staging environment variable `STAGING_DEPLOYMENT_OWNER=github-actions`.
 4. Under GitHub **Settings → Environments**, retain `planets-staging`,
    `planets-android-build`, `planets-play-closed`, selected deployment branch
    `main` only, no tags. Keep the Play owner reviewer and disable bypass where
-   supported. Only after the gates/recovery/credentials are verified, remove
-   the **staging** required reviewer; do not create an unprotected replacement.
+   supported. Only after the gates/recovery-mode/credentials are verified, open
+   **planets-staging → Deployment protection rules → Required reviewers**, remove
+   the **staging-only** reviewer, and save. Retain selected branch `main` only,
+   no tags and no admin bypass; keep the Play reviewer unchanged. Do not create
+   an unprotected replacement environment.
 5. Only staging credentials are required to activate automatic SQL. Android/Play
    credentials below are needed solely for later manual app delivery.
    Provision secrets through those environment settings or owner-run
@@ -147,20 +155,49 @@ owner reviewer; those are activation blockers, not settings changed by this PR.
 6. Review the bounded historical catch-up below in a **new enabling PR**. Do not
    reuse the old `BOOTSTRAP_MANIFEST_SHA256` or task-specific waiver as blanket
    approval. This code PR leaves reconciliation disabled and grants no review.
-7. Set protected staging `STAGING_RECOVERY_POLICY_JSON` and
-   `STAGING_AUTOMATION_READY=true` only after the route below is operational.
-   Set repository `STAGING_RELEASE_ENABLED=true` last. Dispatch `inspect`, check
-   sanitized identity/history/backend evidence, then `deploy` from current main.
-   This is owner activation, outside STAGING-AUTO01 execution authorization.
+7. Dispatch read-only `inspect` on current main while release/readiness remain
+   disabled. It uses the actual secret for certificate/hostname-validated TLS,
+   port 5432, a stable backend session, and history agreement with the Management
+   API. `connection.json` records sanitized results or a fixed failure category;
+   `preflight.json` and `backend.json` remain available on connection failure.
+   Secret names alone prove nothing. Through a pooler, `pg_stat_ssl` describes
+   the separate database-side connection, so it is not used to infer this
+   client's TLS; successful queries with strict TLS options prove that leg.
+   The session client and migration CLI trust the same repository-pinned public
+   Supabase CA (`scripts/release/supabase-prod-ca-2021.crt`), downloaded from the
+   staging dashboard's SSL configuration link. `transport.mjs` verifies its file
+   SHA-256 before connecting; the CLI receives `PGSSLROOTCERT` and `verify-full`.
+   No system trust-store change or disabled certificate validation is needed.
+   On CA rotation, review the dashboard certificate, update the public file/hash
+   together, and repeat strict connection verification.
+   Inspect remains protected by the same environment and main-only restrictions.
+   For `verified-backup` only, configure real `STAGING_RECOVERY_POLICY_JSON` and
+   fresh restoration evidence. Leave it unset for `development-no-backup`.
+   After prerequisites and exact SQL review pass, set protected staging
+   `STAGING_AUTOMATION_READY=true`, then repository `STAGING_RELEASE_ENABLED=true`
+   last, and dispatch staging-only `deploy` from current main.
    Subsequent eligible main pushes need no environment reviewer prompt.
 
 ### Recovery contract
 
-No adequate backup/restore route has been configured or verified by this task.
-The old 26-file “No backup is fine” waiver remains historical evidence only.
-No paid tier, new account or recurring expenditure is assumed. The owner must
-choose an existing access-controlled destination and isolated restore target,
-then implement/review `.github/workflows/staging-recovery.yml` on protected main:
+`STAGING_RECOVERY_MODE=development-no-backup` is a standing acceptance of possible
+data loss for only normal `planets-staging` (`cllpvruvrrvxczjitlqd`). Staging is
+populated: this is not permission to reset, drop, reseed, rewrite existing data
+or bypass SQL/security review. Exact tested/rehearsed/current main, protected
+readiness, the single deployment owner, history, TLS/session lock, populated
+preservation and RLS/Storage/grant checks remain required. No backup verifier is
+called. The safety artifact records `mode: "development-no-backup"`,
+`status: "waived"`, the actual project/predecessor and `data_loss_accepted: true`;
+it contains no invented backup hash, restore timestamp or restoration claim.
+The setting persists across eligible routine merges without a per-migration
+waiver file, prompt or hash. It never applies to Mock, production or app stores.
+
+Switch to `verified-backup` **before staging holds irreplaceable user data**.
+That mode retains the real verifier below with no fallback to the development
+waiver. No backup infrastructure, paid tier or new account is configured here.
+For this optional future mode, choose an existing access-controlled destination
+and isolated restore target, then implement/review
+`.github/workflows/staging-recovery.yml` on protected main:
 
 - Capture the identified staging DB schema/data (including Auth/private and
   Storage metadata) **and actual Storage objects** with a consistent recovery
@@ -179,7 +216,8 @@ then implement/review `.github/workflows/staging-recovery.yml` on protected main
   Run on main by schedule or owner dispatch frequently enough for the selected
   freshness bound. No per-migration founder waiver is needed.
 
-Configure protected environment variable `STAGING_RECOVERY_POLICY_JSON` once:
+For `verified-backup` only, configure protected environment variable
+`STAGING_RECOVERY_POLICY_JSON` once; never fill it with dummy values:
 
 ```json
 {
@@ -219,7 +257,7 @@ is deliberately distinct from the remote raw-statement predecessor digest.
 The writer checks the latest successful trusted main recovery workflow, its
 pinned source hash, one unexpired bounded metadata ZIP, exact policy/target and
 observed predecessor, fresh/non-future timestamp and both restore results.
-Missing/changed/stale evidence stops before SQL. Recovery runs use credentials
+Missing/changed/stale evidence stops before SQL in verified-backup mode. Recovery runs use credentials
 scoped separately; this workflow never downloads real backups or decryption keys.
 Any recovery code/policy change needs owner review and a new pinned hash.
 

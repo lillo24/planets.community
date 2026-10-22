@@ -212,15 +212,17 @@ changes share the Database gate; schema changes also regenerate Web contracts.
 
 # RELEASE01 and STAGING-AUTO01 staged delivery
 
-`staging-release.yml` is separate from Validation and stays disabled unless
-`STAGING_RELEASE_ENABLED=true`. The existing always-present **Change
+`staging-release.yml` is separate from Validation; writes stay disabled unless
+`STAGING_RELEASE_ENABLED=true`. Protected main-only manual `inspect` remains
+available before activation so the actual database secret/TLS can be checked
+without enabling writers. The existing always-present **Change
 classification** job in Validation now blocks unreviewed risky migration PRs
 and performs the populated semantic rehearsal for migration/release/baseline,
 workflow and dependency changes (and full manual Validation). Unrelated PRs skip
 that expensive step without leaving a required status pending. No duplicate PR
 rehearsal runs in the release workflow. SQL history edits/deletions fail closed.
 
-After one-time protected recovery/credential/environment setup, main pushes run
+After one-time protected recovery-mode/credential/environment setup, main pushes run
 exact-source complete Validation, populated rehearsal and serialized staging SQL
 only. Routine nullable-column candidates need real catalog/data preservation;
 other SQL needs owner proof bound to the pre-merge head/hash/predecessor. The
@@ -231,6 +233,7 @@ Android/Play jobs require explicit manual `build`/`publish` dispatch, regardless
 of `STAGING_AUTO_PUBLISH`. Keep that variable false and the separate publication
 reviewer. No live variables, secrets or environment rules change by code merge.
 The [runbook](../../docs/development/release01-staging-play.md) owns classification,
-one-time activation, real encrypted DB **and Storage-object** recovery, bounded
+one-time activation, explicit staging-only `development-no-backup` mode or future
+verified encrypted DB **and Storage-object** recovery, bounded
 two-file reconciliation and incident steps. Current external blockers and the
 123/126 read-only observation are in the existing release status.
