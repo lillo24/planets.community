@@ -2742,6 +2742,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      acknowledge_cocreate_room: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_read_token: string
+          p_room_id: string
+        }
+        Returns: undefined
+      }
       acknowledge_group_contact_read: {
         Args: {
           p_boundary: string
@@ -3650,7 +3659,18 @@ export type Database = {
         }
         Returns: Json
       }
+      get_cocreate_hub: { Args: { p_hub_id: string }; Returns: Json }
       get_cocreate_post: { Args: { p_post_id: string }; Returns: Json }
+      get_cocreate_room_page: {
+        Args: {
+          p_before_sequence?: number
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
       get_current_group_participant_invitation: {
         Args: { p_expected_profile_id: string; p_group_id: string }
         Returns: {
@@ -3777,6 +3797,10 @@ export type Database = {
         Args: { p_case_id: string; p_expected_staff_profile_id: string }
         Returns: Json
       }
+      get_moderation_case_cocreate_room: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: Json
+      }
       get_moderation_case_corroboration: {
         Args: { p_case_id: string; p_expected_staff_profile_id: string }
         Returns: {
@@ -3864,6 +3888,10 @@ export type Database = {
           blocked_display_name: string
           blocked_profile_id: string
         }[]
+      }
+      get_own_cocreate_hub_membership: {
+        Args: { p_expected_profile_id: string; p_hub_id: string }
+        Returns: Json
       }
       get_own_group: {
         Args: { p_expected_profile_id: string; p_group_id: string }
@@ -4909,6 +4937,17 @@ export type Database = {
         }
         Returns: string
       }
+      list_cocreate_hubs: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_limit?: number
+          p_locality?: string
+          p_search?: string
+          p_topic_id?: string
+        }
+        Returns: Json
+      }
       list_cocreate_posts: {
         Args: {
           p_before_created_at?: string
@@ -4917,6 +4956,16 @@ export type Database = {
           p_locality?: string
           p_search?: string
           p_topic_id?: string
+        }
+        Returns: Json
+      }
+      list_cocreate_room_people: {
+        Args: {
+          p_after_profile_id?: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
         }
         Returns: Json
       }
@@ -5327,6 +5376,15 @@ export type Database = {
         }
         Returns: Json
       }
+      list_own_cocreate_hub_exits: {
+        Args: {
+          p_before_id?: string
+          p_before_joined_at?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_own_cocreate_interest_exits: {
         Args: {
           p_before_created_at?: string
@@ -5360,6 +5418,15 @@ export type Database = {
         Args: {
           p_before_created_at?: string
           p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_rooms: {
+        Args: {
+          p_before_id?: string
+          p_before_joined_at?: string
           p_expected_profile_id: string
           p_limit?: number
         }
@@ -7006,6 +7073,16 @@ export type Database = {
         Args: { p_expected_profile_id: string; p_notification_id: string }
         Returns: string
       }
+      moderate_cocreate_hub: {
+        Args: {
+          p_case_id: string
+          p_command_id: string
+          p_expected_staff_profile_id: string
+          p_expected_version: number
+          p_operation: string
+        }
+        Returns: Json
+      }
       moderate_cocreate_post: {
         Args: {
           p_case_id: string
@@ -7022,6 +7099,17 @@ export type Database = {
           p_command_id: string
           p_contact_id: string
           p_expected_profile_id: string
+          p_operation: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_hub: {
+        Args: {
+          p_command_id: string
+          p_episode_id?: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_muted?: boolean
           p_operation: string
         }
         Returns: Json
@@ -7658,6 +7746,16 @@ export type Database = {
         Args: { p_cursor?: Json; p_limit?: number; p_query: Json }
         Returns: Json
       }
+      send_cocreate_room_message: {
+        Args: {
+          p_body: string
+          p_command_id: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
       send_group_contact_message: {
         Args: {
           p_action_id: string
@@ -7963,6 +8061,21 @@ export type Database = {
           p_explanation: string
           p_target_id: string
           p_target_kind: string
+        }
+        Returns: {
+          case_id: string
+          created_at: string
+          report_id: string
+          state: string
+        }[]
+      }
+      submit_cocreate_room_report: {
+        Args: {
+          p_category: string
+          p_client_submission_id: string
+          p_expected_reporter_profile_id: string
+          p_explanation: string
+          p_target_id: string
         }
         Returns: {
           case_id: string

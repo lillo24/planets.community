@@ -115,3 +115,9 @@ the `merge_group` trigger before making these checks queue requirements.
 
 The existing concurrency group is retained, so a newer commit to the same pull
 request cancels its obsolete validation run.
+
+The experimental co-creation Database steps also run the owned-local hub/General
+OTP/concurrency verifier with PLANETS_DISPOSABLE_QA=1. It checks loopback targets,
+uses synthetic identities, and restores server activation OFF even on failure.
+It follows rolled-back tests and precedes exact public type generation; no CI
+trigger/path boundary or required-status policy changed.

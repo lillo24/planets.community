@@ -99,3 +99,9 @@ existing advisory lock; read-only verification never repairs destinations.
   stays intact. It verifies repeat-up preservation and removes only its own
   resolved temporary tree. The multi-link verifier covers real Proposal/Tavolo
   RPC paging, Add receipts, concurrent CAS, legacy coexistence and privacy.
+
+Co-creation local support: cocreate-local-backend.mjs checks explicit disposable
+ownership and every loopback endpoint before opening SQL; its test rejects
+hosted/implicit targets. cocreate-local-fixtures.mjs owns only three deterministic
+synthetic topics/hubs, shared by the seed command and genuine hub verifier. It
+does not enable the gate or create people.
