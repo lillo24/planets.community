@@ -140,6 +140,14 @@ class ResourceListingOwnerPhotoController
     state = state.without(listingId);
   }
 
+  void invalidateAll() {
+    _identityRevision++;
+    _listingRevisions.clear();
+    state = ResourceListingOwnerPhotoState(
+      viewerProfileId: state.viewerProfileId,
+    );
+  }
+
   Future<void> _download(
     String listingId,
     VisibleProfilePhoto photo,
@@ -151,7 +159,7 @@ class ResourceListingOwnerPhotoController
     try {
       bytes = await ref
           .read(profilePhotoGatewayProvider)
-          .downloadVisiblePhoto(photo.objectPath);
+          .downloadVisiblePhoto(photo.smallObjectPath);
     } catch (_) {
       _setFailureIfCurrent(
         listingId,

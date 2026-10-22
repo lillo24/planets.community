@@ -1,3 +1,5 @@
+import '../../resource_listings/presentation/resource_category_field.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -147,6 +149,7 @@ class _ResourceSavedSearchesScreenState
         .read(publicResourceListingsProvider.notifier)
         .applyFilters(
           mode: savedSearch.mode,
+          category: savedSearch.category,
           locality: savedSearch.locality ?? '',
           query: savedSearch.query ?? '',
         );
@@ -231,6 +234,10 @@ class _ResourceSavedSearchCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final filters = <String>[
+      if (savedSearch.category case final category?)
+        l10n.resourceSavedSearchCategoryFilter(
+          resourceCategoryLabel(l10n, category),
+        ),
       if (savedSearch.mode case final mode?)
         l10n.resourceSavedSearchModeFilter(_modeLabel(l10n, mode)),
       if (savedSearch.query case final query?)

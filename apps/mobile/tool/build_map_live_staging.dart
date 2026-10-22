@@ -48,6 +48,7 @@ Future<void> main(List<String> arguments) async {
           'source_commit': (source.stdout as String).trim(),
           'source_dirty': (changes.stdout as String).trim().isNotEmpty,
           'backend': (value as Map<String, dynamic>)['SUPABASE_URL'],
+          'mock': mockBuildTargetMetadata(value),
           'package': 'community.planets.app',
           'mode': debug ? 'debug' : 'release',
           'target': debug ? 'apk' : arguments[0],
@@ -102,6 +103,18 @@ List<String> mapLiveBuildArguments(List<String> arguments) {
     if (budget) '--dart-define=LOCATION_BASEMAP_BUDGET_ENABLED=true',
   ];
 }
+
+/// Public target provenance only; never client credentials or deployment proof.
+Map<String, Object?> mockBuildTargetMetadata(Map<String, dynamic> config) => {
+  'capability': config['ENABLE_CLOSED_TEST_MOCK'] == 'true',
+  if (config['ENABLE_CLOSED_TEST_MOCK'] == 'true') ...{
+    'origin': config['MOCK_SUPABASE_URL'],
+    'broker': config['MOCK_PERSONA_BROKER_URL'],
+    'generation': config['MOCK_FIXTURE_GENERATION'],
+    // Public configuration is provenance, never hosted-readiness evidence.
+    'hosted_readiness_verified': false,
+  },
+};
 
 /// Explicit QA opt-in; runtime/ordinary-build defaults remain disabled.
 const mapLiveDefines = {

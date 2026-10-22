@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Device-bound keys cannot unwrap restored credentials. Preferences also
+     contain legacy Auth and scoped pending capabilities; never transfer them. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="file" path="datastore/" />
+</full-backup-content>

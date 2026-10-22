@@ -1,0 +1,245 @@
+{
+  "project_ref": "cllpvruvrrvxczjitlqd",
+  "source_main": "09d379f5b613bacc609b0d7cdf22188127034f77",
+  "executed_at": "2026-10-21T21:20:25Z",
+  "approval": "Owner explicitly approved original 26 manifest files for staging and said No backup is fine.",
+  "backup_taken": false,
+  "execution_method": "Authorized Supabase migration API; complete canonical SQL in one guarded atomic batch. Each canonical version/name/full SQL recorded only after successful execution.",
+  "batch_sha256": "17f1e13b3efe49f8327a3f9dd4fa17951ef7552bbeaa9f4b4d87a7863ccfe33c",
+  "api_wrapper": {
+    "version": "20261021212025",
+    "name": "release01_approved_staging_reconciliation_20261021",
+    "statement_count": 1,
+    "remote_sha256": "17f1e13b3efe49f8327a3f9dd4fa17951ef7552bbeaa9f4b4d87a7863ccfe33c",
+    "remote_md5": "5b9569a30c8b71671e1aa068ab40e69d",
+    "redundant_record_removed": true
+  },
+  "before": {
+    "canonical_count": 97,
+    "history_md5": "0817939e7deddd6350c2d0a5193fad08",
+    "routines_count": 601,
+    "routines_md5": "1154a32f9c5fa75f64a2d3ed1bd0e80a"
+  },
+  "after": {
+    "canonical_count": 123,
+    "original_97_history_records_unchanged": true,
+    "all_26_canonical_file_sha256_verified": true,
+    "original_column_row_digests_preserved": true,
+    "preserved_tables": 126,
+    "preserved_rows": 355,
+    "checks": {
+      "missing_rpcs": [
+        "get_own_profile_photo_v2",
+        "get_profile_photo_for_viewer_v2",
+        "get_project_creator_profile_photo_for_viewer_v2",
+        "get_resource_listing_owner_profile_photo_for_viewer_v2",
+        "list_profile_photos_for_viewer_v2"
+      ],
+      "unsafe_tables": [],
+      "storage_safe": true,
+      "grants_safe": true,
+      "map_safe": true
+    }
+  },
+  "applied": [
+    {
+      "version": "20261014072939",
+      "name": "group_contact_requests",
+      "sha256": "ed53495ba18c39c19eee61f9fcfe91147be85b4d1bbf6b90a8acfce04ce3dfa3"
+    },
+    {
+      "version": "20261014073229",
+      "name": "group_contact_conversations",
+      "sha256": "24dd64e364b0b0f282a2f0d2f0e9809bc24da8c87471f55c8e56bf1245559ebe"
+    },
+    {
+      "version": "20261014074055",
+      "name": "group_contact_messages_integration",
+      "sha256": "9e95cacbda77416be49c2be01371e77a4e23148d33d0cfd18fbff8cb1bba27f6"
+    },
+    {
+      "version": "20261014074255",
+      "name": "group_discussions_domain",
+      "sha256": "bb4fcb3395d7c1fe541082f9323706730eb12f3b7973ebeea30f06780029e380"
+    },
+    {
+      "version": "20261014074651",
+      "name": "group_contact_safety",
+      "sha256": "f9b5a13d5853867e0eb6b5faf490918e019290849e0303d231d83e3cb3616732"
+    },
+    {
+      "version": "20261014075208",
+      "name": "group_discussion_report_evidence",
+      "sha256": "b29d8a63809fdc5e2ffa60bcb9f40603de9223aea82042d280676e26c9925710"
+    },
+    {
+      "version": "20261014085233",
+      "name": "group_discussion_mobile_projection",
+      "sha256": "a000b116615bbd7673cbdf15f061d9a95da1319a25130e580c5cb73d42f78e2f"
+    },
+    {
+      "version": "20261014092339",
+      "name": "group_contact_context_and_access_invalidation",
+      "sha256": "50b485502c1af402acae3d7a7c2924ce6c1fec91b62d2f7fea6aed5b25861170"
+    },
+    {
+      "version": "20261014100704",
+      "name": "group_contact_exit_context",
+      "sha256": "28036bfbfafbbd39ae8b33c4dd0f0e0755ab5efe79cb5cbb7bdec1c38f4bfc4d"
+    },
+    {
+      "version": "20261014113958",
+      "name": "group_contact_sender_context",
+      "sha256": "18b8db348eca2265adfa3c2f9d1b714fb95a630bb2473b1019ecef5a94ba14af"
+    },
+    {
+      "version": "20261014122236",
+      "name": "group_coordination_proposals",
+      "sha256": "f8f50f55717fef1c786cea300017029366d43efe92275389ad84351e87dadd2e"
+    },
+    {
+      "version": "20261014123208",
+      "name": "group_discussion_named_links",
+      "sha256": "36bdfd3343f947716c51533ea4c0ec3fd94c78a1b4bbf7ab26be0d3cd7a206b5"
+    },
+    {
+      "version": "20261014124500",
+      "name": "group_coordination_messages_and_safety",
+      "sha256": "af0018d7b342b1de4f61f047dfd4691cecc9ee6a3e08c11dff5cae7018601823"
+    },
+    {
+      "version": "20261014125000",
+      "name": "group_coordination_block_convergence",
+      "sha256": "4e28fe460f52b49909292792fc4f491e4f34c66c8cef7eff4babd429372d9976"
+    },
+    {
+      "version": "20261015094229",
+      "name": "group_ideas_general_and_history",
+      "sha256": "e5ad2cff7eaf80e2ee75f3e87903701457f0a3718f150c6a4ad016c4a3a33ba9"
+    },
+    {
+      "version": "20261015094324",
+      "name": "group_ideas_workspaces_and_project_folders",
+      "sha256": "fde77fb10496d31978e8736a33a4b4e9dfd3ca70f4309eb8134cdf9c15385b77"
+    },
+    {
+      "version": "20261015095004",
+      "name": "member_contact_domain",
+      "sha256": "231af40341a54de2ba033651fcd255465b362f97c069115aa6879b3cb138481b"
+    },
+    {
+      "version": "20261015095020",
+      "name": "group_discussion_conversion_final",
+      "sha256": "8f7ed5400b68a353854cc62a46f642c97bc04bdb98b18cae23a64232120478d8"
+    },
+    {
+      "version": "20261015095042",
+      "name": "member_contact_messages_and_safety",
+      "sha256": "d2fc71f7b43d499ba15d14bd2b2eca4356c20a4b963e3051336131ab3fc17546"
+    },
+    {
+      "version": "20261015095248",
+      "name": "group_contact_activity_and_preferences",
+      "sha256": "70f6b95a756204e2055730fff652b09141784f93ab9ec251ffaa9a90fa2df8f9"
+    },
+    {
+      "version": "20261015110945",
+      "name": "contact_activity_canonical_projector",
+      "sha256": "967a423af53a6a9df83b02fb8156eb1e4ecfe2308fde587a676cfa1d659ab7b0"
+    },
+    {
+      "version": "20261015114510",
+      "name": "member_contact_block_lock_order",
+      "sha256": "6452ff140fc122c7a015460faafe68a7b809f1816371891338f3e192c4e35a97"
+    },
+    {
+      "version": "20261019073011",
+      "name": "contact_report_erased_subject_provenance",
+      "sha256": "b4579e653fa7c1cbbaef423c6648f1620f5c55862964cb67eae84e6f655dc3d5"
+    },
+    {
+      "version": "20261020123403",
+      "name": "group_idea_invitation_context",
+      "sha256": "524f2eb1c341f55a6512fcd587eb48255825d084fd278b522eb31f5b0f6a3d87"
+    },
+    {
+      "version": "20261020144145",
+      "name": "contact_discussion_integration",
+      "sha256": "5134f40f33052820255d1d8db209d022fdb03e90ef8830365869096b90ae3787"
+    },
+    {
+      "version": "20261021155653",
+      "name": "resource_cat01_categories",
+      "sha256": "16c5a35e4d14c8fbe8a78c91ffbfebbc274aad4a853835bb3afbf71135feac71"
+    }
+  ],
+  "pending_additions": [
+    "20261021152141_profile_avatar_variants.sql",
+    "20261021193500_notification_projection_atomic_claim.sql"
+  ],
+  "security_advisors": {
+    "before": [
+      {
+        "name": "rls_enabled_no_policy",
+        "count": 106,
+        "level": "INFO",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+      },
+      {
+        "name": "anon_security_definer_function_executable",
+        "count": 38,
+        "level": "WARN",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable"
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "count": 315,
+        "level": "WARN",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+      },
+      {
+        "name": "auth_leaked_password_protection",
+        "count": 1,
+        "level": "WARN",
+        "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+      }
+    ],
+    "after": [
+      {
+        "name": "rls_enabled_no_policy",
+        "count": 146,
+        "level": "INFO",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+      },
+      {
+        "name": "anon_security_definer_function_executable",
+        "count": 40,
+        "level": "WARN",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable"
+      },
+      {
+        "name": "authenticated_security_definer_function_executable",
+        "count": 449,
+        "level": "WARN",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable"
+      },
+      {
+        "name": "auth_leaked_password_protection",
+        "count": 1,
+        "level": "WARN",
+        "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+      }
+    ]
+  },
+  "publication": {
+    "owner_instruction": "Stop before application publication",
+    "play_upload": false,
+    "play_submission": false,
+    "rollout": false
+  },
+  "limitations": [
+    "Additional avatar and notification migrations are not approved/applied",
+    "Current-main AAB blocked until full required backend parity",
+    "Hosted authenticated and Play-device smoke unrun"
+  ]
+}

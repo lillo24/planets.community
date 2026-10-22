@@ -3,6 +3,21 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../tool/build_map_live_staging.dart';
 
 void main() {
+  test('mock manifest records public target only without credentials or readiness claims', () {
+    final metadata = mockBuildTargetMetadata({
+      'ENABLE_CLOSED_TEST_MOCK': 'true',
+      'MOCK_SUPABASE_URL': 'https://pnolarmzxmmjtguligfc.supabase.co',
+      'MOCK_PERSONA_BROKER_URL':
+          'https://pnolarmzxmmjtguligfc.supabase.co/functions/v1/mock-personas',
+      'MOCK_FIXTURE_GENERATION': 'mock-world-2026-10-21-v1',
+      'MOCK_SUPABASE_PUBLISHABLE_KEY': 'client-key-not-for-manifest',
+    });
+    expect(metadata['capability'], isTrue);
+    expect(metadata['hosted_readiness_verified'], isFalse);
+    expect(metadata['generation'], 'mock-world-2026-10-21-v1');
+    expect(metadata.toString(), isNot(contains('client-key-not-for-manifest')));
+    expect(mockBuildTargetMetadata({}), {'capability': false});
+  });
   test('owned emulator QA needs no Play code and enables all map gates', () {
     final args = mapLiveBuildArguments(['debug-apk']);
     expect(args.take(3), ['build', 'apk', '--debug']);

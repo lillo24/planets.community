@@ -10,6 +10,7 @@ import '../../locations/presentation/independent_public_city.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../cover_media/presentation/cover_image.dart';
 import '../domain/resource_listing_models.dart';
+import 'resource_category_field.dart';
 
 String resourceListingModeLabel(
   AppLocalizations l10n,
@@ -180,6 +181,8 @@ class PublicResourceListingCard extends StatelessWidget {
       label: [
         mode,
         listing.title,
+        if (listing.category case final category?)
+          resourceCategoryLabel(l10n, category),
         l10n.resourcePublishedRelative(age),
         interest,
         location,
@@ -230,6 +233,8 @@ class PublicResourceListingCard extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       child: ResourceListingModeBadge(mode: listing.mode),
                     ),
+                    if (listing.category case final category?)
+                      ResourceCategoryText(category: category),
                     const SizedBox(height: AppSpacing.small),
                     Text(
                       listing.description,

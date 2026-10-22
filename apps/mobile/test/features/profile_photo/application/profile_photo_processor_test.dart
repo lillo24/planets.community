@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -15,16 +16,30 @@ void main() {
         );
         final decoded = image.decodeWebP(result.bytes);
 
-        expect(result.width, profilePhotoOutputDimension);
-        expect(result.height, profilePhotoOutputDimension);
+        final expectedDimension = math.min(
+          profilePhotoOutputDimension,
+          math.min(dimensions.$1, dimensions.$2),
+        );
+        expect(result.width, expectedDimension);
+        expect(result.height, expectedDimension);
         expect(decoded, isNotNull);
-        expect(decoded!.width, profilePhotoOutputDimension);
-        expect(decoded.height, profilePhotoOutputDimension);
+        expect(decoded!.width, expectedDimension);
+        expect(decoded.height, expectedDimension);
         expect(result.byteLength, lessThanOrEqualTo(profilePhotoMaxBytes));
         expect(
           result.encodingAttempts,
           inInclusiveRange(1, profilePhotoQualitySequence.length),
         );
+        final small = image.decodeWebP(result.thumbnailBytes)!;
+        expect(small.width, math.min(160, expectedDimension));
+        expect(small.height, small.width);
+        expect(
+          result.thumbnailBytes.length,
+          lessThanOrEqualTo(profilePhotoThumbnailMaxBytes),
+        );
+        expect(small.exif.isEmpty, isTrue);
+        expect(small.iccProfile, isNull);
+        expect(small.textData, anyOf(isNull, isEmpty));
         expect(result.bytes.take(4), [0x52, 0x49, 0x46, 0x46]);
         expect(String.fromCharCodes(result.bytes.skip(8).take(4)), 'WEBP');
       });
@@ -40,8 +55,8 @@ void main() {
       final result = processProfilePhoto(sourceBytes);
       final decoded = image.decodeWebP(result.bytes)!;
 
-      expect(decoded.width, 512);
-      expect(decoded.height, 512);
+      expect(decoded.width, 240);
+      expect(decoded.height, 240);
       expect(decoded.exif.isEmpty, isTrue);
       expect(decoded.textData, anyOf(isNull, isEmpty));
       expect(decoded.iccProfile, isNull);
@@ -71,6 +86,44 @@ void main() {
 
       expect(result.byteLength, lessThanOrEqualTo(profilePhotoTargetBytes));
       expect(result.encodingAttempts, lessThanOrEqualTo(6));
+      expect(
+        result.thumbnailBytes.length,
+        lessThanOrEqualTo(profilePhotoThumbnailTargetBytes),
+      );
+      // ignore: avoid_print
+      print(
+        'IMG01 textured source: full=${result.byteLength} bytes ${result.width}x${result.height}; small=${result.thumbnailBytes.length} bytes 160x160',
+      );
+    });
+
+    test('repository tutorial artwork measures real small/full dimensions and quality', () async {
+      // Repository-owned artwork only; no personal gallery image is copied.
+      final result = processProfilePhoto(
+        await File('assets/tutorial/garden-tools.webp').readAsBytes(),
+      );
+      final full = image.decodeWebP(result.bytes)!;
+      final small = image.decodeWebP(result.thumbnailBytes)!;
+      expect(full.width, 512);
+      expect(full.height, 512);
+      expect(small.width, 160);
+      expect(small.height, 160);
+      expect(result.bytes.length, lessThanOrEqualTo(profilePhotoMaxBytes));
+      expect(
+        result.thumbnailBytes.length,
+        lessThanOrEqualTo(profilePhotoThumbnailMaxBytes),
+      );
+      // ignore: avoid_print
+      print(
+        'IMG01 garden artwork: full=${result.byteLength} bytes, small=${result.thumbnailBytes.length} bytes, quality=${result.quality}',
+      );
+      const output = String.fromEnvironment('AVATAR_VARIANT_CAPTURE_DIR');
+      if (output.isNotEmpty) {
+        await Directory(output).create(recursive: true);
+        await File('$output/garden-avatar-full.webp')
+            .writeAsBytes(result.bytes);
+        await File('$output/garden-avatar-small.webp')
+            .writeAsBytes(result.thumbnailBytes);
+      }
     });
 
     test('corrupt input fails with a safe processing exception', () {

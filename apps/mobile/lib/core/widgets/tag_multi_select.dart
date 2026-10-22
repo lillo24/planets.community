@@ -41,6 +41,7 @@ class TagMultiSelect extends StatelessWidget {
     required this.keyPrefix,
     this.enabled = true,
     this.staged = false,
+    this.compact = false,
     super.key,
   });
 
@@ -55,6 +56,10 @@ class TagMultiSelect extends StatelessWidget {
   final String keyPrefix;
   final bool enabled;
   final bool staged;
+
+  // Static generic filters use a text summary and omit skill search/copy.
+  // Existing skill selectors retain their chips and searchable sheet.
+  final bool compact;
 
   List<TagMultiSelectOption> get _options => [
     for (final category in categories) ...category.options,
@@ -72,6 +77,7 @@ class TagMultiSelect extends StatelessWidget {
         initialSelection: selectedIds,
         keyPrefix: keyPrefix,
         staged: staged,
+        compact: compact,
         onImmediateChanged: staged ? null : onChanged,
       ),
     );
@@ -88,7 +94,9 @@ class TagMultiSelect extends StatelessWidget {
         .toList(growable: false);
     final visible = selected.take(2).toList(growable: false);
     final isEmpty = selected.isEmpty;
-    final selectionCount = l10n.skillSelectorSelectionCount(selected.length);
+    final selectionCount = compact
+        ? l10n.genericSelectionCount(selected.length)
+        : l10n.skillSelectorSelectionCount(selected.length);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,8 +105,12 @@ class TagMultiSelect extends StatelessWidget {
           key: Key('$keyPrefix-trigger'),
           button: true,
           enabled: enabled,
-          label: isEmpty ? '$emptyLabel. $selectionCount' : selectionCount,
-          excludeSemantics: isEmpty,
+          label: compact
+              ? '$label. ${isEmpty ? selectionCount : selected.map((option) => option.label).join(', ')}'
+              : isEmpty
+              ? '$emptyLabel. $selectionCount'
+              : selectionCount,
+          excludeSemantics: isEmpty || compact,
           child: InkWell(
             borderRadius: AppRadii.medium,
             onTap: enabled ? () => _open(context) : null,
@@ -109,11 +121,19 @@ class TagMultiSelect extends StatelessWidget {
                     ? FloatingLabelBehavior.never
                     : FloatingLabelBehavior.auto,
                 enabled: enabled,
+                isDense: compact ? true : null,
                 suffixIcon: const Icon(Icons.expand_more),
               ),
               isEmpty: isEmpty,
               child: isEmpty
                   ? const SizedBox(height: 24)
+                  : compact
+                  ? Text(
+                      selected.length == 1
+                          ? selected.single.label
+                          : selectionCount,
+                      key: Key('$keyPrefix-summary'),
+                    )
                   : Wrap(
                       key: Key('$keyPrefix-summary'),
                       spacing: AppSpacing.small,
@@ -169,12 +189,14 @@ class _TagMultiSelectSheet extends StatefulWidget {
     required this.keyPrefix,
     required this.staged,
     required this.onImmediateChanged,
+    required this.compact,
   });
 
   final List<TagMultiSelectCategory> categories;
   final Set<String> initialSelection;
   final String keyPrefix;
   final bool staged;
+  final bool compact;
   final ValueChanged<Set<String>>? onImmediateChanged;
 
   @override
@@ -259,20 +281,23 @@ class _TagMultiSelectSheetState extends State<_TagMultiSelectSheet> {
               ),
             ),
             const SizedBox(height: AppSpacing.medium),
-            TextField(
-              key: Key('${widget.keyPrefix}-search'),
-              controller: _search,
-              autofocus: false,
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                labelText: l10n.skillFilterSearch,
-                prefixIcon: const Icon(Icons.search),
+            if (!widget.compact)
+              TextField(
+                key: Key('${widget.keyPrefix}-search'),
+                controller: _search,
+                autofocus: false,
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  labelText: l10n.skillFilterSearch,
+                  prefixIcon: const Icon(Icons.search),
+                ),
+                onChanged: (_) => setState(() {}),
               ),
-              onChanged: (_) => setState(() {}),
-            ),
             const SizedBox(height: AppSpacing.small),
             Text(
-              l10n.skillSelectorSelectionCount(_selection.length),
+              widget.compact
+                  ? l10n.genericSelectionCount(_selection.length)
+                  : l10n.skillSelectorSelectionCount(_selection.length),
               key: Key('${widget.keyPrefix}-selection-count'),
               style: Theme.of(context).textTheme.labelLarge,
             ),

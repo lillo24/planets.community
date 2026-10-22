@@ -123,8 +123,9 @@ class FakeProfilePhotoGateway implements ProfilePhotoGateway {
   Future<ProfilePhotoCommit> commitOwnPhoto(
     String expectedProfileId,
     String objectPath,
-    ProfilePhotoAudience audience,
-  ) async {
+    ProfilePhotoAudience audience, {
+    String? thumbnailObjectPath,
+  }) async {
     commitIds.add(expectedProfileId);
     committedAudiences.add(audience);
     if (commitError case final error?) throw error;
@@ -134,12 +135,14 @@ class FakeProfilePhotoGateway implements ProfilePhotoGateway {
     final result = ProfilePhotoCommit(
       currentObjectPath: objectPath,
       previousObjectPath: photo?.objectPath,
+      previousThumbnailObjectPath: photo?.thumbnailObjectPath,
       audience: audience,
       updatedAt: now,
     );
     photo = OwnProfilePhoto(
       profileId: expectedProfileId,
       objectPath: objectPath,
+      thumbnailObjectPath: thumbnailObjectPath,
       audience: audience,
       createdAt: photo?.createdAt ?? now,
       updatedAt: now,
@@ -197,6 +200,7 @@ class FakeProfilePhotoPicker implements ProfilePhotoPicker {
 class FakeProfilePhotoProcessor implements ProfilePhotoProcessor {
   ProcessedProfilePhoto result = ProcessedProfilePhoto(
     bytes: avatarPngBytes(),
+    thumbnailBytes: avatarPngBytes(),
     width: 512,
     height: 512,
     quality: 82,
@@ -225,7 +229,7 @@ class FakeProfilePhotoPathGenerator implements ProfilePhotoPathGenerator {
   @override
   String newPath(String profileId) {
     calls++;
-    return path;
+    return calls.isEven ? path.replaceAll(".webp", "-thumbnail.webp") : path;
   }
 }
 

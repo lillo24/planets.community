@@ -70,7 +70,9 @@ domain verification and change-scoped validation tooling.
   deployment mode. See [the preflight](../docs/development/staging01-recovery-preflight.md).
 
 - `generate-database-types.mjs` writes the canonical public TypeScript schema
-  from the checkout's local Supabase stack. Never hand-edit its output.
+  from the checkout's local Supabase stack. Its tested nullability registry
+  corrects pg-meta's nullable result omissions, including CAT01 categories on
+  the six V2 listing/saved-search readers. Never hand-edit its output.
 - `generate-*-local-config.mjs` prepares local client configuration.
 - `official-starter-inventory.mjs` emits read-only preflight/catalog-diff SQL
   or verifies the actual anonymous public Workshop RPC. It has no mutation mode.
@@ -140,3 +142,10 @@ D→C populated upgrade checks, row/function preservation and genuine mixed repo
 unread checks. It serially resets only the explicitly disposable selected local
 stack. Its temporary migration-set journal and recovery steps are documented in
 [combined qualification](../docs/development/contact-discussion-integration.md).
+
+
+- `lib/profile-avatar-variant-verifier.mjs` extends the existing profile-photo
+  viewer gate with real local Auth/Storage checks for IMG01 immutable variants,
+  legacy RPC shapes, contextual authorization, Block, removal and byte ceilings.
+  It uses the viewer verifier's synthetic actors and restores their original
+  photo after its fixture checks. It does not use hosted accounts or service keys.

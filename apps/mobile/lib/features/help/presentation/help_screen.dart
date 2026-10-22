@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/page_app_bar.dart';
 import '../../../app/startup/tutorial_routes.dart';
@@ -8,18 +9,28 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../locations/data/municipality_data_license.dart';
 import 'help_routes.dart';
 import 'support_mail_action.dart';
+import '../../mock_mode/application/mock_mode_coordinator.dart';
+import '../../mock_mode/presentation/mock_mode_routes.dart';
 
-class HelpScreen extends StatelessWidget {
+class HelpScreen extends ConsumerWidget {
   const HelpScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     return HelpScaffold(
       key: const Key('help-screen'),
       title: l10n.helpTitle,
       fallback: '/',
       children: [
+        if (ref.watch(activeMockRealmProvider) &&
+            ref.watch(closedTestMockCapabilityProvider))
+          _HelpOption(
+            key: const Key('help-mock-accounts-action'),
+            icon: Icons.switch_account_outlined,
+            title: l10n.mockAccountsTitle,
+            onTap: () => context.push(MockModeRoutes.accounts),
+          ),
         _HelpOption(
           key: const Key('help-tutorial-action'),
           icon: Icons.explore_outlined,

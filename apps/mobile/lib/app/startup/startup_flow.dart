@@ -208,6 +208,7 @@ final startupFlowProvider = Provider<StartupFlow>(
       ref.read(tutorialRegistryProvider),
       ref.read(initialStartupPreferenceProvider),
     );
+    if (ref.read(initialStartupEnteredProvider)) flow.deferForExternalJourney();
     ref.onDispose(flow.dispose);
     return flow;
   },
@@ -215,5 +216,13 @@ final startupFlowProvider = Provider<StartupFlow>(
     startupPreferenceStoreProvider,
     initialStartupPreferenceProvider,
     tutorialRegistryProvider,
+    initialStartupEnteredProvider,
   ],
+);
+
+/// A committed realm return continues guest Home after root replacement. Cold
+/// launch and explicit logout retain their ordinary Welcome policy.
+final initialStartupEnteredProvider = Provider<bool>(
+  (ref) => false,
+  dependencies: const [],
 );

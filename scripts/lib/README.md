@@ -3,6 +3,11 @@
 This folder owns reusable Node.js helpers and their unit tests for repository
 tooling.
 
+- `release01.test.mjs` covers the separate `scripts/release/` module: migration
+  drift/approval and target guards, no-op retry, backend/Play failure boundaries,
+  original signing inputs, code/track selection, mock Publisher calls and Python
+  artifact validators. It never uploads a real bundle or mutates hosted staging.
+
 - `contact-native-evidence.test.mjs` exercises the actual CI evidence collector
   using tiny fictional temporary files: both driver manifests, secret redaction,
   unique checkpoint names and rejection of duplicate image-byte payloads.

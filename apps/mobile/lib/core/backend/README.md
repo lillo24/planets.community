@@ -3,6 +3,12 @@
 This folder owns small backend-facing primitives shared across mobile features.
 
 - `supabase_backend.dart` exposes the configured Supabase client through Riverpod.
+- `secure_session_storage.dart` owns confidential device credentials, separate
+  origin/root/request namespaces and acknowledged legacy normal-session migration.
+- `realm_transport.dart` binds captured gateways to their original origin,
+  fences normal product work during mock and tracks unresolved mutations without
+  recording payloads or invitation secrets. See
+  `docs/development/mock-mobile-sessions.md` for the complete owner inventory.
 - `owner_collection.dart` completes actor-bound Project/Tavolo/Resource owner RPC
   reads using 200-row UUID keyset pages below the configured 1,000-row API cap.
   Transport order is explicitly ascending to match each `gt` continuation.

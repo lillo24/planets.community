@@ -12,12 +12,17 @@ class EventSchedule extends StatelessWidget {
     this.endsAt,
     this.timeZone,
     this.showIcon = true,
+    this.viewerTimeZone,
     super.key,
   });
 
   final DateTime? startsAt;
   final DateTime? endsAt;
   final String? timeZone;
+
+  /// Optional explicit viewer zone; otherwise compare the device's UTC offsets
+  /// at both endpoints. Locale is never used to guess a person's timezone.
+  final String? viewerTimeZone;
 
   /// False when the enclosing section heading already supplies the calendar.
   final bool showIcon;
@@ -37,43 +42,102 @@ class EventSchedule extends StatelessWidget {
     }
     final locale = Localizations.localeOf(context).toLanguageTag();
     final sameDay = eventLocalDate(start, zone) == eventLocalDate(end, zone);
-    final date = DateFormat.yMMMMd(locale);
-    Widget endpoint(String label, DateTime instant) => Column(
+    final offsetsDiffer = eventOffsetsDiffer(start, end, zone);
+    final date = DateFormat.yMMMd(locale);
+    final startDate = date.format(eventUtcToWallTime(start, zone));
+    final endDate = date.format(eventUtcToWallTime(end, zone));
+    String clock(DateTime instant) =>
+        formatEventClock(instant, zone, locale, includeOffset: offsetsDiffer);
+    final semanticRange =
+        '${l.proposalStartLabel}: $startDate ${clock(start)}; '
+        '${l.proposalEndLabel}: $endDate ${clock(end)}';
+    final foreignZone = [start, end].any(
+      (instant) =>
+          eventTimeZoneOffset(instant, zone) !=
+          (viewerTimeZone == null
+              ? instant.toLocal().timeZoneOffset
+              : eventTimeZoneOffset(instant, viewerTimeZone!)),
+    );
+    final zoneCue = foreignZone && !offsetsDiffer
+        ? l.eventScheduleZone(eventTimeZoneLabel(start, zone))
+        : '';
+    Widget endpoint(DateTime instant, String text, String key) => Column(
+      key: ValueKey(key),
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: theme.textTheme.labelLarge),
-        Text(date.format(eventUtcToWallTime(instant, zone))),
-        Text(
-          formatEventClock(
-            instant,
-            zone,
-            locale,
-            includeOffset: eventOffsetsDiffer(start, end, zone),
-          ),
-          style: theme.textTheme.titleLarge,
-        ),
+        Text(text),
+        Text(clock(instant), style: theme.textTheme.titleMedium),
       ],
     );
     return ScheduleSurface(
       showIcon: showIcon,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (sameDay) ...[
-            Text(date.format(eventUtcToWallTime(start, zone))),
-            const SizedBox(height: AppSpacing.xSmall),
-            Text(
-              eventTimeRange(start, end, zone, locale),
-              style: theme.textTheme.titleLarge,
-            ),
-          ] else ...[
-            endpoint(l.proposalStartLabel, start),
-            const SizedBox(height: AppSpacing.medium),
-            endpoint(l.proposalEndLabel, end),
-          ],
-          const SizedBox(height: AppSpacing.small),
-          Text(zone, style: theme.textTheme.bodySmall),
-        ],
+      child: Semantics(
+        label: zoneCue.isEmpty ? semanticRange : '$semanticRange; $zoneCue',
+        child: ExcludeSemantics(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (sameDay)
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: '$startDate · '),
+                      TextSpan(
+                        text: '${clock(start)}–${clock(end)}',
+                        style: theme.textTheme.titleMedium,
+                      ),
+                    ],
+                  ),
+                )
+              else
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final horizontal =
+                        constraints.maxWidth >=
+                        MediaQuery.textScalerOf(context).scale(100) * 2 + 32;
+                    final first = endpoint(
+                      start,
+                      startDate,
+                      'event-schedule-start',
+                    );
+                    final last = endpoint(end, endDate, 'event-schedule-end');
+                    return horizontal
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: first),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 8),
+                                child: Icon(Icons.arrow_forward, size: 20),
+                              ),
+                              Expanded(child: last),
+                            ],
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              first,
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 4),
+                                child: Icon(Icons.arrow_downward, size: 20),
+                              ),
+                              last,
+                            ],
+                          );
+                  },
+                ),
+              // Offset changes are already explicit on each clock endpoint.
+              // A foreign device zone gets one friendly abbreviation/offset cue,
+              // without printing the raw IANA identifier on ordinary calendars.
+              if (zoneCue.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xSmall),
+                Text(zoneCue, style: theme.textTheme.bodySmall),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

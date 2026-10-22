@@ -37,7 +37,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     final card = find.byType(ProposalCard);
-    expect(find.textContaining('Full · 1 / 1 spots used'), findsOneWidget);
+    expect(find.textContaining('Full: 1/1 person'), findsOneWidget);
     expect(
       find.descendant(of: card, matching: find.byType(ProjectCapacityLabel)),
       findsOneWidget,
@@ -59,11 +59,11 @@ void main() {
     );
   });
 
-  testWidgets('low public counts show intended capacity and organizers only', (
+  testWidgets('low public counts show only the combined people capacity', (
     tester,
   ) async {
     await _pump(tester, capacityFixture(currentParticipantCount: 1));
-    expect(find.text('Up to 20 participants · +1 organizers'), findsOneWidget);
+    expect(find.text('Up to 21 people'), findsOneWidget);
     expect(find.textContaining(' / 20'), findsNothing);
     expect(find.textContaining('people involved'), findsNothing);
     expect(find.textContaining('spots remaining'), findsNothing);
@@ -80,7 +80,7 @@ void main() {
         countOrganizersTowardCapacity: true,
       ),
     );
-    expect(find.text('Capacity 20 · 3 organizers included'), findsOneWidget);
+    expect(find.text('Up to 20 people'), findsOneWidget);
     expect(find.textContaining('participants'), findsNothing);
     expect(find.textContaining('people involved'), findsNothing);
   });
@@ -91,13 +91,7 @@ void main() {
       await _pump(tester, capacityFixture(currentParticipantCount: 3));
       expect(find.textContaining('people involved'), findsNothing);
       await _pump(tester, capacityFixture(currentParticipantCount: 4));
-      expect(
-        find.text(
-          '4 / 20 participant spots used · +1 organizers · '
-          '5 unique people involved',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('5/21 people'), findsOneWidget);
     },
   );
 
@@ -112,13 +106,7 @@ void main() {
         countOrganizersTowardCapacity: true,
       ),
     );
-    expect(
-      find.text(
-        '5 / 20 spots used · 3 organizers included · '
-        '5 unique people involved',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('5/20 people'), findsOneWidget);
   });
 
   testWidgets('Full is visible below the normal social threshold', (
@@ -131,8 +119,8 @@ void main() {
         countOrganizersTowardCapacity: true,
       ),
     );
-    expect(find.textContaining('Full · 1 / 1 spots used'), findsOneWidget);
-    expect(find.textContaining('1 unique people involved'), findsOneWidget);
+    expect(find.textContaining('Full: 1/1 person'), findsOneWidget);
+    expect(find.textContaining('organizer'), findsNothing);
   });
 
   testWidgets('null capacity keeps its label and organizers until reveal', (
@@ -142,22 +130,13 @@ void main() {
       tester,
       capacityFixture(registrationCapacity: null, currentParticipantCount: 2),
     );
-    expect(
-      find.text('Registration capacity not set · +1 organizers'),
-      findsOneWidget,
-    );
+    expect(find.text('Registration capacity not set'), findsOneWidget);
     expect(find.textContaining('people involved'), findsNothing);
     await _pump(
       tester,
       capacityFixture(registrationCapacity: null, currentParticipantCount: 3),
     );
-    expect(
-      find.text(
-        'Registration capacity not set · +1 organizers · '
-        '4 unique people involved',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('4 people'), findsOneWidget);
   });
 
   testWidgets('managerExact keeps canonical values below public threshold', (
@@ -170,10 +149,7 @@ void main() {
       icon: false,
     );
     expect(
-      find.text(
-        '1 / 20 participant spots used · +1 organizers · '
-        '2 unique people involved',
-      ),
+      find.text('1 / 20 participant spots used\n1 organizer'),
       findsOneWidget,
     );
   });
@@ -186,18 +162,102 @@ void main() {
       capacityFixture(currentParticipantCount: 1),
       locale: const Locale('it'),
     );
-    expect(
-      find.text('Fino a 20 partecipanti · +1 organizzatori'),
-      findsOneWidget,
-    );
+    expect(find.text('Fino a 21 persone'), findsOneWidget);
     expect(find.textContaining('persone uniche coinvolte'), findsNothing);
     await _pump(
       tester,
       capacityFixture(countOrganizersTowardCapacity: true),
       locale: const Locale('it'),
     );
-    expect(find.text('Capienza 20 · 1 organizzatori inclusi'), findsOneWidget);
+    expect(find.text('Fino a 20 persone'), findsOneWidget);
   });
+  for (final locale in [const Locale('en'), const Locale('it')]) {
+    for (final included in [false, true]) {
+      testWidgets('$locale toggle $included combines multiple organizers', (
+        tester,
+      ) async {
+        await _pump(
+          tester,
+          capacityFixture(
+            registrationCapacity: 11,
+            currentParticipantCount: 4,
+            organizerCount: 3,
+            countOrganizersTowardCapacity: included,
+          ),
+          locale: locale,
+        );
+        expect(
+          find.text(
+            '7/${included ? 11 : 14} ${locale.languageCode == 'it' ? 'persone' : 'people'}',
+          ),
+          findsOneWidget,
+        );
+        expect(find.textContaining('+'), findsNothing);
+        expect(find.textContaining('·'), findsNothing);
+      });
+    }
+  }
+
+  testWidgets('hidden counts are absent from accessibility and wrap at 320dp', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('it'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: Scaffold(
+            body: ProjectCapacityLabel(
+              capacity: capacityFixture(
+                registrationCapacity: 100000,
+                organizerCount: 3,
+              ),
+              presentation: ProjectCapacityPresentation.public,
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Fino a 100003 persone'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'organizzator|0/|3/')), findsNothing);
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+  });
+
+  testWidgets(
+    'zero ordinary participants and organizer overlap use canonical social count',
+    (tester) async {
+      final row = {
+        'registration_capacity': 3,
+        'count_organizers_toward_capacity': true,
+        'current_participant_count': 2,
+        'ordinary_participant_count': 0,
+        'organizer_count': 3,
+        'capacity_used_count': 3,
+        'social_people_count': 3,
+        'spots_remaining': 0,
+        'is_full': true,
+      };
+      await _pump(tester, ProjectCapacitySnapshot.fromRow(row));
+      expect(find.text('Full: 3/3 people'), findsOneWidget);
+      await _pump(
+        tester,
+        ProjectCapacitySnapshot.fromRow(row),
+        presentation: ProjectCapacityPresentation.managerExact,
+      );
+      expect(
+        find.text('Full: 3 / 3 spots used\n3 organizers included'),
+        findsOneWidget,
+      );
+    },
+  );
 }
 
 Future<void> _pump(

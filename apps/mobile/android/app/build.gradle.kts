@@ -15,6 +15,23 @@ val uploadProperties = Properties().apply {
 val uploadStoreFile = uploadProperties.getProperty("storeFile")
     ?.takeIf { it.isNotBlank() }?.let { rootProject.file(it) }
 
+// Flutter 3.47 excludes native dev plugins from release. The reviewed CI-only
+// integration target needs its result channel while executing release code.
+// This flag never changes signing validation or ordinary distributable builds.
+val mockReleaseFixture = System.getenv("PLANETS_MOCK_RELEASE_QA") == "1"
+if (mockReleaseFixture) {
+    check(System.getenv("GITHUB_ACTIONS") == "true" &&
+        System.getenv("RUNNER_ENVIRONMENT") == "github-hosted" &&
+        System.getenv("RUNNER_OS") == "Linux" &&
+        project.findProperty("target")?.toString()?.replace('\\', '/')
+            ?.endsWith("integration_test/mock_realm_release_test.dart") == true) {
+        "The release integration plugin is restricted to the owned mock CI target."
+    }
+    dependencies {
+        add("releaseImplementation", project(":integration_test"))
+    }
+}
+
 android {
     namespace = "community.planets.app"
     compileSdk = flutter.compileSdkVersion
