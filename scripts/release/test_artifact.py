@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import struct
 import zipfile
-from artifact import validate_manifest, validate_jarsigner, verify_payloads, validate_build, native_alignment
+from artifact import validate_manifest, validate_jarsigner, verify_payloads, validate_build, native_alignment, mock_target, compiled_capability, scan_payload
 
 
 class ArtifactTests(unittest.TestCase):
@@ -44,12 +44,35 @@ class ArtifactTests(unittest.TestCase):
 
     def test_map_config_and_clean_provenance(self):
         flags = {"LOCATION_MAP_TILES_ENABLED": "true", "LOCATION_MAP_CENTERS_ENABLED": "true", "LOCATION_DETAIL_TILES_ENABLED": "true", "LOCATION_MAP_CACHE_SECONDS": "60", "LOCATION_EDITOR_SEARCH_ENABLED": "true", "LOCATION_BASEMAP_BUDGET_ENABLED": "true"}
-        build = {"source_commit": "a" * 40, "source_dirty": False, "backend": "https://cllpvruvrrvxczjitlqd.supabase.co", "defines": flags, "mode": "release", "target": "appbundle", "version_code": 13}
+        build = {"source_commit": "a" * 40, "source_dirty": False, "backend": "https://cllpvruvrrvxczjitlqd.supabase.co", "defines": flags, "mode": "release", "target": "appbundle", "version_code": 13, "mock": {"capability": False}}
         policy = {"budget_basemap": True}
         self.assertEqual(validate_build(13, policy, build, "a" * 40), flags)
         for changed in [{**build, "source_dirty": True}, {**build, "mock": {"capability": True}}, {**build, "mock": {"capability": False, "origin": "https://isolated.invalid"}}, {**build, "backend": "http://localhost"}, {**build, "defines": {**flags, "LOCATION_MAP_TILES_ENABLED": "false"}}, {**build, "version_code": 12}]:
             with self.assertRaises(ValueError):
                 validate_build(13, policy, changed, "a" * 40)
+
+    def test_compiled_capability_and_secret_scan(self):
+        for enabled in [False, True]:
+            marker = b"PLANETS_COMPILED_MOCK_V1=" + str(enabled).lower().encode()
+            broker = b"https://pnolarmzxmmjtguligfc.supabase.co/functions/v1/mock-personas"
+            data = marker + broker
+            self.assertEqual(compiled_capability(data, enabled), marker.decode())
+            for bad in [b"input manifest only", data + b"PLANETS_COMPILED_MOCK_V1=" + str(not enabled).lower().encode()]:
+                with self.assertRaises(ValueError):
+                    compiled_capability(bad, enabled)
+        for bad in [b"sb_secret_unsafe", b"eyJhbGciOiJIUzI1NiJ9.cGF5bG9hZA.signature"]:
+            with self.assertRaises(ValueError):
+                scan_payload(bad)
+        scan_payload(b"sb_publishable_public_only")
+
+    def test_closed_variant_provenance(self):
+        flags = {"LOCATION_MAP_TILES_ENABLED": "true", "LOCATION_MAP_CENTERS_ENABLED": "true", "LOCATION_DETAIL_TILES_ENABLED": "true", "LOCATION_MAP_CACHE_SECONDS": "60", "LOCATION_EDITOR_SEARCH_ENABLED": "true"}
+        build = {"source_commit": "a" * 40, "source_dirty": False, "backend": "https://cllpvruvrrvxczjitlqd.supabase.co", "defines": flags, "mode": "release", "target": "appbundle", "version_code": 14, "mock": mock_target("closed-test-mock")}
+        validate_build(14, {"budget_basemap": False}, build, "a" * 40, "closed-test-mock")
+        with self.assertRaises(ValueError):
+            validate_build(14, {"budget_basemap": False}, build, "a" * 40)
+        with self.assertRaises(ValueError):
+            validate_build(14, {"budget_basemap": False}, {**build, "mock": {"capability": True}}, "a" * 40, "closed-test-mock")
 
     def test_native_alignment(self):
         data = bytearray(128)

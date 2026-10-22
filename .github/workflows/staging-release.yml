@@ -1,12 +1,6 @@
 name: Staging and Play closed testing
 
 on:
-  pull_request:
-    paths:
-      - "scripts/release/**"
-      - "scripts/lib/release01.test.mjs"
-      - "docs/development/evidence/release01/migration-manifest.json"
-      - ".github/workflows/staging-release.yml"
   workflow_dispatch:
     inputs:
       operation:
@@ -14,39 +8,52 @@ on:
         type: choice
         options: [inspect, deploy, build, publish]
         default: inspect
+      release_variant:
+        description: "Closed testing Mock requires its isolated client configuration. Ordinary staging keeps Mock off."
+        type: choice
+        options: [closed-test-mock, staging]
+        default: closed-test-mock
   push:
     branches: [main]
     paths:
       - "supabase/migrations/**"
       - "supabase/functions/**"
       - "apps/mobile/**"
-      - "!apps/mobile/**/*.md"
       - "scripts/release/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/staging-release.yml"
+      - "!**/*.md"
+      - "!**/*.mdx"
 
 permissions:
   contents: read
 
+env:
+  RELEASE_VARIANT: ${{ inputs.release_variant || 'closed-test-mock' }}
+
 # One staging/Play writer. Do not cancel a migration or an accepted upload.
 concurrency:
-  group: planets-staging-and-play-${{ github.event_name == 'pull_request' && github.ref || 'writer' }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: planets-staging-and-play-writer
+  cancel-in-progress: false
 
 jobs:
   rehearse:
     name: Populated staging predecessor rehearsal
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
     if: >-
-      github.event_name == 'pull_request' ||
-      (github.ref == 'refs/heads/main' && vars.STAGING_RELEASE_ENABLED == 'true' &&
-        (github.event_name == 'push' || inputs.operation != 'inspect'))
+      github.ref == 'refs/heads/main' && vars.STAGING_RELEASE_ENABLED == 'true' &&
+      (github.event_name == 'push' || inputs.operation != 'inspect')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 24.20.0
@@ -55,7 +62,15 @@ jobs:
       - name: Rehearse exact non-contiguous staging history and no-op retry
         env:
           PLANETS_DISPOSABLE_QA: "1"
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/release/rehearse.mjs
+      - if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: staging-semantic-review-${{ github.run_id }}
+          path: build/release01/review-required.json
+          if-no-files-found: ignore
+          retention-days: 7
       - if: success()
         uses: actions/upload-artifact@v6
         with:
@@ -78,6 +93,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 24.20.0
@@ -93,6 +109,11 @@ jobs:
           retention-days: 30
 
   staging:
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      issues: read
     needs: [validate, rehearse]
     if: >-
       always() && github.ref == 'refs/heads/main' &&
@@ -106,14 +127,24 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 24.20.0
           cache: npm
       - run: npm ci
-      - name: Preflight, approved migration apply, backend verification
+      - uses: actions/download-artifact@v5
+        if: inputs.operation != 'inspect'
+        with:
+          name: release-rehearsal-${{ github.run_id }}
+          path: build/release01
+      - name: Preflight, classified migration apply, backend verification
         env:
-          OPERATION: ${{ inputs.operation || 'publish' }}
+          OPERATION: ${{ inputs.operation || 'deploy' }}
+          GH_TOKEN: ${{ github.token }}
+          STAGING_AUTOMATION_READY: ${{ vars.STAGING_AUTOMATION_READY }}
+          STAGING_RECOVERY_POLICY_JSON: ${{ vars.STAGING_RECOVERY_POLICY_JSON }}
+          RELEASE_REHEARSED_SHA: ${{ needs.rehearse.result == 'success' && github.sha || '' }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
           STAGING_CONFIG_JSON: ${{ secrets.STAGING_CONFIG_JSON }}
@@ -135,6 +166,7 @@ jobs:
             build/release01/preflight.json
             build/release01/backend.json
             build/release01/http-smoke.json
+            build/release01/safety.json
           retention-days: 30
       - name: Failure status
         if: failure()
@@ -144,8 +176,8 @@ jobs:
     needs: [validate, staging]
     if: >-
       needs.staging.result == 'success' &&
-      ((github.event_name == 'push' && vars.STAGING_AUTO_PUBLISH == 'true') ||
-        (github.event_name == 'workflow_dispatch' && (inputs.operation == 'build' || inputs.operation == 'publish')))
+      github.event_name == 'workflow_dispatch' &&
+      (inputs.operation == 'build' || inputs.operation == 'publish')
     environment: planets-android-build
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -153,6 +185,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 24.20.0
@@ -173,6 +206,7 @@ jobs:
           path: build/release01
       - name: Verify backend, sign and inspect the reviewable AAB
         env:
+          MOCK_CONFIG_JSON: ${{ secrets.MOCK_CONFIG_JSON }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           STAGING_CONFIG_JSON: ${{ secrets.STAGING_CONFIG_JSON }}
           ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
@@ -200,8 +234,7 @@ jobs:
     needs: android
     if: >-
       needs.android.result == 'success' &&
-      ((github.event_name == 'push' && vars.STAGING_AUTO_PUBLISH == 'true') ||
-        (github.event_name == 'workflow_dispatch' && inputs.operation == 'publish'))
+      github.event_name == 'workflow_dispatch' && inputs.operation == 'publish'
     # The verified AAB already exists before first-release owner approval.
     environment: planets-play-closed
     runs-on: ubuntu-latest
@@ -210,6 +243,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: 24.20.0

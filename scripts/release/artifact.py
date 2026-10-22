@@ -71,14 +71,39 @@ def verify_payloads(bundle):
         return len(payloads)
 
 
-def validate_build(code, policy, build_manifest, source_sha):
+def mock_target(variant):
+    if variant == "staging":
+        return {"capability": False}
+    if variant == "closed-test-mock":
+        return {"capability": True, "origin": "https://pnolarmzxmmjtguligfc.supabase.co",
+                "broker": "https://pnolarmzxmmjtguligfc.supabase.co/functions/v1/mock-personas",
+                "generation": "mock-world-2026-10-21-v1", "hosted_readiness_verified": False}
+    raise ValueError("Unknown release variant")
+
+
+def compiled_capability(data, enabled):
+    marker = b"PLANETS_COMPILED_MOCK_V1=" + (b"true" if enabled else b"false")
+    opposite = b"PLANETS_COMPILED_MOCK_V1=" + (b"false" if enabled else b"true")
+    if marker not in data or opposite in data:
+        raise ValueError("Compiled Mock capability is absent, conflicting or incorrect")
+    if enabled and b"https://pnolarmzxmmjtguligfc.supabase.co/functions/v1/mock-personas" not in data:
+        raise ValueError("Compiled mock broker is missing")
+    return marker.decode("ascii")
+
+
+def scan_payload(data):
+    if re.search(rb"sb_secret_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+", data):
+        raise ValueError("Privileged key or JWT found in AAB")
+
+
+def validate_build(code, policy, build_manifest, source_sha, variant="staging"):
     expected = {"LOCATION_MAP_TILES_ENABLED": "true", "LOCATION_MAP_CENTERS_ENABLED": "true",
                 "LOCATION_DETAIL_TILES_ENABLED": "true", "LOCATION_MAP_CACHE_SECONDS": "60",
                 "LOCATION_EDITOR_SEARCH_ENABLED": "true"}
     if policy["budget_basemap"]:
         expected["LOCATION_BASEMAP_BUDGET_ENABLED"] = "true"
     if (build_manifest.get("source_commit") != source_sha or build_manifest.get("source_dirty") is not False
-            or build_manifest.get("mock", {"capability": False}) != {"capability": False}
+            or build_manifest.get("mock") != mock_target(variant)
             or build_manifest.get("backend") != "https://cllpvruvrrvxczjitlqd.supabase.co"
             or build_manifest.get("defines") != expected or build_manifest.get("mode") != "release"
             or build_manifest.get("target") != "appbundle" or build_manifest.get("version_code") != code):
@@ -102,10 +127,10 @@ def native_alignment(data):
         raise ValueError("Missing ELF load segments")
 
 
-def inspect(bundle, code, policy, build_manifest, source_sha):
+def inspect(bundle, code, policy, build_manifest, source_sha, variant="staging"):
     if not re.fullmatch(r"[0-9a-f]{64}", policy.get("upload_certificate_sha256") or ""):
         raise ValueError("Missing verified original upload certificate SHA-256")
-    expected = validate_build(code, policy, build_manifest, source_sha)
+    expected = validate_build(code, policy, build_manifest, source_sha, variant)
     tool = Path("build/release01/bundletool.jar")
     tool.parent.mkdir(parents=True, exist_ok=True)
     if not tool.exists():
@@ -124,11 +149,18 @@ def inspect(bundle, code, policy, build_manifest, source_sha):
         raise ValueError("AAB does not match the original upload certificate")
     evidence.update({"sha256": hashlib.sha256(bundle.read_bytes()).hexdigest(), "source_sha": source_sha,
                      "upload_certificate_sha256": policy["upload_certificate_sha256"], "signed_payloads": verify_payloads(bundle),
-                     "backend": build_manifest["backend"], "map_defines": expected, "demos_enabled": False, "mock_capability": False})
+                     "backend": build_manifest["backend"], "map_defines": expected, "demos_enabled": False, "release_variant": variant,
+                     "mock_capability": mock_target(variant)["capability"], "mock": mock_target(variant)})
     with zipfile.ZipFile(bundle) as archive:
         libraries = [n for n in archive.namelist() if n.endswith("/libapp.so")]
         if not libraries or not all(build_manifest["backend"].encode() in archive.read(n) for n in libraries):
             raise ValueError("Staging origin absent from compiled app libraries")
+        evidence["compiled_capabilities"] = {
+            n: compiled_capability(archive.read(n), evidence["mock_capability"]) for n in libraries}
+        for name in archive.namelist():
+            if not name.endswith("/"):
+                scan_payload(archive.read(name))
+        evidence["all_payloads_scanned"] = True
         native = [n for n in archive.namelist() if n.startswith("base/lib/") and n.endswith(".so")]
         if set(n.split("/")[2] for n in native) != {"armeabi-v7a", "arm64-v8a", "x86_64"}:
             raise ValueError("Unexpected AAB ABI set")
@@ -144,7 +176,7 @@ if __name__ == "__main__":
     try:
         policy = json.loads(Path("scripts/release/policy.json").read_text(encoding="utf-8"))
         build = json.loads(Path("apps/mobile/build/map-live-staging/manifest.json").read_text(encoding="utf-8"))
-        result = inspect(Path(sys.argv[1]), int(sys.argv[2]), policy, build, os.environ["GITHUB_SHA"])
+        result = inspect(Path(sys.argv[1]), int(sys.argv[2]), policy, build, os.environ["GITHUB_SHA"], os.environ.get("RELEASE_VARIANT", "staging"))
         Path("build/release01/artifact.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
         print("Verified signed AAB; nonsecret evidence in build/release01/artifact.json")
     except (ValueError, OSError, KeyError, ET.ParseError, zipfile.BadZipFile, subprocess.SubprocessError):

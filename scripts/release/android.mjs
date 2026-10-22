@@ -11,6 +11,7 @@ import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { stagingRelease } from "./staging.mjs";
+import { releaseConfig } from "./config.mjs";
 import {
   playAccessToken,
   playClient,
@@ -54,28 +55,7 @@ export function prepareSigning(env, root) {
     if (!env[name])
       throw new ReleaseError(`Missing protected environment secret ${name}`);
   }
-  let config;
-  try {
-    config = JSON.parse(env.STAGING_CONFIG_JSON);
-  } catch {
-    throw new ReleaseError("Invalid staging config JSON");
-  }
-  if (
-    config.APP_ENV !== "staging" ||
-    config.SUPABASE_URL !== "https://cllpvruvrrvxczjitlqd.supabase.co" ||
-    config.ENABLE_DEMO_TOOLS !== "false" ||
-    (config.ENABLE_CLOSED_TEST_MOCK ?? "false") !== "false" ||
-    [
-      "MOCK_SUPABASE_URL",
-      "MOCK_SUPABASE_PUBLISHABLE_KEY",
-      "MOCK_PERSONA_BROKER_URL",
-      "MOCK_FIXTURE_GENERATION",
-    ].some((key) => (config[key] ?? "") !== "") ||
-    config.SENTRY_DSN !== ""
-  )
-    throw new ReleaseError(
-      "Release config must target staging, demos, Mock capability/endpoints and Sentry off",
-    );
+  const config = releaseConfig(env);
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(env.ANDROID_UPLOAD_KEYSTORE_BASE64))
     throw new ReleaseError("Invalid original upload keystore encoding");
   // Java Properties escapes every character, including newlines/backslashes.

@@ -14,8 +14,12 @@ concurrency:
 jobs:
   changes:
     name: Change classification
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
     outputs:
       mobile: ${{ steps.classify.outputs.mobile }}
       web: ${{ steps.classify.outputs.web }}
@@ -27,6 +31,42 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Enforce pre-merge staging migration risk policy
+        id: risk
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release/reviews.mjs
+      - name: Persist exact review request when needed
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: staging-migration-review-${{ github.run_id }}
+          path: build/release01/review-required.json
+          if-no-files-found: ignore
+          retention-days: 7
+      - uses: actions/setup-node@v7.0.0
+        if: steps.risk.outputs.rehearse == 'true'
+        with:
+          node-version: 24.20.0
+          cache: npm
+      - run: npm ci
+        if: steps.risk.outputs.rehearse == 'true'
+      - name: Prove populated migration and catalog semantics before merge
+        if: steps.risk.outputs.rehearse == 'true'
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release/rehearse.mjs
+      - name: Persist populated migration safety evidence
+        if: always() && steps.risk.outputs.rehearse == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: staging-premerge-safety-${{ github.run_id }}
+          path: |
+            build/release01/rehearsal.json
+            build/release01/review-required.json
+          if-no-files-found: ignore
+          retention-days: 30
       - name: Classify affected validation areas
         id: classify
         shell: bash

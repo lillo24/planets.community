@@ -1,5 +1,45 @@
 # RELEASE01 execution status
 
+## STAGING-AUTO01 update — 22 October 2026
+
+Repository safety implementation is ready for exact-head CI; activation is **disabled**.
+Local focused release tests: **41 passed**. Full tooling tests: **178 passed**.
+Formatting and actionlint 1.7.12 passed. Local Docker is unavailable; the
+disposable populated rehearsal and complete four-area Validation run in CI.
+A fresh read-only observation at main `97a215ca60dc35c30b4b9f652441bdb7c35937ba`
+found **123 applied / 126 canonical / three pending / zero drift**. See
+[metadata evidence](evidence/release01/staging-auto01-predecessor.json). The added
+ACTAPI catalogue migration is independently review-required; the bounded
+historical reconciliation still contains only the exact original avatar and
+notification files and remains disabled. No hosted migrations/data writes, AAB
+build/upload or Play publication are authorized or performed by STAGING-AUTO01.
+
+Live settings inspected by name: `STAGING_RELEASE_ENABLED=false`,
+`STAGING_AUTO_PUBLISH=false`; staging still requires its owner reviewer.
+Main protection was absent (GitHub API 404). Recovery workflow/policy, verified
+credentials/native-auto-deploy ownership and protected readiness are one-time
+activation requirements; none are claimed configured. The
+[existing runbook](release01-staging-play.md) gives exact owner steps and proof
+contracts. A code merge alone cannot activate automatic deployment.
+
+The older execution record below is retained as dated evidence; its 125-file
+snapshot and task-specific no-backup waiver do not describe today's pending set
+or authorize later SQL. The implementation PR checks and their artifacts are the source of truth for
+exact-head CI and rehearsal completion; this record does not imply deployment.
+
+## Historical RELEASE01 execution
+
+Release-path correction (22 October): the [runbook](release01-staging-play.md#explicit-android-build-variants)
+now defines an explicit Closed testing Mock variant and an ordinary staging variant.
+The historical report below describes the earlier Mock-off pipeline. Live Play
+inspection on 22 October found code 13 / 0.1.9 Active, uploaded as `13.aab`;
+the original file matches the normal local bundle (SHA-256
+`01c5a61458ccdbedb28711115e9738e65da923c5fabe29f49fbc112695371e94`).
+Its client config omitted the capability and mock endpoints, and all three compiled
+libraries lack the mock origin/broker. Code 13 is consumed; the replacement source
+version is 0.1.10+14, subject to a fresh inventory check before any upload.
+No Play write is authorized or performed by this correction.
+
 Recorded at 2026-10-21 22:02 UTC (22 October locally). Release plumbing is merged
 and the original approved 26 migrations are deployed. **The first RELEASE01 AAB
 is still blocked by two later main migrations awaiting owner approval.** No app
