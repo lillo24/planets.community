@@ -557,7 +557,7 @@ test("push never reaches Android/Play regardless of legacy auto-publish flag", (
     );
   assert.doesNotMatch(workflow, /vars.STAGING_AUTO_PUBLISH/);
   assert.match(publish, /environment: planets-play-closed/);
-  assert.equal(json("scripts/release/reconciliation.json").enabled, false);
+  assert.equal(json("scripts/release/reconciliation.json").enabled, true);
 });
 test("concurrent writer or changed independent history aborts before CLI apply", () => {
   const observed = [{ version: base.version, sha256: base.sha256 }];
