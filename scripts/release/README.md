@@ -20,7 +20,9 @@ diagnostics stay out of public Actions output.
   Only the dedicated isolated-Mock URL validator is excluded from normal-staging
   Edge inventory; ordinary builds reject Mock capability and endpoints.
 - `staging.mjs inspect|deploy|verify` performs identified preflight, approved CLI
-  apply and verification. Apply is supported only in the protected Linux runner.
+  apply and verification. Inspect verifies the actual 5432 DB secret through
+  certificate-validated TLS, a stable session and independent history agreement;
+  it retains sanitized booleans only. Apply is supported only in the protected Linux runner.
   It never repairs history, includes seeds/roles/Vault secrets or deploys Edge
   Functions. `--include-all` is restricted to one exactly approved historical file at a time.
 - `safety.mjs` owns the complete conservative SQL grammar, canonical inventory
@@ -30,10 +32,15 @@ diagnostics stay out of public Actions output.
   scopes its populated rehearsal and verifies owner issue-comment proof against
   exact pre-merge head/file/predecessor bytes again at deploy. It accepts no
   post-merge-created/edited authorization. No credentials or raw comments persist.
-- `recovery.mjs` verifies a fresh metadata-only receipt from a source-hash-pinned
-  main recovery workflow: encrypted/access-controlled DB **and Storage objects**,
-  restored against the exact predecessor. Missing one-time setup blocks writes;
-  the old task-specific waiver is not reused. It never downloads a real backup.
+- `recovery.mjs` requires explicit protected `STAGING_RECOVERY_MODE` for only the
+  identified normal staging target. `development-no-backup` accepts potential
+  development-data loss and records a sanitized `waived` result without fetching
+  or inventing restoration evidence. All SQL/security guards remain mandatory.
+  Switch to `verified-backup` before staging holds irreplaceable data: that mode
+  verifies the existing fresh metadata-only receipt from a source-hash-pinned
+  main recovery workflow for encrypted/access-controlled DB **and Storage objects**,
+  restored against the exact predecessor. Missing/unknown mode or invalid verified
+  recovery setup blocks writes. It never downloads a real backup.
 - `writer.mjs` checks protected readiness, exact tested/rehearsed/current main,
   the whole mixed set, independent history, advisory lock and recovery before
   per-file CLI dry/apply. It retains only safe evidence and never repairs history.

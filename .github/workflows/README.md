@@ -220,17 +220,24 @@ workflow and dependency changes (and full manual Validation). Unrelated PRs skip
 that expensive step without leaving a required status pending. No duplicate PR
 rehearsal runs in the release workflow. SQL history edits/deletions fail closed.
 
-After one-time protected recovery/credential/environment setup, main pushes run
+After one-time protected recovery-mode/credential/environment setup, main pushes run
 exact-source complete Validation, populated rehearsal and serialized staging SQL
 only. Routine nullable-column candidates need real catalog/data preservation;
 other SQL needs owner proof bound to the pre-merge head/hash/predecessor. The
 writer independently rechecks that proof, so merging a failed gate cannot erase
 it. Fresh main, history parity, TLS, advisory lock and backend checks remain.
+Protected staging `STAGING_RECOVERY_MODE=development-no-backup` explicitly waives
+backup/restore for current development staging, without waiving any SQL/security
+check. Missing/unknown mode blocks writes; `verified-backup` retains the genuine
+DB-and-Storage restore receipt path. Read-only `inspect` proves the actual DB
+secret's certificate-validated 5432 session and independent history agreement
+before protected readiness is enabled. Switch to verified backups before storing
+irreplaceable user data.
 
 Android/Play jobs require explicit manual `build`/`publish` dispatch, regardless
 of `STAGING_AUTO_PUBLISH`. Keep that variable false and the separate publication
 reviewer. No live variables, secrets or environment rules change by code merge.
 The [runbook](../../docs/development/release01-staging-play.md) owns classification,
-one-time activation, real encrypted DB **and Storage-object** recovery, bounded
+one-time activation, temporary staging waiver or real encrypted DB **and Storage-object** recovery, bounded
 two-file reconciliation and incident steps. Current external blockers and the
 123/126 read-only observation are in the existing release status.

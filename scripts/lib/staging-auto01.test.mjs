@@ -20,10 +20,13 @@ import {
   assertRecovery,
   recoveryReceipt,
   verifiedRecovery,
+  assertStagingRecoveryMode,
+  stagingRecovery,
 } from "../release/recovery.mjs";
 import {
   assertDeployContext,
   assertWriterSnapshot,
+  writeStaging,
 } from "../release/writer.mjs";
 import {
   deploymentSet,
@@ -31,7 +34,10 @@ import {
   STAGING_REF,
 } from "../release/migrations.mjs";
 import { sha256 } from "../release/sql-fingerprint.mjs";
-import { assertDatabaseUrl } from "../release/staging.mjs";
+import {
+  assertDatabaseUrl,
+  inspectSessionConnection,
+} from "../release/staging.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const json = (path) => JSON.parse(readFileSync(resolve(root, path), "utf8"));
@@ -410,6 +416,135 @@ const receipt = () => ({
   database_sha256: hash,
   storage_objects_sha256: hash,
 });
+const stagingConfig = JSON.stringify({
+  APP_ENV: "staging",
+  SUPABASE_URL: `https://${STAGING_REF}.supabase.co`,
+});
+const waiverEnv = {
+  STAGING_RECOVERY_MODE: "development-no-backup",
+  STAGING_CONFIG_JSON: stagingConfig,
+};
+
+test("explicit development staging waiver never fetches or fabricates recovery proof", async () => {
+  const forbidden = () => {
+    assert.fail("Development mode must not fetch backup/restore receipts");
+  };
+  const expected = {
+    mode: "development-no-backup",
+    status: "waived",
+    project_ref: STAGING_REF,
+    predecessor_inventory_sha256: hash,
+    data_loss_accepted: true,
+  };
+  for (let merge = 0; merge < 2; merge++) {
+    const evidence = await stagingRecovery(
+      { ...waiverEnv, STAGING_RECOVERY_POLICY_JSON: "unused invalid policy" },
+      forbidden,
+      hash,
+      STAGING_REF,
+      forbidden,
+    );
+    assert.deepEqual(evidence, expected);
+    assert.doesNotMatch(
+      JSON.stringify(evidence),
+      /restored|completed_at|database_sha256|storage_objects_sha256|workflow_run_id|policy_id/,
+    );
+    assert.equal(authorize(scenario())[0].authorization, "routine-verified");
+  }
+});
+
+test("missing or unknown mode and non-staging targets fail closed before recovery access", async () => {
+  const forbidden = () => assert.fail("Invalid mode/target must not fetch");
+  for (const mode of [
+    undefined,
+    "",
+    "no-backup",
+    "production",
+    "VERIFIED-BACKUP",
+  ])
+    assert.throws(() =>
+      assertStagingRecoveryMode(
+        { ...waiverEnv, STAGING_RECOVERY_MODE: mode },
+        STAGING_REF,
+      ),
+    );
+  for (const project of [undefined, "production", "pnolarmzxmmjtguligfc"])
+    await assert.rejects(
+      stagingRecovery(waiverEnv, forbidden, hash, project, forbidden),
+      /restricted to planets-staging/,
+    );
+  for (const config of [
+    "invalid",
+    "null",
+    JSON.stringify({
+      APP_ENV: "production",
+      SUPABASE_URL: `https://${STAGING_REF}.supabase.co`,
+    }),
+    JSON.stringify({
+      APP_ENV: "staging",
+      SUPABASE_URL: "https://pnolarmzxmmjtguligfc.supabase.co",
+    }),
+  ])
+    await assert.rejects(
+      stagingRecovery(
+        { ...waiverEnv, STAGING_CONFIG_JSON: config },
+        forbidden,
+        hash,
+        STAGING_REF,
+        forbidden,
+      ),
+    );
+  await assert.rejects(
+    stagingRecovery(
+      waiverEnv,
+      forbidden,
+      "invalid predecessor",
+      STAGING_REF,
+      forbidden,
+    ),
+    /observed predecessor/,
+  );
+});
+
+test("waiving recovery preserves exact-source rehearsal, review and historical reconciliation guards", async () => {
+  await stagingRecovery(waiverEnv, () => assert.fail(), hash, STAGING_REF);
+  const risky = scenario("grant select on private.items to anon;");
+  assert.throws(() => authorize(risky), /pre-merge owner review/);
+  for (const mutate of [
+    (s) => {
+      s.evidence.source_sha = "c".repeat(40);
+    },
+    (s) => {
+      s.witness.preserved_rows = false;
+    },
+    (s) => {
+      s.witness.routine_security_preserved = false;
+    },
+    (s) => {
+      s.witness.predecessor_inventory_sha256 = hash;
+    },
+    (s) => {
+      s.diff.pending[0].sha256 = hash;
+    },
+    (s) => {
+      s.diff.pending[0].historical = true;
+    },
+    (s) => {
+      s.diff.drift.push({ reason: "unexpected live history" });
+    },
+  ]) {
+    const s = scenario();
+    mutate(s);
+    assert.throws(() => authorize(s));
+  }
+});
+
+test("zero-pending writer is a no-op without a recovery setting or receipt", async () => {
+  const remote = [{ version: base.version }],
+    diff = { pending: [] };
+  assert.deepEqual(await writeStaging({ remote, diff }), { remote, diff });
+});
+
 test("recovery needs fresh restore evidence for BOTH encrypted DB and actual Storage objects", () => {
   const now = Date.parse("2026-10-22T12:00:00Z");
   assert.equal(
@@ -508,6 +643,85 @@ function zipReceipt(data) {
   end.writeUInt32LE(local.length + name.length + body.length, 16);
   return Buffer.concat([local, name, body, central, name, end]);
 }
+
+test("verified-backup mode retains the trusted workflow and genuine fresh restoration contract", async () => {
+  const workflow = "owner-reviewed recovery workflow",
+    workflowHash = sha256(workflow);
+  const env = {
+    ...waiverEnv,
+    STAGING_RECOVERY_MODE: "verified-backup",
+    STAGING_RECOVERY_POLICY_JSON: JSON.stringify({
+      ...policy,
+      workflow_sha256: workflowHash,
+    }),
+    GITHUB_REPOSITORY: "lillo24/planets.community",
+    GH_TOKEN: "fictional",
+  };
+  let currentReceipt = { ...receipt(), completed_at: new Date().toISOString() };
+  let fetched = 0;
+  const api = async (path) =>
+    path.includes("/runs?")
+      ? {
+          workflow_runs: [
+            {
+              id: 19,
+              head_branch: "main",
+              head_repository: { full_name: env.GITHUB_REPOSITORY },
+              conclusion: "success",
+              event: "schedule",
+              head_sha: source,
+            },
+          ],
+        }
+      : path.includes("/contents/")
+        ? {
+            encoding: "base64",
+            content: Buffer.from(workflow).toString("base64"),
+          }
+        : {
+            artifacts: [
+              {
+                id: 4,
+                name: "staging-recovery-receipt",
+                expired: false,
+                size_in_bytes: 1000,
+              },
+            ],
+          };
+  const fetcher = async () => {
+    fetched++;
+    return new Response(zipReceipt(currentReceipt));
+  };
+  const result = await stagingRecovery(env, api, hash, STAGING_REF, fetcher);
+  assert.equal(fetched, 1);
+  assert.equal(result.mode, "verified-backup");
+  assert.equal(result.status, "verified");
+  assert.equal(result.database_restored, true);
+  assert.equal(result.storage_objects_restored, true);
+  assert.equal(result.workflow_run_id, 19);
+  for (const invalid of [
+    { ...currentReceipt, database_restored: false },
+    { ...currentReceipt, storage_objects_restored: false },
+    { ...currentReceipt, completed_at: "2020-01-01T00:00:00Z" },
+    { ...currentReceipt, predecessor_inventory_sha256: "c".repeat(64) },
+  ]) {
+    currentReceipt = invalid;
+    await assert.rejects(
+      stagingRecovery(env, api, hash, STAGING_REF, fetcher),
+      /backup\/restore evidence/,
+    );
+  }
+  await assert.rejects(
+    stagingRecovery(
+      { ...env, STAGING_RECOVERY_POLICY_JSON: undefined },
+      api,
+      hash,
+      STAGING_REF,
+      fetcher,
+    ),
+    /STAGING_RECOVERY_POLICY_JSON/,
+  );
+});
 test("only one bounded metadata ZIP receipt is accepted without disk extraction", () => {
   assert.deepEqual(recoveryReceipt(zipReceipt(receipt())), receipt());
   for (const invalid of [
@@ -534,7 +748,8 @@ test("writer requires exact tested/rehearsed main, one-time readiness and creden
     STAGING_AUTOMATION_READY: "true",
     GH_TOKEN: "fictional",
     SUPABASE_ACCESS_TOKEN: "fictional",
-    STAGING_CONFIG_JSON: "fictional",
+    STAGING_CONFIG_JSON: stagingConfig,
+    STAGING_RECOVERY_MODE: "development-no-backup",
   };
   assert.doesNotThrow(() => assertDeployContext(env));
   for (const key of Object.keys(env)) {
@@ -542,6 +757,15 @@ test("writer requires exact tested/rehearsed main, one-time readiness and creden
     delete bad[key];
     assert.throws(() => assertDeployContext(bad));
   }
+  for (const change of [
+    { GITHUB_REF: "refs/heads/production" },
+    { RELEASE_VALIDATED_SHA: "c".repeat(40) },
+    { RELEASE_REHEARSED_SHA: "c".repeat(40) },
+    { STAGING_DEPLOYMENT_OWNER: "supabase" },
+    { STAGING_AUTOMATION_READY: "false" },
+    { STAGING_RECOVERY_MODE: "implicit-waiver" },
+  ])
+    assert.throws(() => assertDeployContext({ ...env, ...change }));
 });
 test("push never reaches Android/Play regardless of legacy auto-publish flag", () => {
   const workflow = readFileSync(
@@ -617,4 +841,102 @@ test("session lock cannot silently use the transaction pooler port", () => {
   );
   assert.throws(() => assertDatabaseUrl(`${route}:6543/postgres`));
   assert.throws(() => assertDatabaseUrl(`${route}/postgres#unexpected`));
+});
+
+test("read-only inspect proves certificate-validated TLS, one session and matching independent history", async () => {
+  const env = {
+    STAGING_DB_URL: `postgres://postgres.${STAGING_REF}:fictional@aws-1-eu-west-1.pooler.supabase.com:5432/postgres`,
+  };
+  let session = {
+    database_name: "postgres",
+    database_role: "postgres",
+    backend_pid: 42,
+    tls: true,
+  };
+  let direct = [],
+    ended = false,
+    changedSession = false;
+  const connect = (url, options) => {
+    assert.match(url, /sslmode=verify-full/);
+    assert.deepEqual(options.ssl, { rejectUnauthorized: true });
+    assert.equal(options.max, 1);
+    assert.equal(options.connect_timeout, 15);
+    assert.deepEqual(options.connection, { statement_timeout: 15000 });
+    let calls = 0;
+    return {
+      unsafe: async (query) => {
+        assert.match(query, /^select /);
+        if (query.includes("schema_migrations")) return direct;
+        calls++;
+        return [
+          {
+            ...session,
+            ...(calls === 2 && changedSession && { backend_pid: 43 }),
+          },
+        ];
+      },
+      end: async () => {
+        ended = true;
+      },
+    };
+  };
+  assert.deepEqual(await inspectSessionConnection(env, [], connect), {
+    tls_verified: true,
+    session_verified: true,
+    history_matches: true,
+    port: 5432,
+  });
+  assert.equal(ended, true);
+  for (const invalid of [
+    { ...session, tls: false },
+    { ...session, database_name: "other" },
+    { ...session, database_role: "other" },
+  ]) {
+    session = invalid;
+    ended = false;
+    await assert.rejects(
+      inspectSessionConnection(env, [], connect),
+      /session\/TLS/,
+    );
+    assert.equal(ended, true);
+  }
+  session = {
+    database_name: "postgres",
+    database_role: "postgres",
+    backend_pid: 42,
+    tls: true,
+  };
+  changedSession = true;
+  await assert.rejects(
+    inspectSessionConnection(env, [], connect),
+    /session\/TLS/,
+  );
+  changedSession = false;
+  direct = [
+    { version: base.version, name: "fixture", statements: ["select 1"] },
+  ];
+  await assert.rejects(
+    inspectSessionConnection(env, [], connect),
+    /independent migration history/,
+  );
+  await assert.rejects(
+    inspectSessionConnection(
+      { STAGING_DB_URL: env.STAGING_DB_URL.replace(":5432/", ":6543/") },
+      [],
+      connect,
+    ),
+  );
+  await assert.rejects(
+    inspectSessionConnection(env, [], () => ({
+      unsafe: async () => {
+        throw new Error("fictional secret provider payload");
+      },
+      end: async () => {},
+    })),
+    (error) => {
+      assert.match(error.message, /verify STAGING_DB_URL credentials/);
+      assert.doesNotMatch(error.message, /fictional secret provider payload/);
+      return true;
+    },
+  );
 });

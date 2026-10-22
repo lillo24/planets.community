@@ -105,10 +105,10 @@ Routine verified migrations need no comment or ongoing safe-manifest ritual.
 
 ## One-time owner activation (not performed by this implementation)
 
-Keep `STAGING_RELEASE_ENABLED=false`, `STAGING_AUTOMATION_READY` unset/false and
-`STAGING_AUTO_PUBLISH=false` until all items below are verified. As observed on
-22 October, main had **no branch protection** and `planets-staging` retained its
-owner reviewer; those are activation blockers, not settings changed by this PR.
+Keep `STAGING_AUTOMATION_READY` unset/false until all items below are verified;
+leave `STAGING_AUTO_PUBLISH=false`. Code merge does not change live settings.
+Recheck current main protection and environment rules rather than treating the
+earlier release audit as current evidence.
 
 1. In GitHub **Settings → Rules → Rulesets** (or Branches), protect `main`:
    require PRs, no force pushes/deletion, no bypass for the automation identity,
@@ -119,16 +119,23 @@ owner reviewer; those are activation blockers, not settings changed by this PR.
    changes owner-reviewed; standing routine authorization never authorizes
    weakening its own guard. Do not require the separately triggered post-merge
    workflow as a universal PR status. Review exact final-head logs before merge.
-2. Establish the trusted recovery route below. Verify credentials, restore
-   evidence and main-only environment restrictions before removing any reviewer.
+2. Select protected staging variable `STAGING_RECOVERY_MODE` explicitly:
+   `development-no-backup` accepts potential loss of current development staging
+   data, or `verified-backup` requires the genuine recovery route below. Missing
+   or unknown values block SQL. Verify credentials and main-only environment
+   restrictions before removing any reviewer. The temporary mode needs no R2,
+   backup job, restore rehearsal or per-migration waiver approval.
 3. In Supabase **Project Settings → Integrations**, confirm native GitHub
    migration deployment is disabled for `planets-staging`. Keep one writer:
    staging environment variable `STAGING_DEPLOYMENT_OWNER=github-actions`.
 4. Under GitHub **Settings → Environments**, retain `planets-staging`,
    `planets-android-build`, `planets-play-closed`, selected deployment branch
    `main` only, no tags. Keep the Play owner reviewer and disable bypass where
-   supported. Only after the gates/recovery/credentials are verified, remove
-   the **staging** required reviewer; do not create an unprotected replacement.
+   supported. Only after the gates/recovery-mode/credentials are verified, open
+   **planets-staging → Deployment protection rules → Required reviewers**, remove
+   the staging reviewer and save. Retain its selected `main` branch restriction
+   and no admin bypass. Keep the **planets-play-closed** reviewer unchanged;
+   do not create an unprotected replacement environment.
 5. Only staging credentials are required to activate automatic SQL. Android/Play
    credentials below are needed solely for later manual app delivery.
    Provision secrets through those environment settings or owner-run
@@ -147,20 +154,39 @@ owner reviewer; those are activation blockers, not settings changed by this PR.
 6. Review the bounded historical catch-up below in a **new enabling PR**. Do not
    reuse the old `BOOTSTRAP_MANIFEST_SHA256` or task-specific waiver as blanket
    approval. This code PR leaves reconciliation disabled and grants no review.
-7. Set protected staging `STAGING_RECOVERY_POLICY_JSON` and
-   `STAGING_AUTOMATION_READY=true` only after the route below is operational.
-   Set repository `STAGING_RELEASE_ENABLED=true` last. Dispatch `inspect`, check
-   sanitized identity/history/backend evidence, then `deploy` from current main.
-   This is owner activation, outside STAGING-AUTO01 execution authorization.
+7. For `verified-backup` only, configure real `STAGING_RECOVERY_POLICY_JSON` and
+   fresh restoration evidence. For `development-no-backup`, leave that policy
+   unset; do not invent receipt values. Set repository
+   `STAGING_RELEASE_ENABLED=true` to dispatch `inspect` while protected readiness
+   remains false. Inspect requires the actual `STAGING_DB_URL`: certificate-validated
+   TLS on port 5432, a stable backend session and exact history agreement with the
+   Management API; only sanitized booleans are retained in `preflight.json`.
+   Connection startup and each SQL statement are bounded to 15 seconds.
+   Check identity/history/backend evidence, then set protected staging
+   `STAGING_AUTOMATION_READY=true` after all prerequisites pass and dispatch
+   `deploy` from current main. A missing/broken secret blocks inspection and
+   writes; its name alone is not connection proof.
    Subsequent eligible main pushes need no environment reviewer prompt.
 
 ### Recovery contract
 
-No adequate backup/restore route has been configured or verified by this task.
-The old 26-file “No backup is fine” waiver remains historical evidence only.
-No paid tier, new account or recurring expenditure is assumed. The owner must
-choose an existing access-controlled destination and isolated restore target,
-then implement/review `.github/workflows/staging-recovery.yml` on protected main:
+`STAGING_RECOVERY_MODE=development-no-backup` is a standing, staging-only acceptance
+of potential data loss for `planets-staging` (`cllpvruvrrvxczjitlqd`). It does not
+mean that staging is empty, permit resets/destructive SQL, authorize unreviewed
+SQL, or extend the original bootstrap or bounded historical reconciliation.
+All exact-source CI, populated upgrade preservation, review, TLS/session-lock,
+history, RLS/Storage and deployment-owner checks still apply. The safety artifact
+records `mode: "development-no-backup"`, `status: "waived"`, the staging reference
+and predecessor digest, and `data_loss_accepted: true`; it contains no backup
+hash, restore timestamp or claim of restored data. No recovery workflow is called.
+The same protected setting applies across routine eligible merges without a new
+waiver file or approval. It cannot activate Mock, production or app-store actions.
+
+The owner must switch to `verified-backup` **before staging holds irreplaceable
+user data**. No backup/restore infrastructure is configured by this code change.
+For that future mode, choose an existing access-controlled destination and
+isolated restore target, then implement/review
+`.github/workflows/staging-recovery.yml` on protected main:
 
 - Capture the identified staging DB schema/data (including Auth/private and
   Storage metadata) **and actual Storage objects** with a consistent recovery
@@ -179,7 +205,8 @@ then implement/review `.github/workflows/staging-recovery.yml` on protected main
   Run on main by schedule or owner dispatch frequently enough for the selected
   freshness bound. No per-migration founder waiver is needed.
 
-Configure protected environment variable `STAGING_RECOVERY_POLICY_JSON` once:
+For `STAGING_RECOVERY_MODE=verified-backup`, configure protected environment
+variable `STAGING_RECOVERY_POLICY_JSON` once:
 
 ```json
 {
@@ -219,7 +246,8 @@ is deliberately distinct from the remote raw-statement predecessor digest.
 The writer checks the latest successful trusted main recovery workflow, its
 pinned source hash, one unexpired bounded metadata ZIP, exact policy/target and
 observed predecessor, fresh/non-future timestamp and both restore results.
-Missing/changed/stale evidence stops before SQL. Recovery runs use credentials
+Missing/changed/stale evidence stops before SQL in verified-backup mode; there is
+no fallback to the development waiver. Recovery runs use credentials
 scoped separately; this workflow never downloads real backups or decryption keys.
 Any recovery code/policy change needs owner review and a new pinned hash.
 

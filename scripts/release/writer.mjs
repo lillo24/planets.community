@@ -25,7 +25,7 @@ import {
   assertRoutineTargets,
 } from "./safety.mjs";
 import { githubClient, deploymentReviews } from "./reviews.mjs";
-import { verifiedRecovery } from "./recovery.mjs";
+import { assertStagingRecoveryMode, stagingRecovery } from "./recovery.mjs";
 
 export function assertDeployContext(env) {
   if (
@@ -44,6 +44,7 @@ export function assertDeployContext(env) {
     throw new ReleaseError(
       "Staging writes require exact tested/rehearsed main, protected one-time readiness, credentials and the single GitHub owner",
     );
+  assertStagingRecoveryMode(env, STAGING_REF);
 }
 function currentMain(env) {
   const result = spawnSync("git", ["ls-remote", "origin", "refs/heads/main"], {
@@ -154,12 +155,13 @@ export async function writeStaging({
     const fresh = summarizeHistory(await api.query(historyQuery));
     assertWriterSnapshot(lock.acquired, direct, fresh, remote);
     currentMain(env);
-    const recovery = await verifiedRecovery(
+    const recovery = await stagingRecovery(
       env,
       proofApi,
       inventoryDigest(
         local.filter((m) => !pending.some((p) => p.version === m.version)),
       ),
+      diff.project_ref,
     );
     const predecessorChecks = (
       await api.query(verificationQuery(root, policy.budget_basemap))

@@ -143,6 +143,7 @@ jobs:
           OPERATION: ${{ inputs.operation || 'deploy' }}
           GH_TOKEN: ${{ github.token }}
           STAGING_AUTOMATION_READY: ${{ vars.STAGING_AUTOMATION_READY }}
+          STAGING_RECOVERY_MODE: ${{ vars.STAGING_RECOVERY_MODE }}
           STAGING_RECOVERY_POLICY_JSON: ${{ vars.STAGING_RECOVERY_POLICY_JSON }}
           RELEASE_REHEARSED_SHA: ${{ needs.rehearse.result == 'success' && github.sha || '' }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

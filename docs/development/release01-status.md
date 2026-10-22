@@ -1,5 +1,19 @@
 # RELEASE01 execution status
 
+## STAGING-AUTO02 implementation — 22 October 2026
+
+The release writer now requires explicit protected `STAGING_RECOVERY_MODE`:
+`development-no-backup` permits properly reviewed/validated development-staging
+SQL without backup infrastructure and records recovery as waived;
+`verified-backup` retains genuine fresh DB-and-Storage restoration proof. The
+temporary waiver never authorizes destructive/unreviewed SQL, resets, Mock,
+production or app-store operations. All other deployment checks remain required.
+Read-only `inspect` verifies the actual staging DB secret through certificate-
+validated TLS and a stable 5432 session with independent history agreement.
+The [runbook](release01-staging-play.md) owns one-time activation and switching
+to verified backups before staging holds irreplaceable user data. Code merge
+alone does not configure credentials, live gates or migration review evidence.
+
 ## STAGING-AUTO01 update — 22 October 2026
 
 Repository safety implementation is ready for exact-head CI; activation is **disabled**.
@@ -16,7 +30,7 @@ build/upload or Play publication are authorized or performed by STAGING-AUTO01.
 
 Live settings inspected by name: `STAGING_RELEASE_ENABLED=false`,
 `STAGING_AUTO_PUBLISH=false`; staging still requires its owner reviewer.
-Main protection was absent (GitHub API 404). Recovery workflow/policy, verified
+Main protection was absent in that historical audit (GitHub API 404). Recovery workflow/policy, verified
 credentials/native-auto-deploy ownership and protected readiness are one-time
 activation requirements; none are claimed configured. The
 [existing runbook](release01-staging-play.md) gives exact owner steps and proof

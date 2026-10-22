@@ -3,6 +3,61 @@ import { inflateRawSync } from "node:zlib";
 import { sha256 } from "./sql-fingerprint.mjs";
 import { STAGING_REF } from "./migrations.mjs";
 
+// The protected setting waives recovery only for the identified development
+// staging database. It never authorizes SQL or changes client release variants.
+export function assertStagingRecoveryMode(env, projectRef) {
+  let config;
+  try {
+    config = JSON.parse(env.STAGING_CONFIG_JSON);
+  } catch {
+    throw new ReleaseError(
+      "Recovery mode requires the identified staging config",
+    );
+  }
+  if (
+    projectRef !== STAGING_REF ||
+    config?.APP_ENV !== "staging" ||
+    config.SUPABASE_URL !== `https://${STAGING_REF}.supabase.co`
+  )
+    throw new ReleaseError("Recovery mode is restricted to planets-staging");
+  if (
+    !["development-no-backup", "verified-backup"].includes(
+      env.STAGING_RECOVERY_MODE,
+    )
+  )
+    throw new ReleaseError(
+      "Set protected STAGING_RECOVERY_MODE to development-no-backup or verified-backup before staging writes",
+    );
+  return env.STAGING_RECOVERY_MODE;
+}
+
+export async function stagingRecovery(
+  env,
+  api,
+  predecessor,
+  projectRef,
+  fetcher = fetch,
+) {
+  const mode = assertStagingRecoveryMode(env, projectRef);
+  if (!/^[a-f0-9]{64}$/.test(predecessor ?? ""))
+    throw new ReleaseError(
+      "Recovery mode requires the observed predecessor inventory",
+    );
+  if (mode === "development-no-backup")
+    return {
+      mode,
+      status: "waived",
+      project_ref: STAGING_REF,
+      predecessor_inventory_sha256: predecessor,
+      data_loss_accepted: true,
+    };
+  return {
+    mode,
+    status: "verified",
+    ...(await verifiedRecovery(env, api, predecessor, fetcher)),
+  };
+}
+
 // Read a single small receipt in memory. Never extract a backup/ZIP onto disk.
 export function recoveryReceipt(zip) {
   const end = zip.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
