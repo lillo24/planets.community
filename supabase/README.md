@@ -1,5 +1,12 @@
 # Supabase database
 
+ACTAPI01 adds an isolated private external-activity catalogue with service-only
+import leases/atomic completion and public filtered list/detail RPCs. No source
+is seeded or enabled; operator-owned rights/attribution gates are independent
+of importer credentials. `tests/148_external_activities.test.sql` and the local
+HTTP verifier cover that boundary. See the
+[source-independent runbook](../docs/development/actapi01-infrastructure.md).
+
 Combined C/D/M source uses an additive complete unread reader and preserves the
 installed lane readers and distinct read boundaries. Both exact populated lane
 orders and sorted fresh replay are required; see

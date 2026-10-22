@@ -1,10 +1,13 @@
 # ACTAPI01 source checkpoint
 
-**Status: blocked on event-text reuse permission; MVP not implemented.**
+**Status: municipal connector blocked on event-text reuse permission.**
+The source-independent catalogue/import framework and Flutter reader are now
+implemented separately; see [the infrastructure runbook](actapi01-infrastructure.md).
+The end-to-end municipal MVP remains incomplete.
 Verified on 2026-10-21 from `main` at
 `55a9480b` (the execution base). ACTSPLIT01 remains the example-only Activities
-experience. No importer, catalogue migration, public read contract, scheduler or
-real-listing Flutter integration has been added by this checkpoint.
+experience at that checkpoint. The founder subsequently authorized the
+source-independent infrastructure while seeking clarification.
 
 ## Why source-dependent work stopped
 
@@ -184,15 +187,16 @@ venue resolution; and rate limits. The successful current-event sample does
 not validate these contracts. Unknown booking, price, recurrence and capacity
 must remain unknown rather than becoming participation promises.
 
-Then implement and validate the plan's single-run dry-run/apply importer,
-canonical isolated catalogue, leases and atomic persistence, public filtered
-pagination, per-record 72-hour/14-day freshness, private bounded run history,
-disabled daily runner, and real Flutter list/detail with separate examples.
-Generate database types from migrations and test on a disposable local stack.
+The source-independent pieces are described and validated in the infrastructure
+runbook. They include canonical storage/reads, import leases and atomic
+persistence, strict record validation, bounded transport and the separate
+Flutter list/detail and example preview. No municipal parser is provided.
 Do the bounded real-data repeat/import/public-read/render check only after the
 permission checkpoint passes. No such end-to-end check has passed yet.
 
-No deployment or activation steps exist at this checkpoint. No hosted migration,
-secret, import, schedule, account resource or external communication was made.
+No source activation is authorized by this checkpoint. No hosted migration,
+secret, import, schedule activation, account resource or municipal/provider
+communication was made.
 Activities Split Mode is still device-local and off by default; switching it off
-restores baseline navigation. There is no new catalogue state to roll back.
+restores baseline navigation. The infrastructure runbook describes catalogue
+source disable and disabled scheduling independently from the device preference.

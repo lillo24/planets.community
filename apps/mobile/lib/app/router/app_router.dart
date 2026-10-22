@@ -11,6 +11,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/widgets/page_app_bar.dart';
 import '../../features/activities_sandbox/presentation/activities_screen.dart';
+import '../../features/external_activities/presentation/external_activities_screen.dart';
+import '../../features/external_activities/presentation/external_activity_detail_screen.dart';
 import '../../features/activities_sandbox/presentation/activity_example_detail_screen.dart';
 import '../../features/settings/application/activities_split_preference_controller.dart';
 import '../../features/geographic_discovery/domain/map_discovery.dart';
@@ -1254,9 +1256,19 @@ RoutingConfig _routingConfig(
                 path: '/activities',
                 pageBuilder: (context, state) => NoTransitionPage<void>(
                   key: state.pageKey,
-                  child: const ActivitiesScreen(),
+                  child: const ExternalActivitiesScreen(),
                 ),
                 routes: [
+                  GoRoute(
+                    path: 'examples',
+                    builder: (context, state) => const ActivitiesScreen(),
+                  ),
+                  GoRoute(
+                    path: 'external/:activityId',
+                    builder: (context, state) => ExternalActivityDetailScreen(
+                      activityId: state.pathParameters['activityId']!,
+                    ),
+                  ),
                   GoRoute(
                     path: 'examples/:exampleId',
                     builder: (context, state) => ActivityExampleDetailScreen(

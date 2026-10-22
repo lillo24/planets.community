@@ -14,7 +14,13 @@ remain native. The real Tavoli list is reached from All/Culture, keeps its own
 pagination and errors, and labels its map as Tavoli-only. No map exists for
 examples. Native location filters and provider activation are unchanged.
 
-The Trento catalogue contains 12 fictional, bilingual local examples: nine
+ACTAPI01 now makes `/activities` the canonical external-catalogue reader, with an
+honest unconfigured state until a licensed source is activated. Its explicit
+preview action opens `/activities/examples`; examples are never a fallback.
+The [infrastructure runbook](actapi01-infrastructure.md) describes this additive
+backend/read path and the still-blocked municipal connector.
+
+The separate preview contains 12 fictional, bilingual local examples: nine
 sports and three cultural activities. Categories are All/Sports/Culture;
 disciplines derive from fixtures. Search and disciplines filter examples only.
 Events show explicit example dates; courses and recurring sessions show weekly
@@ -63,7 +69,7 @@ Remaining native smoke on a healthy emulator or that authorized physical device:
 
 ## Boundaries and next work
 
-No migration, backend deployment, ingestion service, production source
+ACTSPLIT01 itself added no migration, backend deployment, ingestion service, production source
 integration, real submission workflow, billing change or app-store deployment
 was added. The taxonomy is a view-local experiment, not a competence catalog or
 production activity schema. Fixtures cannot make native membership/chat writes
@@ -75,6 +81,7 @@ freshness/availability semantics and real organizer/submission decisions. No
 external account, credential or source is required to evaluate this experiment.
 
 ACTAPI01's [source checkpoint](actapi01-source-checkpoint.md) verified live
-official municipal JSON on 2026-10-21 but stopped on unresolved event-text reuse
-permission. The real-catalogue pipeline is not implemented; these examples
-remain fictional and must not be described as imported results.
+official municipal JSON on 2026-10-21 but stopped its connector on unresolved
+event-text reuse permission. Source-independent infrastructure was subsequently
+authorized and implemented; these examples remain fictional and are never
+described as imported results.

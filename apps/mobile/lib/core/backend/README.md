@@ -2,6 +2,10 @@
 
 This folder owns small backend-facing primitives shared across mobile features.
 
+- `public_external_link.dart` validates public HTTPS destinations before opening
+  an external application. External activity provenance uses this boundary;
+  credentials, unsafe schemes, IP/local hosts and explicit ports are rejected.
+
 - `supabase_backend.dart` exposes the configured Supabase client through Riverpod.
 - `secure_session_storage.dart` owns confidential device credentials, separate
   origin/root/request namespaces and acknowledged legacy normal-session migration.
