@@ -25,7 +25,8 @@ import {
   assertRoutineTargets,
 } from "./safety.mjs";
 import { githubClient, deploymentReviews } from "./reviews.mjs";
-import { verifiedRecovery } from "./recovery.mjs";
+import { assertStagingRecoveryMode, stagingRecovery } from "./recovery.mjs";
+import { stagingTlsOptions, stagingCaPath } from "./transport.mjs";
 
 export function assertDeployContext(env) {
   if (
@@ -44,6 +45,7 @@ export function assertDeployContext(env) {
     throw new ReleaseError(
       "Staging writes require exact tested/rehearsed main, protected one-time readiness, credentials and the single GitHub owner",
     );
+  assertStagingRecoveryMode(env, STAGING_REF);
 }
 function currentMain(env) {
   const result = spawnSync("git", ["ls-remote", "origin", "refs/heads/main"], {
@@ -80,6 +82,7 @@ export async function writeStaging({
   if (!diff.pending.length) return { remote, diff }; // verified backend no-op follows in staging.mjs
   if (policy.staging_safety_version !== 1)
     throw new ReleaseError("Missing staging safety policy");
+  assertStagingRecoveryMode(env, diff.project_ref);
   assertDeployContext(env);
   if (process.platform !== "linux")
     throw new ReleaseError(
@@ -142,7 +145,7 @@ export async function writeStaging({
     historical ? reconciliation : null,
   );
   const sql = postgres(urlValidator(env.STAGING_DB_URL), {
-    ssl: { rejectUnauthorized: true },
+    ssl: stagingTlsOptions(),
     max: 1,
     onnotice: () => {},
   });
@@ -154,12 +157,13 @@ export async function writeStaging({
     const fresh = summarizeHistory(await api.query(historyQuery));
     assertWriterSnapshot(lock.acquired, direct, fresh, remote);
     currentMain(env);
-    const recovery = await verifiedRecovery(
+    const recovery = await stagingRecovery(
       env,
       proofApi,
       inventoryDigest(
         local.filter((m) => !pending.some((p) => p.version === m.version)),
       ),
+      diff.project_ref,
     );
     const predecessorChecks = (
       await api.query(verificationQuery(root, policy.budget_basemap))
@@ -215,7 +219,13 @@ export async function writeStaging({
         const result = spawnSync(
           resolve("node_modules/.bin/supabase"),
           [...args, ...(dry ? ["--dry-run"] : [])],
-          { encoding: "utf8", timeout: 600000, maxBuffer: 8 * 1024 * 1024 },
+          {
+            encoding: "utf8",
+            timeout: 600000,
+            maxBuffer: 8 * 1024 * 1024,
+            // CLI/libpq uses the same reviewed CA as the session-lock client.
+            env: { ...process.env, PGSSLROOTCERT: stagingCaPath },
+          },
         );
         if (result.error || result.status !== 0)
           throw new ReleaseError(

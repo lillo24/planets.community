@@ -20,10 +20,13 @@ import {
   assertRecovery,
   recoveryReceipt,
   verifiedRecovery,
+  assertStagingRecoveryMode,
+  stagingRecovery,
 } from "../release/recovery.mjs";
 import {
   assertDeployContext,
   assertWriterSnapshot,
+  writeStaging,
 } from "../release/writer.mjs";
 import {
   deploymentSet,
@@ -31,7 +34,14 @@ import {
   STAGING_REF,
 } from "../release/migrations.mjs";
 import { sha256 } from "../release/sql-fingerprint.mjs";
-import { assertDatabaseUrl } from "../release/staging.mjs";
+import {
+  assertDatabaseUrl,
+  inspectSessionConnection,
+  connectionFailure,
+} from "../release/staging.mjs";
+import { ReleaseError } from "../release/errors.mjs";
+import { stagingTlsOptions, stagingCaPath } from "../release/transport.mjs";
+import { X509Certificate } from "node:crypto";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const json = (path) => JSON.parse(readFileSync(resolve(root, path), "utf8"));
@@ -534,7 +544,11 @@ test("writer requires exact tested/rehearsed main, one-time readiness and creden
     STAGING_AUTOMATION_READY: "true",
     GH_TOKEN: "fictional",
     SUPABASE_ACCESS_TOKEN: "fictional",
-    STAGING_CONFIG_JSON: "fictional",
+    STAGING_CONFIG_JSON: JSON.stringify({
+      APP_ENV: "staging",
+      SUPABASE_URL: `https://${STAGING_REF}.supabase.co`,
+    }),
+    STAGING_RECOVERY_MODE: "development-no-backup",
   };
   assert.doesNotThrow(() => assertDeployContext(env));
   for (const key of Object.keys(env)) {
@@ -617,4 +631,339 @@ test("session lock cannot silently use the transaction pooler port", () => {
   );
   assert.throws(() => assertDatabaseUrl(`${route}:6543/postgres`));
   assert.throws(() => assertDatabaseUrl(`${route}/postgres#unexpected`));
+});
+
+const developmentEnv = {
+  STAGING_RECOVERY_MODE: "development-no-backup",
+  STAGING_CONFIG_JSON: JSON.stringify({
+    APP_ENV: "staging",
+    SUPABASE_URL: `https://${STAGING_REF}.supabase.co`,
+  }),
+};
+test("standing staging-only waiver skips all recovery access and records no restoration claims", async () => {
+  const forbidden = () => assert.fail("No recovery access in development mode");
+  for (let merge = 0; merge < 2; merge++) {
+    const evidence = await stagingRecovery(
+      {
+        ...developmentEnv,
+        STAGING_RECOVERY_POLICY_JSON: "unused invalid policy",
+      },
+      forbidden,
+      hash,
+      STAGING_REF,
+      forbidden,
+    );
+    assert.deepEqual(evidence, {
+      mode: "development-no-backup",
+      status: "waived",
+      project_ref: STAGING_REF,
+      predecessor_inventory_sha256: hash,
+      data_loss_accepted: true,
+    });
+    assert.doesNotMatch(
+      JSON.stringify(evidence),
+      /restored|completed_at|database_sha256|storage_objects_sha256|workflow_run_id|policy_id/,
+    );
+  }
+  for (const mode of [
+    undefined,
+    "",
+    "no-backup",
+    "production",
+    "VERIFIED-BACKUP",
+  ])
+    assert.throws(() =>
+      assertStagingRecoveryMode(
+        { ...developmentEnv, STAGING_RECOVERY_MODE: mode },
+        STAGING_REF,
+      ),
+    );
+  for (const project of [undefined, "production", "pnolarmzxmmjtguligfc"])
+    await assert.rejects(
+      stagingRecovery(developmentEnv, forbidden, hash, project, forbidden),
+      /restricted to planets-staging/,
+    );
+  for (const config of [
+    "invalid",
+    "null",
+    JSON.stringify({
+      APP_ENV: "production",
+      SUPABASE_URL: `https://${STAGING_REF}.supabase.co`,
+    }),
+    JSON.stringify({
+      APP_ENV: "staging",
+      SUPABASE_URL: "https://pnolarmzxmmjtguligfc.supabase.co",
+    }),
+  ])
+    assert.throws(() =>
+      assertStagingRecoveryMode(
+        { ...developmentEnv, STAGING_CONFIG_JSON: config },
+        STAGING_REF,
+      ),
+    );
+  await assert.rejects(
+    stagingRecovery(
+      developmentEnv,
+      forbidden,
+      "invalid",
+      STAGING_REF,
+      forbidden,
+    ),
+    /observed predecessor/,
+  );
+});
+
+test("verified-backup delegates to genuine trusted workflow and fresh DB plus Storage verification", async () => {
+  const workflow = "fictional owner-reviewed recovery workflow";
+  const env = {
+    ...developmentEnv,
+    STAGING_RECOVERY_MODE: "verified-backup",
+    STAGING_RECOVERY_POLICY_JSON: JSON.stringify({
+      ...policy,
+      workflow_sha256: sha256(workflow),
+    }),
+    GITHUB_REPOSITORY: "lillo24/planets.community",
+    GH_TOKEN: "fictional",
+  };
+  let proof = { ...receipt(), completed_at: new Date().toISOString() };
+  let downloads = 0;
+  const api = async (path) =>
+    path.includes("/runs?")
+      ? {
+          workflow_runs: [
+            {
+              id: 19,
+              head_branch: "main",
+              head_repository: { full_name: env.GITHUB_REPOSITORY },
+              conclusion: "success",
+              event: "schedule",
+              head_sha: source,
+            },
+          ],
+        }
+      : path.includes("/contents/")
+        ? {
+            encoding: "base64",
+            content: Buffer.from(workflow).toString("base64"),
+          }
+        : {
+            artifacts: [
+              {
+                id: 4,
+                name: "staging-recovery-receipt",
+                expired: false,
+                size_in_bytes: 1000,
+              },
+            ],
+          };
+  const fetcher = async () => {
+    downloads++;
+    return new Response(zipReceipt(proof));
+  };
+  const result = await stagingRecovery(env, api, hash, STAGING_REF, fetcher);
+  assert.equal(downloads, 1);
+  assert.deepEqual(result, {
+    mode: "verified-backup",
+    status: "verified",
+    policy_id: policy.policy_id,
+    completed_at: proof.completed_at,
+    database_restored: true,
+    storage_objects_restored: true,
+    workflow_run_id: 19,
+  });
+  for (const bad of [
+    { database_restored: false },
+    { storage_objects_restored: false },
+    { completed_at: "2020-01-01T00:00:00Z" },
+    { predecessor_inventory_sha256: "c".repeat(64) },
+    { project_ref: "production" },
+  ]) {
+    proof = { ...receipt(), completed_at: new Date().toISOString(), ...bad };
+    await assert.rejects(
+      stagingRecovery(env, api, hash, STAGING_REF, fetcher),
+      /backup\/restore evidence/,
+    );
+  }
+  await assert.rejects(
+    stagingRecovery(
+      { ...env, STAGING_RECOVERY_POLICY_JSON: undefined },
+      api,
+      hash,
+      STAGING_REF,
+      fetcher,
+    ),
+    /STAGING_RECOVERY_POLICY_JSON/,
+  );
+});
+
+test("waiver leaves SQL review, preservation, chronology and source guards independent", async () => {
+  await stagingRecovery(developmentEnv, () => assert.fail(), hash, STAGING_REF);
+  assert.equal(authorize(scenario())[0].authorization, "routine-verified");
+  for (const sql of [
+    "grant select on private.items to anon;",
+    "alter table private.items disable row level security;",
+  ])
+    assert.throws(() => authorize(scenario(sql)), /pre-merge owner review/);
+  for (const mutate of [
+    (s) => {
+      s.evidence.source_sha = "c".repeat(40);
+    },
+    (s) => {
+      s.witness.preserved_rows = false;
+    },
+    (s) => {
+      s.witness.routine_security_preserved = false;
+    },
+    (s) => {
+      s.witness.predecessor_inventory_sha256 = hash;
+    },
+    (s) => {
+      s.diff.pending[0].sha256 = hash;
+    },
+    (s) => {
+      s.diff.pending[0].historical = true;
+    },
+    (s) => {
+      s.diff.drift.push({ reason: "unexpected live history" });
+    },
+  ]) {
+    const s = scenario();
+    mutate(s);
+    assert.throws(() => authorize(s));
+  }
+  const remote = [{ version: base.version }],
+    diff = { pending: [] };
+  assert.deepEqual(await writeStaging({ remote, diff }), { remote, diff });
+  await assert.rejects(
+    writeStaging({
+      diff: { pending: [{}], project_ref: "pnolarmzxmmjtguligfc" },
+      policy: { staging_safety_version: 1 },
+      env: developmentEnv,
+    }),
+    /restricted to planets-staging/,
+  );
+});
+
+test("inspect proves client TLS without confusing pooler-to-Postgres TLS and withholds native diagnostics", async () => {
+  const env = {
+    STAGING_DB_URL: `postgres://postgres.${STAGING_REF}:fictional@aws-1-eu-west-1.pooler.supabase.com:5432/postgres`,
+  };
+  let session = {
+    database_name: "postgres",
+    database_role: "postgres",
+    backend_pid: 42,
+  };
+  let changed = false,
+    ended = false,
+    history = [];
+  const connect = (url, options) => {
+    assert.match(url, /sslmode=verify-full/);
+    assert.deepEqual(options.ssl, stagingTlsOptions());
+    assert.equal(options.max, 1);
+    assert.equal(options.connect_timeout, 20);
+    let calls = 0;
+    return {
+      unsafe: async (query) => {
+        assert.match(query, /^select /);
+        assert.doesNotMatch(query, /pg_stat_ssl/);
+        if (query.includes("schema_migrations")) return history;
+        calls++;
+        return [
+          { ...session, ...(calls === 2 && changed && { backend_pid: 43 }) },
+        ];
+      },
+      end: async () => {
+        ended = true;
+      },
+    };
+  };
+  assert.deepEqual(await inspectSessionConnection(env, [], connect), {
+    client_tls_verified: true,
+    session_verified: true,
+    history_matches: true,
+    port: 5432,
+  });
+  assert.equal(ended, true);
+  for (const bad of [
+    { database_name: "other" },
+    { database_role: "other" },
+    { backend_pid: null },
+  ]) {
+    session = {
+      database_name: "postgres",
+      database_role: "postgres",
+      backend_pid: 42,
+      ...bad,
+    };
+    ended = false;
+    await assert.rejects(
+      inspectSessionConnection(env, [], connect),
+      /session or independent/,
+    );
+    assert.equal(ended, true);
+  }
+  session = {
+    database_name: "postgres",
+    database_role: "postgres",
+    backend_pid: 42,
+  };
+  changed = true;
+  await assert.rejects(
+    inspectSessionConnection(env, [], connect),
+    /session or independent/,
+  );
+  changed = false;
+  history = [
+    { version: base.version, name: "fixture", statements: ["select 1"] },
+  ];
+  await assert.rejects(
+    inspectSessionConnection(env, [], connect),
+    /independent migration history/,
+  );
+  await assert.rejects(
+    inspectSessionConnection(
+      { STAGING_DB_URL: env.STAGING_DB_URL.replace(":5432/", ":6543/") },
+      [],
+      () => assert.fail("Reject transaction pooler before connect"),
+    ),
+  );
+  for (const code of [
+    "28P01",
+    "ENOTFOUND",
+    "ERR_TLS_CERT_ALTNAME_INVALID",
+    "unexpected-private-code",
+  ])
+    assert.doesNotMatch(
+      connectionFailure({ code, message: "fictional-private-password" }),
+      /fictional-private|unexpected-private/,
+    );
+  assert.equal(
+    connectionFailure(new ReleaseError("safe authored failure")),
+    "safe authored failure",
+  );
+});
+
+test("session client and migration CLI retain the same reviewed public CA with hostname verification", () => {
+  const options = stagingTlsOptions();
+  assert.equal(options.rejectUnauthorized, true);
+  assert.deepEqual(options.ca, readFileSync(stagingCaPath));
+  const certificate = new X509Certificate(options.ca);
+  assert.equal(certificate.ca, true);
+  assert.equal(
+    certificate.fingerprint256,
+    "80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA",
+  );
+  const writer = readFileSync(
+    resolve(root, "scripts/release/writer.mjs"),
+    "utf8",
+  );
+  assert.match(writer, /ssl: stagingTlsOptions\(\)/);
+  assert.match(writer, /PGSSLROOTCERT: stagingCaPath/);
+  assert.doesNotMatch(writer, /rejectUnauthorized: false/);
+  const workflow = readFileSync(
+    resolve(root, ".github/workflows/staging-release.yml"),
+    "utf8",
+  );
+  const condition = workflow.split("\n  staging:")[1].split("environment:")[0];
+  assert.match(condition, /inputs.operation == 'inspect'\) \|\|/);
 });

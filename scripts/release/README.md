@@ -20,9 +20,16 @@ diagnostics stay out of public Actions output.
   Only the dedicated isolated-Mock URL validator is excluded from normal-staging
   Edge inventory; ordinary builds reject Mock capability and endpoints.
 - `staging.mjs inspect|deploy|verify` performs identified preflight, approved CLI
-  apply and verification. Apply is supported only in the protected Linux runner.
+  apply and verification. Inspect checks the actual secret using certificate-
+  validated client TLS on port 5432, stable session and independent history.
+  It retains sanitized connection results/failures without raw diagnostics.
+  Apply is supported only in the protected Linux runner.
   It never repairs history, includes seeds/roles/Vault secrets or deploys Edge
   Functions. `--include-all` is restricted to one exactly approved historical file at a time.
+- `transport.mjs` pins the public `supabase-prod-ca-2021.crt` bytes and supplies
+  strict client TLS options. The CLI uses that same file via `PGSSLROOTCERT` with
+  `sslmode=verify-full`. A certificate rotation requires reviewing/replacing the
+  public CA and its hash; no private keys or credentials live in either file.
 - `safety.mjs` owns the complete conservative SQL grammar, canonical inventory
   digests, catalog/security preservation and whole-set authorization. A nullable
   column is only a candidate until populated/catalog witnesses prove compatibility.
@@ -30,10 +37,14 @@ diagnostics stay out of public Actions output.
   scopes its populated rehearsal and verifies owner issue-comment proof against
   exact pre-merge head/file/predecessor bytes again at deploy. It accepts no
   post-merge-created/edited authorization. No credentials or raw comments persist.
-- `recovery.mjs` verifies a fresh metadata-only receipt from a source-hash-pinned
-  main recovery workflow: encrypted/access-controlled DB **and Storage objects**,
-  restored against the exact predecessor. Missing one-time setup blocks writes;
-  the old task-specific waiver is not reused. It never downloads a real backup.
+- `recovery.mjs` requires explicit protected `STAGING_RECOVERY_MODE` for only
+  normal staging. `development-no-backup` accepts possible development-data loss,
+  skips backup access and records an honest `waived` result. SQL review and all
+  other guards remain independent. Missing/unknown mode blocks writes. Switch to
+  `verified-backup` before staging holds irreplaceable data: it retains the fresh
+  metadata-only receipt verifier from a source-hash-pinned main recovery workflow,
+  encrypted/access-controlled DB **and Storage objects** restored against the
+  exact predecessor. It never downloads a real backup.
 - `writer.mjs` checks protected readiness, exact tested/rehearsed/current main,
   the whole mixed set, independent history, advisory lock and recovery before
   per-file CLI dry/apply. It retains only safe evidence and never repairs history.
