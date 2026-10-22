@@ -13,6 +13,7 @@ import '../data/activity_examples.dart';
 import '../domain/activity_example.dart';
 import 'activity_example_widgets.dart';
 
+/// Explicit fictional preview. The main route uses ExternalActivitiesScreen.
 class ActivitiesScreen extends ConsumerStatefulWidget {
   const ActivitiesScreen({super.key});
 
@@ -63,7 +64,10 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
         .toSet();
 
     return Scaffold(
-      appBar: pageAppBar(context, title: Text(l.activitiesTitle)),
+      appBar: pageAppBar(
+        context,
+        title: Text(l.activitiesExamplesPreviewTitle),
+      ),
       body: SafeArea(
         child: Align(
           alignment: Alignment.topCenter,

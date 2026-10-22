@@ -3198,5 +3198,44 @@
   "personPreviewAnonymous": "PLANETS member",
   "personPreviewNoDetails": "No further public profile details are available.",
   "personPreviewReadError": "Could not load this profile.",
-  "personPreviewBlocked": "You have blocked this person."
+  "personPreviewBlocked": "You have blocked this person.",
+  "activitiesExternalTitle": "External calendars · Trento",
+  "activitiesExternalScope": "Events from external calendars. Check the official page for conditions and booking. Coverage is limited.",
+  "activitiesSearchExternal": "Search external events",
+  "activitiesPreviewExamples": "Preview fictional examples",
+  "activitiesExamplesPreviewTitle": "Fictional examples",
+  "activitiesExternalLoading": "Loading external events…",
+  "activitiesExternalEmpty": "No external events match these filters.",
+  "activitiesExternalUnconfigured": "The external catalogue is not configured yet.",
+  "activitiesExternalNeverSynchronized": "The first external calendar import has not completed.",
+  "activitiesExternalStale": "Calendar updates are overdue. Check the official event page.",
+  "activitiesExternalUnavailable": "The calendar could not be refreshed. Previously imported events may still be shown.",
+  "activitiesExternalReadFailed": "The catalogue could not be read. Try again.",
+  "activitiesExternalDetail": "External event",
+  "activitiesExternalMissing": "This external event is not available.",
+  "activitiesExternalStaleRecord": "Last observed more than 72 hours ago",
+  "activitiesOfficialEvent": "View official event",
+  "activitiesSourceLicense": "Source licence",
+  "activitiesLinkFailed": "Could not open this link. Try again.",
+  "activitiesTimeNotProvided": "Time not provided",
+  "activitiesAllDay": "All day",
+  "activitiesExternalScheduleUnknown": "Schedule not provided",
+  "activitiesExternalCancelled": "Cancelled by the source",
+  "activitiesExternalLoadMore": "Load more external events",
+  "activitiesSourceLabel": "Source: {source}",
+  "@activitiesSourceLabel": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "activitiesObservedAt": "Last observed by PLANETS: {date}",
+  "@activitiesObservedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }
