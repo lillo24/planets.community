@@ -14,10 +14,12 @@ import { sha256 } from "./sql-fingerprint.mjs";
 
 export const REVIEW_PREFIX = "STAGING-AUTO01-REVIEW\n";
 export function requiresSafetyRehearsal(paths) {
-  return paths.some((p) =>
-    /^(supabase\/migrations\/|scripts\/release\/|scripts\/lib\/(release01|staging-auto01)\.test\.mjs$|docs\/development\/evidence\/release01\/(migration-manifest|staging-auto01-predecessor)\.json$|\.github\/workflows\/(validation|staging-release)\.yml$|package(-lock)?\.json$)/.test(
-      p,
-    ),
+  return paths.some(
+    (p) =>
+      !/\.(md|mdx)$/i.test(p) &&
+      /^(supabase\/migrations\/|scripts\/release\/|scripts\/lib\/(release01|staging-auto01)\.test\.mjs$|docs\/development\/evidence\/release01\/(migration-manifest|staging-auto01-predecessor)\.json$|\.github\/workflows\/(validation|staging-release)\.yml$|package(-lock)?\.json$)/.test(
+        p,
+      ),
   );
 }
 const hash = /^[a-f0-9]{64}$/,

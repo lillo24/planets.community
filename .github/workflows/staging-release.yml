@@ -14,11 +14,12 @@ on:
       - "supabase/migrations/**"
       - "supabase/functions/**"
       - "apps/mobile/**"
-      - "!apps/mobile/**/*.md"
       - "scripts/release/**"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/staging-release.yml"
+      - "!**/*.md"
+      - "!**/*.mdx"
 
 permissions:
   contents: read

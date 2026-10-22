@@ -101,7 +101,9 @@ owner reviewer; those are activation blockers, not settings changed by this PR.
    `main` only, no tags. Keep the Play owner reviewer and disable bypass where
    supported. Only after the gates/recovery/credentials are verified, remove
    the **staging** required reviewer; do not create an unprotected replacement.
-5. Provision secrets through those environment settings or owner-run
+5. Only staging credentials are required to activate automatic SQL. Android/Play
+   credentials below are needed solely for later manual app delivery.
+   Provision secrets through those environment settings or owner-run
    `gh secret set NAME --env ENV` with protected stdin; never paste values into
    chat/history/issues. All three use `SUPABASE_ACCESS_TOKEN` (legitimate scoped
    management access) and `STAGING_CONFIG_JSON`. Staging additionally needs

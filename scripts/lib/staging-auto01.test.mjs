@@ -590,6 +590,9 @@ test("semantic safety lives in the always-present required classification check 
     "docs/development/example.md",
     "apps/site/src/App.tsx",
     "apps/mobile/lib/main.dart",
+    "scripts/release/README.md",
+    "supabase/functions/README.md",
+    ".github/workflows/README.md",
   ])
     assert.equal(requiresSafetyRehearsal([path]), false);
   const validation = readFileSync(
@@ -600,6 +603,11 @@ test("semantic safety lives in the always-present required classification check 
     validation.split("\n  mobile:\n")[0],
     /node scripts\/release\/rehearse.mjs/,
   );
+  const release = readFileSync(
+    resolve(root, ".github/workflows/staging-release.yml"),
+    "utf8",
+  );
+  assert.match(release.split("permissions:")[0], /"!\*\*\/\*\.md"/);
 });
 test("session lock cannot silently use the transaction pooler port", () => {
   const route = `postgres://postgres.${STAGING_REF}:fictional@aws-1-eu-west-1.pooler.supabase.com`;
