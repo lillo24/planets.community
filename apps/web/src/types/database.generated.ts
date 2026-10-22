@@ -2734,6 +2734,14 @@ export type Database = {
         Args: { p_expected_owner_profile_id: string; p_request_id: string }
         Returns: string
       }
+      acknowledge_cocreate_contact: {
+        Args: {
+          p_contact_id: string
+          p_expected_profile_id: string
+          p_read_token: string
+        }
+        Returns: undefined
+      }
       acknowledge_group_contact_read: {
         Args: {
           p_boundary: string
@@ -3624,6 +3632,17 @@ export type Database = {
         Args: { p_expected_profile_id: string; p_item: string; p_kind: string }
         Returns: Json
       }
+      get_cocreate_availability: { Args: never; Returns: Json }
+      get_cocreate_contact_page: {
+        Args: {
+          p_before_sequence?: number
+          p_contact_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      get_cocreate_post: { Args: { p_post_id: string }; Returns: Json }
       get_current_group_participant_invitation: {
         Args: { p_expected_profile_id: string; p_group_id: string }
         Returns: {
@@ -3744,6 +3763,10 @@ export type Database = {
           p_kind: string
           p_view: string
         }
+        Returns: Json
+      }
+      get_moderation_case_cocreate: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
         Returns: Json
       }
       get_moderation_case_corroboration: {
@@ -4836,6 +4859,17 @@ export type Database = {
         }
         Returns: string
       }
+      list_cocreate_posts: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_limit?: number
+          p_locality?: string
+          p_search?: string
+          p_topic_id?: string
+        }
+        Returns: Json
+      }
       list_current_group_people: {
         Args: {
           p_after_profile_id?: string
@@ -5214,6 +5248,34 @@ export type Database = {
           blocked_display_name: string
           blocked_profile_id: string
         }[]
+      }
+      list_own_cocreate_contacts: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_interests: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_post_id?: string
+        }
+        Returns: Json
+      }
+      list_own_cocreate_posts: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
       }
       list_own_delegated_projects: {
         Args: { p_expected_profile_id: string }
@@ -6847,6 +6909,48 @@ export type Database = {
         Args: { p_expected_profile_id: string; p_notification_id: string }
         Returns: string
       }
+      moderate_cocreate_post: {
+        Args: {
+          p_case_id: string
+          p_command_id: string
+          p_expected_staff_profile_id: string
+          p_expected_version: number
+          p_suppressed: boolean
+        }
+        Returns: Json
+      }
+      mutate_cocreate_contact: {
+        Args: {
+          p_body?: string
+          p_command_id: string
+          p_contact_id: string
+          p_expected_profile_id: string
+          p_operation: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_interest: {
+        Args: {
+          p_command_id: string
+          p_expected_profile_id: string
+          p_interest_id?: string
+          p_note?: string
+          p_operation: string
+          p_post_id: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_post: {
+        Args: {
+          p_command_id: string
+          p_content?: Json
+          p_expected_profile_id: string
+          p_expected_version?: number
+          p_operation: string
+          p_post_id?: string
+        }
+        Returns: Json
+      }
       mutate_project_organization_v1: {
         Args: {
           p_command: Json
@@ -7738,6 +7842,22 @@ export type Database = {
       step_down_project_authority: {
         Args: { p_delegate_id: string; p_expected_profile_id: string }
         Returns: string
+      }
+      submit_cocreate_report: {
+        Args: {
+          p_category: string
+          p_client_submission_id: string
+          p_expected_reporter_profile_id: string
+          p_explanation: string
+          p_target_id: string
+          p_target_kind: string
+        }
+        Returns: {
+          case_id: string
+          created_at: string
+          report_id: string
+          state: string
+        }[]
       }
       submit_group_contact_request: {
         Args: {
