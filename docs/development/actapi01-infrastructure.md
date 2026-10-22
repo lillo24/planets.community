@@ -9,7 +9,7 @@ actual 2026-10-21 API observations and missing reuse permission.
 
 ## Ownership and publication gates
 
-`supabase/migrations/20261021101314_external_activity_catalogue.sql` adds only
+`supabase/migrations/20261022084023_external_activity_catalogue.sql` adds only
 `private.external_activity_sources`, `external_activity_runs`,
 `external_activities` and `external_activity_occurrences`. These have no native
 Project/Profile/participation foreign keys. All four have RLS and no raw
@@ -222,6 +222,11 @@ has passed; zero municipal records have been imported or made visible.
 ### Recorded execution evidence
 
 Validated on 2026-10-22 against `main` at `f938e017` plus this change:
+
+Before merge, the still-unapplied catalogue migration was restamped after the
+latest main migrations and RELEASE01's fixed bootstrap boundary. Its SQL is
+unchanged; no shared/applied migration history was rewritten. This avoids
+creating an unexpected historical gap in a future staged rollout.
 
 - `npm run test:tooling`: 163 passing tests, including 19 bounded importer tests.
 - `flutter test --no-pub test/features/external_activities`: 15 passing tests.
