@@ -3056,6 +3056,15 @@ export type Database = {
         }
         Returns: number
       }
+      create_cocreate_post_from_event: {
+        Args: {
+          p_activity_id: string
+          p_command_id: string
+          p_content: Json
+          p_expected_profile_id: string
+        }
+        Returns: Json
+      }
       create_cocreate_project_draft: {
         Args: {
           p_command_id: string
@@ -3688,6 +3697,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_cocreate_event_context: {
+        Args: { p_activity_id: string }
+        Returns: Json
+      }
       get_cocreate_general_context: {
         Args: {
           p_episode_id: string
@@ -3712,6 +3725,7 @@ export type Database = {
         Returns: Json
       }
       get_cocreate_post: { Args: { p_post_id: string }; Returns: Json }
+      get_cocreate_post_event: { Args: { p_post_id: string }; Returns: Json }
       get_cocreate_recruitment: {
         Args: {
           p_episode_id: string

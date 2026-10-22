@@ -138,3 +138,11 @@ decide Project visibility; a private source reference grants no new audience.
 See docs/development/cocreate-source-links.md for authority and exact retry rules.
 Acknowledged receipts remain pending until the UI completion succeeds; callback
 recovery does not resend the write. Late completion cannot clear another attempt.
+
+D03 adds data/co_creation_events_gateway.dart for actual ACTAPI01 context,
+minimal post-bound public references and unpublished draft receipts. Presentation
+owns composer lifecycle in co_creation_event_screen.dart and optional external
+detail action, source review and safe links in co_creation_event_widgets.dart.
+They reuse the external domain/schedule/URL primitives and never import or mutate
+events. Source changes clear prior input while a new public read is pending.
+See docs/development/cocreate-event-handoff.md for filters and qualification.

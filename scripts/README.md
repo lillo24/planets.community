@@ -174,3 +174,8 @@ compatibility. Both require the same owned disposable target and restore OFF.
 explicit hub/group admission, concurrent source versioning and ordinary native
 personal draft creation/recovery without copied content or membership. It uses
 the same owned-target guard and restores activation OFF.
+
+`verify-local-cocreate-events.mjs` tests ACTAPI01's service/public pipeline with
+a synthetic licensed local fixture, exact unpublished handoff retries and current
+cancellation/source withdrawal. It keeps the non-default API guard, cleans only
+its exact source, and restores co-creation OFF.

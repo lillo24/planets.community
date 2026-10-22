@@ -1,3 +1,4 @@
+import 'package:planets_mobile/features/co_creation/data/co_creation_events_gateway.dart';
 import 'package:planets_mobile/features/co_creation/data/co_creation_sources_gateway.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -76,6 +77,8 @@ class Fixture {
         };
       case 'list_cocreate_group_projects':
         return [];
+      case 'get_cocreate_post_event':
+        return null;
       case 'get_cocreate_availability':
         return {'enabled': enabled};
       case 'list_cocreate_topics':
@@ -160,6 +163,9 @@ Future<(ProviderContainer, GoRouter)> pump(
       policyAcceptanceProvider.overrideWith(Policy.new),
       coCreationSourcesGatewayProvider.overrideWithValue(
         CoCreationSourcesGateway(fixture.rpc),
+      ),
+      coCreationEventsGatewayProvider.overrideWithValue(
+        CoCreationEventsGateway(fixture.rpc),
       ),
       peoplePostsGatewayProvider.overrideWithValue(
         PeoplePostsGateway(fixture.rpc),

@@ -9,6 +9,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../settings/application/activities_split_preference_controller.dart';
 import '../application/external_activities_controller.dart';
 import 'external_activity_widgets.dart';
+import '../../co_creation/presentation/co_creation_event_widgets.dart';
 
 class ExternalActivityDetailScreen extends ConsumerWidget {
   const ExternalActivityDetailScreen({required this.activityId, super.key});
@@ -56,6 +57,7 @@ class ExternalActivityDetailScreen extends ConsumerWidget {
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         Text(l.activitiesSourceLabel(item.sourceName)),
+                        CoEventPeopleAction(item: item),
                         const SizedBox(height: AppSpacing.medium),
                         if (item.status == 'cancelled')
                           Text(l.activitiesExternalCancelled),

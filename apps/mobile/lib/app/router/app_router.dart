@@ -1,3 +1,4 @@
+import '../../features/co_creation/presentation/co_creation_event_screen.dart';
 import '../../features/co_creation/presentation/co_creation_sources_screen.dart';
 import '../../features/co_creation/presentation/co_creation_recruitment_screen.dart';
 import '../../features/co_creation/presentation/co_creation_numbered_screen.dart';
@@ -898,6 +899,7 @@ RoutingConfig _routingConfig(
                   GoRoute(
                     path: 'cocreate/hubs/:hubId/review',
                     builder: (_, state) => CoCreationHubScreen(
+                      key: ValueKey(state.pathParameters['hubId']),
                       hubId: HubId.parse(state.pathParameters['hubId']),
                     ),
                   ),
@@ -914,6 +916,12 @@ RoutingConfig _routingConfig(
                   GoRoute(
                     path: 'cocreate/hubs/:hubId/groups/:roomId/join',
                     builder: (_, state) => CoNumberedDetailScreen(
+                      key: ValueKey((
+                        state.pathParameters['hubId'] ??
+                            state.pathParameters['id'],
+                        state.pathParameters['roomId'],
+                        state.pathParameters['episodeId'],
+                      )),
                       hub: HubId.parse(state.pathParameters['hubId']),
                       room: CoRoomId.parse(state.pathParameters['roomId']),
                     ),
@@ -937,6 +945,12 @@ RoutingConfig _routingConfig(
                       GoRoute(
                         path: 'manage',
                         builder: (_, state) => CoNumberedManageScreen(
+                          key: ValueKey((
+                            state.pathParameters['hubId'] ??
+                                state.pathParameters['id'],
+                            state.pathParameters['roomId'],
+                            state.pathParameters['episodeId'],
+                          )),
                           hub: HubId.parse(state.pathParameters['hubId']),
                           room: CoRoomId.parse(state.pathParameters['roomId']),
                           episode: CoEpisodeId.parse(
@@ -947,6 +961,12 @@ RoutingConfig _routingConfig(
                       GoRoute(
                         path: 'leave',
                         builder: (_, state) => CoNumberedLeaveScreen(
+                          key: ValueKey((
+                            state.pathParameters['hubId'] ??
+                                state.pathParameters['id'],
+                            state.pathParameters['roomId'],
+                            state.pathParameters['episodeId'],
+                          )),
                           hub: HubId.parse(state.pathParameters['hubId']),
                           room: CoRoomId.parse(state.pathParameters['roomId']),
                           episode: CoEpisodeId.parse(
@@ -957,6 +977,12 @@ RoutingConfig _routingConfig(
                       GoRoute(
                         path: 'people',
                         builder: (_, state) => CoNumberedRosterScreen(
+                          key: ValueKey((
+                            state.pathParameters['hubId'] ??
+                                state.pathParameters['id'],
+                            state.pathParameters['roomId'],
+                            state.pathParameters['episodeId'],
+                          )),
                           hub: HubId.parse(state.pathParameters['hubId']),
                           room: CoRoomId.parse(state.pathParameters['roomId']),
                           episode: CoEpisodeId.parse(
@@ -997,7 +1023,12 @@ RoutingConfig _routingConfig(
                       GoRoute(
                         path: 'people',
                         builder: (_, state) => CoRoomPeopleScreen(
-                          key: state.pageKey,
+                          key: ValueKey((
+                            state.pathParameters['hubId'] ??
+                                state.pathParameters['id'],
+                            state.pathParameters['roomId'],
+                            state.pathParameters['episodeId'],
+                          )),
                           hubId: HubId.parse(state.pathParameters['hubId']),
                           roomId: CoRoomId.parse(
                             state.pathParameters['roomId'],
@@ -1025,6 +1056,7 @@ RoutingConfig _routingConfig(
                   GoRoute(
                     path: 'cocreate/contacts/:id/group',
                     builder: (_, state) => CoContactGroupScreen(
+                      key: ValueKey(state.pathParameters['id']),
                       contact: peopleUuid(state.pathParameters['id']),
                     ),
                   ),
@@ -1037,8 +1069,10 @@ RoutingConfig _routingConfig(
                   ),
                   GoRoute(
                     path: 'cocreate/requests',
-                    builder: (_, state) =>
-                        PeopleRequestsScreen(postId: state.extra as PostId?),
+                    builder: (_, state) => PeopleRequestsScreen(
+                      key: ValueKey((state.extra as PostId?)?.value),
+                      postId: state.extra as PostId?,
+                    ),
                   ),
                   GoRoute(
                     path: 'discussions/groups/:groupId',
@@ -1435,12 +1469,24 @@ RoutingConfig _routingConfig(
                   GoRoute(
                     path: 'hubs/:id/create-group',
                     builder: (_, state) => CoNumberedCreateScreen(
+                      key: ValueKey((
+                        state.pathParameters['hubId'] ??
+                            state.pathParameters['id'],
+                        state.pathParameters['roomId'],
+                        state.pathParameters['episodeId'],
+                      )),
                       hub: HubId.parse(state.pathParameters['id']),
                     ),
                   ),
                   GoRoute(
                     path: 'hubs/:id/groups/:roomId',
                     builder: (_, state) => CoNumberedDetailScreen(
+                      key: ValueKey((
+                        state.pathParameters['hubId'] ??
+                            state.pathParameters['id'],
+                        state.pathParameters['roomId'],
+                        state.pathParameters['episodeId'],
+                      )),
                       hub: HubId.parse(state.pathParameters['id']),
                       room: CoRoomId.parse(state.pathParameters['roomId']),
                     ),
@@ -1457,8 +1503,18 @@ RoutingConfig _routingConfig(
                     builder: (_, _) => const CoCreationDemoBrowseScreen(),
                   ),
                   GoRoute(
+                    path: 'from-event/:id',
+                    builder: (_, state) => CoEventComposerScreen(
+                      key: ValueKey(state.pathParameters['id']),
+                      activityId: peopleUuid(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
                     path: 'compose',
                     builder: (_, state) => PeopleComposerScreen(
+                      key: ValueKey(
+                        (state.extra as OwnPeoplePost?)?.id.value ?? 'new',
+                      ),
                       post: state.extra as OwnPeoplePost?,
                     ),
                   ),
@@ -1469,12 +1525,14 @@ RoutingConfig _routingConfig(
                   GoRoute(
                     path: 'posts/:id/group',
                     builder: (_, state) => CoPostGroupLinkScreen(
+                      key: ValueKey(state.pathParameters['id']),
                       post: PostId.parse(state.pathParameters['id']),
                     ),
                   ),
                   GoRoute(
                     path: 'posts/:id',
                     builder: (_, state) => PeoplePostScreen(
+                      key: ValueKey(state.pathParameters['id']),
                       postId: PostId.parse(state.pathParameters['id']),
                     ),
                   ),

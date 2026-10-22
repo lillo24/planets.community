@@ -11,6 +11,9 @@ import '../../auth/application/auth_session_controller.dart';
 import '../data/people_private_gateway.dart';
 import '../domain/people_private.dart';
 import 'people_widgets.dart';
+import '../../external_activities/domain/external_activity.dart';
+import '../data/co_creation_events_gateway.dart';
+import 'co_creation_event_widgets.dart';
 
 class PeopleOwnPostsScreen extends StatelessWidget {
   const PeopleOwnPostsScreen({super.key});
@@ -93,8 +96,9 @@ class PeopleOwnPostsScreen extends StatelessWidget {
 /// Input stays on this route while auth/policy is pushed above it. Returning
 /// never submits. A different established identity clears private input.
 class PeopleComposerScreen extends ConsumerStatefulWidget {
-  const PeopleComposerScreen({this.post, super.key});
+  const PeopleComposerScreen({this.post, this.event, super.key});
   final OwnPeoplePost? post;
+  final ExternalActivity? event;
   @override
   ConsumerState<PeopleComposerScreen> createState() => _PeopleComposerState();
 }
@@ -105,6 +109,22 @@ class _PeopleComposerState extends ConsumerState<PeopleComposerScreen> {
       locality = TextEditingController();
   TopicId? topic;
   bool invalidated = false;
+  bool seededEvent = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final e = widget.event;
+    if (!seededEvent && widget.post == null && e != null) {
+      seededEvent = true;
+      final l = AppLocalizations.of(context);
+      title.text = String.fromCharCodes(
+        l.coEventDraftTitle(e.title).runes.take(120),
+      );
+      body.text = l.coEventDraftBody;
+      locality.text = String.fromCharCodes((e.city ?? '').runes.take(100));
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -137,15 +157,19 @@ class _PeopleComposerState extends ConsumerState<PeopleComposerScreen> {
       }
     });
     final l = AppLocalizations.of(context), p = widget.post;
+    final event = p == null ? widget.event : null;
+    final slot = event != null
+        ? 'post/event/${event.id}'
+        : p == null
+        ? 'post/create'
+        : 'post/${p.id.value}';
     if (invalidated) {
       return PeoplePage(
         title: l.coPeopleOwn,
         child: Text(l.coPeopleUnavailable),
       );
     }
-    final attempt = ref.watch(
-      peopleAttemptsProvider,
-    )[p == null ? 'post/create' : 'post/${p.id.value}'];
+    final attempt = ref.watch(peopleAttemptsProvider)[slot];
     final locked = attempt?.pending == true || attempt?.busy == true;
     return PeoplePage(
       title: l.coPeopleCompose,
@@ -153,6 +177,7 @@ class _PeopleComposerState extends ConsumerState<PeopleComposerScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(l.coPeopleGuidance),
+          if (event != null) CoEventDraftContext(event: event),
           TextField(
             controller: title,
             enabled: !locked,
@@ -182,12 +207,21 @@ class _PeopleComposerState extends ConsumerState<PeopleComposerScreen> {
             child: ListenableBuilder(
               listenable: Listenable.merge([title, body, locality]),
               builder: (context, _) => PeopleCommand(
-                slot: p == null ? 'post/create' : 'post/${p.id.value}',
-                rpc: 'mutate_cocreate_post',
+                slot: slot,
+                rpc: event == null
+                    ? 'mutate_cocreate_post'
+                    : 'create_cocreate_post_from_event',
+                gateway: event == null
+                    ? null
+                    : (ref) => ref.read(coCreationEventsGatewayProvider),
                 intent: {
-                  'p_operation': p == null ? 'create' : 'edit',
-                  'p_post_id': p?.id.value,
-                  'p_expected_version': p?.version,
+                  if (event != null)
+                    'p_activity_id': event.id
+                  else ...{
+                    'p_operation': p == null ? 'create' : 'edit',
+                    'p_post_id': p?.id.value,
+                    'p_expected_version': p?.version,
+                  },
                   'p_content': {
                     'title': title.text,
                     'body': body.text,

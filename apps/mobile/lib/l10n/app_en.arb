@@ -3381,5 +3381,18 @@
   "coSourceReview": "Review shared group",
   "coSourceProject": "Start a personal Project draft",
   "coSourceProjectNotice": "Open an ordinary personal Project draft. No messages, notes, members, capacity or location are copied. You review and publish it through the normal editor. Group members are not enrolled.",
-  "coSourcePublishedProject": "View published Project"
+  "coSourcePublishedProject": "View published Project",
+  "coEventFindPeople": "Find company for this event",
+  "coEventReview": "Review this public event and edit the text below. Saving creates a private people-seeking draft. It does not publish, book or join the event.",
+  "coEventDraftTitle": "Company for: {title}",
+  "coEventDraftBody": "I am looking for company around this public event. Please review the official event details.",
+  "@coEventDraftTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "coEventDraftUnavailable": "This public event is unavailable for a new people-seeking draft.",
+  "coEventUnavailable": "The public event details are no longer available."
 }

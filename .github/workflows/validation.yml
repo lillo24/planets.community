@@ -372,6 +372,10 @@ jobs:
         env:
           PLANETS_DISPOSABLE_QA: "1"
         run: npm run cocreate:links:verify:local
+      - name: Verify reviewed event handoff without importing or enrollment
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: npm run cocreate:events:verify:local
 
       - name: Regenerate public database types
         run: npm run db:types

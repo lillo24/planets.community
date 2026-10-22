@@ -1,3 +1,6 @@
+import 'package:planets_mobile/features/co_creation/data/co_creation_events_gateway.dart';
+import 'package:planets_mobile/features/settings/application/co_creation_preference_controller.dart';
+import 'package:planets_mobile/features/settings/domain/co_creation_preference.dart';
 import 'package:planets_mobile/features/co_creation/data/co_creation_sources_gateway.dart';
 
 import 'dart:async';
@@ -112,6 +115,8 @@ class Fixture {
         };
       case 'list_cocreate_group_projects':
         return [];
+      case 'get_cocreate_post_event':
+        return null;
       case 'get_cocreate_availability':
         return {'enabled': enabled};
       case 'list_cocreate_topics':
@@ -218,11 +223,20 @@ Future<(ProviderContainer, GoRouter)> pump(
   Fixture f, {
   String language = 'en',
   bool large = false,
+  bool coCreation = false,
   String path = '/people/hubs/$hub',
   List<RouteBase> extraRoutes = const [],
 }) async {
   final app = ProviderContainer(
     overrides: [
+      initialCoCreationPreferenceProvider.overrideWithValue(
+        CoCreationPreferenceState(
+          mode: coCreation ? CoCreationMode.on : CoCreationMode.off,
+        ),
+      ),
+      coCreationEventsGatewayProvider.overrideWithValue(
+        CoCreationEventsGateway(f.rpc),
+      ),
       authSessionProvider.overrideWith(Session.new),
       policyAcceptanceProvider.overrideWith(Policy.new),
       coCreationSourcesGatewayProvider.overrideWithValue(

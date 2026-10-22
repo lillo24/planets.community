@@ -13,6 +13,7 @@ import '../data/people_posts_gateway.dart';
 import '../domain/co_creation_identity.dart';
 import '../domain/people_post.dart';
 import 'people_widgets.dart';
+import 'co_creation_event_widgets.dart';
 
 class PeopleBrowseScreen extends ConsumerStatefulWidget {
   const PeopleBrowseScreen({super.key});
@@ -156,6 +157,7 @@ class _PeoplePostScreenState extends ConsumerState<PeoplePostScreen> {
                 Text(p.title, style: Theme.of(context).textTheme.headlineSmall),
                 Text(p.locality),
                 Text(p.body),
+                CoPostEventReference(post: p.id),
                 Text(l.coPeopleConsent),
                 TextButton(
                   onPressed: () => ModerationRoutes.openReport(

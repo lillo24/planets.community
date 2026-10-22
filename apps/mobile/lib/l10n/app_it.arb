@@ -2643,5 +2643,18 @@
   "coSourceReview": "Esamina il gruppo condiviso",
   "coSourceProject": "Avvia una bozza personale di Progetto",
   "coSourceProjectNotice": "Apri una normale bozza personale di Progetto. Non vengono copiati messaggi, note, membri, capienza o posizione. La esamini e pubblichi con l’editor ordinario. I membri del gruppo non vengono iscritti.",
-  "coSourcePublishedProject": "Vedi il Progetto pubblicato"
+  "coSourcePublishedProject": "Vedi il Progetto pubblicato",
+  "coEventFindPeople": "Trova compagnia per questo evento",
+  "coEventReview": "Esamina questo evento pubblico e modifica il testo qui sotto. Salvare crea una bozza privata per cercare persone. Non pubblica, prenota o iscrive all’evento.",
+  "coEventDraftTitle": "Compagnia per: {title}",
+  "coEventDraftBody": "Cerco compagnia per questo evento pubblico. Verifica i dettagli nella pagina ufficiale dell’evento.",
+  "@coEventDraftTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "coEventDraftUnavailable": "Questo evento pubblico non è disponibile per una nuova bozza di ricerca persone.",
+  "coEventUnavailable": "I dettagli dell’evento pubblico non sono più disponibili."
 }
