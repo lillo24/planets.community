@@ -69,5 +69,6 @@
       "ezbr_sha256": "7cf99298e81fc3cfd070065fa97946441731f7f5ac3759ee9c57264e8f3bf83f"
     }
   ],
-  "bootstrap_boundary": "20261021155653"
+  "bootstrap_boundary": "20261021155653",
+  "staging_safety_version": 1
 }

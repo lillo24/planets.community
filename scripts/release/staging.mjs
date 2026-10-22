@@ -1,22 +1,12 @@
+import { writeStaging } from "./writer.mjs";
 import { ReleaseError, reportFailure } from "./errors.mjs";
-import {
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-  mkdtempSync,
-  cpSync,
-  rmSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import postgres from "postgres";
 import {
   STAGING_REF,
   readMigrations,
   migrationDiff,
-  deploymentSet,
   assertBackendReady,
 } from "./migrations.mjs";
 import { sha256 } from "./sql-fingerprint.mjs";
@@ -85,92 +75,17 @@ export async function stagingRelease(mode, env = process.env) {
     history: remote,
   });
   if (mode === "deploy") {
-    const pending = deploymentSet(diff, policy, env.BOOTSTRAP_MANIFEST_SHA256);
-    if (pending.length) {
-      if (process.platform !== "linux")
-        throw new ReleaseError(
-          "Hosted apply is supported only in the protected Linux Actions runner",
-        );
-      if (
-        env.GITHUB_REF !== "refs/heads/main" ||
-        env.RELEASE_VALIDATED_SHA !== env.GITHUB_SHA ||
-        env.STAGING_DEPLOYMENT_OWNER !== "github-actions"
-      )
-        throw new ReleaseError(
-          "Deployment requires tested main and confirmed single deployment owner",
-        );
-      const main = spawnSync(
-        "git",
-        ["ls-remote", "origin", "refs/heads/main"],
-        { encoding: "utf8", timeout: 60000 },
-      );
-      if (main.status !== 0 || main.stdout.split(/\s/)[0] !== env.GITHUB_SHA)
-        throw new ReleaseError(
-          "Main advanced before migration approval; start a new release run",
-        );
-      const databaseUrl = assertDatabaseUrl(env.STAGING_DB_URL);
-      const sql = postgres(databaseUrl, {
-        ssl: { rejectUnauthorized: true },
-        max: 1,
-        onnotice: () => {},
-      });
-      let temp;
-      try {
-        // Hold a session advisory lock even across CLI transactions. Compare the
-        // direct connection's history to the independently identified API target.
-        const [lock] =
-          await sql`select pg_try_advisory_lock(72701, 1) as acquired`;
-        if (!lock.acquired)
-          throw new ReleaseError(
-            "Another staging deployment holds the writer lock",
-          );
-        const direct = summarizeHistory(await sql.unsafe(historyQuery));
-        if (JSON.stringify(direct) !== JSON.stringify(remote))
-          throw new ReleaseError(
-            "Staging history changed or direct identity differs",
-          );
-        temp = mkdtempSync(join(tmpdir(), "planets-release01-"));
-        mkdirSync(join(temp, "supabase"));
-        cpSync(
-          join(root, "supabase/migrations"),
-          join(temp, "supabase/migrations"),
-          { recursive: true },
-        );
-        writeFileSync(
-          join(temp, "supabase/config.toml"),
-          'project_id = "planets-release01"\n',
-        );
-        const args = [
-          "db",
-          "push",
-          "--db-url",
-          databaseUrl,
-          "--workdir",
-          temp,
-          "--skip-vault",
-          "--yes",
-        ];
-        // Include-all is permitted only for the exact approved bootstrap set.
-        if (pending.some((m) => m.historical)) args.push("--include-all");
-        for (const dry of [true, false]) {
-          const result = spawnSync(
-            resolve("node_modules/.bin/supabase"),
-            [...args, ...(dry ? ["--dry-run"] : [])],
-            { encoding: "utf8", timeout: 600000, maxBuffer: 8 * 1024 * 1024 },
-          );
-          // CLI errors can contain connection strings: never forward its output.
-          if (result.error || result.status !== 0)
-            throw new ReleaseError(
-              `Staging CLI ${dry ? "dry run" : "apply"} failed; release blocked (output withheld to protect credentials)`,
-            );
-        }
-      } finally {
-        await sql.end({ timeout: 5 }); // closes session and releases its lock
-        if (temp) rmSync(temp, { recursive: true, force: true });
-      }
-      remote = summarizeHistory(await api.query(historyQuery));
-      diff = migrationDiff(local, remote, STAGING_REF);
-    }
+    ({ remote, diff } = await writeStaging({
+      root,
+      local,
+      remote,
+      diff,
+      policy,
+      env,
+      api,
+      save,
+      urlValidator: assertDatabaseUrl,
+    }));
   }
   const checks = (
     await api.query(verificationQuery(root, policy.budget_basemap))

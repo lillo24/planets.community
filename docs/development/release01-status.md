@@ -1,5 +1,34 @@
 # RELEASE01 execution status
 
+## STAGING-AUTO01 update — 22 October 2026
+
+Repository safety implementation is ready for exact-head CI; activation is **disabled**.
+Local focused release tests: **40 passed**. Full tooling tests: **177 passed**.
+Formatting and actionlint 1.7.12 passed. Local Docker is unavailable; the
+disposable populated rehearsal and complete four-area Validation run in CI.
+A fresh read-only observation at main `97a215ca60dc35c30b4b9f652441bdb7c35937ba`
+found **123 applied / 126 canonical / three pending / zero drift**. See
+[metadata evidence](evidence/release01/staging-auto01-predecessor.json). The added
+ACTAPI catalogue migration is independently review-required; the bounded
+historical reconciliation still contains only the exact original avatar and
+notification files and remains disabled. No hosted migrations/data writes, AAB
+build/upload or Play publication are authorized or performed by STAGING-AUTO01.
+
+Live settings inspected by name: `STAGING_RELEASE_ENABLED=false`,
+`STAGING_AUTO_PUBLISH=false`; staging still requires its owner reviewer.
+Main protection was absent (GitHub API 404). Recovery workflow/policy, verified
+credentials/native-auto-deploy ownership and protected readiness are one-time
+activation requirements; none are claimed configured. The
+[existing runbook](release01-staging-play.md) gives exact owner steps and proof
+contracts. A code merge alone cannot activate automatic deployment.
+
+The older execution record below is retained as dated evidence; its 125-file
+snapshot and task-specific no-backup waiver do not describe today's pending set
+or authorize later SQL. The implementation PR checks and their artifacts are the source of truth for
+exact-head CI and rehearsal completion; this record does not imply deployment.
+
+## Historical RELEASE01 execution
+
 Recorded at 2026-10-21 22:02 UTC (22 October locally). Release plumbing is merged
 and the original approved 26 migrations are deployed. **The first RELEASE01 AAB
 is still blocked by two later main migrations awaiting owner approval.** No app
