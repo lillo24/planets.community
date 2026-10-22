@@ -354,3 +354,18 @@ unchanged. This follow-up is not complete or ready for production.
   documentation are current. Backend qualification is `2225a88f` + `e6fdf8f5`.
 - Next: commit qualified mock/mobile stages, integrate merged latest main, finish
   mobile aggregate and final draft-PR evidence. Keep all PRs unmerged.
+
+### Follow-up mock fixture stage verified
+
+- Dedicated mock operator now seeds all eleven requested named communities in
+  seven curated categories, timed **4/7 Valorant**, full Lupus, persistent group
+  messages and pending interest scenarios through canonical eligible commands.
+  Separate five-person Activities and Find people datasets are broker metadata.
+- Target/broker/fixture unit tests pass **14**. Actual two-realm qualification
+  passes **382 / ten personas / zero normal-realm calls**, including real Auth,
+  notification concurrency, populated mock-control replay and non-destructive
+  repeat seed. Source schema digest is recorded in `cocreate-fill01.md`.
+- No hosted mock data/control update was performed; its separate owner-approved
+  schema/control/seed rollout remains required. Next: commit the mobile picker,
+  mutually exclusive presentation selection, hierarchy, meeting UI and notices;
+  then reconcile latest merged main and complete the final mobile aggregate.
