@@ -4,9 +4,10 @@ This feature reads PLANETS' licensed external catalogue under Activities Split
 Mode. It never contacts providers, imports events or invokes native participation.
 
 - `domain/external_activity.dart` owns strict public payloads, filter state,
-  exact occurrences, source health and per-record observation freshness.
+  event/course/place kinds, bounded course schedules, published geometry,
+  exact occurrences, complete server facets and observation freshness.
 - `data/external_activity_gateway.dart` calls only canonical public list/detail
-  RPCs and translates an invalidated continuation into an explicit refresh.
+  V2 RPCs and translates an invalidated continuation into an explicit refresh.
 - `application/external_activities_controller.dart` owns retained pages, filter
   resets and stale-request fencing. Construction does no IO; screens activate
   reads only while visible, enabled and foreground. No background polling.
@@ -26,6 +27,8 @@ Mode. It never contacts providers, imports events or invokes native participatio
 `activities_sandbox` retains its own example list, filters and detail. Its
 fixtures are never a fallback here. The router and Settings keep the experiment
 off by default. See the ACTAPI01 runbook for server contracts and activation.
+ACTCAT02 extends those contracts without replacing the released event RPCs;
+see [the V2 rollout and eligibility contract](../../../../../docs/development/actcat02-catalogue-contract.md).
 
 ACTMET01 instruments only deliberate real catalogue card opens and successful
 official-link copy/share handoffs. Rebuilds, external browser opening, examples

@@ -42,6 +42,43 @@ void main() {
     await initializeDateFormatting('en');
     await initializeDateFormatting('it');
   });
+  testWidgets(
+    'course detail renders its canonical derived lesson without inventing prose or an unknown-schedule warning',
+    (tester) async {
+      final payload = externalActivityPayload()
+        ..['kind'] = 'course'
+        ..['description'] = null
+        ..['occurrences'] = []
+        ..['next_at'] = '2026-10-25T09:00:00Z'
+        ..['next_occurrence'] = {
+          'kind': 'timed',
+          'start': '2026-10-25T10:00:00+01:00',
+          'end': null,
+          'timezone': 'Europe/Rome',
+        }
+        ..['schedule'] = {
+          'season_start': '2026-10-01',
+          'season_end': '2026-11-30',
+          'timezone': 'Europe/Rome',
+        };
+      final router = await _pump(
+        tester,
+        FakeExternalActivityGateway()..detail = ExternalActivity.parse(payload),
+      );
+      router.go('/activities/external/$externalActivityFixtureId');
+      await tester.pumpAndSettle();
+      expect(find.textContaining('10:00'), findsOneWidget);
+      expect(
+        find.text(AppLocalizationsEn().activitiesExternalScheduleUnknown),
+        findsNothing,
+      );
+      expect(
+        find.text(AppLocalizationsEn().activitiesScheduleUnknown),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets(
     'ACTMET01 imported card gesture once; filters, deep links and return do not emit',
@@ -238,7 +275,7 @@ void main() {
       'https://planets.example.org',
       'test-key',
       httpClient: MockClient((request) async {
-        expect(request.url.path, '/rest/v1/rpc/list_external_activities');
+        expect(request.url.path, '/rest/v1/rpc/list_external_activities_v2');
         final params = jsonDecode(request.body) as Map<String, dynamic>;
         expect(params['p_category'], 'culture');
         expect(params['p_query'], 'source text');
@@ -324,6 +361,9 @@ void main() {
         category: 'sports',
         query: 'source text',
         discipline: 'rowing',
+        kind: ExternalActivityKind.event,
+        from: '2026-10-23',
+        to: '2026-10-26',
       ),
     );
     gateway.page = externalPageFixture(
@@ -333,6 +373,9 @@ void main() {
     await controller.refresh();
     expect(gateway.calls.last.discipline, isNull);
     expect(gateway.calls.last.query, 'source text');
+    expect(gateway.calls.last.kind, ExternalActivityKind.event);
+    expect(gateway.calls.last.from, '2026-10-23');
+    expect(gateway.calls.last.to, '2026-10-26');
     expect(
       container.read(externalActivitiesControllerProvider).filter.category,
       'sports',

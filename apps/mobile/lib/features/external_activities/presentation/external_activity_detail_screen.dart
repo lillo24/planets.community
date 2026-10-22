@@ -8,6 +8,7 @@ import '../../../core/widgets/page_app_bar.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../settings/application/activities_split_preference_controller.dart';
 import '../application/external_activities_controller.dart';
+import '../domain/external_activity.dart';
 import 'external_activity_widgets.dart';
 import 'external_activity_share_actions.dart';
 
@@ -60,7 +61,24 @@ class ExternalActivityDetailScreen extends ConsumerWidget {
                         const SizedBox(height: AppSpacing.medium),
                         if (item.status == 'cancelled')
                           Text(l.activitiesExternalCancelled),
-                        if (item.stale) Text(l.activitiesExternalStaleRecord),
+                        if (item.stale)
+                          Text(
+                            item.kind == ExternalActivityKind.place
+                                ? l.activitiesPlaceStale
+                                : l.activitiesExternalStaleRecord,
+                          ),
+                        if (item.nextOccurrence != null &&
+                            !item.occurrences.any(
+                              (occurrence) => occurrence.startInstant
+                                  .isAtSameMomentAs(item.nextAt!),
+                            ))
+                          Text(
+                            externalOccurrenceLabel(
+                              item.nextOccurrence!,
+                              locale,
+                              l,
+                            ),
+                          ),
                         for (final occurrence in item.occurrences)
                           Padding(
                             padding: const EdgeInsets.only(
@@ -70,8 +88,18 @@ class ExternalActivityDetailScreen extends ConsumerWidget {
                               externalOccurrenceLabel(occurrence, locale, l),
                             ),
                           ),
-                        if (item.occurrences.isEmpty)
-                          Text(l.activitiesExternalScheduleUnknown),
+                        if (item.kind == ExternalActivityKind.course &&
+                            item.schedule?.text != null)
+                          Text(item.schedule!.text!),
+                        if (item.occurrences.isEmpty &&
+                            item.nextOccurrence == null &&
+                            item.schedule?.text == null &&
+                            item.kind != ExternalActivityKind.place)
+                          Text(
+                            item.kind == ExternalActivityKind.course
+                                ? l.activitiesScheduleUnknown
+                                : l.activitiesExternalScheduleUnknown,
+                          ),
                         if (item.venue != null || item.city != null)
                           Text([item.venue, item.city].nonNulls.join(' · ')),
                         for (final text in [
@@ -79,10 +107,12 @@ class ExternalActivityDetailScreen extends ConsumerWidget {
                           item.organizer,
                           item.audience,
                           item.cost,
+                          item.level,
+                          item.access,
                         ].nonNulls)
                           Text(text),
                         const SizedBox(height: AppSpacing.medium),
-                        Text(item.description),
+                        if (item.description != null) Text(item.description!),
                         if (item.sourceCategories.isNotEmpty)
                           Text(item.sourceCategories.join(' · ')),
                         const SizedBox(height: AppSpacing.large),

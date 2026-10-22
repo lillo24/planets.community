@@ -6,6 +6,11 @@ is seeded or enabled; operator-owned rights/attribution gates are independent
 of importer credentials. `tests/148_external_activities.test.sql` and the local
 HTTP verifier cover that boundary. See the
 [source-independent runbook](../docs/development/actapi01-infrastructure.md).
+ACTCAT02 adds versioned event/course/place reads, bounded source schedules and
+published geometry while preserving V1 events. The canonical validator still
+guards the same leased transaction. `tests/149_external_catalogue_kinds.test.sql`
+and the V1/V2 HTTP verifier cover the extension; see
+[catalogue contracts](../docs/development/actcat02-catalogue-contract.md).
 
 Combined C/D/M source uses an additive complete unread reader and preserves the
 installed lane readers and distinct read boundaries. Both exact populated lane

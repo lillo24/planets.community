@@ -9,6 +9,7 @@ import {
   runActivityImport,
 } from "./lib/external-activities/importer.mjs";
 import { ActivityImportError } from "./lib/external-activities/transport.mjs";
+import { verifyExternalCatalogueUpgrade } from "./lib/external-activities-upgrade-verifier.mjs";
 
 const ci = process.env.CI === "true";
 if (!ci && process.env.PLANETS_DISPOSABLE_QA !== "1") {
@@ -75,6 +76,7 @@ async function detail(id) {
   return data;
 }
 try {
+  await verifyExternalCatalogueUpgrade(sql);
   assert.equal(
     (await list()).state,
     "unconfigured",
@@ -226,14 +228,109 @@ try {
     { state: "success", records: [], fetched: 0, rejected: 0 },
     AbortSignal.timeout(10_000),
   );
+  // V2 uses the same leased import and identities. Unknown values never become
+  // fabricated event dates/prose, and V1 cannot receive a new listing kind.
+  const place = {
+    ...record("place"),
+    kind: "place",
+    category: "sports",
+    discipline: "basketball",
+    description: null,
+    occurrences: [],
+    geometry: {
+      latitude: 46.07,
+      longitude: 11.12,
+      precision: "locality",
+      provenance_url: origin + "/dataset",
+    },
+  };
+  const course = {
+    ...record("course"),
+    kind: "course",
+    category: "sports",
+    discipline: "yoga",
+    description: null,
+    occurrences: [],
+    schedule: {
+      season_start: new Date(Date.now() - 86400000).toISOString().slice(0, 10),
+      season_end: new Date(Date.now() + 30 * 86400000)
+        .toISOString()
+        .slice(0, 10),
+      text: "Synthetic schedule to confirm",
+    },
+  };
+  entries = [record("b"), place, course].map((record) => ({ record }));
+  assert.equal(
+    (await runActivityImport({ connector, store, apply: true })).changed,
+    2,
+  );
+  assert.equal((await list()).items.length, 1, "V1 remains event-only.");
+  async function listV2(params = {}) {
+    const { data, error } = await guest.rpc(
+      "list_external_activities_v2",
+      params,
+    );
+    assert.equal(error, null, "Anonymous V2 HTTP list succeeds.");
+    return data;
+  }
+  const catalogue = await listV2();
+  assert.deepEqual(
+    catalogue.items.map((item) => item.kind),
+    ["event", "course", "place"],
+  );
+  const placeId = catalogue.items.find((item) => item.kind === "place").id;
+  const courseId = catalogue.items.find((item) => item.kind === "course").id;
+  assert.equal(catalogue.items[1].next_at, null);
+  assert.equal(catalogue.items[2].description, null);
+  assert.equal(catalogue.items[2].geometry.precision, "locality");
+  assert.equal((await listV2({ p_kind: "place" })).items[0].id, placeId);
+  const v2first = await listV2({ p_limit: 1 });
+  assert.equal(
+    (await listV2({ p_limit: 1, p_cursor: v2first.next_cursor })).items[0].id,
+    courseId,
+  );
+  assert.equal(
+    (await runActivityImport({ connector, store, apply: true })).changed,
+    0,
+  );
+  entries = [
+    { record: record("b") },
+    { record: place },
+    { record: { ...course, kind: "place", schedule: null } },
+  ];
+  assert.equal(
+    (await runActivityImport({ connector, store, apply: true })).changed,
+    1,
+  );
+  const changedKind = await guest.rpc("get_external_activity_v2", {
+    p_activity_id: courseId,
+  });
+  assert.equal(changedKind.error, null);
+  assert.equal(
+    changedKind.data.id,
+    courseId,
+    "Kind updates preserve the canonical UUID.",
+  );
+  assert.equal(changedKind.data.kind, "place");
+  assert.equal(
+    await detail(courseId),
+    null,
+    "V1 exact detail excludes new kinds.",
+  );
   await sql`update private.external_activity_sources set enabled=false where source_id=${sourceId}`;
   assert.equal((await list()).state, "unconfigured");
+  assert.equal((await listV2()).state, "unconfigured");
+  assert.equal(
+    (await guest.rpc("get_external_activity_v2", { p_activity_id: placeId }))
+      .data,
+    null,
+  );
   assert.equal(await detail(ids.get("Synthetic activity b")), null);
   const [nativeAfter] =
     await sql`select count(*)::integer as count from public.projects`;
   assert.deepEqual(nativeAfter, nativeBefore);
   console.log(
-    "External activities: synthetic local service/anonymous HTTP pipeline, stable repeat/update, paging, private denial, concurrent claims, failed-run preservation, per-record expiry, obsolete completion and source disable passed. No municipal data was fetched or published.",
+    "External activities: synthetic local service/anonymous V1/V2 HTTP pipeline, all three kinds, stable repeat/kind update, paging, private denial, concurrent claims, failed-run preservation, per-record expiry, obsolete completion and source disable passed. No municipal data was fetched or published.",
   );
 } finally {
   // Only this run's synthetic source is owned here; never reset a peer stack.

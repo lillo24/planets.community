@@ -5,8 +5,11 @@
 - `lib/external-activities/` owns bounded transport, strict canonical records and
   atomic import orchestration. `verify-local-external-activities.mjs` uses only
   a guarded disposable local catalogue and synthetic fixtures to exercise real
-  service/anonymous HTTP, leases, paging, failure and freshness. See the
-  [ACTAPI01 runbook](../docs/development/actapi01-infrastructure.md).
+  service/anonymous V1/V2 HTTP, leases, paging, failure and freshness. Its
+  `lib/external-activities-upgrade-verifier.mjs` helper also proves a populated
+  upgrade with warmed importer plans in a rolled-back transaction. See the
+  [ACTAPI01 runbook](../docs/development/actapi01-infrastructure.md) and
+  [event/course/place contract](../docs/development/actcat02-catalogue-contract.md).
 
 - `run-contact-native-ci.sh` owns the explicitly opted-in ephemeral Linux Android
   runtime for both D/M review journeys, with serial builds and complete drivers.
@@ -150,7 +153,6 @@ D→C populated upgrade checks, row/function preservation and genuine mixed repo
 unread checks. It serially resets only the explicitly disposable selected local
 stack. Its temporary migration-set journal and recovery steps are documented in
 [combined qualification](../docs/development/contact-discussion-integration.md).
-
 
 - `lib/profile-avatar-variant-verifier.mjs` extends the existing profile-photo
   viewer gate with real local Auth/Storage checks for IMG01 immutable variants,

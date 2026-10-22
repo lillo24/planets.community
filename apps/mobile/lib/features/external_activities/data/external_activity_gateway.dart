@@ -28,11 +28,14 @@ class SupabaseExternalActivityGateway implements ExternalActivityGateway {
     Object? result;
     try {
       result = await _client.rpc(
-        'list_external_activities',
+        'list_external_activities_v2',
         params: {
           'p_category': filter.category,
           'p_query': filter.query,
           'p_discipline': filter.discipline,
+          'p_kind': filter.kind?.name,
+          'p_from': filter.from,
+          'p_to': filter.to,
           'p_limit': 20,
           'p_cursor': cursor,
         },
@@ -57,7 +60,7 @@ class SupabaseExternalActivityGateway implements ExternalActivityGateway {
   @override
   Future<ExternalActivity?> get(String id) async {
     final result = await _client.rpc(
-      'get_external_activity',
+      'get_external_activity_v2',
       params: {'p_activity_id': id},
     );
     return result == null ? null : ExternalActivity.parse(result);

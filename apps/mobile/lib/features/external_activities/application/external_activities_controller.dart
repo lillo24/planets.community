@@ -91,6 +91,9 @@ class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
           ExternalActivityFilter(
             category: filter.category,
             query: filter.query,
+            kind: filter.kind,
+            from: filter.from,
+            to: filter.to,
           ),
         );
         return;
@@ -109,6 +112,8 @@ class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
           asOf: page.asOf,
           items: [if (append) ...old!.items, ...page.items],
           disciplines: page.disciplines,
+          kinds: page.kinds,
+          categories: page.categories,
           nextCursor: page.nextCursor,
           lastSuccessAt: page.lastSuccessAt,
         ),

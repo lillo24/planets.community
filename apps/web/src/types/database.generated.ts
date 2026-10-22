@@ -3661,6 +3661,10 @@ export type Database = {
         }[]
       }
       get_external_activity: { Args: { p_activity_id: string }; Returns: Json }
+      get_external_activity_v2: {
+        Args: { p_activity_id: string }
+        Returns: Json
+      }
       get_group_authority_invitation_preview: {
         Args: { p_token: string }
         Returns: {
@@ -4939,6 +4943,19 @@ export type Database = {
           p_discipline?: string
           p_limit?: number
           p_query?: string
+        }
+        Returns: Json
+      }
+      list_external_activities_v2: {
+        Args: {
+          p_category?: string
+          p_cursor?: Json
+          p_discipline?: string
+          p_from?: string
+          p_kind?: string
+          p_limit?: number
+          p_query?: string
+          p_to?: string
         }
         Returns: Json
       }

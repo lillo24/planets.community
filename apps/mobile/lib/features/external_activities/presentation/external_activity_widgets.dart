@@ -73,7 +73,9 @@ class ExternalActivityCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.small),
               Text(
                 occurrence == null
-                    ? l.activitiesExternalScheduleUnknown
+                    ? item.kind == ExternalActivityKind.place
+                          ? l.activitiesPlace
+                          : item.schedule?.text ?? l.activitiesScheduleUnknown
                     : externalOccurrenceLabel(occurrence, locale, l),
               ),
               if (item.venue != null || item.city != null)
@@ -83,7 +85,12 @@ class ExternalActivityCard extends StatelessWidget {
                 l.activitiesSourceLabel(item.sourceName),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
-              if (item.stale) Text(l.activitiesExternalStaleRecord),
+              if (item.stale)
+                Text(
+                  item.kind == ExternalActivityKind.place
+                      ? l.activitiesPlaceStale
+                      : l.activitiesExternalStaleRecord,
+                ),
             ],
           ),
         ),
