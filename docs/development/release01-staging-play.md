@@ -156,14 +156,17 @@ earlier release audit as current evidence.
    approval. This code PR leaves reconciliation disabled and grants no review.
 7. For `verified-backup` only, configure real `STAGING_RECOVERY_POLICY_JSON` and
    fresh restoration evidence. For `development-no-backup`, leave that policy
-   unset; do not invent receipt values. Set repository
-   `STAGING_RELEASE_ENABLED=true` to dispatch `inspect` while protected readiness
-   remains false. Inspect requires the actual `STAGING_DB_URL`: certificate-validated
+   unset; do not invent receipt values. Dispatch read-only `inspect` from `main`
+   while `STAGING_RELEASE_ENABLED` and protected readiness remain false. This
+   manual-only exception retains the protected `planets-staging` environment;
+   deploy/build/publish still require the release flag and successful exact-source
+   validation/rehearsal. Inspect requires the actual `STAGING_DB_URL`: certificate-validated
    TLS on port 5432, a stable backend session and exact history agreement with the
    Management API; only sanitized booleans are retained in `preflight.json`.
    Connection startup and each SQL statement are bounded to 15 seconds.
    Check identity/history/backend evidence, then set protected staging
-   `STAGING_AUTOMATION_READY=true` after all prerequisites pass and dispatch
+   `STAGING_AUTOMATION_READY=true` and repository `STAGING_RELEASE_ENABLED=true`
+   after all prerequisites pass and dispatch
    `deploy` from current main. A missing/broken secret blocks inspection and
    writes; its name alone is not connection proof.
    Subsequent eligible main pushes need no environment reviewer prompt.

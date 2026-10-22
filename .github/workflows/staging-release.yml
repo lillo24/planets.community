@@ -117,9 +117,9 @@ jobs:
     needs: [validate, rehearse]
     if: >-
       always() && github.ref == 'refs/heads/main' &&
-      vars.STAGING_RELEASE_ENABLED == 'true' &&
-      ((needs.validate.result == 'success' && needs.rehearse.result == 'success') ||
-        (github.event_name == 'workflow_dispatch' && inputs.operation == 'inspect'))
+      ((github.event_name == 'workflow_dispatch' && inputs.operation == 'inspect') ||
+        (vars.STAGING_RELEASE_ENABLED == 'true' &&
+          needs.validate.result == 'success' && needs.rehearse.result == 'success'))
     environment: planets-staging
     runs-on: ubuntu-latest
     timeout-minutes: 25

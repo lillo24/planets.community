@@ -767,6 +767,80 @@ test("writer requires exact tested/rehearsed main, one-time readiness and creden
   ])
     assert.throws(() => assertDeployContext({ ...env, ...change }));
 });
+test("only manual main inspection can enter protected staging before release activation", () => {
+  const workflow = readFileSync(
+    resolve(root, ".github/workflows/staging-release.yml"),
+    "utf8",
+  );
+  const staging = workflow
+    .split("\n  staging:\n")[1]
+    .split("\n  android:\n")[0];
+  assert.match(staging, /environment: planets-staging/);
+  const condition = staging
+    .match(/if: >-\n([\s\S]*?)\n    environment:/)[1]
+    .trim();
+  const enabled = new Function(
+    "github",
+    "vars",
+    "inputs",
+    "needs",
+    "always",
+    `return (${condition});`,
+  );
+  const check = ({
+    event = "workflow_dispatch",
+    ref = "refs/heads/main",
+    flag = "false",
+    operation = "inspect",
+    validation = "skipped",
+    rehearsal = "skipped",
+  } = {}) =>
+    enabled(
+      { event_name: event, ref },
+      { STAGING_RELEASE_ENABLED: flag },
+      { operation },
+      { validate: { result: validation }, rehearse: { result: rehearsal } },
+      () => true,
+    );
+  assert.equal(check(), true);
+  assert.equal(check({ validation: "failure", rehearsal: "failure" }), true);
+  assert.equal(check({ ref: "refs/heads/other" }), false);
+  assert.equal(check({ event: "push" }), false);
+  for (const operation of ["deploy", "build", "publish", ""]) {
+    assert.equal(
+      check({ operation, validation: "success", rehearsal: "success" }),
+      false,
+    );
+    assert.equal(
+      check({
+        operation,
+        flag: "true",
+        validation: "success",
+        rehearsal: "success",
+      }),
+      true,
+    );
+    assert.equal(
+      check({
+        operation,
+        flag: "true",
+        validation: "failure",
+        rehearsal: "success",
+      }),
+      false,
+    );
+    assert.equal(
+      check({
+        operation,
+        flag: "true",
+        validation: "success",
+        rehearsal: "skipped",
+      }),
+      false,
+    );
+  }
+});
+
 test("push never reaches Android/Play regardless of legacy auto-publish flag", () => {
   const workflow = readFileSync(
     resolve(root, ".github/workflows/staging-release.yml"),

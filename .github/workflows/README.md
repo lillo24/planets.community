@@ -213,7 +213,10 @@ changes share the Database gate; schema changes also regenerate Web contracts.
 # RELEASE01 and STAGING-AUTO01 staged delivery
 
 `staging-release.yml` is separate from Validation and stays disabled unless
-`STAGING_RELEASE_ENABLED=true`. The existing always-present **Change
+`STAGING_RELEASE_ENABLED=true`, except manual read-only `inspect` from `main`
+may enter the same protected staging environment while deployment is disabled.
+This exception verifies credentials/TLS before activation; it cannot enter the
+deploy/build/publish paths. The existing always-present **Change
 classification** job in Validation now blocks unreviewed risky migration PRs
 and performs the populated semantic rehearsal for migration/release/baseline,
 workflow and dependency changes (and full manual Validation). Unrelated PRs skip
