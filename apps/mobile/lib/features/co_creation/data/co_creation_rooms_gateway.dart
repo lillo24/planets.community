@@ -297,6 +297,40 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     Map<String, dynamic> args,
   ) async {
     final raw = await rpc(name, args);
+    if (name == 'schedule_cocreate_meeting' ||
+        name == 'mutate_cocreate_meeting') {
+      final r = coCreationObject(raw, {
+        'operation',
+        'hub_id',
+        'room_id',
+        'episode_id',
+        'meeting_id',
+        if (name == 'schedule_cocreate_meeting') ...[
+          'recruitment_id',
+          'message_id',
+        ],
+      });
+      if (r['operation'] !=
+              (name == 'schedule_cocreate_meeting'
+                  ? 'schedule'
+                  : args['p_operation']) ||
+          HubId.parse(r['hub_id']).value != args['p_hub_id'] ||
+          args['p_room_id'] != null && r['room_id'] != args['p_room_id'] ||
+          args['p_episode_id'] != null &&
+              r['episode_id'] != args['p_episode_id'] ||
+          args['p_meeting_id'] != null &&
+              r['meeting_id'] != args['p_meeting_id']) {
+        throw const FormatException('Meeting command receipt mismatch.');
+      }
+      CoRoomId.parse(r['room_id']);
+      CoEpisodeId.parse(r['episode_id']);
+      peopleUuid(r['meeting_id']);
+      if (name == 'schedule_cocreate_meeting') {
+        peopleUuid(r['recruitment_id']);
+        peopleUuid(r['message_id']);
+      }
+      return r;
+    }
     if (name == 'mutate_cocreate_recruitment') {
       final r = coCreationObject(raw, {
         'operation',
@@ -379,6 +413,23 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
       return row;
     }
     throw const FormatException('Unsupported room command.');
+  }
+
+  Future<CoCurrentMeeting?> currentMeeting(
+    String actor,
+    CoRoomId room,
+    CoEpisodeId episode,
+  ) async {
+    final raw = await rpc('get_cocreate_current_meeting', {
+      'p_expected_profile_id': peopleUuid(actor),
+      'p_room_id': room.value,
+      'p_episode_id': episode.value,
+    });
+    final result = raw == null ? null : CoCurrentMeeting.parse(raw);
+    if (result?.card != null && result!.card!.room.value != room.value) {
+      throw const FormatException('Foreign current meeting.');
+    }
+    return result;
   }
 }
 

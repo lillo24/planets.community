@@ -369,3 +369,18 @@ unchanged. This follow-up is not complete or ready for production.
   schema/control/seed rollout remains required. Next: commit the mobile picker,
   mutually exclusive presentation selection, hierarchy, meeting UI and notices;
   then reconcile latest merged main and complete the final mobile aggregate.
+
+### Follow-up typed reader/notification stage verified
+
+- Added closed categorized/proposal/own-invitation parsers, bounded typed readers,
+  meeting scheduling/attendance receipts and compatible optional scheduled card
+  fields. Timed filling notices use the existing sole notification inbox and an
+  exact review destination; read never joins a chat. Actor-only signals refresh
+  inbox/count without publishing meeting details.
+- Strict community/notification tests pass **six**. Final formatter checks **937
+  files / zero changes**; Flutter analysis is clean. Latest community/meeting
+  retry suite passes **23**, including activated support and an older meeting's
+  unconfirmed RSVP after the current occurrence changes.
+- Next: commit the tested mobile hierarchy/meeting/settings/picker/Home stage,
+  merge only latest committed main, run complete combined mobile qualification,
+  then final evidence/PR update. Backend/admin/mock commits remain intact.

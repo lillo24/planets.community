@@ -279,6 +279,7 @@ String coNumberedLeaveRoute(HubId hub, CoRoomId room, CoEpisodeId episode) =>
 
 class CoRecruitment {
   CoRecruitment.parse(Object? value) {
+    final scheduled = value is Map && value.containsKey('meeting_id');
     final r = coCreationObject(value, {
       'recruitment_id',
       'hub_id',
@@ -289,6 +290,7 @@ class CoRecruitment {
       'available',
       'state',
       'expires_at',
+      if (scheduled) ...['meeting_id', 'starts_at'],
     });
     id = peopleUuid(r['recruitment_id']);
     hub = HubId.parse(r['hub_id']);
@@ -303,6 +305,11 @@ class CoRecruitment {
       'unavailable',
     });
     expiresAt = coCreationDate(r['expires_at']);
+    meetingId = scheduled ? peopleUuid(r['meeting_id']) : null;
+    startsAt = scheduled ? coCreationDate(r['starts_at']) : null;
+    if (startsAt != null && expiresAt.isAfter(startsAt!)) {
+      throw const FormatException('Recruitment outlives its meeting.');
+    }
     capacity = r['capacity'] == null ? null : coCapacity(r['capacity']);
     occupied = r['occupied'] == null ? null : peopleCount(r['occupied']);
     if ((capacity == null) != (occupied == null) ||
@@ -322,6 +329,39 @@ class CoRecruitment {
   late final int? capacity, occupied;
   late final bool available;
   late final DateTime expiresAt;
+  late final String? meetingId;
+  late final DateTime? startsAt;
+}
+
+class CoCurrentMeeting {
+  CoCurrentMeeting.parse(Object? value) {
+    final r = coCreationObject(value, {
+      'meeting_id',
+      'starts_at',
+      'capacity',
+      'occupied',
+      'cancelled',
+      'attending',
+      'recruitment',
+    });
+    id = peopleUuid(r['meeting_id']);
+    startsAt = coCreationDate(r['starts_at']);
+    capacity = coCapacity(r['capacity']);
+    occupied = peopleCount(r['occupied']);
+    cancelled = peopleBool(r['cancelled']);
+    attending = peopleBool(r['attending']);
+    card = r['recruitment'] == null
+        ? null
+        : CoRecruitment.parse(r['recruitment']);
+    if (occupied > capacity || card != null && card!.meetingId != id) {
+      throw const FormatException('Inconsistent current meeting.');
+    }
+  }
+  late final String id;
+  late final DateTime startsAt;
+  late final int capacity, occupied;
+  late final bool cancelled, attending;
+  late final CoRecruitment? card;
 }
 
 /// Contact payloads stay human-only. Only the versioned room reader accepts

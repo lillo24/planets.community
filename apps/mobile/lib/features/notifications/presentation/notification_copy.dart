@@ -1,7 +1,25 @@
 import '../../../l10n/generated/app_localizations.dart';
+
+import 'package:intl/intl.dart';
+
 import '../domain/notification_models.dart';
 
 String notificationCopy(AppLocalizations l10n, AppNotification notification) {
+  if (notification.kind == NotificationKind.cocreateFilling) {
+    final n = notification.coFilling;
+    if (n == null) return l10n.notificationsGeneric;
+    final local = n.startsAt.toLocal(),
+        offset = n.startsAt.toLocal().timeZoneOffset.inMinutes;
+    final zone =
+        'UTC${offset < 0 ? '-' : '+'}${(offset.abs() ~/ 60).toString().padLeft(2, '0')}:${(offset.abs() % 60).toString().padLeft(2, '0')}';
+    return l10n.notificationCoFilling(
+      n.topic,
+      n.number,
+      n.occupied,
+      n.capacity,
+      '${DateFormat.yMMMd(l10n.localeName).add_Hm().format(local)} ($zone)',
+    );
+  }
   if (notification.kind.isContact) {
     return switch (notification.kind) {
       NotificationKind.groupContactRequest =>
