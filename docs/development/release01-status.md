@@ -29,6 +29,17 @@ exact-head CI and rehearsal completion; this record does not imply deployment.
 
 ## Historical RELEASE01 execution
 
+Release-path correction (22 October): the [runbook](release01-staging-play.md#explicit-android-build-variants)
+now defines an explicit Closed testing Mock variant and an ordinary staging variant.
+The historical report below describes the earlier Mock-off pipeline. Live Play
+inspection on 22 October found code 13 / 0.1.9 Active, uploaded as `13.aab`;
+the original file matches the normal local bundle (SHA-256
+`01c5a61458ccdbedb28711115e9738e65da923c5fabe29f49fbc112695371e94`).
+Its client config omitted the capability and mock endpoints, and all three compiled
+libraries lack the mock origin/broker. Code 13 is consumed; the replacement source
+version is 0.1.10+14, subject to a fresh inventory check before any upload.
+No Play write is authorized or performed by this correction.
+
 Recorded at 2026-10-21 22:02 UTC (22 October locally). Release plumbing is merged
 and the original approved 26 migrations are deployed. **The first RELEASE01 AAB
 is still blocked by two later main migrations awaiting owner approval.** No app

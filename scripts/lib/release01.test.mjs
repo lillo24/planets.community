@@ -35,6 +35,7 @@ import {
   playAccessToken,
   playClient,
 } from "../release/play.mjs";
+import { releaseConfig } from "../release/config.mjs";
 import { manualCode, prepareSigning } from "../release/android.mjs";
 import { requireFullValidation } from "../release/validation.mjs";
 import { verifyPersistedArtifact } from "../release/publish.mjs";
@@ -614,6 +615,14 @@ test("publication approves only the persisted verified source/certificate/AAB re
     debuggable: false,
     demos_enabled: false,
     mock_capability: false,
+    release_variant: "staging",
+    all_payloads_scanned: true,
+    compiled_capabilities: Object.fromEntries(
+      ["arm64-v8a", "armeabi-v7a", "x86_64"].map((abi) => [
+        `base/lib/${abi}/libapp.so`,
+        "PLANETS_COMPILED_MOCK_V1=false",
+      ]),
+    ),
     target_sdk: 36,
     signed_payloads: 3,
     native_16k_checks: 2,
@@ -626,12 +635,48 @@ test("publication approves only the persisted verified source/certificate/AAB re
   assert.doesNotThrow(() =>
     verifyPersistedArtifact(p, e, Buffer.from("bundle"), v, e.source_sha),
   );
+  const closed = {
+    ...e,
+    release_variant: "closed-test-mock",
+    mock_capability: true,
+    compiled_capabilities: Object.fromEntries(
+      Object.keys(e.compiled_capabilities).map((key) => [
+        key,
+        "PLANETS_COMPILED_MOCK_V1=true",
+      ]),
+    ),
+  };
+  assert.doesNotThrow(() =>
+    verifyPersistedArtifact(
+      p,
+      closed,
+      Buffer.from("bundle"),
+      v,
+      e.source_sha,
+      "closed-test-mock",
+    ),
+  );
+  assert.throws(() =>
+    verifyPersistedArtifact(p, closed, Buffer.from("bundle"), v, e.source_sha),
+  );
+  assert.throws(() =>
+    verifyPersistedArtifact(
+      p,
+      e,
+      Buffer.from("bundle"),
+      v,
+      e.source_sha,
+      "closed-test-mock",
+    ),
+  );
   for (const changed of [
     { ...e, source_sha: "c".repeat(40) },
     { ...e, upload_certificate_sha256: "c".repeat(64) },
     { ...e, target_sdk: undefined },
     { ...e, demos_enabled: true },
     { ...e, mock_capability: true },
+    { ...e, compiled_capabilities: {} },
+    { ...e, all_payloads_scanned: false },
   ])
     assert.throws(() =>
       verifyPersistedArtifact(
@@ -769,4 +814,64 @@ test("AAB manifest/payload validator covers altered identity, debuggable and uns
     { encoding: "utf8" },
   );
   assert.equal(result.status, 0, result.stderr);
+});
+
+test("explicit closed-test Mock variant requires its complete isolated configuration", () => {
+  const base = {
+    APP_ENV: "staging",
+    SUPABASE_URL: `https://${STAGING_REF}.supabase.co`,
+    SUPABASE_PUBLISHABLE_KEY: "sb_publishable_normal_synthetic_key_000",
+    ENABLE_DEMO_TOOLS: "false",
+    SENTRY_DSN: "",
+  };
+  const mock = {
+    MOCK_SUPABASE_URL: "https://pnolarmzxmmjtguligfc.supabase.co",
+    MOCK_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_mock_synthetic_key_0000",
+    MOCK_PERSONA_BROKER_URL:
+      "https://pnolarmzxmmjtguligfc.supabase.co/functions/v1/mock-personas",
+    MOCK_FIXTURE_GENERATION: "mock-world-2026-10-21-v1",
+  };
+  const env = {
+    RELEASE_VARIANT: "closed-test-mock",
+    STAGING_CONFIG_JSON: JSON.stringify(base),
+    MOCK_CONFIG_JSON: JSON.stringify(mock),
+  };
+  assert.equal(releaseConfig(env).ENABLE_CLOSED_TEST_MOCK, "true");
+  assert.equal(
+    releaseConfig({ ...env, RELEASE_VARIANT: "staging" })
+      .ENABLE_CLOSED_TEST_MOCK,
+    undefined,
+  );
+  for (const patch of [
+    { MOCK_CONFIG_JSON: "{}" },
+    { MOCK_CONFIG_JSON: undefined },
+    { RELEASE_VARIANT: "production" },
+    { STAGING_CONFIG_JSON: JSON.stringify({ ...base, APP_ENV: "production" }) },
+    ...[
+      { MOCK_SUPABASE_URL: base.SUPABASE_URL },
+      { MOCK_FIXTURE_GENERATION: "old" },
+      { MOCK_SUPABASE_PUBLISHABLE_KEY: base.SUPABASE_PUBLISHABLE_KEY },
+      { MOCK_SUPABASE_PUBLISHABLE_KEY: "sb_secret_forbidden" },
+      { ROLE: "admin" },
+    ].map((patch) => ({
+      MOCK_CONFIG_JSON: JSON.stringify({ ...mock, ...patch }),
+    })),
+  ])
+    assert.throws(() => releaseConfig({ ...env, ...patch }));
+});
+
+test("observed uploaded code 13 cannot be reused by a manual release", () => {
+  const policy = JSON.parse(
+    readFileSync("scripts/release/policy.json", "utf8"),
+  );
+  assert.equal(policy.historical_version_code_floor, 13);
+  const env = {
+    PLAY_VERIFIED_UNUSED_CODE: "13",
+    PLAY_CONSOLE_CHECKED_AT: new Date().toISOString(),
+  };
+  assert.throws(() => manualCode(env, policy));
+  assert.equal(
+    manualCode({ ...env, PLAY_VERIFIED_UNUSED_CODE: "14" }, policy),
+    14,
+  );
 });

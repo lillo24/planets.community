@@ -8,6 +8,34 @@ the existing `community.planets.app` closed track. Production and iOS distributi
 remain outside this workflow. The initial [live assessment](evidence/release01/assessment.md)
 records the blockers; merging release plumbing does not resolve them.
 
+## Explicit Android build variants
+
+The workflow selects `release_variant=closed-test-mock` by default, including
+future explicitly enabled push builds. Its Android environment must contain
+`MOCK_CONFIG_JSON`: only `MOCK_SUPABASE_URL`, `MOCK_SUPABASE_PUBLISHABLE_KEY`,
+`MOCK_PERSONA_BROKER_URL`, and `MOCK_FIXTURE_GENERATION`, all strings. The fixed
+mock project is `pnolarmzxmmjtguligfc`, broker `/functions/v1/mock-personas`, and
+generation `mock-world-2026-10-21-v1`. The existing private client build config
+supplies these four fields; no human enrollment or real login is required.
+
+The variant combines those public client values with the unchanged normal
+`STAGING_CONFIG_JSON` and explicitly compiles `ENABLE_CLOSED_TEST_MOCK=true`.
+Missing, foreign, privileged or incomplete mock configuration blocks the build;
+there is no automatic ordinary-build fallback. Choose `release_variant=staging`
+to build the ordinary test app with Mock off. Direct script use defaults to
+`RELEASE_VARIANT=staging`; opt in with `RELEASE_VARIANT=closed-test-mock`.
+Neither path accepts production. `APP_ENV=production` also suppresses the runtime
+capability even with a stale true define. Existing map flags and signing remain.
+
+The AAB inspector requires a single effective `PLANETS_COMPILED_MOCK_V1=true`
+or `false` AOT constant in **every ABI**, agreeing with the chosen variant and
+build provenance. The compile-time application loader checks that marker against
+the actual `AppConfig.closedTestMockEnabled` gate and emits it once in the device
+log without credentials. Missing/conflicting markers fail verification. Every ZIP
+payload is scanned for privileged keys/JWTs. Publication rechecks the variant,
+compiled receipts and exact AAB hash. Marker/config evidence proves build capability;
+it does not prove hosted availability, Play publication or a complete device journey.
+
 ## STAGING-AUTO01 safety policy
 
 Code merge and activation are separate. After one-time setup, eligible main
@@ -270,7 +298,9 @@ separate Mock origin; it is excluded from the normal-staging Edge inventory.
 RELEASE01 ordinary builds require `ENABLE_CLOSED_TEST_MOCK` absent/false and
 all `MOCK_*` endpoint/key/generation fields empty. Build provenance and the AAB
 receipt confirm Mock capability is off; its broker is never deployed to staging
-as a workaround. A Mock-enabled release belongs to its separate qualification flow.
+as a workaround. The explicit `closed-test-mock` variant adds only the isolated
+mock client target and requires compiled-on evidence; hosted mock readiness remains
+a separate gate. It never deploys the broker to normal staging.
 Anonymous HTTP verifies old/V2 listing reads, `22023` for an invalid category and
 denial of authenticated Messages access. These probes do not log returned rows,
 impersonate users or create hosted synthetic fixtures. They complement local
