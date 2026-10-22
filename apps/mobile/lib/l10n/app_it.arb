@@ -2656,5 +2656,23 @@
     }
   },
   "coEventDraftUnavailable": "Questo evento pubblico non è disponibile per una nuova bozza di ricerca persone.",
-  "coEventUnavailable": "I dettagli dell’evento pubblico non sono più disponibili."
+  "coEventUnavailable": "I dettagli dell’evento pubblico non sono più disponibili.",
+  "coIntroTitle": "Trova persone",
+  "coIntroHeading": "Ogni passione può avvicinare persone",
+  "coIntroBody": "Parti da ciò che ami. Trova persone con cui condividerlo.",
+  "coIntroExamples": "Interessi illustrativi · Anteprima Sandbox",
+  "coIntroBoardGames": "Giochi da tavolo",
+  "coIntroConcerts": "Concerti",
+  "coIntroVideoGames": "Videogiochi",
+  "coIntroFuso": "Fuso",
+  "coIntroLupus": "Lupus in Fabula",
+  "coIntroStrokes": "The Strokes",
+  "coIntroManeskin": "Måneskin",
+  "coIntroValorant": "Valorant",
+  "coIntroTogether": "Un interesse in comune. Un nuovo incontro.",
+  "coIntroDescription": "Tre pianeti di interessi: giochi da tavolo, con Fuso e Lupus in Fabula; concerti, con The Strokes e Måneskin; videogiochi, con Valorant. Gli interessi condivisi possono avvicinare persone. Sono esempi, non comunità esistenti o collaborazioni ufficiali.",
+  "coIntroExplore": "Esplora",
+  "coIntroSkip": "Salta",
+  "coIntroReplay": "Rivedi introduzione",
+  "coIntroStorageError": "Impossibile leggere o salvare la preferenza locale dell’introduzione. Puoi comunque esplorare o rivedere l’introduzione."
 }

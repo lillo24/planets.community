@@ -8,6 +8,8 @@ import '../../features/co_creation/presentation/co_creation_room_items.dart';
 import '../../features/co_creation/domain/co_creation_rooms.dart';
 import '../../features/co_creation/presentation/people_exit_screens.dart';
 import '../../features/co_creation/presentation/people_browse_screen.dart';
+import '../../features/co_creation/presentation/people_entry_screen.dart';
+import '../../features/co_creation/presentation/people_interests_intro.dart';
 import '../../features/co_creation/presentation/people_manage_screen.dart';
 import '../../features/co_creation/presentation/people_message_items.dart';
 import '../../features/co_creation/presentation/people_contact_screen.dart';
@@ -1459,9 +1461,20 @@ RoutingConfig _routingConfig(
                 path: '/people',
                 pageBuilder: (context, state) => NoTransitionPage<void>(
                   key: state.pageKey,
-                  child: const PeopleBrowseScreen(),
+                  child: PeopleEntryScreen(
+                    ordinaryEntry:
+                        state.uri.path == '/people' && !state.uri.hasQuery,
+                    child: const PeopleBrowseScreen(),
+                  ),
                 ),
                 routes: [
+                  GoRoute(
+                    path: 'intro',
+                    builder: (context, _) => PeopleInterestsIntro(
+                      onExplore: () => context.pop(),
+                      onClose: () => context.pop(),
+                    ),
+                  ),
                   GoRoute(
                     path: 'hubs',
                     builder: (_, _) => const CoCreationHubsScreen(),
