@@ -109,3 +109,20 @@ queue merge. No hosted source/import/scheduler activation or store upload.
 
 RESUME01 is merged at 9945ad01 with all required CI green. Its code is now reconciled into this cumulative branch. Both ARB additions are retained; the event-only D03 Find company handoff is intentionally limited to event records. Continue 003/004, then 005–011; no intermediate merges or hosted activation.
 
+### 003 ACTUI02 — implemented and locally qualified
+
+One category/kind filter and compact dates/discipline disclosure now drive the
+canonical server filter across pagination. Place selection clears dates, Culture
+clears incompatible sports place/discipline, reset retains category. Search and
+scroll remain RAM-only; existing inactive/off/stale fences and native Tavoli are
+preserved. Examples moved to the secondary footer; no dead Map action exists.
+
+`flutter analyze lib/features/external_activities`: PASS. Scoped external,
+ACTMET01 and complete navigation tests: **130 PASS**, including new server-filter
+transition/search/reset and native scope journeys. Old interaction assumptions
+were repaired with real scroll/pump before tapping after controls moved; no
+navigation/analytics assertion removed. Rendered IT/EN × 320/360dp × light/dark,
+2x text: **8 PASS / 16 captures**; narrow Italian controls and English stale
+results inspected. Source heading reduced after inspection to avoid redundant
+oversized headings. No device or live source claim. Remaining detailed Sports
+metadata and final integrated matrix belong to 004/011. Next: implement 004.

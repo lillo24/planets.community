@@ -40,3 +40,11 @@ ACTMET01 instruments only deliberate real catalogue card opens and successful
 official-link copy/share handoffs. Rebuilds, external browser opening, examples
 and Mock records emit nothing. Production analytics remains disabled; see the
 [metrics guide](../../../../../docs/development/activity-interest-metrics.md).
+
+ACTUI02: `presentation/external_activity_filters.dart` owns the one category/kind,
+server discipline and date disclosure, ready for List/Map composition. Category
+changes clear sports discipline; Culture clears a sports place lane; choosing a
+place clears dates. Dates are an explicit exclusive-end window of at most 90
+calendar dates and exclude undated places. Reset keeps the selected category.
+Search, filters and scroll are RAM-only within the retained route; no history is
+persisted or background fetching introduced. Examples are a secondary footer.

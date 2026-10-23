@@ -42,6 +42,106 @@ void main() {
     await initializeDateFormatting('en');
     await initializeDateFormatting('it');
   });
+  for (final language in ['en', 'it']) {
+    for (final width in [320.0, 360.0]) {
+      for (final dark in [false, true]) {
+        testWidgets('ACTUI02 rendered $language $width 2x dark=$dark', (
+          tester,
+        ) async {
+          tester.view.physicalSize = Size(width, 900);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final payload = externalActivityPayload();
+          final gateway = FakeExternalActivityGateway()
+            ..page = externalPageFixture(
+              items: [ExternalActivity.parse(payload)],
+              health: dark
+                  ? ExternalCatalogueHealth.stale
+                  : ExternalCatalogueHealth.healthy,
+            );
+          await _pump(
+            tester,
+            gateway,
+            language: language,
+            scale: 2,
+            dark: dark,
+          );
+          await RenderedEvidence.capture(
+            tester,
+            'actui02-$language-${width.toInt()}-2x-${dark ? 'dark' : 'light'}',
+          );
+          await tester.scrollUntilVisible(
+            find.byKey(const ValueKey('external-$externalActivityFixtureId')),
+            250,
+            scrollable: find.byType(Scrollable).hitTestable().first,
+          );
+          await tester.pumpAndSettle();
+          await RenderedEvidence.capture(
+            tester,
+            'actui02-results-$language-${width.toInt()}-2x-${dark ? 'dark' : 'light'}',
+          );
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  }
+
+  testWidgets(
+    'ACTUI02 kind transitions, search and reset use full server filters',
+    (tester) async {
+      final gateway = FakeExternalActivityGateway();
+      await _pump(tester, gateway);
+      await tester.tap(find.byKey(const Key('activities-category-sports')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('activities-kind-course')));
+      await tester.pumpAndSettle();
+      expect(gateway.calls.last.category, 'sports');
+      expect(gateway.calls.last.kind, ExternalActivityKind.course);
+      final search = find.byKey(const Key('activities-external-search'));
+      await tester.ensureVisible(search);
+      await tester.enterText(search, 'swimming');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(gateway.calls.last.query, 'swimming');
+      expect(gateway.calls.last.kind, ExternalActivityKind.course);
+      await tester.ensureVisible(
+        find.byKey(const Key('activities-reset-filters')),
+      );
+      await tester.tap(find.byKey(const Key('activities-reset-filters')));
+      await tester.pumpAndSettle();
+      expect(gateway.calls.last.category, 'sports');
+      expect(gateway.calls.last.kind, isNull);
+      expect(gateway.calls.last.query, isEmpty);
+      expect(tester.widget<TextField>(search).controller!.text, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'ACTUI02 Culture clears incompatible sports place without changing native scope',
+    (tester) async {
+      final gateway = FakeExternalActivityGateway();
+      await _pump(tester, gateway);
+      await tester.tap(find.byKey(const Key('activities-category-sports')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('activities-kind-place')));
+      await tester.pumpAndSettle();
+      expect(gateway.calls.last.kind, ExternalActivityKind.place);
+      expect(find.byKey(const Key('activities-native-tavoli')), findsNothing);
+      await tester.tap(find.byKey(const Key('activities-category-culture')));
+      await tester.pumpAndSettle();
+      expect(gateway.calls.last.kind, isNull);
+      expect(find.byKey(const Key('activities-kind-place')), findsNothing);
+      await tester.ensureVisible(
+        find.byKey(const Key('activities-native-tavoli')),
+      );
+      await tester.tap(find.byKey(const Key('activities-native-tavoli')));
+      await tester.pumpAndSettle();
+      expect(find.text('Native Tavoli destination'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'course detail renders its canonical derived lesson without inventing prose or an unknown-schedule warning',
     (tester) async {
@@ -238,6 +338,7 @@ void main() {
         250,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.pumpAndSettle();
       await tester.tap(card);
       await tester.pumpAndSettle();
       expect(sink.events, isEmpty);
@@ -579,6 +680,11 @@ void main() {
       expect(find.text('Last observed more than 72 hours ago'), findsOneWidget);
       expect(find.byType(DropdownButtonFormField<String>), findsNothing);
       await RenderedEvidence.capture(tester, 'actapi01-synthetic-list');
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('activities-external-search')),
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
       await tester.enterText(
         find.byKey(const Key('activities-external-search')),
         'sport',
@@ -657,6 +763,12 @@ void main() {
               ? findsOneWidget
               : findsNothing,
         );
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('activities-preview-examples')),
+          200,
+          scrollable: find.byType(Scrollable).hitTestable().first,
+        );
+        await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('activities-preview-examples')));
         await tester.pumpAndSettle();
         expect(router.state.uri.path, '/activities/examples');
@@ -751,6 +863,7 @@ Future<GoRouter> _pump(
   MemoryActivityInterestSink? interestSink,
   FakeProjectInviteSharing? sharing,
   bool mock = false,
+  bool dark = false,
 }) async {
   final auth = FakeAuthGateway();
   addTearDown(auth.close);
@@ -814,7 +927,7 @@ Future<GoRouter> _pump(
       child: RenderedEvidence.wrap(
         MaterialApp.router(
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
+          theme: dark ? AppTheme.dark : AppTheme.light,
           locale: Locale(language),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,

@@ -14,6 +14,7 @@ import '../../activity_interest/domain/activity_interest_event.dart';
 import '../application/external_activities_controller.dart';
 import '../domain/external_activity.dart';
 import 'external_activity_widgets.dart';
+import 'external_activity_filters.dart';
 
 class ExternalActivitiesScreen extends ConsumerStatefulWidget {
   const ExternalActivitiesScreen({super.key});
@@ -53,6 +54,7 @@ class _ExternalActivitiesScreenState
         WidgetsBinding.instance.lifecycleState == null ||
         WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     WidgetsBinding.instance.addObserver(this);
+    _search.text = ref.read(externalActivitiesControllerProvider).filter.query;
   }
 
   @override
@@ -74,18 +76,25 @@ class _ExternalActivitiesScreenState
     super.dispose();
   }
 
-  void _filter({String? category, String? discipline}) {
+  void _apply(ExternalActivityFilter value) {
     _debounce?.cancel();
     if (_scroll.hasClients) _scroll.jumpTo(0);
-    ref
-        .read(externalActivitiesControllerProvider.notifier)
-        .filter(
-          ExternalActivityFilter(
-            category: category,
-            discipline: discipline,
-            query: _search.text.trim(),
-          ),
-        );
+    if (_search.text != value.query) _search.text = value.query;
+    ref.read(externalActivitiesControllerProvider.notifier).filter(value);
+  }
+
+  void _searchChanged() {
+    final filter = ref.read(externalActivitiesControllerProvider).filter;
+    _apply(
+      ExternalActivityFilter(
+        category: filter.category,
+        discipline: filter.discipline,
+        kind: filter.kind,
+        from: filter.from,
+        to: filter.to,
+        query: _search.text.trim(),
+      ),
+    );
   }
 
   @override
@@ -131,22 +140,10 @@ class _ExternalActivitiesScreenState
                     selected: BrowseActivityType.activities,
                   ),
                   const SizedBox(height: AppSpacing.medium),
-                  Wrap(
-                    spacing: AppSpacing.small,
-                    runSpacing: AppSpacing.xSmall,
-                    children: [
-                      for (final category in [null, 'sports', 'culture'])
-                        ChoiceChip(
-                          key: Key('activities-category-${category ?? 'all'}'),
-                          selected: state.filter.category == category,
-                          label: Text(switch (category) {
-                            'sports' => l.activitiesSports,
-                            'culture' => l.activitiesCulture,
-                            _ => l.activitiesAll,
-                          }),
-                          onSelected: (_) => _filter(category: category),
-                        ),
-                    ],
+                  ExternalActivityFilters(
+                    filter: state.filter,
+                    disciplines: page?.disciplines ?? const [],
+                    onChanged: _apply,
                   ),
                   if (state.filter.category != 'sports') ...[
                     const SizedBox(height: AppSpacing.medium),
@@ -164,16 +161,10 @@ class _ExternalActivitiesScreenState
                   const SizedBox(height: AppSpacing.large),
                   Text(
                     l.activitiesExternalTitle,
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: AppSpacing.small),
                   Text(l.activitiesExternalScope),
-                  TextButton.icon(
-                    key: const Key('activities-preview-examples'),
-                    onPressed: () => context.push('/activities/examples'),
-                    icon: const Icon(Icons.visibility_outlined),
-                    label: Text(l.activitiesPreviewExamples),
-                  ),
                   TextField(
                     key: const Key('activities-external-search'),
                     controller: _search,
@@ -189,10 +180,7 @@ class _ExternalActivitiesScreenState
                               icon: const Icon(Icons.clear),
                               onPressed: () {
                                 _search.clear();
-                                _filter(
-                                  category: state.filter.category,
-                                  discipline: state.filter.discipline,
-                                );
+                                _searchChanged();
                               },
                             ),
                     ),
@@ -201,43 +189,11 @@ class _ExternalActivitiesScreenState
                       _debounce?.cancel();
                       _debounce = Timer(const Duration(milliseconds: 300), () {
                         if (mounted) {
-                          _filter(
-                            category: state.filter.category,
-                            discipline: state.filter.discipline,
-                          );
+                          _searchChanged();
                         }
                       });
                     },
                   ),
-                  if (page != null &&
-                      page.disciplines.isNotEmpty &&
-                      state.filter.category == 'sports')
-                    DropdownButtonFormField<String>(
-                      key: ValueKey(
-                        'external-discipline-${state.filter.discipline}',
-                      ),
-                      initialValue: state.filter.discipline,
-                      isExpanded: true,
-                      itemHeight: null,
-                      decoration: InputDecoration(
-                        labelText: l.activitiesDiscipline,
-                      ),
-                      items: [
-                        DropdownMenuItem(
-                          value: null,
-                          child: Text(l.activitiesAllDisciplines),
-                        ),
-                        for (final discipline in page.disciplines)
-                          DropdownMenuItem(
-                            value: discipline,
-                            child: Text(discipline),
-                          ),
-                      ],
-                      onChanged: (value) => _filter(
-                        category: state.filter.category,
-                        discipline: value,
-                      ),
-                    ),
                   const SizedBox(height: AppSpacing.medium),
                   if (state.loading) ...[
                     Text(l.activitiesExternalLoading),
@@ -281,6 +237,12 @@ class _ExternalActivitiesScreenState
                       item: item,
                       onTap: () => _openActivity(item),
                     ),
+                  TextButton.icon(
+                    key: const Key('activities-preview-examples'),
+                    onPressed: () => context.push('/activities/examples'),
+                    icon: const Icon(Icons.visibility_outlined),
+                    label: Text(l.activitiesPreviewExamples),
+                  ),
                   if (state.moreFailed) Text(l.activitiesExternalReadFailed),
                   if (page?.nextCursor != null)
                     TextButton(

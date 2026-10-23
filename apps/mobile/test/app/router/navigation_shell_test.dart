@@ -227,7 +227,7 @@ void main() {
         // ACTCAT02 includes courses and undated places, beyond calendars.
         expect(find.text('External activities · Trento'), findsOneWidget);
         await RenderedEvidence.capture(tester, 'activities-all-$destination');
-        await _tap(tester, 'activities-preview-examples');
+        await _activityTap(tester, 'activities-preview-examples');
         await _tap(tester, 'activities-category-sports');
         expect(find.byKey(const Key('activities-native-tavoli')), findsNothing);
         await tester.enterText(
@@ -329,7 +329,7 @@ void main() {
       );
       app.read(appRouterProvider).go('/activities');
       await tester.pumpAndSettle();
-      await _tap(tester, 'activities-preview-examples');
+      await _activityTap(tester, 'activities-preview-examples');
       await _tap(tester, 'activities-category-sports');
       await _activityTap(tester, 'example-acrobatics');
       expect(find.text('Course'), findsOneWidget);
@@ -385,6 +385,11 @@ void main() {
       final router = app.read(appRouterProvider);
       router.go('/activities');
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('activities-external-search')),
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
       await tester.enterText(
         find.byKey(const Key('activities-external-search')),
         'no matching example',
