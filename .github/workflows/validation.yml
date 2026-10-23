@@ -66,7 +66,12 @@ jobs:
         if: github.event_name == 'pull_request' && steps.risk.outputs.rehearse == 'true'
         run: |
           # Base files run from their own archive; candidate tests cannot replace them.
-          node --test build/trusted-release/scripts/lib/staging-auto01.test.mjs build/trusted-release/scripts/lib/release01.test.mjs
+          tests=(build/trusted-release/scripts/lib/staging-auto01.test.mjs build/trusted-release/scripts/lib/release01.test.mjs)
+          for name in staging-auto03 backend-handoff; do
+            file="build/trusted-release/scripts/lib/$name.test.mjs"
+            if [[ -f "$file" ]]; then tests+=("$file"); fi
+          done
+          node --test "${tests[@]}"
       - name: Prove populated migration and catalog semantics before merge
         if: steps.risk.outputs.rehearse == 'true'
         env:
