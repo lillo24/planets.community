@@ -24,7 +24,7 @@ Use fictional data for new captures and interactions. Keep the supplied real-acc
 
 ## Repository evidence checked while preparing this prompt
 
-Planning baseline: `main` at **33f0309bcc02c2a54b872210c4f6ec51a6ccc731**, inspected **23 October 2026**. The mobile manifest then declared **0.1.10+14**. Start execution from the latest appropriate `main`, recheck these references, and record the actual audited source. These are navigation aids, not instructions to freeze an old checkout.
+Planning baseline: `main` at **9945ad0102218f69acbafd543d8112aa8fa90cec**, rechecked **23 October 2026** after PR #297 integrated Find People, Communities, meetings, and related Mock Mode changes. The initial inspection was at `33f0309bcc02c2a54b872210c4f6ec51a6ccc731`, with mobile version **0.1.10+14**. Start execution from the latest appropriate `main`, recheck these references, and record the actual audited source. These are navigation aids, not instructions to freeze an old checkout.
 
 | Area | Current places to inspect and reuse |
 | --- | --- |
@@ -33,6 +33,7 @@ Planning baseline: `main` at **33f0309bcc02c2a54b872210c4f6ec51a6ccc731**, inspe
 | Existing complete Android capture workflow | `docs/play-store-assets/README.md` and capture provenance; reuse the method, not old screenshots or its old device geometry |
 | Local data and setup | `docs/development/getting-started.md`, `docs/development/demo-data.md`, root `package.json` |
 | Shared mock environment limitations | `docs/development/mock-environment.md`, `docs/development/mock-mobile-sessions.md`; prior status files are historical observations |
+| Find People, Communities, meetings and local fixtures | `apps/mobile/lib/features/co_creation/README.md`, `docs/development/cocreate-experimental-contract.md`, `docs/development/cocreate-fill01.md`, `scripts/seed-local-cocreate.mjs` |
 | Inbox implementation | `apps/mobile/lib/features/messages/{domain,application,data,presentation}/`, especially `message_chat_models.dart`, `message_chats_controller.dart`, `message_chats_gateway.dart`, `messages_screen.dart` |
 | Participation chat contract | `docs/architecture/decisions/0007-participation-pair-conversations.md` and its canonical migrations/tests |
 
@@ -79,6 +80,10 @@ Cover these implemented families, rechecking actual availability rather than inv
 | Safety | Blocked people, reports and own reports, evidence requests, corroboration and counterstatement UI |
 | Closed-test-only surfaces | Persona selection, unavailable/recovery/boundary/return-to-normal UI, clearly marked as test-app-specific |
 
+Also audit the newly integrated **Find People / Co-Creation** family: intro/replay; browse/filter/detail; create/edit/My posts; interests and author responses; accepted-contact chat and close/withdraw; Communities categories/proposals/support/Your interests; hub join/General; numbered groups and People/settings/leave; timed meetings/RSVP/recruitment; source-to-native-Project and external-event handoffs; Messages/notification integration and gate-OFF recovery.
+
+Treat the local **Co-Creation presentation setting**, the **server experiment gate**, and the **Mock backend realm** as separate axes. Co-Creation and Activities Split are now mutually exclusive presentation selections; switching them does not silently switch the account. Cover the distinct UIs with legitimate task-owned local fixtures, enabling the local server gate only through the documented fixture setup. Turning the presentation OFF preserves existing Messages and own-exit routes. Clearly label `/people/demo` previews as fictional presentation-only screens. The source merge does not prove hosted migration/activation or installed-app delivery; do not activate a shared server to obtain screenshots.
+
 Do not expand this into a full independent web/admin/iOS audit. Include external browser/native screens only where needed to understand a mobile flow, and label the boundary.
 
 For every distinct page, capture a normal meaningful state. Where relevant add empty, loading, error/retry/offline, validation, keyboard-open, long-content, and role-specific states. Use at least guest, ordinary member/requester, and creator/organizer fixtures where their visible UI differs. Use legitimate local authorization; do not weaken access rules to obtain screenshots.
@@ -98,6 +103,7 @@ Current-source evidence makes a cross-domain explanation plausible:
 - A participation-request activity can produce "Richiesta accettata".
 - Both kinds use the counterparty name as their card title.
 - ADR 0007 unifies Project/Tavolo participation history for a pair but explicitly preserves Resource conversations separately. Newer personal member contacts are also group-scoped.
+- Current Find People also appends post-scoped accepted-contact rows through `PeopleContactItems`; these are a separate section, not another v7 `MessageChatItem` kind. Include this domain in inbox coverage where enabled.
 
 Treat that as a hypothesis to verify, not a conclusion about Leonardo's installed build.
 
