@@ -33,6 +33,8 @@ schedule/retry recovery and separate per-occurrence RSVP/refilling controls.
 Structured recruitment renders occupancy and the meeting instant before Join.
 The existing room gateway still owns canonical chat admission and episode
 validation. Notifications reuse the sole inbox and actor-only signal stream.
+At large text sizes, category icons and right-aligned room occupancy have their
+own line so group names and availability retain the phone's full content width.
 See the [combined contract](../../../../../docs/development/cocreate-fill01.md)
 for capacities, cooldowns, compatibility, mock catalogs and qualification.
 

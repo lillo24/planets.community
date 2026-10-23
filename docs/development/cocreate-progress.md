@@ -407,3 +407,23 @@ unchanged. This follow-up is not complete or ready for production.
   captures were rendered/inspected, including large Italian category and meeting
   copy plus the disabled Home button. Next: integrate origin/main `d735bb88`,
   complete combined mobile tests/debug APK and final docs/evidence/PR checks.
+
+### Latest-main integration and visual qualification checkpoint
+
+- `f5a25f25` integrates merged main `d735bb88`, including merged ACTMET01, on this
+  same branch. The sole adjacent-import conflict preserves both the D03 people
+  handoff and ACTMET01 sharing controls. Their denied analytics gate/Mock
+  exclusion remains intact. Other agents' branches/worktrees are untouched.
+- New EN/IT active hierarchy → General → separate **2/3** room → deliberate room
+  Join/Open journeys pass at 320dp/2x. Their screenshots exposed cramped large
+  room-row copy; it now uses full-width lines and right-aligned occupancy. Final
+  complete Co-Creation **139 pass**; final formatter/analyzer clean. Twenty-four
+  focused captures are selected; extra generated renders are preserved in .local.
+- Complete integrated serial mobile run is active, currently past native
+  Project tests with no failures and two existing opt-in smoke skips. Its log is
+  `.local/qa-api-overlay/mobile-complete-final.log`; debug APK follows only on
+  success in session **95840**. After the small visual repair, all affected
+  Co-Creation tests were independently rerun and pass. Next: finish this run/APK,
+  inspect final diff, commit/push evidence, update draft #297 and record the exact
+  final-head owner CI artifact. Do not repeat completed stages or touch hosted
+  services/main/other branches. QA config/activation restoration is complete.

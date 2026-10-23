@@ -50,15 +50,34 @@ class _NumberedListState extends State<CoNumberedList> {
           load: (ref, actor, before) => ref
               .read(coCreationRoomsGatewayProvider)
               .numbered(widget.hub, openOnly: openOnly, before: before),
-          row: (context, r, refresh) => ListTile(
-            title: Text(l.coGroupsNumber(r.number)),
-            trailing: Text(l.coCommunityMembers(r.occupied, r.capacity)),
-            subtitle: Text(r.available ? l.coGroupsAvailable : l.coGroupsFull),
-            onTap: () async {
-              await context.push(coNumberedDetailRoute(r.hubId, r.roomId));
-              await refresh();
-            },
-          ),
+          row: (context, r, refresh) {
+            final largeText = MediaQuery.textScalerOf(context).scale(16) > 24;
+            final count = l.coCommunityMembers(r.occupied, r.capacity);
+            final availability = r.available
+                ? l.coGroupsAvailable
+                : l.coGroupsFull;
+            return ListTile(
+              title: Text(l.coGroupsNumber(r.number)),
+              trailing: largeText ? null : Text(count),
+              // Large text gets full-width lines; the count remains right aligned.
+              subtitle: largeText
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(count),
+                        ),
+                        Text(availability),
+                      ],
+                    )
+                  : Text(availability),
+              onTap: () async {
+                await context.push(coNumberedDetailRoute(r.hubId, r.roomId));
+                await refresh();
+              },
+            );
+          },
         ),
       ],
     );

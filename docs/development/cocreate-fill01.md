@@ -1,9 +1,12 @@
-# COCREATE-FILL01 — meetings, filling and mode-specific mock data
+# COCREATE-COMM01/FILL01 — communities, meetings and mock data
 
-Status: implementation in progress, 2026-10-23. New isolated branch
+Status: implementation complete; final integrated qualification in progress,
+2026-10-23. New isolated branch
 `codex/cocreate-fill01` builds on RUNALL `a0e810d0` and preserves VIS01
-`512192ec` through an explicit merge. Main, ACTAPI01, ACTMET01 and other
-worktrees are untouched. Keep the cumulative PR unmerged as requested.
+`512192ec` through an explicit merge. Latest merged main `d735bb88` is integrated,
+preserving ACTAPI01 and merged ACTMET01. Other branches/worktrees are untouched.
+Keep [draft PR #297](https://github.com/lillo24/planets.community/pull/297), based
+on `codex/cocreate-runall`, unmerged as requested.
 
 ## Requested behavior and working contract
 
@@ -44,7 +47,10 @@ The later instruction to combine related unfinished work explicitly authorizes
 integrating VIS01. Its source is preserved on this branch; #287 and #292 and their
 worktrees remain untouched. The focused dependent draft targets
 `codex/cocreate-runall`, while the combined source also contains VIS01. Do not
-merge it. Independent ACTMET01 is not needed for community support or meetings.
+merge it. ACTMET01 subsequently merged into main as `4a568037`; only that merged
+source is included. Its activity-only vocabulary, Mock exclusion and denied
+analytics/provider gate remain unchanged. The Activities/Sports queue added by
+`d735bb88` is a planning document, not another implementation executed here.
 
 ### Canonical community contract
 
@@ -215,6 +221,16 @@ The backend commands used here were `npm run db:reset`, `npm run db:test`,
 with `npm run cocreate:upgrade:verify:local`; the script only accepts its two
 documented immutable bases and still requires its owned-project guard.
 
+For the recorded Windows owned engine, process-only environment selected
+`CONTAINER_CONNECTION=planets-cocreate-qa-root` and
+`DOCKER_HOST=npipe:////./pipe/podman-planets-cocreate-qa`.
+`PLANETS_DISPOSABLE_QA=1` and
+`PLANETS_UPGRADE_QA_PROJECT=planets-cocreate-fill01-qa` explicitly permitted the
+upgrade. The journaled task config used project `planets-cocreate-fill01-qa`, API
+54821, database 54322 and mailbox 54324. That overlay is now restored; recreating
+QA requires a new verified owned setup, not running these resets on the default
+project. No private signing/API keys are recorded in source or evidence.
+
 - Final strengthened backend tests: **299 pgTAP** and **104 genuine Auth**
   assertions pass, including normalized concurrent proposals from different
   accounts, withdrawal versus activation, existing-hub reuse, scoped staff CAS,
@@ -245,3 +261,46 @@ documented immutable bases and still requires its owned-project guard.
   restored byte-for-byte (`2e67b7a5cda9ffc671c31b4461c1c8b896cc75c3bf727f6e406ee573eefbd8f6`),
   both new mock stacks cleaned up, and the owned QA VM stopped. Recovery state
   and private diagnostics remain untracked in `.local`.
+
+### Latest-main reconciliation and final visual repair
+
+`f5a25f25` integrates actual main `d735bb88` on this existing branch. Its only
+conflict was adjacent external-detail imports; both the D03 people action and
+ACTMET01 sharing controls are retained. No migration, analytics gate, provider
+setting or other branch was changed by the reconciliation.
+
+The active-category widget journey checks localized category → Valorant →
+General disclosure/admission → independent `2/3` room → deliberate room admission
+and chat. Locality remains a filter and no preview reads a transcript. Both EN
+and IT journeys pass at 320dp/2x. Its first test expectation incorrectly assumed
+legacy direct room Join also navigated; the established separate Open chat step
+was restored in the test, preserving product behavior. Large-text capture
+inspection then found cramped availability copy; count and label now have full
+width with occupancy still aligned right. The final entire Co-Creation suite
+passes **139**, including that repair and both new journeys.
+
+Final format covers **947 files / zero changes** and analysis is clean. The
+complete serial mobile run is still active on the integrated source, followed
+by the debug APK. The small visual repair is independently requalified by all
+139 Co-Creation tests after the full run had already passed this area; no test
+or assertion is disabled. Twenty-four focused PNGs are retained in
+`evidence/cocreate-fill01`; extra predecessor/Demo renders are preserved only in
+task-owned `.local` diagnostics.
+
+Mobile commands run from `apps/mobile`:
+
+```text
+flutter gen-l10n
+dart format --output=none --set-exit-if-changed lib test test_support
+flutter analyze --no-pub
+flutter test --no-pub --concurrency=1 --reporter expanded
+flutter test --no-pub --concurrency=1 --reporter expanded --dart-define=UI_POLISH_CAPTURE_DIR=../../docs/development/evidence/cocreate-fill01 test/features/co_creation
+flutter build apk --debug --no-pub
+```
+
+The capture invocation actually used the absolute worktree output path with the
+same directory. Mock unit command from root:
+`node --test scripts/mock/*.test.mjs supabase/functions/mock-personas/*.test.mjs`.
+Web/root commands and their qualified results are recorded above. Final GitHub
+CI remains dependent on the existing exact-head owner migration review; no
+owner approval is posted or fabricated by this task.
