@@ -179,12 +179,16 @@ class CoMeetingPanel extends ConsumerWidget {
     required this.room,
     required this.episode,
     this.manager = false,
+    this.expectedMeetingId,
     super.key,
   });
   final HubId hub;
   final CoRoomId room;
   final CoEpisodeId episode;
   final bool manager;
+
+  /// Calendar links review one exact occurrence; never substitute a newer one.
+  final String? expectedMeetingId;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
@@ -210,6 +214,27 @@ class CoMeetingPanel extends ConsumerWidget {
             .currentMeeting(actor!, room, episode),
       ],
       row: (context, m, refresh) {
+        if (expectedMeetingId != null && m?.id != expectedMeetingId) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(l.coPeopleUnavailable),
+              // A new occurrence cannot strand an older frozen operation.
+              for (final entry in pendingMeetings.where(
+                (entry) =>
+                    entry.value.intent['p_meeting_id'] == expectedMeetingId,
+              ))
+                PeopleCommand(
+                  slot: entry.key,
+                  rpc: 'mutate_cocreate_meeting',
+                  gateway: (ref) => ref.read(coCreationRoomsGatewayProvider),
+                  intent: Map<String, dynamic>.from(entry.value.intent),
+                  label: l.coPeopleRetry,
+                  onSuccess: (_) => refresh(),
+                ),
+            ],
+          );
+        }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

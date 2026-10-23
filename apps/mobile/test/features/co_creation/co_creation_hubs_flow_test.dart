@@ -47,6 +47,11 @@ class Session extends AuthSessionController {
 }
 
 class Policy extends PolicyAcceptanceController {
+  void revoke() => state = PolicyAcceptanceState(
+    state.account,
+    state.version,
+    PolicyAcceptancePhase.required,
+  );
   @override
   PolicyAcceptanceState build() => PolicyAcceptanceState(
     ref.watch(authSessionProvider).identity?.id,
@@ -245,8 +250,8 @@ Future<(ProviderContainer, GoRouter)> pump(
         CoCreationSourcesGateway(f.rpc),
       ),
       peoplePostsGatewayProvider.overrideWithValue(PeoplePostsGateway(f.rpc)),
-      coCreationRoomsGatewayProvider.overrideWithValue(
-        CoCreationRoomsGateway(f.rpc),
+      coCreationRoomsGatewayProvider.overrideWith(
+        (_) => CoCreationRoomsGateway(f.rpc),
       ),
       coCreationCommunitiesGatewayProvider.overrideWithValue(
         CoCreationCommunitiesGateway(f.rpc),
@@ -317,6 +322,7 @@ Future<(ProviderContainer, GoRouter)> pump(
       container: app,
       child: RenderedEvidence.wrap(
         MaterialApp.router(
+          debugShowCheckedModeBanner: false,
           routerConfig: router,
           theme: dark ? AppTheme.dark : AppTheme.light,
           locale: Locale(language),
