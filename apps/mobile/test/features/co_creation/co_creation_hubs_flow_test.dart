@@ -164,7 +164,7 @@ class Fixture {
           'closed': !active.contains(actor),
           'muted': false,
         };
-      case 'get_cocreate_room_page_v2':
+      case 'get_cocreate_room_page_v3':
         require(actor!, args);
         return {
           'profile_id': actor,
@@ -412,7 +412,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(f.commands, isEmpty);
       expect(f.acks, isEmpty);
-      expect(f.calls.where((n) => n == 'get_cocreate_room_page_v2'), isEmpty);
+      expect(f.calls.where((n) => n == 'get_cocreate_room_page_v3'), isEmpty);
       await tap(tester, find.text('Join this community'));
       expect(f.commands.single['p_operation'], 'join');
       expect(f.acks, isEmpty);

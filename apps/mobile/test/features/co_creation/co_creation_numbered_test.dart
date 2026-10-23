@@ -30,7 +30,7 @@ class NumberedFixture extends f.Fixture {
   @override
   Future<Object?> rpc(String name, Map<String, dynamic> args) async {
     switch (name) {
-      case 'get_own_cocreate_recruitment':
+      case 'get_own_cocreate_recruitment_v2':
         return null;
       case 'get_cocreate_numbered_group':
         calls.add(name);
@@ -97,7 +97,7 @@ class NumberedFixture extends f.Fixture {
           'manager_profile_id': f.a,
           'is_manager': args['p_expected_profile_id'] == f.a && !closed,
         };
-      case 'get_cocreate_room_page_v2':
+      case 'get_cocreate_room_page_v3':
         if (args['p_room_id'] == room) {
           calls.add(name);
           return {
@@ -308,7 +308,7 @@ void main() {
       );
       (app.read(authSessionProvider.notifier) as f.Session).change(f.b);
       await tester.pumpAndSettle();
-      expect(fixture.calls, isNot(contains('get_cocreate_room_page_v2')));
+      expect(fixture.calls, isNot(contains('get_cocreate_room_page_v3')));
       await f.tap(tester, find.widgetWithText(FilledButton, 'Join this group'));
       await f.tap(tester, find.text('Refresh').first);
       await f.tap(tester, find.widgetWithText(FilledButton, 'Retry'));

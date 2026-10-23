@@ -111,7 +111,7 @@ void main() {
         await tester.pumpAndSettle();
         await RenderedEvidence.capture(tester, 'active-directory-$language-2x');
         await f.tap(tester, find.text('Valorant'));
-        expect(fixture.calls, isNot(contains('get_cocreate_room_page_v2')));
+        expect(fixture.calls, isNot(contains('get_cocreate_room_page_v3')));
         expect(find.text(l.coCommunityMembers(2, 3)), findsOneWidget);
         await tester.ensureVisible(find.text(l.coCommunityMembers(2, 3)));
         await tester.pumpAndSettle();

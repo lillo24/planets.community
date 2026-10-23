@@ -15,6 +15,9 @@ select ok(not has_function_privilege('anon',signature,'EXECUTE'),'guest cannot m
  'public.schedule_cocreate_meeting(uuid,uuid,uuid,timestamptz,integer,uuid,uuid)',
  'public.mutate_cocreate_meeting(uuid,uuid,uuid,uuid,uuid,uuid,text)',
  'public.get_cocreate_current_meeting(uuid,uuid,uuid)',
+ 'public.get_own_cocreate_recruitment_v2(uuid,uuid,uuid)',
+ 'public.get_cocreate_recruitment_v2(uuid,uuid,uuid,uuid)',
+ 'public.get_cocreate_room_page_v3(uuid,uuid,uuid,integer,bigint)',
  'public.list_own_notifications_with_cocreate(uuid,integer,timestamptz,uuid)',
  'public.moderate_cocreate_community_proposal(uuid,uuid,uuid,bigint,text)'])signature;
 select is(private.cocreate_normalize(E'  VaLoRaNt\t  Community  '),'valorant community','case and whitespace normalize consistently');
@@ -64,6 +67,21 @@ select set_config('cc.meeting',public.schedule_cocreate_meeting('cc080000-0000-4
 select is(private.cocreate_recruitment_projection((current_setting('cc.meeting')::jsonb->>'recruitment_id')::uuid)->>'capacity','3','card counts meeting places');
 select is(private.cocreate_recruitment_projection((current_setting('cc.meeting')::jsonb->>'recruitment_id')::uuid)->>'occupied','1','creator attends initial meeting');
 select ok(private.cocreate_recruitment_projection((current_setting('cc.meeting')::jsonb->>'recruitment_id')::uuid) ? 'starts_at','card carries scheduled time');
+select set_config('cc.oldcard',public.get_own_cocreate_recruitment('cc080000-0000-4000-8000-000000000001',(current_setting('cc.meeting')::jsonb->>'room_id')::uuid,(current_setting('cc.meeting')::jsonb->>'episode_id')::uuid)::text,true);
+select set_config('cc.newcard',public.get_own_cocreate_recruitment_v2('cc080000-0000-4000-8000-000000000001',(current_setting('cc.meeting')::jsonb->>'room_id')::uuid,(current_setting('cc.meeting')::jsonb->>'episode_id')::uuid)::text,true);
+select is((select count(*)::int from jsonb_object_keys(current_setting('cc.oldcard')::jsonb)),9,'installed closed card reader keeps exactly nine fields for dated requests');
+select is(current_setting('cc.oldcard')::jsonb->>'state','unavailable','old client cannot offer a dateless meeting admission');
+select is(current_setting('cc.oldcard')::jsonb->>'available','false','legacy dated card has no Join action');
+select is(current_setting('cc.oldcard')::jsonb->>'occupied',null::text,'legacy dated card never mislabels attendance as chat membership');
+select is((select count(*)::int from jsonb_object_keys(current_setting('cc.newcard')::jsonb)),11,'new version exposes exactly eleven dated-card fields');
+select is(current_setting('cc.newcard')::jsonb->>'available','true','new client can deliberately review and join a dated request');
+select set_config('cc.general',(select general_room_id::text from private.cocreate_recruitments where id=(current_setting('cc.meeting')::jsonb->>'recruitment_id')::uuid),true);
+select set_config('cc.generalep',(select id::text from private.cocreate_room_episodes where room_id=current_setting('cc.general')::uuid and actor_id='cc080000-0000-4000-8000-000000000001' and ended_at is null),true);
+select set_config('cc.oldpage',public.get_cocreate_room_page_v2('cc080000-0000-4000-8000-000000000001',current_setting('cc.general')::uuid,current_setting('cc.generalep')::uuid)::text,true);
+select set_config('cc.newpage',public.get_cocreate_room_page_v3('cc080000-0000-4000-8000-000000000001',current_setting('cc.general')::uuid,current_setting('cc.generalep')::uuid)::text,true);
+select is(current_setting('cc.oldpage')::jsonb->'messages'->0->'recruitment',current_setting('cc.oldcard')::jsonb,'installed mixed feed keeps its strict nested legacy card');
+select is(current_setting('cc.newpage')::jsonb->'messages'->0->'recruitment',current_setting('cc.newcard')::jsonb,'versioned mixed feed carries full meeting time and counts');
+select is(current_setting('cc.newpage')::jsonb->>'read_token',current_setting('cc.oldpage')::jsonb->>'read_token','versioning cannot change the exact ACK frontier');
 select is((select capacity from private.cocreate_rooms where id=(current_setting('cc.meeting')::jsonb->>'room_id')::uuid),50,'persistent chat capacity is independent');
 select throws_ok($$select public.mutate_cocreate_numbered_group('cc080000-0000-4000-8000-000000000001',gen_random_uuid(),current_setting('cc.hub')::uuid,'capacity',(current_setting('cc.meeting')::jsonb->>'room_id')::uuid,(current_setting('cc.meeting')::jsonb->>'episode_id')::uuid,3,null,(select version from private.cocreate_rooms where id=(current_setting('cc.meeting')::jsonb->>'room_id')::uuid))$$,'PT409',null,'legacy capacity controls cannot introduce a second RSVP limit');
 select is((select count(*)::int from private.outbox_events where event_type='cocreate.filling_posted' and payload->>'recruitment_id'=current_setting('cc.meeting')::jsonb->>'recruitment_id'),1,'one identifier-only outbox event per card');

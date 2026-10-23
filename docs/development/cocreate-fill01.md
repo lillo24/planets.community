@@ -82,6 +82,17 @@ analytics/provider gate remain unchanged. The Activities/Sports queue added by
   shape. New categorized readers and scheduled card fields are additive. Public
   TypeScript types use the established generator.
 
+Scheduled cards use `get_own_cocreate_recruitment_v2`,
+`get_cocreate_recruitment_v2` and `get_cocreate_room_page_v3`. The old installed
+readers keep their function identity, grants, episode/history limits, exact ACK
+frontier and closed nine-field nested card. For a dated request, that legacy card
+is non-actionable (`unavailable`, null counts) rather than allowing an old client
+to join without seeing the meeting time. Unscheduled cards are unchanged. New
+readers expose the eleven-field card with the time and meeting places; strict
+parsers are retained. Existing internal report snapshots preserve the full exact
+dated evidence. Apply the backend migration before distributing the new client;
+there is no fallback to a dateless admission or Demo data.
+
 ### Meeting and notice contract
 
 - Only the current numbered-group creator schedules/reposts/cancels. A General

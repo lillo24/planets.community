@@ -427,3 +427,49 @@ unchanged. This follow-up is not complete or ready for production.
   inspect final diff, commit/push evidence, update draft #297 and record the exact
   final-head owner CI artifact. Do not repeat completed stages or touch hosted
   services/main/other branches. QA config/activation restoration is complete.
+
+### Compatibility correction checkpoint (continue here)
+
+- The complete integrated mobile suite passed **4,179 / two existing opt-in
+  smoke skips** in 18m10s, followed by a successful Android debug APK (240.5s).
+  All **139** Co-Creation tests independently pass after the large-text repair.
+- Final interface inspection found a real gap: scheduled-card fields were added
+  through installed D01 readers whose earlier client parsers are closed. New
+  additive migration `20261023002240_cocreate_versioned_meeting_readers.sql`
+  introduces `get_own_cocreate_recruitment_v2`,
+  `get_cocreate_recruitment_v2` and `get_cocreate_room_page_v3`, preserving all
+  existing Auth/episode/history/ACK checks. Existing readers retain their OID,
+  ACL, exact unscheduled behavior and nine-field nested shape; dated cards appear
+  unavailable with no occupancy/admission action, so old clients cannot offer
+  Join without meeting time. New readers carry the eleven-field dated card.
+- Correction source (scoped checks pass; final replay/upgrade in progress): new migration, mobile
+  gateway names and corresponding explicit fixture expectations, old/new reader
+  pgTAP and genuine Auth/ACK assertions. No previous migration is rewritten.
+  Ordinary reader compatibility is repaired at the backend rather than relaxing
+  strict parsers. Report snapshots and current-meeting reads retain exact time.
+- Owned QA VM restarted and the stopped owned backup resumed; the new migration
+  applied successfully. Root config is TEMPORARILY the owned overlay again:
+  project `planets-cocreate-fill01-qa`, API54821/DB54322/mail54324, overlay SHA256
+  `42c0e9dda182248d77185be3dc12c70c6473a08b87d6b6a666fb22c9abbe56fc`.
+  `.local/qa-api-overlay/journal.json` records it; original bytes/hash remain
+  safely saved. NEVER stage this config, use the default project or touch another
+  machine/worktree. Earlier restoration evidence above is historical.
+- Scoped compatibility qualification passes **314 pgTAP / 113 real Auth**;
+  standard generation adds 27 public type lines. All **139** Co-Creation tests
+  pass with the new RPC names; existing fixtures changed only their explicit
+  method expectations, retaining every assertion. Flutter analysis is clean.
+- Active sessions: **52764** runs fresh replay/full pgTAP, lint/advisors, selected
+  actual-base populated upgrade, continuous programme, final Auth and generation
+  (`compat-clean-reset.log`, `compat-full-tap.log`, `compat-upgrade.log`,
+  `compat-programme.log`, `compat-auth-final.log`, `compat-types-final.log`).
+  **85221** has reached the updated debug APK (`compat-apk.log`). Inspect actual
+  results before claiming final qualification. Source stays isolated on
+  `codex/cocreate-fill01`, draft PR #297; config overlay must not be staged.
+- Exact next action: finish/repair these tests, fresh replay/full pgTAP plus
+  lint/advisors, repeat selected actual-base upgrade/continuous journey and public
+  types/drift, qualify Web types, then stop own backend with backup and hash-check
+  restore original config. Repeat two-realm mock qualification against the final
+  migration digest (the earlier 382 pass used three follow-up migrations). Commit
+  correction/evidence, push once final local qualification is complete, refresh
+  draft #297 and its exact owner-review CI artifact. No hosted operation,
+  deployment, main merge, external delivery or approval bypass.

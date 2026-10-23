@@ -3747,6 +3747,15 @@ export type Database = {
         }
         Returns: Json
       }
+      get_cocreate_recruitment_v2: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_general_room_id: string
+          p_recruitment_id: string
+        }
+        Returns: Json
+      }
       get_cocreate_room_page: {
         Args: {
           p_before_sequence?: number
@@ -3758,6 +3767,16 @@ export type Database = {
         Returns: Json
       }
       get_cocreate_room_page_v2: {
+        Args: {
+          p_before_sequence?: number
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      get_cocreate_room_page_v3: {
         Args: {
           p_before_sequence?: number
           p_episode_id: string
@@ -4003,6 +4022,14 @@ export type Database = {
         Returns: Json
       }
       get_own_cocreate_recruitment: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      get_own_cocreate_recruitment_v2: {
         Args: {
           p_episode_id: string
           p_expected_profile_id: string

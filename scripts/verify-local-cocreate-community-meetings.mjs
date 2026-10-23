@@ -313,7 +313,7 @@ try {
     "22023",
   );
   const getCard = (p) =>
-    rpc(p, "get_cocreate_recruitment", {
+    rpc(p, "get_cocreate_recruitment_v2", {
       ...actor(p),
       p_general_room_id: ha.room_id,
       p_episode_id:
@@ -327,6 +327,53 @@ try {
       p_recruitment_id: meeting.recruitment_id,
     });
   let card = await getCard(b);
+  const oldCard = await rpc(b, "get_cocreate_recruitment", {
+    ...actor(b),
+    p_general_room_id: ha.room_id,
+    p_episode_id: hb.episode_id,
+    p_recruitment_id: meeting.recruitment_id,
+  });
+  equal(
+    Object.keys(oldCard).length,
+    9,
+    "Legacy review retains its closed nine-field payload",
+  );
+  equal(
+    oldCard.available,
+    false,
+    "Legacy client cannot join without seeing meeting time",
+  );
+  equal(
+    oldCard.occupied,
+    null,
+    "Legacy review does not mislabel meeting attendance",
+  );
+  const pageArgs = {
+    ...actor(b),
+    p_room_id: ha.room_id,
+    p_episode_id: hb.episode_id,
+  };
+  const oldPage = await rpc(b, "get_cocreate_room_page_v2", pageArgs);
+  const newPage = await rpc(b, "get_cocreate_room_page_v3", pageArgs);
+  const findScheduled = (page) =>
+    page.messages.find(
+      (m) => m.recruitment?.recruitment_id === meeting.recruitment_id,
+    )?.recruitment;
+  equal(
+    findScheduled(oldPage),
+    oldCard,
+    "Installed mixed feed remains parseable without dropping human history",
+  );
+  equal(
+    findScheduled(newPage),
+    card,
+    "New mixed feed carries the same exact dated request",
+  );
+  equal(
+    newPage.read_token,
+    oldPage.read_token,
+    "Reader versioning preserves the exact ACK frontier",
+  );
   equal(card.occupied, 1, "Creator counts toward meeting occupancy");
   equal(card.capacity, 2, "Meeting capacity independent of persistent chat");
   equal(

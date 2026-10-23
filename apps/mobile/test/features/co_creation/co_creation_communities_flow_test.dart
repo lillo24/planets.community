@@ -159,7 +159,7 @@ void main() {
             expect(find.text('Category'), findsNothing);
             expect(find.text('Community'), findsNothing);
             expect(
-              fixture.calls.where((c) => c == 'get_cocreate_room_page_v2'),
+              fixture.calls.where((c) => c == 'get_cocreate_room_page_v3'),
               isEmpty,
             );
             expect(tester.takeException(), isNull);

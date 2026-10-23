@@ -30,8 +30,8 @@ class CardFixture extends n.NumberedFixture {
   bool lose = false;
   @override
   Future<Object?> rpc(String name, Map<String, dynamic> args) async {
-    if (name == 'get_cocreate_recruitment' ||
-        name == 'get_own_cocreate_recruitment') {
+    if (name == 'get_cocreate_recruitment_v2' ||
+        name == 'get_own_cocreate_recruitment_v2') {
       calls.add(name);
       return card(state: state);
     }
@@ -54,7 +54,7 @@ class CardFixture extends n.NumberedFixture {
         'archived': false,
       };
     }
-    if (name == 'get_cocreate_room_page_v2' && args['p_room_id'] == f.room) {
+    if (name == 'get_cocreate_room_page_v3' && args['p_room_id'] == f.room) {
       calls.add(name);
       return {
         'profile_id': args['p_expected_profile_id'],

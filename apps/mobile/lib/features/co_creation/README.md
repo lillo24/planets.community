@@ -31,6 +31,11 @@ public proposals and route activation invitations through deliberate existing
 hub admission. `co_creation_meeting_screen.dart` owns local-date/time input,
 schedule/retry recovery and separate per-occurrence RSVP/refilling controls.
 Structured recruitment renders occupancy and the meeting instant before Join.
+The room gateway uses versioned scheduled-card review readers and mixed feed v3;
+installed review/feed readers retain their strict nine-field card and mark dated
+requests unavailable rather than offering Join without the time. Their Auth,
+episode/history and ACK boundaries are unchanged. This client requires the
+additive reader migration; it never falls back to a dateless card on RPC failure.
 The existing room gateway still owns canonical chat admission and episode
 validation. Notifications reuse the sole inbox and actor-only signal stream.
 At large text sizes, category icons and right-aligned room occupancy have their
@@ -80,8 +85,10 @@ The HTTP fallback refresh interval is 20 seconds for lists and 10 seconds for
 an open contact. It does not grant socket access to transcripts or persist data.
 Catalogue availability and every command are server-controlled, independently
 of the local Sandbox preference. Turning Sandbox off preserves Messages/exit
-routes. Backend disabled/error never injects Demo rows. Curated topics remain
-empty/inactive outside explicit synthetic local fixtures.
+routes. Backend disabled/error never injects Demo rows. The initial topic/hub
+catalog remains empty/inactive outside explicit fixtures; COMM01 can activate a
+topic/local hub only through its configured eligible-interest threshold while
+the server experiment is enabled.
 
 See docs/development/cocreate-posts-contacts.md for local setup, exact RPCs,
 canonical blocking/moderation, migration and qualification evidence. Native phone

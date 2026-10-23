@@ -119,7 +119,7 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     CoEpisodeId episode, {
     int? before,
   }) async => CoRoomPage.parse(
-    await rpc('get_cocreate_room_page_v2', {
+    await rpc('get_cocreate_room_page_v3', {
       'p_expected_profile_id': peopleUuid(actor),
       'p_room_id': room.value,
       'p_episode_id': episode.value,
@@ -140,7 +140,9 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     String? id,
   }) async {
     final raw = await rpc(
-      id == null ? 'get_own_cocreate_recruitment' : 'get_cocreate_recruitment',
+      id == null
+          ? 'get_own_cocreate_recruitment_v2'
+          : 'get_cocreate_recruitment_v2',
       {
         'p_expected_profile_id': peopleUuid(actor),
         if (id == null)

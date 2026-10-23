@@ -1,5 +1,15 @@
 # Structured recruitment (D01)
 
+[COMM01/FILL01](cocreate-fill01.md) adds dated requests and explicit refilling on
+this same domain. Legacy unscheduled cards retain this nine-field reader and
+behavior. New scheduled cards carry an immutable meeting instant, use separate
+attendance capacity, and queue bounded in-app General notifications. The mobile
+manager now schedules dated requests; existing installed commands/readers stay
+compatible. New clients use review v2/feed v3 for dated cards; installed readers
+keep nine fields and a non-actionable placeholder for such requests, preserving
+history/ACK while requiring an updated client to display time before Join.
+External push/provider delivery is not activated.
+
 The current numbered-group creator can deliberately post one active structured
 card into that group's hub General. A card is an immutable room message plus a
 separate private recruitment reference/lifecycle row; it never rewrites human
@@ -10,8 +20,8 @@ The experimental private defaults are a per-room 3,600-second cooldown (bounded
 60–86,400) and seven-day expiry (bounded 1–30 days). Expiry is a live query state,
 not retention or an automatic reposting job. Reopening a seat updates the existing
 card's availability and posts nothing. Retraction names the exact recruitment ID
-and remains an identity-only own cleanup when the gate is OFF. No push or durable
-notification is created. Room message abuse limits still include structured
+and remains an identity-only own cleanup when the gate is OFF. Legacy unscheduled
+cards create no push or durable notification. Room message abuse limits still include structured
 inserts; human unread explicitly excludes them.
 
 `mutate_cocreate_recruitment` serializes post/retract with the actor and hub locks,

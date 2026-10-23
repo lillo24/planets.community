@@ -5,6 +5,14 @@ These defaults apply only to this isolated development programme. They do not
 settle production policy or change any existing domain's audience/history.
 Project/Event/Tavolo classification and final visual identity remain unresolved.
 
+[COMM01/FILL01](cocreate-fill01.md) extends this baseline with curated categories,
+three-person community activation, deliberate ready-to-join invitations, separate
+meeting attendance and timed filling notices. It also supersedes the original
+device-preference precedence rule: new Settings selections disable the other
+presentation first. Unscheduled room limits/history and all existing authority
+remain as defined here; the follow-up documents the disclosed persistent-chat
+ceiling and independent meeting places. No production policy is activated.
+
 ## Objects and access
 
 | Object                | Deliberate public projection, while server gate ON                               | Admitted access                                                                               | Authority                                                                                 |
