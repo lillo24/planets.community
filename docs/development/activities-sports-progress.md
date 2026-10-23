@@ -106,3 +106,6 @@ generated-type areas, then implement 003 → 004 → 005 → 006 → 007 → 008
 010 → 011. Commit/tests/progress per stage, no intermediate merge waits. Obtain
 fresh consolidated exact-content approval and required final CI before the one
 queue merge. No hosted source/import/scheduler activation or store upload.
+
+RESUME01 is merged at 9945ad01 with all required CI green. Its code is now reconciled into this cumulative branch. Both ARB additions are retained; the event-only D03 Find company handoff is intentionally limited to event records. Continue 003/004, then 005–011; no intermediate merges or hosted activation.
+

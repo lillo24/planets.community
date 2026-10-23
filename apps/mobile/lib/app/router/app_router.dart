@@ -1,3 +1,22 @@
+import '../../features/co_creation/presentation/co_creation_event_screen.dart';
+import '../../features/co_creation/presentation/co_creation_sources_screen.dart';
+import '../../features/co_creation/presentation/co_creation_recruitment_screen.dart';
+import '../../features/co_creation/presentation/co_creation_numbered_screen.dart';
+import '../../features/co_creation/presentation/co_creation_hubs_screen.dart';
+import '../../features/co_creation/presentation/co_creation_community_screens.dart';
+import '../../features/co_creation/presentation/co_creation_meeting_screen.dart';
+import '../../features/co_creation/presentation/co_creation_general_screen.dart';
+import '../../features/co_creation/presentation/co_creation_room_items.dart';
+import '../../features/co_creation/domain/co_creation_rooms.dart';
+import '../../features/co_creation/presentation/people_exit_screens.dart';
+import '../../features/co_creation/presentation/people_browse_screen.dart';
+import '../../features/co_creation/presentation/people_entry_screen.dart';
+import '../../features/co_creation/presentation/people_interests_intro.dart';
+import '../../features/co_creation/presentation/people_manage_screen.dart';
+import '../../features/co_creation/presentation/people_message_items.dart';
+import '../../features/co_creation/presentation/people_contact_screen.dart';
+import '../../features/co_creation/domain/co_creation_identity.dart';
+import '../../features/co_creation/domain/people_private.dart';
 import '../../features/member_contact/presentation/member_contact_routes.dart';
 import '../../features/member_contact/presentation/member_contact_compose_screen.dart';
 import '../../features/member_contact/presentation/member_contact_request_screen.dart';
@@ -125,6 +144,9 @@ import 'app_navigation_shell.dart';
 import 'native_project_links.dart';
 import 'draft_departure_coordinator.dart';
 
+import '../../features/settings/application/co_creation_preference_controller.dart';
+import '../../features/co_creation/presentation/co_creation_demo_screens.dart';
+
 typedef AuthSessionReader = AuthSessionState Function();
 typedef PendingEmailOtpReader = PendingEmailOtp? Function();
 
@@ -136,6 +158,7 @@ GoRouter createAppRouter({
   StartupFlow? startupFlow,
   bool Function()? readPolicyAccepted,
   bool Function()? readActivitiesSplit,
+  bool Function()? readCoCreation,
 }) {
   final configuration = _NativeRoutingConfig(
     _routingConfig(
@@ -146,6 +169,7 @@ GoRouter createAppRouter({
       startupFlow,
       readPolicyAccepted,
       readActivitiesSplit,
+      readCoCreation,
     ),
     draftDeparture,
   );
@@ -167,6 +191,7 @@ RoutingConfig _routingConfig(
   StartupFlow? startupFlow,
   bool Function()? readPolicyAccepted,
   bool Function()? readActivitiesSplit,
+  bool Function()? readCoCreation,
   MockModeCoordinator? mockCoordinator,
   bool activeMock = false,
 ]) {
@@ -231,6 +256,10 @@ RoutingConfig _routingConfig(
       final session = sessionReader();
       final pending = pendingReader();
       final path = state.uri.path;
+      if ((path == '/people' || path.startsWith('/people/')) &&
+          !(readCoCreation?.call() ?? false)) {
+        return '/proposals';
+      }
       if (path == MockModeRoutes.accounts &&
           (mockCoordinator == null ||
               (!activeMock && !mockCoordinator.selectionRequested))) {
@@ -359,7 +388,7 @@ RoutingConfig _routingConfig(
             pending?.returnTo ??
             sanitizeReturnDestination(state.uri.queryParameters['returnTo']);
         final destinationPath = Uri.parse(destination).path;
-        if (isDiscussionExitPath(destinationPath) ||
+        if (isOwnConversationExitPath(destinationPath) ||
             destinationPath == '/settings' ||
             destinationPath == '/groups' ||
             destinationPath.startsWith('/groups/') ||
@@ -385,7 +414,7 @@ RoutingConfig _routingConfig(
           ParticipantInvitationRoutes.isInvitePath(path) ||
           ProjectDelegateRoutes.isInvitePath(path);
       final needsPolicy =
-          !isDiscussionExitPath(path) &&
+          !isOwnConversationExitPath(path) &&
           (isProfileEditRoute ||
               path == profileVisibilityPath ||
               isInvite ||
@@ -421,7 +450,7 @@ RoutingConfig _routingConfig(
               isProjectResourceNeedManagementRoute ||
               isProjectDelegateManagementRoute ||
               isProjectWorkspaceManagementRoute ||
-              (isMessagesRoute && !isDiscussionExitPath(path)) ||
+              (isMessagesRoute && !isOwnConversationExitPath(path)) ||
               isNotificationsRoute)) {
         return Uri(
           path: '/profile/edit',
@@ -450,7 +479,7 @@ RoutingConfig _routingConfig(
       if (session.phase == AuthSessionPhase.profileSetupRequired &&
           isActivityManagementRoute &&
           !isModerationRoute &&
-          !isDiscussionExitPath(path)) {
+          !isOwnConversationExitPath(path)) {
         return Uri(
           path: '/profile/edit',
           queryParameters: {'returnTo': state.uri.toString()},
@@ -872,6 +901,202 @@ RoutingConfig _routingConfig(
                 builder: (context, state) => const MessagesLandingScreen(),
                 routes: [
                   GoRoute(
+                    path: 'cocreate/hubs/:hubId/schedule',
+                    builder: (_, state) => CoMeetingScheduleScreen(
+                      key: state.pageKey,
+                      hub: HubId.parse(state.pathParameters['hubId']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/hubs/:hubId/groups/:roomId/:episodeId/schedule',
+                    builder: (_, state) => CoMeetingScheduleScreen(
+                      key: state.pageKey,
+                      hub: HubId.parse(state.pathParameters['hubId']),
+                      room: CoRoomId.parse(state.pathParameters['roomId']),
+                      episode: CoEpisodeId.parse(
+                        state.pathParameters['episodeId'],
+                      ),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/hubs/:hubId/review',
+                    builder: (_, state) => CoCreationHubScreen(
+                      key: ValueKey(state.pathParameters['hubId']),
+                      hubId: HubId.parse(state.pathParameters['hubId']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/hubs/:hubId/:episodeId/leave',
+                    builder: (_, state) => CoHubLeaveScreen(
+                      key: state.pageKey,
+                      hubId: HubId.parse(state.pathParameters['hubId']),
+                      episodeId: CoEpisodeId.parse(
+                        state.pathParameters['episodeId'],
+                      ),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/hubs/:hubId/groups/:roomId/join',
+                    builder: (_, state) => CoNumberedDetailScreen(
+                      key: ValueKey((
+                        state.pathParameters['hubId'] ??
+                            state.pathParameters['id'],
+                        state.pathParameters['roomId'],
+                        state.pathParameters['episodeId'],
+                      )),
+                      hub: HubId.parse(state.pathParameters['hubId']),
+                      room: CoRoomId.parse(state.pathParameters['roomId']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/hubs/:hubId/groups/:roomId/:episodeId',
+                    builder: (_, state) => CoCreationGeneralScreen(
+                      key: ValueKey((
+                        state.pathParameters['hubId'],
+                        state.pathParameters['roomId'],
+                        state.pathParameters['episodeId'],
+                      )),
+                      numbered: true,
+                      hubId: HubId.parse(state.pathParameters['hubId']),
+                      roomId: CoRoomId.parse(state.pathParameters['roomId']),
+                      episodeId: CoEpisodeId.parse(
+                        state.pathParameters['episodeId'],
+                      ),
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'manage',
+                        builder: (_, state) => CoNumberedManageScreen(
+                          key: ValueKey((
+                            state.pathParameters['hubId'] ??
+                                state.pathParameters['id'],
+                            state.pathParameters['roomId'],
+                            state.pathParameters['episodeId'],
+                          )),
+                          hub: HubId.parse(state.pathParameters['hubId']),
+                          room: CoRoomId.parse(state.pathParameters['roomId']),
+                          episode: CoEpisodeId.parse(
+                            state.pathParameters['episodeId'],
+                          ),
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'leave',
+                        builder: (_, state) => CoNumberedLeaveScreen(
+                          key: ValueKey((
+                            state.pathParameters['hubId'] ??
+                                state.pathParameters['id'],
+                            state.pathParameters['roomId'],
+                            state.pathParameters['episodeId'],
+                          )),
+                          hub: HubId.parse(state.pathParameters['hubId']),
+                          room: CoRoomId.parse(state.pathParameters['roomId']),
+                          episode: CoEpisodeId.parse(
+                            state.pathParameters['episodeId'],
+                          ),
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'people',
+                        builder: (_, state) => CoNumberedRosterScreen(
+                          key: ValueKey((
+                            state.pathParameters['hubId'] ??
+                                state.pathParameters['id'],
+                            state.pathParameters['roomId'],
+                            state.pathParameters['episodeId'],
+                          )),
+                          hub: HubId.parse(state.pathParameters['hubId']),
+                          room: CoRoomId.parse(state.pathParameters['roomId']),
+                          episode: CoEpisodeId.parse(
+                            state.pathParameters['episodeId'],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'cocreate/hubs/:hubId/general/:roomId/:episodeId',
+                    builder: (_, state) => CoCreationGeneralScreen(
+                      key: ValueKey((
+                        state.pathParameters['hubId'],
+                        state.pathParameters['roomId'],
+                        state.pathParameters['episodeId'],
+                      )),
+                      hubId: HubId.parse(state.pathParameters['hubId']),
+                      roomId: CoRoomId.parse(state.pathParameters['roomId']),
+                      episodeId: CoEpisodeId.parse(
+                        state.pathParameters['episodeId'],
+                      ),
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'recruitment/:id',
+                        builder: (_, state) => CoRecruitmentJoinScreen(
+                          hub: HubId.parse(state.pathParameters['hubId']),
+                          general: CoRoomId.parse(
+                            state.pathParameters['roomId'],
+                          ),
+                          episode: CoEpisodeId.parse(
+                            state.pathParameters['episodeId'],
+                          ),
+                          id: peopleUuid(state.pathParameters['id']),
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'people',
+                        builder: (_, state) => CoRoomPeopleScreen(
+                          key: ValueKey((
+                            state.pathParameters['hubId'] ??
+                                state.pathParameters['id'],
+                            state.pathParameters['roomId'],
+                            state.pathParameters['episodeId'],
+                          )),
+                          hubId: HubId.parse(state.pathParameters['hubId']),
+                          roomId: CoRoomId.parse(
+                            state.pathParameters['roomId'],
+                          ),
+                          episodeId: CoEpisodeId.parse(
+                            state.pathParameters['episodeId'],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: 'cocreate/posts/:postId/interests/:id/withdraw',
+                    builder: (_, state) => PeopleInterestWithdrawScreen(
+                      postId: PostId.parse(state.pathParameters['postId']),
+                      interestId: peopleUuid(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/contacts/:id/close',
+                    builder: (_, state) => PeopleContactCloseScreen(
+                      contactId: peopleUuid(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/contacts/:id/group',
+                    builder: (_, state) => CoContactGroupScreen(
+                      key: ValueKey(state.pathParameters['id']),
+                      contact: peopleUuid(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/contacts/:id',
+                    builder: (_, state) => PeopleContactScreen(
+                      key: ValueKey(state.pathParameters['id']),
+                      contactId: peopleUuid(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/requests',
+                    builder: (_, state) => PeopleRequestsScreen(
+                      key: ValueKey((state.extra as PostId?)?.value),
+                      postId: state.extra as PostId?,
+                    ),
+                  ),
+                  GoRoute(
                     path: 'discussions/groups/:groupId',
                     builder: (context, state) => DiscussionGroupScreen(
                       key: state.pageKey,
@@ -1253,6 +1478,154 @@ RoutingConfig _routingConfig(
                 ],
               ),
               GoRoute(
+                path: '/people',
+                pageBuilder: (context, state) => NoTransitionPage<void>(
+                  key: state.pageKey,
+                  child: PeopleEntryScreen(
+                    ordinaryEntry:
+                        state.uri.path == '/people' && !state.uri.hasQuery,
+                    child: const PeopleBrowseScreen(),
+                  ),
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'intro',
+                    builder: (context, _) => PeopleInterestsIntro(
+                      onExplore: () => context.pop(),
+                      onClose: () => context.pop(),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'categories/:category/propose',
+                    builder: (_, state) => CoCommunityComposeScreen(
+                      key: state.pageKey,
+                      category: state.pathParameters['category']!,
+                      initialName: state.uri.queryParameters['name'] ?? '',
+                      initialLocality:
+                          state.uri.queryParameters['locality'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'community-proposals/:id',
+                    builder: (_, state) => CoCommunityProposalScreen(
+                      key: ValueKey(state.pathParameters['id']),
+                      id: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'community-interests',
+                    builder: (_, _) => const CoCommunityInterestsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'hubs',
+                    builder: (_, _) => const CoCreationHubsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'hubs/:id/create-group',
+                    builder: (_, state) => CoNumberedCreateScreen(
+                      key: ValueKey((
+                        state.pathParameters['hubId'] ??
+                            state.pathParameters['id'],
+                        state.pathParameters['roomId'],
+                        state.pathParameters['episodeId'],
+                      )),
+                      hub: HubId.parse(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'hubs/:id/groups/:roomId',
+                    builder: (_, state) => CoNumberedDetailScreen(
+                      key: ValueKey((
+                        state.pathParameters['hubId'] ??
+                            state.pathParameters['id'],
+                        state.pathParameters['roomId'],
+                        state.pathParameters['episodeId'],
+                      )),
+                      hub: HubId.parse(state.pathParameters['id']),
+                      room: CoRoomId.parse(state.pathParameters['roomId']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'hubs/:id',
+                    builder: (_, state) => CoCreationHubScreen(
+                      key: ValueKey(state.pathParameters['id']),
+                      hubId: HubId.parse(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'demo',
+                    builder: (_, _) => const CoCreationDemoBrowseScreen(),
+                  ),
+                  GoRoute(
+                    path: 'from-event/:id',
+                    builder: (_, state) => CoEventComposerScreen(
+                      key: ValueKey(state.pathParameters['id']),
+                      activityId: peopleUuid(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'compose',
+                    builder: (_, state) => PeopleComposerScreen(
+                      key: ValueKey(
+                        (state.extra as OwnPeoplePost?)?.id.value ?? 'new',
+                      ),
+                      post: state.extra as OwnPeoplePost?,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'mine',
+                    builder: (_, _) => const PeopleOwnPostsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'posts/:id/group',
+                    builder: (_, state) => CoPostGroupLinkScreen(
+                      key: ValueKey(state.pathParameters['id']),
+                      post: PostId.parse(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'posts/:id',
+                    builder: (_, state) => PeoplePostScreen(
+                      key: ValueKey(state.pathParameters['id']),
+                      postId: PostId.parse(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'demo/compose',
+                    builder: (_, _) => const CoCreationDemoComposer(),
+                  ),
+                  GoRoute(
+                    path: 'demo/posts/:id',
+                    builder: (_, state) => CoCreationDemoPostScreen(
+                      id: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'demo/hubs/:id',
+                    builder: (_, state) => CoCreationDemoHubScreen(
+                      id: state.pathParameters['id']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'general',
+                        builder: (_, state) => CoCreationDemoRoomScreen(
+                          hubId: state.pathParameters['id']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'groups/:number',
+                        builder: (_, state) => CoCreationDemoRoomScreen(
+                          hubId: state.pathParameters['id']!,
+                          number:
+                              int.tryParse(state.pathParameters['number']!) ??
+                              -1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              GoRoute(
                 path: '/activities',
                 pageBuilder: (context, state) => NoTransitionPage<void>(
                   key: state.pageKey,
@@ -1449,78 +1822,87 @@ bool _isResourceManagementPath(String destination) {
 
 final initialAppLocationProvider = Provider<String>((ref) => '/');
 
-final appRouterProvider = Provider<GoRouter>((ref) {
-  final startup = ref.read(startupFlowProvider);
-  RoutingConfig configuration() => _routingConfig(
-    () => ref.read(authSessionProvider),
-    () => ref.read(pendingEmailOtpProvider),
-    ref.read(draftDepartureProvider),
-    () => ref.read(authCommandProvider.notifier).cancelFlow(),
-    startup,
-    () => ref
-        .read(policyAcceptanceProvider)
-        .allows(
-          ref.read(authSessionProvider).identity?.id,
-          ref.read(policyVersionProvider),
-        ),
-    () => ref.read(activitiesSplitPreferenceProvider).enabled,
-    ref.read(mockModeCoordinatorProvider),
-    ref.read(activeMockRealmProvider),
-  );
-  final routes = _NativeRoutingConfig(
-    configuration(),
-    ref.read(draftDepartureProvider),
-  );
-  final router = GoRouter.routingConfig(
-    routingConfig: routes,
-    initialLocation: ref.read(initialAppLocationProvider),
-    errorBuilder: (context, state) => const _UnknownRouteScreen(),
-  );
-  routes.readIncomingUri = () => router.routeInformationProvider.value.uri;
-  ref.listen(authSessionProvider, (previous, next) {
-    if (next.identity != null) startup.enter();
-    if (previous?.identity?.id != next.identity?.id &&
-        router.routerDelegate.currentConfiguration.uri.path.isNotEmpty) {
-      // Native entry may still be parsing when restored Auth arrives. There are
-      // no retained stacks yet, and GoRouter cannot reparse its initial empty URI.
-      // New shell/branch keys discard all retained forms and private stacks.
-      // Reparse the current URL instead of losing an in-flight OTP returnTo.
-      routes.value = configuration();
-    }
-    router.refresh();
-  });
-  ref.listen(policyAcceptanceProvider, (_, _) {
-    // Identity/version rebuilding may be observed while redirect is building
-    // Router. Refresh after that frame, while still denying writes immediately.
-    if (SchedulerBinding.instance.schedulerPhase ==
-        SchedulerPhase.persistentCallbacks) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (ref.mounted) {
-          router.refresh();
-        }
-      });
-    } else {
+final appRouterProvider = Provider<GoRouter>(
+  (ref) {
+    final startup = ref.read(startupFlowProvider);
+    RoutingConfig configuration() => _routingConfig(
+      () => ref.read(authSessionProvider),
+      () => ref.read(pendingEmailOtpProvider),
+      ref.read(draftDepartureProvider),
+      () => ref.read(authCommandProvider.notifier).cancelFlow(),
+      startup,
+      () => ref
+          .read(policyAcceptanceProvider)
+          .allows(
+            ref.read(authSessionProvider).identity?.id,
+            ref.read(policyVersionProvider),
+          ),
+      () => ref.read(activitiesSplitPreferenceProvider).enabled,
+      () => ref.read(coCreationPreferenceProvider).enabled,
+      ref.read(mockModeCoordinatorProvider),
+      ref.read(activeMockRealmProvider),
+    );
+    final routes = _NativeRoutingConfig(
+      configuration(),
+      ref.read(draftDepartureProvider),
+    );
+    final router = GoRouter.routingConfig(
+      routingConfig: routes,
+      initialLocation: ref.read(initialAppLocationProvider),
+      errorBuilder: (context, state) => const _UnknownRouteScreen(),
+    );
+    routes.readIncomingUri = () => router.routeInformationProvider.value.uri;
+    ref.listen(authSessionProvider, (previous, next) {
+      if (next.identity != null) startup.enter();
+      if (previous?.identity?.id != next.identity?.id &&
+          router.routerDelegate.currentConfiguration.uri.path.isNotEmpty) {
+        // Native entry may still be parsing when restored Auth arrives. There are
+        // no retained stacks yet, and GoRouter cannot reparse its initial empty URI.
+        // New shell/branch keys discard all retained forms and private stacks.
+        // Reparse the current URL instead of losing an in-flight OTP returnTo.
+        routes.value = configuration();
+      }
       router.refresh();
-    }
-  });
-  // Refresh the gate in place: changing this local experiment must not replace
-  // branch keys, the Router, protected forms, or retained domain state.
-  ref.listen(activitiesSplitPreferenceProvider, (_, _) => router.refresh());
-  ref.listen(pendingEmailOtpProvider, (_, _) => router.refresh());
-  ref.listen(authCommandProvider, (previous, next) {
-    if (next.didSignOut &&
-        previous?.didSignOut != true &&
-        ref.read(authSessionProvider).phase == AuthSessionPhase.signedOut) {
-      startup.returnToWelcomeAfterSignOut();
-      router.go('/welcome');
-    }
-  });
-  startup.addListener(router.refresh);
-  ref.onDispose(() => startup.removeListener(router.refresh));
-  ref.onDispose(router.dispose);
-  ref.onDispose(routes.dispose);
-  return router;
-}, dependencies: [startupFlowProvider, activitiesSplitPreferenceProvider]);
+    });
+    ref.listen(policyAcceptanceProvider, (_, _) {
+      // Identity/version rebuilding may be observed while redirect is building
+      // Router. Refresh after that frame, while still denying writes immediately.
+      if (SchedulerBinding.instance.schedulerPhase ==
+          SchedulerPhase.persistentCallbacks) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (ref.mounted) {
+            router.refresh();
+          }
+        });
+      } else {
+        router.refresh();
+      }
+    });
+    // Refresh the gate in place: changing this local experiment must not replace
+    // branch keys, the Router, protected forms, or retained domain state.
+    ref.listen(activitiesSplitPreferenceProvider, (_, _) => router.refresh());
+    ref.listen(coCreationPreferenceProvider, (_, _) => router.refresh());
+    ref.listen(pendingEmailOtpProvider, (_, _) => router.refresh());
+    ref.listen(authCommandProvider, (previous, next) {
+      if (next.didSignOut &&
+          previous?.didSignOut != true &&
+          ref.read(authSessionProvider).phase == AuthSessionPhase.signedOut) {
+        startup.returnToWelcomeAfterSignOut();
+        router.go('/welcome');
+      }
+    });
+    startup.addListener(router.refresh);
+    ref.onDispose(() => startup.removeListener(router.refresh));
+    ref.onDispose(router.dispose);
+    ref.onDispose(routes.dispose);
+    return router;
+  },
+  dependencies: [
+    startupFlowProvider,
+    activitiesSplitPreferenceProvider,
+    coCreationPreferenceProvider,
+  ],
+);
 
 /// External deliveries compose native validation with draft departure. Ordinary
 /// routes retain the draft hook while an editor owns it; startup without an
@@ -1585,3 +1967,10 @@ class _UnknownRouteScreen extends StatelessWidget {
     );
   }
 }
+
+// Exact, Auth-only exits expose no transcript or membership admission.
+bool isOwnConversationExitPath(String path) =>
+    isDiscussionExitPath(path) ||
+    isPeopleOwnExitPath(path) ||
+    isCoHubLeavePath(path) ||
+    isCoNumberedLeavePath(path);

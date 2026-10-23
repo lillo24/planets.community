@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   for (final kind in [
+    'cocreate_contact',
     'group_discussion',
     'member_contact_chat',
     'group_contact_chat',
@@ -27,7 +28,7 @@ void main() {
           ));
           return http.Response(
             jsonEncode(
-              rpc == 'get_own_message_unread_summary_with_contacts_and_discussions'
+              rpc == 'get_own_message_unread_summary_with_cocreate'
                   ? {'total': 2, 'private': 1, 'groups': 1}
                   : rpc == 'acknowledge_group_discussion_read_v2'
                   ? null
@@ -44,14 +45,22 @@ void main() {
           .acknowledge('actor', kind, 'conversation', 'exact-boundary');
       expect(value.total, 2);
       expect(calls.map((call) => call.rpc), [
-        kind == 'group_discussion'
+        kind == 'cocreate_contact'
+            ? 'acknowledge_cocreate_contact'
+            : kind == 'group_discussion'
             ? 'acknowledge_group_discussion_read_v2'
             : 'acknowledge_own_message_read_v3',
-        'get_own_message_unread_summary_with_contacts_and_discussions',
+        'get_own_message_unread_summary_with_cocreate',
       ]);
       expect(
         calls.first.params,
-        kind == 'group_discussion'
+        kind == 'cocreate_contact'
+            ? {
+                'p_expected_profile_id': 'actor',
+                'p_contact_id': 'conversation',
+                'p_read_token': 'exact-boundary',
+              }
+            : kind == 'group_discussion'
             ? {
                 'p_expected_profile_id': 'actor',
                 'p_room_id': 'conversation',

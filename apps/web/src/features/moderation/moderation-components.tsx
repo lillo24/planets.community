@@ -1,6 +1,7 @@
 import { TemplateRemovalForm } from "./template-removal-form";
 import { GroupReviewView } from "./group-review";
 import { DiscussionEvidenceView } from "./discussion-evidence";
+import { CoProposalReviewView } from "./cocreate-proposal-review";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -145,6 +146,13 @@ export function ModerationCaseDetailView({
 
       {detail.discussion ? (
         <DiscussionEvidenceView evidence={detail.discussion} />
+      ) : null}
+      {detail.coProposal ? (
+        <CoProposalReviewView
+          key={`${detail.caseId}/${detail.coProposal.version}`}
+          review={detail.coProposal}
+          caseId={detail.caseId}
+        />
       ) : null}
       {detail.group ? (
         <GroupReviewView group={detail.group} caseId={detail.caseId} />

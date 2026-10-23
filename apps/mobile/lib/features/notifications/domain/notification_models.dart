@@ -1,4 +1,5 @@
 import '../../participation/domain/participation_models.dart';
+import 'co_filling_notification.dart';
 
 enum NotificationCategory {
   participation,
@@ -27,6 +28,7 @@ enum NotificationCategory {
 }
 
 enum NotificationKind {
+  cocreateFilling,
   groupContactRequest,
   groupCoordinationProposal,
   memberContactRequest,
@@ -55,6 +57,7 @@ enum NotificationKind {
   unknown;
 
   static NotificationKind fromWire(String value) => switch (value) {
+    'cocreate_filling' => NotificationKind.cocreateFilling,
     'group_contact_request' => NotificationKind.groupContactRequest,
     'group_coordination_proposal' => NotificationKind.groupCoordinationProposal,
     'member_contact_request' => NotificationKind.memberContactRequest,
@@ -131,6 +134,7 @@ enum NotificationKind {
 }
 
 enum NotificationDestinationKind {
+  cocreateFilling,
   groupContactRequest,
   groupCoordinationProposal,
   memberContactRequest,
@@ -144,6 +148,7 @@ enum NotificationDestinationKind {
   unknown;
 
   static NotificationDestinationKind fromWire(String value) => switch (value) {
+    'cocreate_filling' => NotificationDestinationKind.cocreateFilling,
     'group_contact_request' => NotificationDestinationKind.groupContactRequest,
     'group_coordination_proposal' =>
       NotificationDestinationKind.groupCoordinationProposal,
@@ -213,6 +218,7 @@ enum ResourceNotificationLegKind {
 
 class AppNotification {
   const AppNotification({
+    this.coFilling,
     this.contactTargetId,
     required this.notificationId,
     required this.category,
@@ -240,6 +246,7 @@ class AppNotification {
   });
 
   final String notificationId;
+  final CoFillingNotification? coFilling;
   final String? contactTargetId;
   final NotificationCategory category;
   final NotificationKind kind;
@@ -265,6 +272,7 @@ class AppNotification {
   final ResourceNotificationLegKind? resourceExchangeLegKind;
 
   Object get refreshValue => (
+    coFilling?.refreshValue,
     notificationId,
     contactTargetId,
     category,
@@ -294,6 +302,7 @@ class AppNotification {
   bool get isUnread => readAt == null;
 
   AppNotification withReadAt(DateTime value) => AppNotification(
+    coFilling: coFilling,
     notificationId: notificationId,
     contactTargetId: contactTargetId,
     category: category,

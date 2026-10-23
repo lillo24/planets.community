@@ -3,6 +3,13 @@ import '../../participation/presentation/participation_routes.dart';
 import '../domain/notification_models.dart';
 
 String? notificationDestinationRoute(AppNotification notification) {
+  if (notification.kind == NotificationKind.cocreateFilling) {
+    return notification.category == NotificationCategory.participation &&
+            notification.destinationKind ==
+                NotificationDestinationKind.cocreateFilling
+        ? notification.coFilling?.route
+        : null;
+  }
   if (notification.kind.isContact) {
     if (notification.category != NotificationCategory.participation ||
         notification.contactTargetId == null) {

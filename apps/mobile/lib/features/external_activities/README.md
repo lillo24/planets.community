@@ -3,6 +3,12 @@
 This feature reads PLANETS' licensed external catalogue under Activities Split
 Mode. It never contacts providers, imports events or invokes native participation.
 
+When Co-Creation's independent presentation/server gates are ON, detail delegates
+an explicit Find company action to that feature. It re-fetches the actual public
+source and opens an editable unpublished people-seeking draft. This module keeps
+its read-only import/participation boundary. No category-to-topic mapping or
+attendance/capacity inference is added.
+
 - `domain/external_activity.dart` owns strict public payloads, filter state,
   event/course/place kinds, bounded course schedules, published geometry,
   exact occurrences, complete server facets and observation freshness.

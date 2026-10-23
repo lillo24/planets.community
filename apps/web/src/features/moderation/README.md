@@ -1,5 +1,14 @@
 # Moderation staff surface
 
+COMM01 adds `cocreate-proposal-models.ts` for a closed exact-report snapshot and
+current proposal version/state, and `cocreate-proposal-review.tsx` for explicit
+case-scoped suppress/restore/reject actions. The server loads this only after
+current staff authorization for a `cocreate_community_proposal` case. Each action
+rechecks staff, validates identifiers and CAS version, and retains the same
+command/intent on unconfirmed delivery. It exposes no chat or supporter roster.
+Suppressing/rejecting a proposal never archives an activated hub. See
+[COMM01/FILL01](../../../../../docs/development/cocreate-fill01.md).
+
 D01 adds `group-contact-moderation-models.ts` for strict case-scoped evidence of
 a reported group contact request or representative message. The server loads it
 only for those typed cases. Staff see the exact reported content and canonical

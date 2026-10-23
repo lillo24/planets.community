@@ -1,3 +1,6 @@
+import 'package:planets_mobile/features/settings/application/co_creation_preference_controller.dart';
+import 'package:planets_mobile/features/settings/data/co_creation_preference_store.dart';
+import 'package:planets_mobile/features/settings/domain/co_creation_preference.dart';
 import 'package:planets_mobile/features/recurring_activities/domain/recurring_activity_models.dart';
 import 'package:planets_mobile/features/resource_listings/domain/resource_listing_models.dart';
 import 'package:planets_mobile/core/widgets/tag_multi_select.dart';
@@ -83,6 +86,44 @@ import '../../features/groups/group_membership_test.dart'
     show selfRow;
 
 void main() {
+  testWidgets(
+    'COCREATE route gate, mode precedence and native destinations remain independent',
+    (tester) async {
+      final app = await _pump(
+        tester,
+        signedIn: false,
+        split: true,
+        coCreation: true,
+      );
+      final router = app.read(appRouterProvider);
+      await _tap(tester, 'browse-people-button');
+      expect(_path(app), '/people');
+      router.go('/people/demo/hubs/demo-football/groups/2');
+      await tester.pumpAndSettle();
+      expect(find.text('Group 2'), findsOneWidget);
+      await app
+          .read(coCreationPreferenceProvider.notifier)
+          .select(CoCreationMode.off);
+      await tester.pumpAndSettle();
+      expect(_path(app), '/proposals');
+      expect(find.text('Group 2', skipOffstage: false), findsNothing);
+      expect(app.read(appRouterProvider), same(router));
+      expect(app.read(activitiesSplitPreferenceProvider).enabled, isTrue);
+      router.go('/activities');
+      await tester.pumpAndSettle();
+      expect(_path(app), '/activities');
+      router.go('/people/demo/compose');
+      await tester.pumpAndSettle();
+      expect(_path(app), '/proposals');
+      router.go('/tavoli');
+      await tester.pumpAndSettle();
+      expect(_path(app), '/tavoli');
+      router.go('/resources');
+      await tester.pumpAndSettle();
+      expect(_path(app), '/resources');
+      expect(tester.takeException(), isNull);
+    },
+  );
   setUpAll(() => RenderedEvidence.loadFonts());
   testWidgets(
     'ACTSPLIT01 route-backed Projects and Activities choices stay native',
@@ -2215,6 +2256,7 @@ void main() {
 
 Future<ProviderContainer> _pump(
   WidgetTester tester, {
+  bool coCreation = false,
   bool split = false,
   bool splitRestoreFailed = false,
   FakeActivitiesSplitPreferenceStore? splitStore,
@@ -2259,6 +2301,14 @@ Future<ProviderContainer> _pump(
             _ContactRouteGroupProjects(contactRpc),
           ),
         ],
+        initialCoCreationPreferenceProvider.overrideWithValue(
+          CoCreationPreferenceState(
+            mode: coCreation ? CoCreationMode.on : CoCreationMode.off,
+          ),
+        ),
+        coCreationPreferenceStoreProvider.overrideWithValue(
+          FakeCoCreationPreferenceStore(),
+        ),
         initialActivitiesSplitPreferenceProvider.overrideWithValue(
           ActivitiesSplitPreferenceState(
             restoreFailed: splitRestoreFailed,
