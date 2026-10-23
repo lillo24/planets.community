@@ -81,6 +81,15 @@ green zero-accepted export. Known outside-window/rights exclusions keep the
 existing explicit policy; no canonical erasure or test weakening was introduced.
 The real-import verifier now proves V3 List/Map equality and source-disable denial.
 
+The exact CI request also exposed a reporting distinction: two Windows local
+SQL inputs used CRLF while their published Git blobs use LF. Byte comparison
+proves that newline conversion is the only difference; no published migration
+content changed. The manifest labels the original local execution checksums
+separately and records canonical Git hashes for review. Its predecessor chain
+uses the complete actual PR base plus additions, matching the unchanged gate;
+the earlier-timestamp addition cannot use only a chronological prefix. Working
+copies now match Git exactly, and canonical-LF clean replay is additionally run.
+
 Windows/Podman `db reset` failed with `DbConnectError` and later `DbSetupError`.
 Only the task-owned `planets-resume02-qa` stack was stopped/restarted from empty;
 the 142 and 146 fresh starts and actual-main upgrade passed without health bypass.

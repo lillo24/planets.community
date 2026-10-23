@@ -30,32 +30,33 @@
       }
     ],
     "legacy_importer_oid_grants_and_identity_preserved": true,
-    "no_op_retry": true
+    "no_op_retry": true,
+    "execution_hash_basis": "Original task-owned main-upgrade execution used the local checkout bytes recorded per file. Two new files had CRLF; normalized text exactly matches the canonical Git LF bytes, recorded separately. No published Git migration was changed."
   },
   "sql_review": [
     {
       "version": "20261022231354",
-      "file": "20261022231354_external_activity_catalogue_kinds.sql",
       "sha256": "d94302b99efa93dec14cd849ad7f0cc4b84120017162103644ff1f694eec4a65",
-      "predecessor_inventory_sha256": "615974da755586b176db2ed625cc9ec6d47dd3b519897133255e7d690adf0c3b"
+      "predecessor_inventory_sha256": "51e55db0d695b84949db6ef37f5b900b4c9551c2c5a5f12934be4a881fe0bff3",
+      "file": "20261022231354_external_activity_catalogue_kinds.sql"
     },
     {
       "version": "20261023093757",
-      "file": "20261023093757_external_activity_multi_source.sql",
-      "sha256": "f48e5d392709356727bdfb17803088a16a0215d499a81d9feecc7860fe9e2ea4",
-      "predecessor_inventory_sha256": "7e2d7d76b8aae2c6787918ac3ef31a04d4c08499bb19231df5aa92827aa6a838"
+      "sha256": "0fec4437bf512a14c6218c3f7e7bc3b810c5414dcc44d8d2c2db72010b742fd6",
+      "predecessor_inventory_sha256": "7e2d7d76b8aae2c6787918ac3ef31a04d4c08499bb19231df5aa92827aa6a838",
+      "file": "20261023093757_external_activity_multi_source.sql"
     },
     {
       "version": "20261023101305",
-      "file": "20261023101305_external_activity_geography.sql",
-      "sha256": "7884e2367f8572654c96a02697de9c04f761fcf500f47c0f1759270824d147e8",
-      "predecessor_inventory_sha256": "bf552f1cb9e760396ffe35f81d73bd17c1c5bc9f8927464184e117653254d9aa"
+      "sha256": "115555740a898d5a2d32ff9ebe35d188c22a3e8b11e8d8105687ad56253412e4",
+      "predecessor_inventory_sha256": "39341b7d3a007bee8afeefead764832420265e37bbe3920b17350d13697a3cfa",
+      "file": "20261023101305_external_activity_geography.sql"
     },
     {
       "version": "20261023113057",
-      "file": "20261023113057_external_activity_operations.sql",
       "sha256": "e7f4fa5e094bf6dfbc06e52fc1ad7c12baf037918396615686f192a029a603ae",
-      "predecessor_inventory_sha256": "e587f3579b7dbd0b121fe5a0512ea7d80084ab647996b396524d8ad5bd3772c9"
+      "predecessor_inventory_sha256": "207db6ad5cd928b0966ae048ca973eb2b501d2d758a842ac31ffa4a07909be94",
+      "file": "20261023113057_external_activity_operations.sql"
     }
   ],
   "municipal": {
@@ -116,5 +117,20 @@
     "No verified live course/event source in this queue",
     "Windows Podman db reset failed twice; task-owned fresh starts succeeded, including all146 migrations and full8452 assertions, without health bypass",
     "Six unchanged-main Prettier baseline warnings remain; changed paths and full Dart formatting pass"
-  ]
+  ],
+  "sql_checkout_newlines": [
+    {
+      "version": "20261023093757",
+      "local_execution_sha256": "f48e5d392709356727bdfb17803088a16a0215d499a81d9feecc7860fe9e2ea4",
+      "canonical_git_sha256": "0fec4437bf512a14c6218c3f7e7bc3b810c5414dcc44d8d2c2db72010b742fd6",
+      "difference": "CRLF versus LF only"
+    },
+    {
+      "version": "20261023101305",
+      "local_execution_sha256": "7884e2367f8572654c96a02697de9c04f761fcf500f47c0f1759270824d147e8",
+      "canonical_git_sha256": "115555740a898d5a2d32ff9ebe35d188c22a3e8b11e8d8105687ad56253412e4",
+      "difference": "CRLF versus LF only"
+    }
+  ],
+  "sql_review_inventory_basis": "Exact canonical Git blobs; complete actual PR base inventory, then sorted additions, matching the unmodified CI gate. An earlier timestamp addition does not use only a chronological prefix."
 }
