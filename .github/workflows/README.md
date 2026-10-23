@@ -227,6 +227,8 @@ unproven hosted compatibility produces a concrete hold. Changed shared workflows
 select all existing areas. Unrelated PRs avoid expensive rehearsal; full manual
 Validation stays available. The live proof uses actual observed history and
 reuses exact-source Validation rather than duplicating unrelated runs.
+Web's tooling tests fetch full history to inspect the immutable untrusted SQL
+fixture used by the policy's negative controls; a shallow checkout lacks it.
 
 Recovery mode, strict pinned CA/hostname/session TLS, one writer, canonical
 history, populated Auth/profile/Storage preservation, real security contracts,
