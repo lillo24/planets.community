@@ -6,12 +6,19 @@
   Android screenshots, manual visual-review requirements and cleanup.
 
 - `import-external-activities.mjs` owns explicit dry-run/apply CLI entry and
-  server-only target configuration. Its municipal connector remains blocked.
+  server-only target configuration. The licensed municipal equipment connector
+  works; Agenda and ODH retain their separate recorded source blocks.
+- `operate-external-activities.mjs` owns the explicit bounded source-set modes,
+  private cadence, inspection and maintenance entry point; see the
+  [operations runbook](../docs/development/activities-operations.md).
 - `lib/external-activities/` owns bounded transport, strict canonical records and
   atomic import orchestration. `verify-local-external-activities.mjs` uses only
   a guarded disposable local catalogue and synthetic fixtures to exercise real
-  service/anonymous HTTP, leases, paging, failure and freshness. See the
-  [ACTAPI01 runbook](../docs/development/actapi01-infrastructure.md).
+  service/anonymous V1/V2 HTTP, leases, paging, failure and freshness. Its
+  `lib/external-activities-upgrade-verifier.mjs` helper also proves a populated
+  upgrade with warmed importer plans in a rolled-back transaction. See the
+  [ACTAPI01 runbook](../docs/development/actapi01-infrastructure.md) and
+  [event/course/place contract](../docs/development/actcat02-catalogue-contract.md).
 
 - `run-contact-native-ci.sh` owns the explicitly opted-in ephemeral Linux Android
   runtime for both D/M review journeys, with serial builds and complete drivers.
@@ -232,3 +239,14 @@ OTP accounts preserve a two-supporter pending proposal and immutable command
 receipt, nine native/community OID/ACL/result contracts, legacy chat/history and
 all original table columns/rows. Exact retry remains pending; only a new third
 interest activates after upgrade, with private invitations and no chat admission.
+
+## CAL01 calendar qualification
+
+`verify-local-cocreate-calendar.mjs` exercises the calendar with genuine local
+OTP sessions and actor-bound HTTP calls. The existing community/meeting verifier
+also runs it and `verify-local-cocreate-calendar-upgrade.mjs`; the latter requires
+explicit `PLANETS_DISPOSABLE_QA=1` even on the owned local engine. That bounded
+rollback rehearsal checks populated-row/function/reader compatibility and
+explains the real query over 3,000 historical fixtures. Its safe count/hash-only
+summary goes to `build/cocreate-cal01/qualification.json`. See the
+[calendar contract](../docs/development/cocreate-cal01-calendar.md).

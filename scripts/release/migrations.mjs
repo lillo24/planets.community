@@ -126,6 +126,29 @@ export function deploymentSet(diff, policy, approvalDigest, reconciliation) {
   return diff.pending;
 }
 
+// V2 does not broaden the old bootstrap waiver or two-file reconciliation.
+// Every pending member (including an older hole) must have its own independent
+// exact-byte/predecessor witness before the writer receives any file.
+export function verifiedDeploymentSet(diff, policy, decisions) {
+  if (
+    policy.project_ref !== STAGING_REF ||
+    policy.migration_owner !== "github-actions" ||
+    policy.staging_safety_version !== 2 ||
+    diff.drift.length ||
+    decisions.length !== diff.pending.length ||
+    diff.pending.some(
+      (m, i) =>
+        m.version !== decisions[i]?.version ||
+        m.sha256 !== decisions[i].sha256 ||
+        decisions[i].authorization !== "standing-verified-policy",
+    )
+  )
+    throw new ReleaseError(
+      "Whole pending chain lacks verified staging authorization",
+    );
+  return diff.pending;
+}
+
 export function assertBackendReady(diff, checks) {
   if (
     diff.pending.length ||
@@ -177,7 +200,7 @@ export function requiredRpcs(root) {
   return [...names].sort();
 }
 
-export function requiredEdgeFunctions(root) {
+export function requiredEdgeFunctions(root, variant = "staging") {
   const names = new Set([
     "map-provider",
     "location-search",
@@ -190,11 +213,19 @@ export function requiredEdgeFunctions(root) {
     root,
     "apps/mobile/lib/core/config/mock_environment_config.dart",
   );
+  const mockImages = join(
+    root,
+    "apps/mobile/lib/features/geographic_discovery/data/mock_public_basemap_gateway.dart",
+  );
   function walk(dir) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const path = join(dir, entry.name);
       if (entry.isDirectory()) walk(path);
-      else if (entry.name.endsWith(".dart") && path !== isolatedMockConfig) {
+      else if (
+        entry.name.endsWith(".dart") &&
+        path !== isolatedMockConfig &&
+        (path !== mockImages || variant === "closed-test-mock")
+      ) {
         const source = readFileSync(path, "utf8");
         for (const match of source.matchAll(
           /(?:functions\/v1\/|\.functions\.invoke\(\s*['"])([a-z][a-z0-9-]+)/g,

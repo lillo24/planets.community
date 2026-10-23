@@ -8,7 +8,9 @@ import '../../../core/widgets/page_app_bar.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../settings/application/activities_split_preference_controller.dart';
 import '../application/external_activities_controller.dart';
+import '../domain/external_activity.dart';
 import 'external_activity_widgets.dart';
+import 'external_activity_filters.dart';
 import '../../co_creation/presentation/co_creation_event_widgets.dart';
 import 'external_activity_share_actions.dart';
 
@@ -57,12 +59,35 @@ class ExternalActivityDetailScreen extends ConsumerWidget {
                           item.title,
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
+                        Text(externalKindLabel(item.kind, l)),
                         Text(l.activitiesSourceLabel(item.sourceName)),
-                        CoEventPeopleAction(item: item),
+                        if (item.discipline != null)
+                          Text(externalDisciplineLabel(item.discipline!, l)),
+                        // The existing D03 handoff revalidates the event-only V1
+                        // reader. Courses/places have no event participation.
+                        if (item.kind == ExternalActivityKind.event)
+                          CoEventPeopleAction(item: item),
                         const SizedBox(height: AppSpacing.medium),
                         if (item.status == 'cancelled')
                           Text(l.activitiesExternalCancelled),
-                        if (item.stale) Text(l.activitiesExternalStaleRecord),
+                        if (item.stale)
+                          Text(
+                            item.kind == ExternalActivityKind.place
+                                ? l.activitiesPlaceStale
+                                : l.activitiesExternalStaleRecord,
+                          ),
+                        if (item.nextOccurrence != null &&
+                            !item.occurrences.any(
+                              (occurrence) => occurrence.startInstant
+                                  .isAtSameMomentAs(item.nextAt!),
+                            ))
+                          Text(
+                            externalOccurrenceLabel(
+                              item.nextOccurrence!,
+                              locale,
+                              l,
+                            ),
+                          ),
                         for (final occurrence in item.occurrences)
                           Padding(
                             padding: const EdgeInsets.only(
@@ -72,7 +97,14 @@ class ExternalActivityDetailScreen extends ConsumerWidget {
                               externalOccurrenceLabel(occurrence, locale, l),
                             ),
                           ),
-                        if (item.occurrences.isEmpty)
+                        if (item.kind == ExternalActivityKind.course) ...[
+                          Text(externalCourseLabel(item.schedule, locale, l)),
+                          if (item.nextOccurrence == null)
+                            Text(l.activitiesNextSessionUnknown),
+                        ],
+                        if (item.kind == ExternalActivityKind.event &&
+                            item.occurrences.isEmpty &&
+                            item.nextOccurrence == null)
                           Text(l.activitiesExternalScheduleUnknown),
                         if (item.venue != null || item.city != null)
                           Text([item.venue, item.city].nonNulls.join(' · ')),
@@ -81,10 +113,12 @@ class ExternalActivityDetailScreen extends ConsumerWidget {
                           item.organizer,
                           item.audience,
                           item.cost,
+                          item.level,
+                          item.access,
                         ].nonNulls)
                           Text(text),
                         const SizedBox(height: AppSpacing.medium),
-                        Text(item.description),
+                        if (item.description != null) Text(item.description!),
                         if (item.sourceCategories.isNotEmpty)
                           Text(item.sourceCategories.join(' · ')),
                         const SizedBox(height: AppSpacing.large),
@@ -98,7 +132,11 @@ class ExternalActivityDetailScreen extends ConsumerWidget {
                           key: const Key('external-activity-official-link'),
                           onPressed: () =>
                               _open(context, ref, item.officialLink),
-                          child: Text(l.activitiesOfficialEvent),
+                          child: Text(
+                            item.linkScope == ExternalActivityLinkScope.dataset
+                                ? l.activitiesDatasetLink
+                                : l.activitiesOfficialInformation,
+                          ),
                         ),
                         TextButton(
                           onPressed: () =>

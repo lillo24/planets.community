@@ -13,7 +13,12 @@ class MapViewButton extends StatelessWidget {
     this.mapSelected = false,
     super.key,
   });
-  final MapDiscoveryOrigin origin;
+  const MapViewButton.external({
+    this.mapSelected = false,
+    this.prepare,
+    super.key,
+  }) : origin = null;
+  final MapDiscoveryOrigin? origin;
   final VoidCallback? prepare;
   final bool mapSelected;
   @override
@@ -36,6 +41,7 @@ class MapViewButton extends StatelessWidget {
                     MapDiscoveryOrigin.projects => '/proposals',
                     MapDiscoveryOrigin.tavoli => '/tavoli',
                     MapDiscoveryOrigin.resources => '/resources',
+                    null => '/activities',
                   }),
           ),
           const SizedBox(width: AppSpacing.small),
@@ -45,12 +51,18 @@ class MapViewButton extends StatelessWidget {
             icon: Icons.map_outlined,
             selected: mapSelected,
             key: Key(
-              mapSelected ? 'map-map-selected' : 'map-open-${origin.name}',
+              mapSelected
+                  ? 'map-map-selected'
+                  : 'map-open-${origin?.name ?? 'activities'}',
             ),
             onTap: () {
               prepare?.call();
               FocusScope.of(context).unfocus();
-              context.push('/discover/map/${origin.name}');
+              context.push(
+                origin == null
+                    ? '/activities/map'
+                    : '/discover/map/${origin!.name}',
+              );
             },
           ),
         ],

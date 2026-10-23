@@ -9,6 +9,7 @@ import '../application/people_attempt.dart';
 import '../data/co_creation_rooms_gateway.dart';
 import '../domain/co_creation_identity.dart';
 import '../domain/co_creation_rooms.dart';
+import '../domain/co_creation_calendar.dart';
 import 'co_creation_community_screens.dart';
 import 'people_widgets.dart';
 import 'co_creation_numbered_screen.dart';
@@ -107,6 +108,11 @@ class CoCreationHubScreen extends StatelessWidget {
                 Text(h.label, style: Theme.of(context).textTheme.headlineSmall),
                 Text(l.coRoomsHistory),
                 PeopleAccess(child: _HubMembership(hub: hubId)),
+                TextButton.icon(
+                  onPressed: () => context.push(coCalendarRoute(hubId)),
+                  icon: const Icon(Icons.calendar_month),
+                  label: Text(l.coCalendarTitle),
+                ),
                 CoNumberedList(hub: hubId),
               ],
             ),

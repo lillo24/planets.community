@@ -72,3 +72,12 @@ not GPS. Basemap availability/failure is a concise, accessible notice over the
 canvas; fixture diagnostics, permanent result counts and explanatory essays are
 absent. Required attribution links stay pinned in SafeArea. Search this area,
 zoom, center, approximate pin labels, errors, Refresh and Load more are retained.
+
+ACTMAP01 extracts `domain/public_map_camera.dart` (camera/reference only) and
+`domain/public_map_clustering.dart` (the same stable public coordinate grid).
+`PublicPointMap` keeps the native adapter contract over `PublicMapCanvas` in its
+existing presentation file; `public_map_entry_chooser.dart` keeps the common
+scrolling loaded-entry layout. External Activities supplies typed source-public
+markers/destinations through these seams. Native GeoKind, RPCs, default All,
+protected geometry and tile/cache ownership are unchanged. MapViewButton.external
+uses the gated external route without adding a native family or bottom tab.

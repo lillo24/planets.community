@@ -70,14 +70,14 @@ export async function publicSmoke(configJson, fetcher = fetch) {
   }
   return checks; // Never retain returned public rows or provider error details.
 }
-export function verifyFunctions(root, policy, functions) {
+export function verifyFunctions(root, policy, functions, variant = "staging") {
   if (
     !policy.approved_functions?.length ||
     !Object.keys(policy.approved_function_source_sha256 ?? {}).length
   )
     return false;
   if (
-    requiredEdgeFunctions(root).some(
+    requiredEdgeFunctions(root, variant).some(
       (name) => !policy.approved_functions.some((f) => f.slug === name),
     )
   )
@@ -99,7 +99,7 @@ export function verifyFunctions(root, policy, functions) {
     policy.approved_function_source_sha256,
   )) {
     if (
-      !/^(?:map-provider|location-search|location-preview)\/[a-z-]+\.(?:mjs|ts)$/.test(
+      !/^(?:map-provider|mock-basemap|location-search|location-preview)\/[a-z-]+\.(?:mjs|ts)$/.test(
         path,
       ) ||
       sha256(readFileSync(`${root}/supabase/functions/${path}`)) !== hash
@@ -173,5 +173,36 @@ export function managementClient(token, fetcher = fetch) {
     identity: () => request(""),
     query: (query) => request("/database/query", { query, read_only: true }),
     functions: () => request("/functions"),
+    branches: () => request("/branches"),
+  };
+}
+
+// Supabase Studio derives "Deploy to production" from the default branch's
+// git_branch. Use the same authoritative metadata before every protected run.
+export function assertNativeDeploymentDisabled(branches) {
+  if (!Array.isArray(branches))
+    throw new ReleaseError(
+      "Cannot verify native Supabase deployment ownership",
+    );
+  const defaults = branches.filter((b) => b.is_default === true);
+  if (
+    defaults.length !== 1 ||
+    defaults[0].project_ref !== STAGING_REF ||
+    defaults[0].parent_project_ref !== STAGING_REF
+  )
+    throw new ReleaseError(
+      "Cannot verify native Supabase default branch identity",
+    );
+  if (
+    defaults[0].git_branch != null &&
+    (typeof defaults[0].git_branch !== "string" ||
+      defaults[0].git_branch.trim())
+  )
+    throw new ReleaseError(
+      "Native Supabase GitHub migration deployment is enabled; retain one staging writer",
+    );
+  return {
+    native_deployment_disabled: true,
+    default_branch_id: defaults[0].id,
   };
 }
