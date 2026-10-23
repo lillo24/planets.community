@@ -1,4 +1,5 @@
 import test from "node:test";
+import { execFileSync } from "node:child_process";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -184,6 +185,70 @@ test("private additive inspection is only a candidate; unknown privileged code i
       "review-required-for-hosted",
     );
 });
+
+test("private defaults, references, initial values and index expressions cannot hide privileged effects", () => {
+  for (const sql of [
+    "create table private.example(id uuid references auth.users(id));",
+    "create table private.example(id text default public.read_private_profile());",
+    "create table private.example(id integer check(id #! 1));",
+    privateTable +
+      "insert into private.example values(private.mutate_profile());",
+    privateTable +
+      "create index example_expr on private.example(public.private_lookup(id));",
+  ])
+    assert.equal(
+      inspectAdditive(sql).classification,
+      "review-required-for-hosted",
+    );
+});
+test("basemap names cannot authorize another relation, callee or configuration write", () => {
+  const sql = execFileSync(
+    "git",
+    [
+      "show",
+      "b20c20758f6addfa1a15b670b6155e09cac614f6:supabase/migrations/20261023054839_mapmock01_shared_public_basemap.sql",
+    ],
+    { encoding: "utf8" },
+  );
+  assert.equal(
+    inspectAdditive(sql).classification,
+    "mock-basemap-contract-candidate",
+  );
+  for (const changed of [
+    sql.replace(
+      "select * into cfg from private.location_provider_config",
+      "select * into cfg from private.real_user_secret",
+    ),
+    sql.replace(
+      "perform 1 from private.location_search_config",
+      "update private.location_provider_config set daily_units_limit=800000; perform 1 from private.location_search_config",
+    ),
+    sql.replace("where bucket<day", "where true"),
+    sql.replace(
+      "return 'ok';",
+      "perform public.get_own_profile_photo(null); return 'ok';",
+    ),
+  ]) {
+    assert.notEqual(changed, sql);
+    assert.equal(
+      inspectAdditive(changed).classification,
+      "review-required-for-hosted",
+    );
+  }
+  // Structure alone cannot prove accounting semantics: the real independent
+  // PostgreSQL contracts must still reject both unchanged-signature mutants.
+  assert.equal(
+    inspectAdditive(sql.replaceAll("'units:global'", "'units:shadow'"))
+      .classification,
+    "mock-basemap-contract-candidate",
+  );
+  assert.equal(
+    inspectAdditive(
+      sql.replaceAll("cfg.daily_units_limit/4", "cfg.daily_units_limit"),
+    ).classification,
+    "mock-basemap-contract-candidate",
+  );
+});
 test("destructive and malformed statements cannot be automatic candidates", () => {
   for (const sql of [
     "drop table private.example;",
@@ -240,6 +305,26 @@ test("catalog proof permits an isolated denied private table", () => {
   assert.throws(
     () => assertBoundedCatalog(before, after, candidate),
     /direct client privileges/,
+  );
+});
+
+test("isolated additions cannot use unknown type IO or remove an existing table permission", () => {
+  const before = catalog(),
+    after = structuredClone(before);
+  after.tables.push({
+    ...table(),
+    id: "private.new",
+    columns: [{ name: "value", type: "public.unproven_domain" }],
+  });
+  assert.throws(
+    () => assertBoundedCatalog(before, after, candidate),
+    /unproven type/,
+  );
+  after.tables.pop();
+  before.tables[0].access.authenticated.SELECT = true;
+  assert.throws(
+    () => assertBoundedCatalog(before, after, candidate),
+    /permission contract/,
   );
 });
 for (const [label, mutate] of [

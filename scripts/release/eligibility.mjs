@@ -54,6 +54,253 @@ const qualified = (s, at) =>
   word.test(s[at] ?? "") && s[at + 1] === "." && word.test(s[at + 2] ?? "")
     ? s.slice(at, at + 3).join("")
     : null;
+
+// Defaults/index expressions may use only side-effect-free built-ins. Cross-table
+// references and unknown functions need a separately installed contract.
+const pureCalls = new Set([
+  "gen_random_uuid",
+  "clock_timestamp",
+  "statement_timestamp",
+  "now",
+  "coalesce",
+  "nullif",
+  "greatest",
+  "least",
+  "length",
+  "char_length",
+  "octet_length",
+  "lower",
+  "upper",
+  "md5",
+  "encode",
+  "decode",
+  "extensions.digest",
+  "extensions.gen_random_uuid",
+]);
+const grammarCalls = new Set([
+  "check",
+  "key",
+  "unique",
+  "include",
+  "exists",
+  "if",
+  "conflict",
+  "values",
+  "count",
+  "ceil",
+  "extract",
+  "date_trunc",
+  "jsonb_build_object",
+  "make_interval",
+  "power",
+]);
+function callsAreBounded(tokens, calls) {
+  const operators = new Set([
+    "+",
+    "-",
+    "*",
+    "/",
+    "%",
+    "<",
+    "<=",
+    ">",
+    ">=",
+    "=",
+    "<>",
+    "!=",
+    "||",
+    "~",
+    "!~",
+    "~*",
+    "!~*",
+    "::",
+  ]);
+  for (let i = 0; i < tokens.length - 1; i++)
+    if (word.test(tokens[i]) && tokens[i + 1] === "(") {
+      const name =
+        tokens[i - 1] === "." ? tokens[i - 2] + "." + tokens[i] : tokens[i];
+      if (!calls.has(name)) return false;
+    }
+  for (const token of tokens)
+    if (
+      /^[+*/<>=~!@#%^&|?:-]+$/.test(token) &&
+      !operators.has(token) &&
+      ![":=", "=>", "->", "->>"].includes(token)
+    )
+      return false;
+  return true;
+}
+const basemapRelations = new Set([
+  "private.location_search_config",
+  "private.location_provider_config",
+  "private.map_baseline_config",
+  "private.mock_basemap_config",
+  "private.location_provider_usage",
+  "private.map_provider_cache",
+  "private.map_baseline_tiles",
+  "private.mock_basemap_claims",
+]);
+const mapEffects = new Map([
+  [
+    "private.reserve_mock_map_provider_v1",
+    {
+      calls: [],
+      insert: ["private.location_provider_usage"],
+      delete: [
+        "private.mock_basemap_claims",
+        "private.location_provider_usage",
+      ],
+    },
+  ],
+  [
+    "private.reserve_basemap_tile_internal_v3",
+    {
+      calls: [
+        "private.reserve_location_provider_v1",
+        "private.reserve_mock_map_provider_v1",
+        "private.basemap_retry_v2",
+        "private.basemap_ancestor_v2",
+        "private.is_trento_baseline_v2",
+        "private.basemap_tile_payload_v2",
+      ],
+      insert: ["private.map_baseline_tiles", "private.map_provider_cache"],
+      delete: ["private.map_baseline_tiles", "private.map_provider_cache"],
+    },
+  ],
+  [
+    "public.reserve_basemap_tile_v2",
+    {
+      calls: ["private.reserve_basemap_tile_internal_v3"],
+      insert: [],
+      delete: [],
+    },
+  ],
+  [
+    "public.reserve_mock_basemap_tile_v1",
+    {
+      calls: ["private.reserve_basemap_tile_internal_v3"],
+      insert: ["private.mock_basemap_claims"],
+      delete: [],
+    },
+  ],
+  [
+    "public.finish_mock_basemap_tile_v1",
+    {
+      calls: ["public.finish_basemap_tile_v2"],
+      insert: [],
+      delete: ["private.mock_basemap_claims"],
+    },
+  ],
+]);
+function boundedMapBody(body, name) {
+  const delimiter = body.match(/^\$(?:[a-z_][a-z0-9_]*)?\$/i)?.[0];
+  if (!delimiter) return false;
+  const tokens = sqlTokens(body.slice(delimiter.length, -delimiter.length)).map(
+    (t) => t.toLowerCase(),
+  );
+  if (name === "private.reserve_basemap_tile_internal_v3") {
+    // The existing normal actor check may inspect only existence of its own
+    // profile ID. No profile field/projection becomes a mock pixel dependency.
+    const probe = sqlTokens("select 1 from public.profiles where id=p_actor");
+    const positions = [];
+    for (let i = 0; i < tokens.length; i++)
+      if (probe.every((t, j) => tokens[i + j] === t)) positions.push(i);
+    if (positions.length !== 1) return false;
+    tokens.splice(positions[0], probe.length, "select", "1");
+  }
+  const effects = mapEffects.get(name);
+  const calls = new Set([
+    ...pureCalls,
+    ...grammarCalls,
+    ...effects.calls,
+    ...basemapRelations,
+  ]);
+  if (!callsAreBounded(tokens, calls)) return false;
+  const aliases = new Set([
+    "cfg",
+    "mock",
+    "baseline",
+    "tile",
+    "cached",
+    "excluded",
+    "c",
+    "t",
+  ]);
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    const ref = qualified(tokens, i);
+    if (
+      ref &&
+      tokens[i - 1] !== "." &&
+      !basemapRelations.has(ref) &&
+      !calls.has(ref) &&
+      !aliases.has(tokens[i])
+    )
+      return false;
+    if (
+      token === "delete" &&
+      qualified(tokens, i + 2) === "private.location_provider_usage"
+    ) {
+      const end = tokens.indexOf(";", i);
+      if (
+        tokens.slice(i, end < 0 ? tokens.length : end).join(" ") !==
+        "delete from private . location_provider_usage where bucket < day"
+      )
+        return false;
+    }
+    if (
+      [
+        "drop",
+        "truncate",
+        "alter",
+        "create",
+        "copy",
+        "execute",
+        "grant",
+        "revoke",
+        "call",
+        "merge",
+        "reset",
+        "listen",
+        "notify",
+        "unlisten",
+      ].includes(token)
+    )
+      return false;
+    if (token === "set" && tokens[i - 1] !== "update") return false;
+    if (
+      token === "insert" &&
+      (tokens[i + 1] !== "into" ||
+        !effects.insert.includes(qualified(tokens, i + 2)))
+    )
+      return false;
+    if (
+      token === "delete" &&
+      (tokens[i + 1] !== "from" ||
+        !effects.delete.includes(qualified(tokens, i + 2)))
+    )
+      return false;
+    if (
+      token === "update" &&
+      tokens[i - 1] !== "for" &&
+      !(tokens[i - 1] === "do" && tokens[i + 1] === "set")
+    )
+      return false;
+    if (
+      ["from", "join"].includes(token) &&
+      !(
+        token === "from" &&
+        tokens[i - 1] === "epoch" &&
+        tokens[i - 2] === "(" &&
+        tokens[i - 3] === "extract"
+      )
+    ) {
+      const relation = qualified(tokens, i + 1);
+      if (relation && !basemapRelations.has(relation)) return false;
+    }
+  }
+  return true;
+}
 export function inspectAdditive(sql) {
   let parsed;
   try {
@@ -93,11 +340,26 @@ export function inspectAdditive(sql) {
         !name?.startsWith("private.") ||
         s[5] !== "(" ||
         s.some((t) =>
-          ["inherits", "partition", "like", "tablespace"].includes(t),
+          [
+            "inherits",
+            "partition",
+            "like",
+            "tablespace",
+            "references",
+            "generated",
+            "collate",
+            "using",
+          ].includes(t),
         )
       )
         return hold(
           "Only isolated new private regular tables are automatic candidates",
+        );
+      if (
+        !callsAreBounded(s.slice(6), new Set([...pureCalls, ...grammarCalls]))
+      )
+        return hold(
+          "New private table defaults/constraints contain an unproven function effect",
         );
       tables.push(name);
     } else if (
@@ -126,6 +388,10 @@ export function inspectAdditive(sql) {
           "Dynamic or external privileged effects need a targeted contract",
         );
       functions.push(name);
+      if (mapEffects.has(name) && !boundedMapBody(body, name))
+        return hold(
+          "Basemap body exceeds its predeclared relation/call/write effects",
+        );
     } else if (s[0] === "alter" && s[1] === "table") {
       if (
         !tables.includes(qualified(s, 2)) ||
@@ -138,6 +404,15 @@ export function inspectAdditive(sql) {
       const on = s.indexOf("on");
       if (!tables.includes(qualified(s, on + 1)))
         return hold("Index must belong to a declared new private table");
+      if (
+        !callsAreBounded(
+          s.slice(on + 5),
+          new Set([...pureCalls, ...grammarCalls]),
+        )
+      )
+        return hold(
+          "New index expression contains an unproven function effect",
+        );
     } else if (s[0] === "revoke") {
       if (
         s[1] !== "all" ||
@@ -173,6 +448,29 @@ export function inspectAdditive(sql) {
       )
         return hold(
           "Only initial values in a new isolated private table are candidates",
+        );
+      if (
+        !s
+          .slice(s.indexOf("values") + 1)
+          .every(
+            (t) =>
+              [
+                "(",
+                ")",
+                ",",
+                "-",
+                "+",
+                "true",
+                "false",
+                "null",
+                "default",
+              ].includes(t) ||
+              /^\d+(?:\.\d+)?$/.test(t) ||
+              /^'(?:[^']|'')*'$/.test(t),
+          )
+      )
+        return hold(
+          "Initial private values must be literal; unproven expressions are held",
         );
     } else if (
       ["set", "reset"].includes(s[0]) &&
@@ -333,6 +631,10 @@ export function assertBoundedCatalog(before, after, candidate) {
               throw new UnsafeCatalogError(
                 `Existing table grant widened: ${a.id}/${role}/${privilege}`,
               );
+        if (JSON.stringify(a.access) !== JSON.stringify(b.access))
+          throw new ReleaseError(
+            `Existing table permission contract changed: ${a.id}`,
+          );
       }
       if (section === "functions") {
         // FILL01's exact already-merged private delegation retains the original
@@ -370,6 +672,26 @@ export function assertBoundedCatalog(before, after, candidate) {
     )
       throw new ReleaseError(
         `New table exposes direct client privileges: ${table.id}`,
+      );
+    if (
+      candidate.classification !== "established-contract-candidate" &&
+      table.columns.some(
+        (c) =>
+          ![
+            "boolean",
+            "smallint",
+            "integer",
+            "bigint",
+            "text",
+            "uuid",
+            "jsonb",
+            "date",
+            "timestamp with time zone",
+          ].includes(c.type),
+      )
+    )
+      throw new ReleaseError(
+        `New private table uses an unproven type: ${table.id}`,
       );
   }
   if (candidate.classification !== "established-contract-candidate") {

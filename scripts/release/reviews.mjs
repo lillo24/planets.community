@@ -213,17 +213,25 @@ export async function checkPullRequest(
         );
       const m = local.find((m) => `supabase/migrations/${m.file}` === path);
       if (!m) throw new ReleaseError("Unparseable canonical migration path");
-      const candidate = migrationCandidate(m);
-      if (candidate.classification === "blocked-unsafe")
-        throw new ReleaseError(
-          `Migration ${m.version} blocked-unsafe: ${candidate.reason}`,
-        );
+      let candidate;
+      try {
+        candidate = migrationCandidate(m);
+      } catch (error) {
+        if (!(error instanceof ReleaseError)) throw error;
+        candidate = { classification: "blocked-unsafe", reason: error.message };
+      }
       added.push({
         version: m.version,
         sha256: m.sha256,
         candidate: candidate.classification,
-        status: "review-required-for-hosted",
-        reason: "Awaiting populated catalog/security/real-actor proof",
+        status:
+          candidate.classification === "blocked-unsafe"
+            ? "blocked-unsafe"
+            : "review-required-for-hosted",
+        reason:
+          candidate.classification === "blocked-unsafe"
+            ? candidate.reason
+            : "Awaiting populated catalog/security/real-actor proof",
       });
     }
   }
@@ -246,6 +254,11 @@ export async function checkPullRequest(
   console.log(
     "Source safety: no owner fingerprint required; hosted eligibility awaits independent populated/security proof.",
   );
+  const blocked = added.find((m) => m.status === "blocked-unsafe");
+  if (blocked)
+    throw new ReleaseError(
+      `Migration ${blocked.version} blocked-unsafe: ${blocked.reason}`,
+    );
   return;
 }
 if (

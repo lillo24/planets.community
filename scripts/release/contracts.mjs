@@ -205,6 +205,18 @@ export async function mockBasemapContract(databaseUrl) {
     await sql`update private.mock_basemap_config set enabled=true,daily_units_limit=800`;
     await sql`update private.location_provider_config set daily_units_limit=4`;
     await sql`delete from private.location_provider_usage where scope like 'units:%' or scope like 'requests:%'`;
+    assert.equal(
+      (await reserve(6001)).status,
+      "ok",
+      "First quarter of a lowered global ceiling is available",
+    );
+    assert.equal(
+      (await reserve(6002)).status,
+      "budget_exhausted",
+      "Mock cannot borrow the other three quarters of global capacity",
+    );
+    assert.equal(await used("units:global"), 1);
+    await sql`delete from private.location_provider_usage where scope like 'units:%' or scope like 'requests:%'`;
     await sql`insert into private.location_provider_usage values('units:global',date_trunc('day',statement_timestamp() at time zone 'UTC') at time zone 'UTC',4)`;
     assert.equal(
       (await reserve(6000)).status,
@@ -359,6 +371,25 @@ export async function mapPolicyNegativeControls(status, fixtureSql) {
         () => mockBasemapContract(status.databaseUrl),
         { name: "AssertionError" },
         "Wrong ledger body with unchanged signature must fail",
+      );
+    } finally {
+      await sql.unsafe(definition);
+    }
+    try {
+      const changed = definition.replaceAll(
+        "cfg.daily_units_limit/4",
+        "cfg.daily_units_limit",
+      );
+      assert.notEqual(
+        changed,
+        definition,
+        "Quarter-cap mutation must alter the actual body",
+      );
+      await sql.unsafe(changed);
+      await assert.rejects(
+        () => mockBasemapContract(status.databaseUrl),
+        { name: "AssertionError" },
+        "Changed quota with unchanged signature must fail",
       );
     } finally {
       await sql.unsafe(definition);

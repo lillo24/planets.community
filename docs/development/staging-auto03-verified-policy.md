@@ -24,6 +24,16 @@ An unchanged signature is insufficient. Negative controls actually replace its
 body with a wrong ledger, widen execution, disable RLS, change definer context
 and install a hidden trigger on the disposable database; those changes must fail.
 
+The isolated class accepts built-in column types, bounded pure defaults/index
+expressions and literal initial rows. Cross-table references, custom type IO,
+unknown function/operator effects and custom table access methods are held.
+MAPMOCK bodies have predeclared budget/cache relations, callees and write targets;
+they cannot mutate provider configuration or read product data. The existing
+normal actor check retains only its exact profile-ID existence probe. Budget
+history pruning is restricted to buckets before the current UTC day. Structure
+alone cannot approve accounting: the unchanged-signature wrong-ledger and removed
+quarter-cap mutants must fail the independent PostgreSQL contracts.
+
 The already merged product baseline `ec4c57060331b96577d512794b8c5bd78ac16d2b`
 defines existing catch-up candidates and immutable pgTAP/Auth fixture producers.
 Its hash is **not deployment authorization**: actual per-file security effects,
