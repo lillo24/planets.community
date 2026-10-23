@@ -594,7 +594,12 @@ unchanged. This follow-up is not complete or ready for production.
   native function OID/ACL/result contracts**. RUNALL upgrade **216 PASS / 187
   snapshots / six contracts**, including existing General/numbered episodes,
   chat, legacy card and original capacity. Post-upgrade real OTP/socket
-  programme **139 PASS**; gates restored OFF. Full `check:db` now running.
+  programme **139 PASS**; gates restored OFF. Frozen full `check:db` passed:
+  all eleven configured native upgrade commands, clean 141-migration replay,
+  lint/advisors,
+  **170 pgTAP files / 8,273 assertions**, all configured real Auth verifiers and
+  generated type drift. Final affected 142-migration checks are recorded below;
+  a second complete `check:db` at 142 is not claimed.
   A **new** named disposable
   `planets-cocreate-deploy01-qa` protects old backups, with a hash-journaled
   two-line config overlay. The first actual-main CLI reset failed before
@@ -602,15 +607,29 @@ unchanged. This follow-up is not complete or ready for production.
   passing manifests remain retained, and diagnostics now include both redacted
   output channels rather than hiding stdout errors behind stderr progress.
 - **Audit finding / eligible follow-up:** a withdrawn proposer can accumulate a
-  large supporter roster; reactivation's refresh-signal loop is unbounded.
-  Private drafts prepare a 36-account canonical regression and a forward limit
-  of 25 optional recipient invalidations plus the actor response. Every durable
+  large supporter roster; reactivation's refresh-signal loop was unbounded.
+  A 36-account canonical regression reproduced exactly one failure out of 12.
+  New forward migration `20261023071604` limits optional recipient invalidations
+  to 25 plus the actor response; the unchanged regression is now **12 PASS**.
+  It counts actual Realtime rows without replacing helpers. Every durable
   Ready-to-join invitation remains available through the existing 20-second
   foreground refresh/entry; no product enrollment or provider change is needed.
-- **Precise next action:** finish frozen full `check:db` first, demonstrate the
-  regression and apply/qualify the bounded refresh migration without rewriting
-  the original 15. Then restore gate OFF, stop only the new project with backup,
-  restore original config bytes. Inspect/commit, retarget the same draft #297 to
+- Populated published-FILL01 **141-to-142 upgrade: 245 PASS / 195 original table
+  snapshots / nine OID/ACL/result contracts**. Installed pending support and the
+  immutable command receipt survive; only the new third interest activates,
+  with all private invitations and zero automatic chat admission.
+- Final **142-migration** clean replay, lint/advisors and generated types/drift
+  PASS. Full pgTAP **171 files / 8,285 assertions PASS**. All eight affected real
+  Auth/socket scripts PASS: **72 / 77 / 101 / 54 / 50 / 38 / 112 / 139**.
+  Actual-main upgrade repeated **185 PASS**, RUNALL **216 PASS**. Raw-byte audit
+  confirms all 141 published files retained and **16** cumulative review-required
+  additions against main; original 15 hashes/predecessor digests unchanged.
+- Activation OFF verified, only the new project stopped with backup, exact
+  original config restored. The VM was already running at DEPLOY01 start and
+  remains running. Final two-realm Mock replay is in progress at the new schema.
+  A fresh `adb devices -l` still finds no attached phone; no device QA is claimed.
+- **Precise next action:** finish final Mock, inspect/commit, retarget the same
+  draft #297 to
   main before final push, obtain a fresh exact-head owner-review artifact and
   wait for actual owner SQL proof/current-head green CI. Do not post owner proof,
   weaken controls, merge duplicate ancestry or begin DEPLOY02. No hosted action.

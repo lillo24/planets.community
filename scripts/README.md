@@ -214,7 +214,16 @@ For COMM01/FILL01, the explicit `PLANETS_COCREATE_UPGRADE_BASE` value
 membership, human message and legacy card before upgrading. DEPLOY01 additionally
 accepts exact main `667bf57b51912f8c1d92b54828bb1e4d801a7303` (126 immutable
 migrations), selected through the same environment variable, to qualify the
-complete 15-migration cumulative integration against its actual main predecessor.
+complete cumulative integration against its actual main predecessor (16 additive
+migrations after DEPLOY01's bounded activation refresh hardening).
 The original default remains supported; arbitrary refs are refused. The same
 non-default-project and loopback opt-ins remain mandatory. This local qualification
 is not the separate staging semantic rehearsal or repository-owner SQL approval.
+
+The published FILL01 head `35312dc1f2954f50e70a02968eff5a1d748f437f` is the
+fourth explicit base (141 immutable migrations). The same command/environment
+also qualifies installed community commands before forward hardening: three real
+OTP accounts preserve a two-supporter pending proposal and immutable command
+receipt, nine native/community OID/ACL/result contracts, legacy chat/history and
+all original table columns/rows. Exact retry remains pending; only a new third
+interest activates after upgrade, with private invitations and no chat admission.

@@ -22,12 +22,21 @@ const runallBase = "a0e810d0678cfd17b0124eb103e68974e932474b";
 // DEPLOY01's actual main predecessor, including ACTAPI01 and merged ACTMET01.
 // Pin its complete inventory; arbitrary refs must never authorize a local reset.
 const integrationBase = "667bf57b51912f8c1d92b54828bb1e4d801a7303";
+// Published FILL01 verifies installed community commands before bounded refresh.
+const fillBase = "35312dc1f2954f50e70a02968eff5a1d748f437f";
+const inventories = new Map([
+  [originalBase, 123],
+  [runallBase, 137],
+  [integrationBase, 126],
+  [fillBase, 141],
+]);
 const base = process.env.PLANETS_COCREATE_UPGRADE_BASE ?? originalBase;
 assert.ok(
-  [originalBase, runallBase, integrationBase].includes(base),
-  "Only the reviewed original, RUNALL or DEPLOY01 main base is supported",
+  inventories.has(base),
+  "Only the explicit original, RUNALL, DEPLOY01 main or FILL01 base is supported",
 );
-const followup = base === runallBase;
+const followup = base === runallBase || base === fillBase;
+const communityFollowup = base === fillBase;
 const root = await realpath(process.cwd());
 const config = await readFile(path.join(root, "supabase/config.toml"), "utf8");
 const project = config.match(/^project_id\s*=\s*"([^"]+)"/m)?.[1];
@@ -92,7 +101,7 @@ const files = run("git", [
   .trim()
   .split(/\r?\n/);
 assert.ok(
-  files.length === (followup ? 137 : base === integrationBase ? 126 : 123) &&
+  files.length === inventories.get(base) &&
     files.every((f) => /^supabase\/migrations\/\d{14}_[\w-]+\.sql$/.test(f)),
   "Exact base inventory required",
 );
@@ -259,7 +268,7 @@ try {
     p_administrative_area: null,
     p_public_location_label: null,
   });
-  let cocreate;
+  let cocreate, community;
   if (followup) {
     const topic = randomUUID(),
       hub = randomUUID();
@@ -295,6 +304,58 @@ try {
       p_operation: "post",
     });
     cocreate = { topic, hub, general, numbered, recruitment };
+    if (communityFollowup) {
+      const others = [];
+      for (let n = 0; n < 2; n++) {
+        const person = await signInLocalOtpUser({
+          ...status,
+          mailpitUrl: "http://127.0.0.1:54324",
+          email: `cocreate-upgrade-community-${tag}-${n}@planets.invalid`,
+          verifierName: "cocreate-upgrade-community",
+        });
+        await sql`insert into public.profiles(id,display_name) values(${person.id}::uuid,'Synthetic community upgrade supporter')`;
+        await rpc(person, "accept_policy_bundle", {
+          p_expected_account_id: person.id,
+          p_bundle_version: "POLICY01-2026-10-08-v1",
+        });
+        others.push(person);
+      }
+      const proposed = await rpc(u, "propose_cocreate_community", {
+        p_expected_profile_id: u.id,
+        p_command_id: randomUUID(),
+        p_category_id: "other",
+        p_name: `Synthetic before bounded refresh ${tag}`,
+        p_locality: "Synthetic upgrade locality",
+        p_explanation:
+          "Synthetic pending state survives the forward migration.",
+      });
+      await rpc(others[0], "mutate_cocreate_community_interest", {
+        p_expected_profile_id: others[0].id,
+        p_command_id: randomUUID(),
+        p_proposal_id: proposed.proposal_id,
+        p_operation: "interest",
+      });
+      const attempt = {
+        p_expected_profile_id: u.id,
+        p_command_id: randomUUID(),
+        p_proposal_id: proposed.proposal_id,
+        p_operation: "interest",
+      };
+      const receipt = await rpc(
+        u,
+        "mutate_cocreate_community_interest",
+        attempt,
+      );
+      const own = await rpc(u, "list_own_cocreate_community_interests", {
+        p_expected_profile_id: u.id,
+      });
+      equal(
+        own[0].ready_to_join,
+        false,
+        "Two supporters remain pending before upgrade",
+      );
+      community = { proposal: proposed.proposal_id, others, attempt, receipt };
+    }
     await sql`update private.cocreate_settings set enabled=false`;
   }
   const tables =
@@ -314,6 +375,12 @@ try {
       "public.process_notification_outbox_batch(integer)",
       "public.get_cocreate_room_page(uuid,uuid,uuid,integer,bigint)",
       "public.join_cocreate_recruitment(uuid,uuid,uuid,uuid,uuid)",
+    );
+  if (communityFollowup)
+    signatures.push(
+      "public.mutate_cocreate_community_interest(uuid,uuid,uuid,text)",
+      "public.list_own_cocreate_community_interests(uuid,integer,timestamptz,uuid)",
+      "public.get_cocreate_room_page_v3(uuid,uuid,uuid,integer,bigint)",
     );
   const identities = () =>
     sql`select p.oid,p.oid::regprocedure::text signature,p.proacl::text acl,pg_get_function_result(p.oid) result_shape from pg_proc p where p.oid in(select to_regprocedure(value) from jsonb_array_elements_text(${sql.json(signatures)}) a(value)) order by p.oid`;
@@ -439,6 +506,56 @@ try {
       cocreate.recruitment.recruitment_id,
       "Legacy card identity survives upgrade",
     );
+    if (community) {
+      equal(
+        await rpc(u, "mutate_cocreate_community_interest", community.attempt),
+        community.receipt,
+        "Installed command's immutable exact retry survives the forward upgrade",
+      );
+      const pending = await rpc(u, "get_cocreate_community_proposal", {
+        p_proposal_id: community.proposal,
+      });
+      equal(
+        pending.state,
+        "pending",
+        "Upgrade/retry never activates pending support",
+      );
+      equal(
+        pending.interested_count,
+        2,
+        "Original two distinct interests survive",
+      );
+      const third = community.others[1];
+      const activated = await rpc(third, "mutate_cocreate_community_interest", {
+        p_expected_profile_id: third.id,
+        p_command_id: randomUUID(),
+        p_proposal_id: community.proposal,
+        p_operation: "interest",
+      });
+      equal(
+        typeof activated.hub_id,
+        "string",
+        "A fresh third interest activates after upgrade",
+      );
+      for (const person of [u, ...community.others]) {
+        const own = await rpc(person, "list_own_cocreate_community_interests", {
+          p_expected_profile_id: person.id,
+        });
+        equal(
+          own.find((item) => item.proposal.proposal_id === community.proposal)
+            ?.ready_to_join,
+          true,
+          "Every original/new interested actor retrieves a private invitation",
+        );
+      }
+      equal(
+        (
+          await sql`select count(*)::integer n from private.cocreate_room_episodes e join private.cocreate_rooms r on r.id=e.room_id where r.hub_id=${activated.hub_id}::uuid`
+        )[0].n,
+        0,
+        "Activation after upgrade still grants no chat membership",
+      );
+    }
     await sql`update private.cocreate_settings set enabled=false`;
   }
   manifest.checks = checks;

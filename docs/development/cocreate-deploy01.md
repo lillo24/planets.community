@@ -1,7 +1,8 @@
 # COCREATE-DEPLOY01 — cumulative integration and owner review
 
-Status: source reconciliation, populated upgrades and client/Mock qualification
-complete; full database regression in progress, 2026-10-23.
+Status: source reconciliation, full 141-migration database baseline and client/Mock
+qualification complete; forward hardening database qualification passed, final
+two-realm Mock qualification in progress, 2026-10-23.
 
 The user selected DEPLOY01 before DEPLOY02. Its full handoff prompt,
 `PLANETS_COCREATE_DEPLOY01_integrate_fill01_into_main.md`, was read from the
@@ -37,25 +38,26 @@ the cumulative integration succeeds and their final heads remain fully included.
 
 ## Required review boundary
 
-Exactly 15 additive co-creation migrations are new against selected main:
+Exactly 16 additive co-creation migrations are new against selected main:
 
-| Version        | Subject / review focus                                                |
-| -------------- | --------------------------------------------------------------------- |
-| 20261021195032 | Independent server gate, default OFF; narrow availability/eligibility |
-| 20261021195841 | Posts, consent contacts, immutable commands, private authorization    |
-| 20261022080000 | Versioned mobile own projections, actor-only private metadata         |
-| 20261022090000 | Local topic hubs, canonical General, explicit membership/history      |
-| 20261022100000 | Exact hub/room/episode context and retained history                   |
-| 20261022110000 | Numbered rooms, atomic capacity, creator admission/removal/exit       |
-| 20261022120000 | Scoped manager recovery and admitted People projection                |
-| 20261022130000 | Structured General recruitment, immutable retries and canonical join  |
-| 20261022140000 | Deliberate native Project/source links, no authority inheritance      |
-| 20261022150000 | Minimal ACTAPI01 references, current native visibility                |
-| 20261022160000 | Closed source signals and public projection allow-lists               |
-| 20261022224046 | Immutable timed meetings, per-occurrence seats vs persistent chat     |
-| 20261022224420 | Curated categories, normalized proposals and three-person activation  |
-| 20261022224830 | Bounded notification outbox/projector, live recipient authorization   |
-| 20261023002240 | Installed closed-reader compatibility, additive dated readers         |
+| Version        | Subject / review focus                                                 |
+| -------------- | ---------------------------------------------------------------------- |
+| 20261021195032 | Independent server gate, default OFF; narrow availability/eligibility  |
+| 20261021195841 | Posts, consent contacts, immutable commands, private authorization     |
+| 20261022080000 | Versioned mobile own projections, actor-only private metadata          |
+| 20261022090000 | Local topic hubs, canonical General, explicit membership/history       |
+| 20261022100000 | Exact hub/room/episode context and retained history                    |
+| 20261022110000 | Numbered rooms, atomic capacity, creator admission/removal/exit        |
+| 20261022120000 | Scoped manager recovery and admitted People projection                 |
+| 20261022130000 | Structured General recruitment, immutable retries and canonical join   |
+| 20261022140000 | Deliberate native Project/source links, no authority inheritance       |
+| 20261022150000 | Minimal ACTAPI01 references, current native visibility                 |
+| 20261022160000 | Closed source signals and public projection allow-lists                |
+| 20261022224046 | Immutable timed meetings, per-occurrence seats vs persistent chat      |
+| 20261022224420 | Curated categories, normalized proposals and three-person activation   |
+| 20261022224830 | Bounded notification outbox/projector, live recipient authorization    |
+| 20261023002240 | Installed closed-reader compatibility, additive dated readers          |
+| 20261023071604 | Bounded optional activation signals; every private invitation retained |
 
 Owner SQL review must inspect each file and its exact SHA-256/predecessor digest,
 not approve a summary. Confirm private table grants/RLS; explicit public RPC
@@ -83,7 +85,7 @@ change invalidates the old approval. No direct-to-main push or approval bypass.
 
 ## Refreshed qualification and checkpoint
 
-Refreshed results on the reconciled source (no UI or migration changed):
+Refreshed results on the reconciled 141-migration baseline (no UI changed):
 
 - Mobile: **4,181 PASS / two existing opt-in skips**, clean analyzer and
   **947 files / zero formatting changes**. Full test command used
@@ -123,31 +125,96 @@ Refreshed results on the reconciled source (no UI or migration changed):
 - Continuous programme after populated upgrade: **139 PASS**, genuine local
   OTP/concurrency and retained socket; activation restored OFF.
 
-Pending: full clean database replay/security and all native/co-creation Auth
-regressions in `npm run check:db`, plus generated type drift. Final source
-CI/owner review remains separate. Safe witnesses are retained privately in
+The complete `npm run check:db` baseline passed: all eleven configured native
+populated-upgrade commands, clean 141-migration replay, lint/security advisors,
+**170 pgTAP files / 8,273 assertions**, every configured native/co-creation real
+Auth verifier and generated type drift. Activation was verified OFF. Final
+142-migration affected qualification is recorded below; source CI/owner review
+remains separate.
+Safe baseline witnesses are retained privately in
 `.local/cocreate-upgrade-b6012ab9-3eda-4e78-80c1-5a4d74302582/manifest.json`
 (main) and `.local/cocreate-upgrade-d671d82f-2f91-4724-970f-6804eb5885d9/manifest.json`
 (RUNALL). No backup or private CLI status is a public artifact.
 
-The integration audit also identified one eligible hardening task: while a
+The integration audit identified one eligible hardening task: while a
 proposer has withdrawn interest, a pending proposal can accumulate many other
-supporters. Reactivation currently loops over every supporter to emit Realtime
+supporters. Reactivation previously looped over every supporter to emit Realtime
 refresh metadata. Durable invitation state is already present for everyone and
-the existing visible Your interests list refreshes every 20 seconds. After the
-running 141-migration baseline finishes, demonstrate the fanout regression with
-36 canonical interested actors, then add a forward migration limiting activation
-invalidations to 25 recipients plus the command actor. Keep all original SQL
-bytes, all invitations and three-person activation unchanged. Qualify the
-populated function OID/ACL/data boundary, fresh replay/Auth/Mock and type drift
-before final review; do not change the migration inventory underneath an active
-database qualification.
+the existing visible Your interests list refreshes every 20 seconds. The frozen
+baseline reproduced exactly one failure in the 12-assertion, 36-account canonical
+stress test: unbounded actual Realtime broadcast rows. The additive migration
+limits optional invalidations to 25 recipients plus the command actor; the same
+test is now **12 PASS**, including all 36 durable invitations, exact lost-reply
+retry, one General and no automatic chat admission/numbered rooms. No delivery
+helper or security check was mocked or replaced. All original SQL bytes,
+invitations and three-person activation remain unchanged. The populated FILL01
+141-to-142 witness is **245 PASS / 195 table snapshots / nine OID/ACL/result
+contracts**, including an installed pending proposal/receipt and fresh third
+supporter activation.
 
 The upgrade script now also allow-lists the exact actual main SHA above and its
 126-file inventory. It retains its original and RUNALL bases and all explicit
 non-default disposable-project/loopback guards. No migrations or test assertions
 are removed. Current-main and the previously populated RUNALL scenarios qualify
 different upgrade boundaries; prior-head results are historical background.
+
+### Final forward-migration qualification
+
+The baseline's complete native Auth/upgrade suite passed before adding the one
+forward signal-bound migration. After that addition, the smallest complete
+affected set was rerun; a second complete `check:db` at 142 is not claimed:
+
+- Fresh **142-migration** replay, database lint and security advisors PASS.
+  Full pgTAP: **171 files / 8,285 assertions PASS**. Existing tests were retained;
+  the additional 12 assertions cover the demonstrated fanout regression.
+- Actual main **126-to-142: 185 PASS / 168 table snapshots / three contracts**;
+  RUNALL **137-to-142: 216 PASS / 187 snapshots / six contracts**;
+  published FILL01 **141-to-142: 245 PASS / 195 snapshots / nine contracts**.
+  Every original column/row and warmed OID/ACL/result shape survived.
+- Real Auth verifiers: posts/contacts **72**, hubs/General **77**, numbered
+  groups **101**, recruitment **54**, source links **50**, events **38**,
+  communities/meetings **112**, integrated OTP/concurrency/retained-socket
+  programme **139**, all PASS with activation restored OFF.
+- Standard `npm run db:types:check` PASS after regeneration. The forward migration
+  changes a function body only, so the generated public type file is unchanged.
+- Raw-byte inventory audit: **126 main and all 141 published predecessor files
+  unchanged, 142 unique current migrations, 16 review-required additions**. All
+  original 15 review hashes/predecessor digests remain unchanged. RUNALL/VIS01
+  ancestry and release-control byte identity were rechecked. Fresh fetch still
+  selects main `667bf57b` and the same two dependency heads.
+- Pending final Mock replay uses the new schema digest. The fresh full client
+  checks above remain applicable: no mobile/web/site runtime or test source
+  changed during hardening, only the mobile feature navigation README.
+
+Reproduce serially on the explicit owned disposable target documented above:
+
+```powershell
+# For each exact allow-listed predecessor; never a shared/hosted project.
+$env:PLANETS_COCREATE_UPGRADE_BASE = '35312dc1f2954f50e70a02968eff5a1d748f437f'
+npm run cocreate:upgrade:verify:local
+# Repeat with main 667bf57b51912f8c1d92b54828bb1e4d801a7303
+# and RUNALL a0e810d0678cfd17b0124eb103e68974e932474b.
+npm run db:reset
+npm run db:lint
+npm run db:advisors
+npm run db:test
+npm run db:types:check
+npm run cocreate:posts:verify:local
+npm run cocreate:hubs:verify:local
+npm run cocreate:numbered:verify:local
+npm run cocreate:recruitment:verify:local
+npm run cocreate:links:verify:local
+npm run cocreate:events:verify:local
+npm run cocreate:communities:verify:local
+npm run cocreate:programme:verify:local
+# Stop only the owned project with backup; restore original root config first.
+node scripts/mock/qualify-local.mjs
+```
+
+Final populated manifests are retained privately under
+`.local/cocreate-upgrade-cb1bbab4-04fb-46cd-bcad-e3f3590d4473` (main),
+`.local/cocreate-upgrade-f0a3b262-4048-4850-8a34-1221b3b6cc01` (RUNALL) and
+`.local/cocreate-upgrade-650cbe1c-cf23-463e-a982-8a37d330dc73` (FILL01).
 
 Local logs/recovery receipts stay in untracked `.local/deploy01/`; no credentials
 or data are committed. After verifying no running containers and free ports, the

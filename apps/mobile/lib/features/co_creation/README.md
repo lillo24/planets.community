@@ -38,6 +38,10 @@ episode/history and ACK boundaries are unchanged. This client requires the
 additive reader migration; it never falls back to a dateless card on RPC failure.
 The existing room gateway still owns canonical chat admission and episode
 validation. Notifications reuse the sole inbox and actor-only signal stream.
+Ready-to-join invitations are durable actor-private reader state. Activation
+invalidates at most 25 interested actors plus its command actor; larger rosters
+retrieve the same invitations on entry or the existing 20-second list refresh.
+No supporter is enrolled or loses an invitation because of this signal bound.
 At large text sizes, category icons and right-aligned room occupancy have their
 own line so group names and availability retain the phone's full content width.
 See the [combined contract](../../../../../docs/development/cocreate-fill01.md)

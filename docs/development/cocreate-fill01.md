@@ -74,6 +74,15 @@ analytics/provider gate remain unchanged. The Activities/Sports queue added by
   and its existing canonical INSERT trigger creates one General. No numbered
   group, membership or chat grant is created by support. Interested rows provide
   persistent actor-private ready-to-join invitations in Your interests.
+- DEPLOY01 bounds activation's optional Realtime refresh invalidations to 25
+  interested actors in stable actor-ID order, plus the command actor's existing
+  response signal. A withdrawn proposer can accumulate a larger pending roster;
+  no interests or durable invitations are dropped. Everyone can retrieve their
+  invitation on entry/restart or the visible list's existing 20-second refresh.
+  Ordinary three-person activation still signals every supporter immediately.
+  This is a delivery-work bound, not an activation threshold or membership cap.
+  The additive migration preserves the mutation's OID, grants, result and receipt
+  contracts; all previous SQL files remain immutable.
 - Configurable defaults in private.cocreate_settings: activation threshold 3
   (3–10); 3 proposals/rolling day (1–20); 50 current pending interests (1–200);
   pending lifetime 30 days (1–90). Withdraw/cancel only while pending. Expiry,
