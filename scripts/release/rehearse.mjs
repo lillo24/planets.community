@@ -326,6 +326,21 @@ try {
     if (error !== rollback) throw error;
   }
   await verifyStorage();
+  // Baseline pgTAP fixtures require an otherwise clean application dataset
+  // (fixed Auth emails, singleton searches and template counts). First finish
+  // every populated upgrade/Storage proof above. Reset only this owned loopback
+  // stack, then prove its entire effective catalog equals the upgraded catalog
+  // before running unchanged trusted fixtures. No assertion/test is skipped.
+  const upgradedCatalog = (await sql.unsafe(effectCatalogQuery))[0].catalog;
+  command(cli, ["db", "reset", "--local", "--yes"]);
+  assert.deepEqual(
+    catalogEffects(
+      upgradedCatalog,
+      (await sql.unsafe(effectCatalogQuery))[0].catalog,
+    ),
+    [],
+    "Clean security fixture catalog differs from actual populated upgrade",
+  );
   command(cli, ["test", "db", resolve(trusted, "supabase/tests")]);
   const effective = (await sql.unsafe(effectCatalogQuery))[0].catalog;
   const addedFunctions = effective.functions.filter((f) =>
@@ -400,6 +415,8 @@ try {
     resource_auth_rest: true,
     generated_types: true,
     trusted_security_tests: true,
+    trusted_security_fixture_mode:
+      "clean-fixtures-with-equivalent-upgraded-catalog",
     real_actor_denials: denials.verified,
     denial_probes: denials,
     storage_objects_preserved: true,

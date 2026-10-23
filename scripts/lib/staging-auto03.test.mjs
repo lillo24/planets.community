@@ -302,6 +302,27 @@ test("same signature body changes remain explicit effects for independent domain
   other.functions[0].oid++;
   assert.equal(catalogEffects(before, other)[0].oid_retained, false);
 });
+
+test("one trusted private delegate retains the original object/body and exact caller contract", () => {
+  const before = catalog();
+  before.functions[0] = {
+    ...fn(),
+    id: "private.cocreate_recruitment_projection(p_id uuid)",
+    source_body: "original",
+  };
+  const after = structuredClone(before);
+  after.functions[0].oid = 43;
+  after.functions[0].source_body = "new wrapper";
+  after.functions.push({
+    ...before.functions[0],
+    id: "private.cocreate_recruitment_before_meetings(p_id uuid)",
+  });
+  const established = { classification: "established-contract-candidate" };
+  assert.doesNotThrow(() => assertBoundedCatalog(before, after, established));
+  assert.throws(() => assertBoundedCatalog(before, after, candidate));
+  after.functions[1].source_body = "changed original";
+  assert.throws(() => assertBoundedCatalog(before, after, established));
+});
 test("whole exact non-contiguous dependency chain qualifies before any apply", () => {
   const s = scenario(),
     decisions = authorize(s);

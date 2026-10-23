@@ -240,8 +240,9 @@ export const effectCatalogQuery = `select jsonb_build_object(
   from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','private','auth','storage') and c.relkind in ('r','p')) q),
  'functions',(select coalesce(jsonb_agg(x order by x->>'id'),'[]') from (
   select jsonb_build_object('id',n.nspname||'.'||p.proname||'('||pg_get_function_identity_arguments(p.oid)||')','oid',p.oid,'owner',pg_get_userbyid(p.proowner),
-   'returns',pg_get_function_result(p.oid),'input_names',coalesce(p.proargnames[1:p.pronargs],array[]::text[]),'definer',p.prosecdef,'config',p.proconfig,
-   'body',md5(pg_get_functiondef(p.oid)),'acl',coalesce(p.proacl::text,''),
+   'returns',pg_get_function_result(p.oid),'arguments',pg_get_function_arguments(p.oid),'input_names',coalesce(p.proargnames[1:p.pronargs],array[]::text[]),'definer',p.prosecdef,'config',p.proconfig,
+   'volatility',p.provolatile,'parallel',p.proparallel,'strict',p.proisstrict,'leakproof',p.proleakproof,
+   'body',md5(pg_get_functiondef(p.oid)),'source_body',md5(p.prosrc),'acl',coalesce(p.proacl::text,''),
    'access',(select jsonb_object_agg(r.rolname,has_function_privilege(r.oid,p.oid,'execute')) from pg_roles r where r.rolname in ('anon','authenticated','service_role'))) x
   from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','private','auth','storage') and p.prokind in ('f','p')) q),
  'policies',(select coalesce(jsonb_agg(jsonb_build_object('id',n.nspname||'.'||c.relname||'.'||p.polname,'definition',pg_get_expr(p.polqual,p.polrelid),'check',pg_get_expr(p.polwithcheck,p.polrelid),'command',p.polcmd,'permissive',p.polpermissive,'roles',(select array_agg(coalesce(r.rolname,'PUBLIC') order by r.rolname) from unnest(p.polroles) a left join pg_roles r on r.oid=a)) order by n.nspname,c.relname,p.polname),'[]') from pg_policy p join pg_class c on c.oid=p.polrelid join pg_namespace n on n.oid=c.relnamespace),
@@ -280,6 +281,20 @@ export function catalogEffects(before, after) {
 }
 export function assertBoundedCatalog(before, after, candidate) {
   const changes = catalogEffects(before, after);
+  const sameContext = (a, b) =>
+    [
+      "owner",
+      "returns",
+      "arguments",
+      "acl",
+      "definer",
+      "config",
+      "volatility",
+      "parallel",
+      "strict",
+      "leakproof",
+      "access",
+    ].every((key) => JSON.stringify(a[key]) === JSON.stringify(b[key]));
   for (const section of [
     "tables",
     "functions",
@@ -315,18 +330,25 @@ export function assertBoundedCatalog(before, after, candidate) {
                 `Existing table grant widened: ${a.id}/${role}/${privilege}`,
               );
       }
-      if (
-        section === "functions" &&
-        (a.oid !== b.oid ||
-          a.owner !== b.owner ||
-          a.returns !== b.returns ||
-          a.acl !== b.acl ||
-          a.definer !== b.definer ||
-          JSON.stringify(a.config) !== JSON.stringify(b.config))
-      )
-        throw new ReleaseError(
-          `Existing function identity/ACL/context changed: ${a.id}`,
-        );
+      if (section === "functions") {
+        // FILL01's exact already-merged private delegation retains the original
+        // object/body and old public contracts. It is not a general OID waiver.
+        const delegate =
+          candidate.classification === "established-contract-candidate" &&
+          a.id === "private.cocreate_recruitment_projection(p_id uuid)" &&
+          after.functions.find(
+            (f) =>
+              f.id ===
+                "private.cocreate_recruitment_before_meetings(p_id uuid)" &&
+              f.oid === a.oid &&
+              f.source_body === a.source_body &&
+              sameContext(a, f),
+          );
+        if (!sameContext(a, b) || (a.oid !== b.oid && !delegate))
+          throw new ReleaseError(
+            `Existing function identity/ACL/context changed: ${a.id}`,
+          );
+      }
     }
   }
   for (const table of after.tables.filter(

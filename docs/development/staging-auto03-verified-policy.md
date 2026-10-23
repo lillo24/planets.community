@@ -56,6 +56,17 @@ downloaded bytes. It executes trusted baseline security tests, independent
 service RPC denials with two actual Auth sessions, generated public types and a
 second CLI invocation proving no-op retry. Two real sessions prove lock exclusion.
 
+The unchanged baseline pgTAP fixtures require clean synthetic data (fixed Auth
+emails and singleton/count assumptions). Their phase follows all populated
+upgrade and Storage proofs: only the owned loopback stack is reset, its entire
+effective catalog must match the actually upgraded catalog, and then every
+trusted test runs unchanged. This mode is explicit in the receipt; no hosted
+target can enter the rehearsal and no security assertion is skipped. FILL01's
+specific private recruitment helper delegation must retain its original OID,
+body and permission context under its new private name while the legacy caller
+contract and independently trusted recruitment tests remain valid. Public RPC
+replacements still retain their original OID and permission context.
+
 After the entire pending chain qualifies, the writer rechecks current main,
 source/tree/policy hash, exact predecessor, recovery mode, live RLS/grants/Storage
 and an advisory lock. Each CLI invocation contains already applied canonical
