@@ -19,9 +19,9 @@ concurrency:
 
 jobs:
   refresh:
-    # This gate does not confirm municipal reuse rights or provide a connector.
-    # The shipped CLI fails explicitly at that separate code-owned checkpoint.
-    if: ${{ github.repository == 'lillo24/planets.community' && vars.ACTIVITIES_IMPORT_ENABLED == 'true' }}
+    # Opt-in, main only; never a PR/fork job. Source rights/enablement remain
+    # independent database/code gates. No implicit fetch of every known source.
+    if: ${{ github.repository == 'lillo24/planets.community' && github.ref == 'refs/heads/main' && vars.ACTIVITIES_IMPORT_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -34,14 +34,19 @@ jobs:
       - name: Run the bounded importer
         env:
           ACTIVITIES_TARGET: ${{ vars.ACTIVITIES_TARGET }}
+          ACTIVITIES_SOURCES: ${{ vars.ACTIVITIES_SOURCES }}
+          ACTIVITIES_REFRESH_POLICY_JSON: ${{ secrets.ACTIVITIES_REFRESH_POLICY_JSON }}
           ACTIVITIES_API_URL: ${{ secrets.ACTIVITIES_API_URL }}
           ACTIVITIES_SERVICE_ROLE_KEY: ${{ secrets.ACTIVITIES_SERVICE_ROLE_KEY }}
           IMPORT_APPLY: ${{ github.event_name == 'schedule' || inputs.apply }}
+          IMPORT_DUE_ONLY: ${{ github.event_name == 'schedule' }}
         shell: bash
         run: |
           set -euo pipefail
           if [[ "$IMPORT_APPLY" == 'true' ]]; then
-            node scripts/import-external-activities.mjs --source agenda-trento --apply --target "$ACTIVITIES_TARGET"
+            extra=()
+            if [[ "$IMPORT_DUE_ONLY" == 'true' ]]; then extra+=(--due-only); fi
+            node scripts/operate-external-activities.mjs --apply --target "$ACTIVITIES_TARGET" "${extra[@]}"
           else
-            node scripts/import-external-activities.mjs --source agenda-trento --dry-run
+            node scripts/operate-external-activities.mjs --dry-run
           fi

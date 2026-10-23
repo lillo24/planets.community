@@ -1,5 +1,13 @@
 # Validation workflow
 
+CAL01 extends the existing community/meeting HTTP step with actor-bound calendar
+reads, a genuine last-seat race and a bounded rollback-only populated rehearsal
+over 3,000 historical meetings. It preserves installed function/reader contracts
+and checks the query's date index. The step already supplies the required
+`PLANETS_DISPOSABLE_QA=1`; no workflow trigger, job, area classification or hosted
+credential is added. This coverage runs with the existing Database area because
+the new reader aggregates protected meeting/history authority.
+
 `external-activities.yml` is a separate daily 04:20 UTC/dispatch Node runner,
 skipped unless `ACTIVITIES_IMPORT_ENABLED=true`. No PR/fork trigger receives
 its server-only credentials. Target-scoped concurrency and a ten-minute cap
@@ -211,6 +219,14 @@ required statuses remain unchanged. Requests/chat/unread compatibility and safet
 changes share the Database gate; schema changes also regenerate Web contracts.
 
 # RELEASE01 and STAGING-AUTO03 staged delivery
+
+ACTOPS01 extends the existing opt-in external-activities refresh workflow, with
+main/owner-repository guards, explicit source-set configuration, private bounded
+daily cadence and a seven-minute parent within the existing ten-minute job.
+Default-off variables, target concurrency, read-only token and no PR/fork events
+remain. Apply/maintenance use existing server-only credentials; dry-run does not
+write. No workflow, source or secret has been activated. See the
+[operations runbook](../../docs/development/activities-operations.md).
 
 `staging-release.yml` is separate from Validation and disabled unless
 `STAGING_RELEASE_ENABLED=true`. Protected main-only manual `inspect` verifies

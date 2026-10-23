@@ -4,6 +4,7 @@ import {
   createActivityTransport,
 } from "./transport.mjs";
 import { normalizeActivity } from "./records.mjs";
+import { resolveActivityConnector } from "./connectors.mjs";
 
 const rejectionCodes = new Set([
   "invalid_record",
@@ -21,13 +22,7 @@ const storedCodes = new Set([
 ]);
 
 export function officialActivityConnector(sourceId) {
-  // No municipal parser or live publication is authorized yet. Do not replace
-  // this with fixtures or treat the block as an empty successful calendar.
-  throw new ActivityImportError(
-    sourceId === "agenda-trento"
-      ? "source_rights_checkpoint_blocked"
-      : "unknown_source",
-  );
+  return resolveActivityConnector(sourceId);
 }
 
 export function activityImportArguments(args) {
@@ -64,17 +59,22 @@ export async function runActivityImport({
   limits: overrides = {},
   fetchImpl,
   sleep,
+  parentSignal,
 }) {
   const limits = { ...activityImportLimits, ...overrides };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), limits.runMs);
-  const signal = controller.signal;
+  const signal = parentSignal
+    ? AbortSignal.any([controller.signal, parentSignal])
+    : controller.signal;
   let run;
   let fetched = 0;
   let rejected = 0;
   const reasons = {};
   try {
+    signal.throwIfAborted();
     if (apply) run = await store.begin(connector.sourceId, signal);
+    signal.throwIfAborted();
     const start = run ? new Date(run.started_at) : now();
     if (!Number.isFinite(start.getTime()))
       throw new ActivityImportError("invalid_payload");
@@ -108,6 +108,20 @@ export async function runActivityImport({
       throw new ActivityImportError("invalid_payload");
     if (collected.entries.length > limits.records)
       throw new ActivityImportError("limit_exceeded");
+    if (
+      collected.summary != null &&
+      (typeof collected.summary !== "object" ||
+        Array.isArray(collected.summary) ||
+        Object.keys(collected.summary).length > 12 ||
+        Object.entries(collected.summary).some(
+          ([key, value]) =>
+            !/^[a-z_]{1,40}$/.test(key) ||
+            !Number.isSafeInteger(value) ||
+            value < 0 ||
+            value > limits.records,
+        ))
+    )
+      throw new ActivityImportError("invalid_payload");
     const records = [];
     const ids = new Set();
     for (const entry of collected.entries) {
@@ -119,12 +133,17 @@ export async function runActivityImport({
       if (!rejection) {
         let record;
         try {
-          record = normalizeActivity(entry?.record, connector.officialOrigin);
+          record = normalizeActivity(
+            entry?.record,
+            connector.publicLinkOrigins ?? connector.officialOrigin,
+          );
+          if (connector.kinds && !connector.kinds.includes(record.kind))
+            throw new ActivityImportError("invalid_record");
         } catch (error) {
           if (error?.code !== "invalid_record") throw error;
           rejection = "invalid_record";
         }
-        if (record) {
+        if (record && !rejection) {
           if (ids.has(record.upstream_id))
             throw new ActivityImportError("duplicate_upstream_id");
           ids.add(record.upstream_id);
@@ -136,6 +155,16 @@ export async function runActivityImport({
         reasons[rejection] = (reasons[rejection] ?? 0) + 1;
       }
     }
+    // A complete traversal with no entries, or only deliberate window/rights
+    // exclusions, can be a valid empty catalogue. Unexpected validation drift
+    // rejecting every candidate is not an observed healthy empty snapshot.
+    // Fail before success persistence for both single-source and set-based CLIs.
+    if (
+      fetched > 0 &&
+      records.length === 0 &&
+      (reasons.invalid_record ?? 0) + (reasons.unsupported_schedule ?? 0) > 0
+    )
+      throw new ActivityImportError("source_record_drift");
     const result = apply
       ? await store.finish(
           run.run_id,
@@ -153,6 +182,9 @@ export async function runActivityImport({
       mode: apply ? "apply" : "dry-run",
       ...result,
       rejection_reasons: reasons,
+      ...(collected.summary == null
+        ? {}
+        : { source_summary: collected.summary }),
       transport: transport.counts,
     };
   } catch (error) {
@@ -167,13 +199,20 @@ export async function runActivityImport({
           run.run_id,
           {
             state:
-              code === "limit_exceeded" || code === "invalid_payload"
+              code === "limit_exceeded" ||
+              code === "invalid_payload" ||
+              code === "source_record_drift"
                 ? "incomplete"
                 : "failure",
             records: [],
             fetched,
             rejected,
-            errorCode: storedCodes.has(code) ? code : "internal_error",
+            errorCode:
+              code === "source_record_drift"
+                ? "invalid_payload"
+                : storedCodes.has(code)
+                  ? code
+                  : "internal_error",
           },
           AbortSignal.timeout(10_000),
         );

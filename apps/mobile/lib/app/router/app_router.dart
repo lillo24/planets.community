@@ -5,6 +5,7 @@ import '../../features/co_creation/presentation/co_creation_numbered_screen.dart
 import '../../features/co_creation/presentation/co_creation_hubs_screen.dart';
 import '../../features/co_creation/presentation/co_creation_community_screens.dart';
 import '../../features/co_creation/presentation/co_creation_meeting_screen.dart';
+import '../../features/co_creation/presentation/co_creation_calendar_screen.dart';
 import '../../features/co_creation/presentation/co_creation_general_screen.dart';
 import '../../features/co_creation/presentation/co_creation_room_items.dart';
 import '../../features/co_creation/domain/co_creation_rooms.dart';
@@ -31,6 +32,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/widgets/page_app_bar.dart';
 import '../../features/activities_sandbox/presentation/activities_screen.dart';
 import '../../features/external_activities/presentation/external_activities_screen.dart';
+import '../../features/external_activities/presentation/external_activities_map_screen.dart';
 import '../../features/external_activities/presentation/external_activity_detail_screen.dart';
 import '../../features/activities_sandbox/presentation/activity_example_detail_screen.dart';
 import '../../features/settings/application/activities_split_preference_controller.dart';
@@ -1521,6 +1523,25 @@ RoutingConfig _routingConfig(
                     builder: (_, _) => const CoCreationHubsScreen(),
                   ),
                   GoRoute(
+                    path: 'hubs/:id/calendar',
+                    builder: (_, state) => CoCreationCalendarScreen(
+                      key: state.pageKey,
+                      hub: HubId.parse(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'hubs/:id/calendar/meetings/:meetingId/:roomId/:episodeId',
+                    builder: (_, state) => CoCalendarMeetingReviewScreen(
+                      key: state.pageKey,
+                      hub: HubId.parse(state.pathParameters['id']),
+                      room: CoRoomId.parse(state.pathParameters['roomId']),
+                      episode: CoEpisodeId.parse(
+                        state.pathParameters['episodeId'],
+                      ),
+                      meeting: peopleUuid(state.pathParameters['meetingId']),
+                    ),
+                  ),
+                  GoRoute(
                     path: 'hubs/:id/create-group',
                     builder: (_, state) => CoNumberedCreateScreen(
                       key: ValueKey((
@@ -1632,6 +1653,11 @@ RoutingConfig _routingConfig(
                   child: const ExternalActivitiesScreen(),
                 ),
                 routes: [
+                  GoRoute(
+                    path: 'map',
+                    builder: (context, state) =>
+                        const ExternalActivitiesMapScreen(),
+                  ),
                   GoRoute(
                     path: 'examples',
                     builder: (context, state) => const ActivitiesScreen(),

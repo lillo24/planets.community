@@ -5,8 +5,16 @@ tooling.
 
 - `external-activities/` separates bounded provider transport, canonical record
   validation and atomic import orchestration. `external-activities.test.mjs`
-  uses synthetic data and fake transport; the municipal connector is blocked
-  pending the source-rights checkpoint and never falls back to examples.
+  uses synthetic data and fake transport. The municipal equipment connector
+  works under its explicit licence; Agenda/ODH retain their recorded rights or
+  coverage blocks. Live reads never fall back to examples.
+- `external-operations.test.mjs` and `external-operations-verifier.mjs` qualify
+  bounded independent refreshes, due cadence, safe outcomes, private inspection
+  and lease/retention maintenance. The verifier runs only through the guarded
+  disposable-local entry point.
+- `external-activities-upgrade-verifier.mjs` supports the guarded local HTTP
+  verifier with a populated predecessor-to-V2 transaction, including warmed
+  imports and stable function/record identities. Its DDL and fixtures roll back.
 
 - `release01.test.mjs` covers the separate `scripts/release/` module: migration
   drift/approval and target guards, no-op retry, backend/Play failure boundaries,
@@ -110,3 +118,14 @@ ownership and every loopback endpoint before opening SQL; its test rejects
 hosted/implicit targets. cocreate-local-fixtures.mjs owns only three deterministic
 synthetic topics/hubs, shared by the seed command and genuine hub verifier. It
 does not enable the gate or create people.
+
+## Calendar verification
+
+`cocreate-calendar-verifier.mjs` owns bounded synthetic real-Auth checks for the
+CAL01 calendar: exact admitted scope, occupancy, reposts/expiry, signed pagination,
+blocking, unread invariance and competing last-place joins. The existing
+community/meeting verifier calls it in Database CI; the standalone
+`../verify-local-cocreate-calendar.mjs` uses the same owned-loopback guard.
+`../verify-local-cocreate-calendar-upgrade.mjs` additionally preserves populated
+rows, installed function contracts and warmed readers across the actual additive
+migration, then explains its query over 3,000 rollback-only historical fixtures.
