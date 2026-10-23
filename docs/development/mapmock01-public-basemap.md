@@ -102,7 +102,10 @@ slots, 64 entries/4 MiB compressed bound, at-most-60-second RAM reuse, expiry,
 budget/cache-only fallback and route-owned decoded-image eviction are reused.
 HTTP is bounded to eight seconds, 400,000 response bytes and no redirects.
 Persona/session changes cancel requests and increment an epoch, including
-A→B→A. Coordinator fencing disposes the dedicated gateway; route departure,
+A→B→A. The first GoTrue replay matching the session at subscription is a
+snapshot; subsequent Auth events and stream errors always fence pending IO.
+Leaving the coordinator's committed Mock phase disposes the dedicated
+gateway (its switching-screen `fencing` bit may remain set after commit); route departure,
 background, denial and provider kill clear/revoke renderer scopes through the
 existing stores. Late callbacks cannot revive images or product results.
 

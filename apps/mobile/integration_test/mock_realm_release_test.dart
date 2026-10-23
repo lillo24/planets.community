@@ -240,12 +240,30 @@ void main() {
         operation = 'public-basemap-$name';
         expect(scope().read(mapProviderGatewayProvider).centerEnabled, !mock);
         await navigate('/discover/map/projects');
-        await wait(
-          () =>
-              find.byType(PublicPointMap).evaluate().isNotEmpty &&
-              scope().read(budgetBasemapTilesProvider).count > 0,
-          'map fixture pixels loaded',
-        );
+        try {
+          await wait(
+            () =>
+                find.byType(PublicPointMap).evaluate().isNotEmpty &&
+                scope().read(budgetBasemapTilesProvider).count > 0,
+            'map fixture pixels loaded',
+          );
+        } catch (_) {
+          final current = scope();
+          final geo = current.read(
+            geographicDiscoveryProvider('map05:projects'),
+          );
+          final tiles = current.read(budgetBasemapTilesProvider);
+          errors.add(
+            'map path ${current.read(appRouterProvider).routerDelegate.state.uri.path} '
+            'auth ${current.read(authSessionProvider).phase.name} '
+            'geo ${geo.phase.name} items ${geo.items.length} '
+            'canvas ${find.byType(PublicPointMap).evaluate().length} '
+            'enabled ${tiles.enabled} sources ${tiles.count} '
+            'mode ${current.read(mockModeCoordinatorProvider)?.phase.name}',
+          );
+          await capture('map-failure-$name-$stage');
+          rethrow;
+        }
         final canvas = tester.widget<PublicPointMap>(
           find.byType(PublicPointMap),
         );

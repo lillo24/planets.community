@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -98,7 +99,6 @@ void main() {
       }),
     );
     addTearDown(images.dispose);
-    await Future<void>.delayed(Duration.zero);
     final result = await images.tile(
       id,
       cacheOnly: false,
@@ -219,6 +219,8 @@ void main() {
     });
   }
   test('active mock realm selects the image gateway and preserves its domain client', () {
+    final coordinator = _ImageCoordinator();
+    addTearDown(coordinator.dispose);
     final config = AppConfig.fromValues(
       appEnvironment: 'staging',
       supabaseUrl: 'https://cllpvruvrrvxczjitlqd.supabase.co',
@@ -235,6 +237,7 @@ void main() {
       overrides: [
         appConfigProvider.overrideWithValue(config.forMockDataRealm()),
         activeMockRealmProvider.overrideWithValue(true),
+        mockModeCoordinatorProvider.overrideWithValue(coordinator),
         supabaseClientProvider.overrideWithValue(client),
       ],
     );
@@ -248,8 +251,41 @@ void main() {
         container.read(budgetBasemapGatewayProvider),
         same(container.read(mockPublicBasemapGatewayProvider)),
       );
+      final images = container.read(mockPublicBasemapGatewayProvider)!;
+      // A successful fresh persona selection retains the switching fence bit.
+      expect(coordinator.fencing, isTrue);
+      expect(images.allowed(), isTrue);
+      coordinator.transition(MockModePhase.switching);
+      expect(images.allowed(), isFalse);
+      coordinator.transition(MockModePhase.mock);
+      final replacement = container.read(mockPublicBasemapGatewayProvider)!;
+      expect(replacement, isNot(same(images)));
+      expect(replacement.allowed(), isTrue);
+      expect(
+        images.tile(
+          id,
+          cacheOnly: false,
+          cancellation: Completer<void>().future,
+        ),
+        throwsA(isA<BudgetBasemapFailure>()),
+      );
     } else {
       expect(gateway.tilesEnabled, isFalse);
     }
   });
+}
+
+class _ImageCoordinator extends ChangeNotifier implements MockModeCoordinator {
+  @override
+  MockModePhase phase = MockModePhase.mock;
+  @override
+  bool fencing = true;
+  void transition(MockModePhase value) {
+    phase = value;
+    notifyListeners();
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnsupportedError(invocation.memberName.toString());
 }

@@ -23,7 +23,16 @@ class MockPublicBasemapGateway implements BudgetBasemapGateway {
     required this.allowed,
     http.Client? transport,
   }) : _transport = transport ?? http.Client() {
-    _auth = client.auth.onAuthStateChange.listen((_) => _revoke());
+    final initialToken = client.auth.currentSession?.accessToken;
+    var firstEvent = true;
+    _auth = client.auth.onAuthStateChange.listen((state) {
+      // GoTrue replays its current session to each new subscriber. That
+      // snapshot must not cancel the map's first request. Later events,
+      // including a same-token refresh or A→B→A, always fence pending IO.
+      final snapshot = firstEvent && state.session?.accessToken == initialToken;
+      firstEvent = false;
+      if (!snapshot) _revoke();
+    }, onError: (Object _) => _revoke());
   }
   final SupabaseClient client;
   final Uri endpoint;
@@ -187,11 +196,12 @@ final mockPublicBasemapGatewayProvider = Provider<MockPublicBasemapGateway?>((
   final gateway = MockPublicBasemapGateway(
     client: ref.watch(supabaseClientProvider),
     endpoint: mock.normalOrigin.resolve('/functions/v1/mock-basemap'),
-    allowed: () =>
-        coordinator?.phase == MockModePhase.mock && !coordinator!.fencing,
+    // `fencing` describes the switching screen and can remain set after commit.
+    // The committed phase owns image entitlement and fences every transition.
+    allowed: () => coordinator?.phase == MockModePhase.mock,
   );
   void changed() {
-    if (coordinator?.phase != MockModePhase.mock || coordinator!.fencing) {
+    if (coordinator?.phase != MockModePhase.mock) {
       gateway.dispose();
     }
     ref.invalidateSelf();
