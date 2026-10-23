@@ -14,6 +14,7 @@ import {
 import { STAGING_REF, verifiedDeploymentSet } from "../release/migrations.mjs";
 import { inventoryDigest } from "../release/safety.mjs";
 import { sha256 } from "../release/sql-fingerprint.mjs";
+import { writeStaging } from "../release/writer.mjs";
 import { assertNativeDeploymentDisabled } from "../release/backend.mjs";
 import {
   assertReconciledWriter,
@@ -442,6 +443,26 @@ test("partial or interrupted writes require independently reconciled exact live 
   assert.doesNotThrow(() =>
     assertReconciledWriter({ status: "failed-before-write" }, "", {}),
   );
+});
+
+test("rejected pre-apply proof records a known no-write failure before returning", async () => {
+  const receipts = [];
+  await assert.rejects(() =>
+    writeStaging({
+      diff: { pending: [{}], project_ref: "pnolarmzxmmjtguligfc" },
+      policy: { staging_safety_version: 2 },
+      env: {
+        GITHUB_SHA: source,
+        GITHUB_RUN_ID: "12",
+        STAGING_RECOVERY_MODE: "development-no-backup",
+      },
+      save: (name, value) => receipts.push({ name, value }),
+    }),
+  );
+  assert.equal(receipts[0].name, "deployment");
+  assert.equal(receipts[0].value.status, "failed-before-write");
+  assert.equal(receipts[0].value.attempt_started, false);
+  assertReconciledWriter(receipts[0].value, "unneeded", {});
 });
 test("previous writer status comes from the protected run artifact; cancelled unknown writes hold", async () => {
   const run = {

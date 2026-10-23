@@ -233,7 +233,7 @@ export async function mockBasemapContract(databaseUrl) {
           await tx.unsafe(`delete from private.${table}`);
           await tx.unsafe(
             `insert into private.${table} select * from jsonb_populate_recordset(null::private.${table},$1::jsonb)`,
-            [JSON.stringify(saved.get(table))],
+            [tx.json(saved.get(table))],
           );
         }
       });

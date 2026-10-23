@@ -87,6 +87,15 @@ export async function writeStaging({
   save,
   urlValidator,
 }) {
+  // Persist known no-write state before any gate can reject. A proven failure
+  // before apply must not become an "unknown partial write" on the next run.
+  save?.("deployment", {
+    source_sha: env?.GITHUB_SHA ?? null,
+    workflow_run_id: env?.GITHUB_RUN_ID ?? null,
+    status: "failed-before-write",
+    completed: [],
+    attempt_started: false,
+  });
   if (!diff.pending.length) return { remote, diff }; // verified backend no-op follows in staging.mjs
   assertStagingRecoveryMode(env, diff.project_ref);
   if (policy.staging_safety_version !== 2)

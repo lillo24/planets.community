@@ -154,6 +154,7 @@ export async function stagingRelease(mode, env = process.env) {
     history: remote,
     ...nativeOwner,
   });
+  const hadPending = diff.pending.length > 0;
   if (mode === "deploy") {
     ({ remote, diff } = await writeStaging({
       root,
@@ -227,6 +228,14 @@ export async function stagingRelease(mode, env = process.env) {
       source_sha: env.GITHUB_SHA,
       checks: await publicSmoke(env.STAGING_CONFIG_JSON),
     });
+    if (mode === "deploy" && !hadPending)
+      save("deployment", {
+        source_sha: env.GITHUB_SHA,
+        workflow_run_id: env.GITHUB_RUN_ID,
+        status: "verified",
+        operation: "no-write",
+        observed_no_pending: true,
+      });
   }
   return { diff, checks };
 }
