@@ -93,6 +93,7 @@ Inspect long screens top to bottom and capture successive viewports or clearly l
 Avoid redundant captures for aliases of identical UI; map every alias to the shared evidence and explain the equivalence. Add states when they reveal different controls or a concrete layout risk. No arbitrary screenshot limit or "one page per feature" shortcut.
 
 Every inventory entry must end as **captured**, **blocked with reason**, or **not applicable with evidence**. Track planned/captured/visually-reviewed counts. Empty results do not substitute for populated-state coverage.
+For the mixed Messages inbox, explicitly capture **no native chats plus an existing Find People contact**, and **no native requests plus an existing People/discussion request**, as well as mixed-kind ordering/pagination. Current source composition suggests a risk of contradictory empty-state copy beside populated added sections; verify the rendered state before recording a defect.
 
 ## 3. Investigate the reported repeated private-chat rows first
 
