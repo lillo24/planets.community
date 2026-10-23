@@ -22,6 +22,7 @@ import {
   assertBoundedCatalog,
   policyModuleHash,
   UnsafeCatalogError,
+  predecessorCatalog,
 } from "./eligibility.mjs";
 import {
   mockBasemapContract,
@@ -31,6 +32,10 @@ import {
   writerLockContract,
 } from "./contracts.mjs";
 import { sha256 } from "./sql-fingerprint.mjs";
+import {
+  migrationStartupOptions,
+  migrationStartupProbe,
+} from "./transport.mjs";
 import { applyParticipationRpcNullability } from "../lib/participation-rpc-nullability.mjs";
 
 // This destructive rehearsal is confined to a fresh, credential-free Actions
@@ -50,7 +55,9 @@ const cli = resolve("node_modules/.bin/supabase");
 // Direct immutable fixture scripts do not receive npm's implicit executable PATH.
 process.env.PATH = `${resolve("node_modules/.bin")}:${process.env.PATH ?? ""}`;
 function command(program, args) {
-  console.log(`Disposable step: ${program} ${args.join(" ")}`);
+  console.log(
+    `Disposable step: ${program} ${args.map((a) => (/^postgres(?:ql)?:\/\//.test(a) ? "[disposable-db]" : a)).join(" ")}`,
+  );
   const result = spawnSync(program, args, {
     encoding: "utf8",
     timeout: 900000,
@@ -180,6 +187,39 @@ try {
     where n.nspname in ('public','private','auth','storage') and c.relkind in ('r','p') and a.attnum>0 and not a.attisdropped
     group by n.nspname,c.relname order by n.nspname,c.relname`;
   const before = await snapshot(tables);
+  const predecessorCatalogProof = predecessorCatalog(
+    (await sql.unsafe(effectCatalogQuery))[0].catalog,
+  );
+  const boundedLocal = new URL(status.databaseUrl);
+  boundedLocal.searchParams.set("sslmode", "disable"); // owned loopback fixture only
+  boundedLocal.searchParams.set("options", migrationStartupOptions);
+  command(cli, [
+    "db",
+    "query",
+    "--db-url",
+    boundedLocal.toString(),
+    migrationStartupProbe,
+  ]);
+  const wrongBounds = new URL(boundedLocal);
+  wrongBounds.searchParams.set(
+    "options",
+    migrationStartupOptions.replace("lock_timeout=5000", "lock_timeout=7000"),
+  );
+  const rejectedBounds = spawnSync(
+    cli,
+    ["db", "query", "--db-url", wrongBounds.toString(), migrationStartupProbe],
+    {
+      encoding: "utf8",
+      timeout: 60000,
+      maxBuffer: 65536,
+    },
+  );
+  assert.equal(rejectedBounds.error, undefined);
+  assert.notEqual(
+    rejectedBounds.status,
+    0,
+    "The real CLI must reject a mismatched startup bound",
+  );
   const previousInventory = local.filter((m) => applied.has(m.version));
   for (const migration of pending) {
     const currentTables =
@@ -188,7 +228,13 @@ try {
     const priorCatalog = (await sql.unsafe(catalogQuery))[0].catalog;
     const beforeEffects = (await sql.unsafe(effectCatalogQuery))[0].catalog;
     writeFileSync(path(migration), migration.sql);
-    command(cli, ["migration", "up", "--local", "--include-all"]);
+    command(cli, [
+      "migration",
+      "up",
+      "--db-url",
+      boundedLocal.toString(),
+      "--include-all",
+    ]);
     assert.deepEqual(
       await snapshot(currentTables),
       original,
@@ -251,7 +297,13 @@ try {
   const diff = migrationDiff(local, first, STAGING_REF);
   assert.equal(diff.pending.length, 0);
   assert.deepEqual(diff.drift, []);
-  command(cli, ["migration", "up", "--local", "--include-all"]);
+  command(cli, [
+    "migration",
+    "up",
+    "--db-url",
+    boundedLocal.toString(),
+    "--include-all",
+  ]);
   assert.deepEqual(
     summarizeHistory(await sql.unsafe(historyQuery)),
     first,
@@ -407,6 +459,8 @@ try {
     trusted_product_base: TRUSTED_PRODUCT_BASE,
     workflow_run_id: process.env.GITHUB_RUN_ID,
     inventory_sha256: inventoryDigest(local),
+    predecessor_catalog: predecessorCatalogProof,
+    predecessor_catalog_sha256: sha256(JSON.stringify(predecessorCatalogProof)),
     migration_safety: witnesses,
     routine_catalog_probe: true,
     routine_catalog_negative_probes: true,
@@ -425,6 +479,7 @@ try {
     storage_objects_preserved: true,
     policy_negative_probes: true,
     single_writer_probe: true,
+    cli_startup_bounds: true,
   };
   writeFileSync(
     "build/release01/rehearsal.json",

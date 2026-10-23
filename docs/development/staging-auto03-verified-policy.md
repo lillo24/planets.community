@@ -65,6 +65,12 @@ original column/row digest after each file and checks the original photo API and
 downloaded bytes. It executes trusted baseline security tests, independent
 service RPC denials with two actual Auth sessions, generated public types and a
 second CLI invocation proving no-op retry. Two real sessions prove lock exclusion.
+Its receipt also fingerprints the entire repository-owned predecessor catalog,
+including unchanged helpers and application Storage policies. Before any live
+apply, the writer compares that catalog with staging and holds out-of-band edits.
+Provider-owned Auth/Storage internals and extension objects are excluded from
+this application comparison; the explicitly used pgcrypto API stays in scope
+with its provider implementation and privileged execution checks.
 
 The unchanged baseline pgTAP fixtures require clean synthetic data (fixed Auth
 emails and singleton/count assumptions). Their phase follows all populated
@@ -84,6 +90,10 @@ files plus exactly **one** qualified pending file. `--include-all` is limited to
 that single historical hole. Session and CLI use the same pinned public CA,
 `verify-full`, a 5-second lock timeout and 60-second statement timeout. No reset,
 seed, role deployment, history repair or broad backlog application is allowed.
+DDL uses `search_path=pg_catalog` and the heap access method; application
+references remain schema-qualified. Both disposable replay and hosted apply
+first execute a read-only CLI probe of the actual startup timeout/path/method
+values. A passing Node connection alone cannot stand in for that CLI proof.
 Actual catalog effects must match independently observed rehearsal effects; old
 rows and authoritative history are checked after **each** file. A final actual
 CLI retry must preserve catalog/history/rows.

@@ -368,6 +368,53 @@ export function inspectAdditive(sql) {
     ) {
       const at = s[1] === "function" ? 2 : 4;
       const name = qualified(s, at);
+      if (!["sql", "plpgsql"].includes(s[s.indexOf("language") + 1]))
+        return hold(
+          "Only parsed SQL/PLpgSQL bodies are supported by this additive class",
+        );
+      if (mapEffects.has(name)) {
+        const open = at + 3;
+        const close = s.indexOf(")", open + 1);
+        const groups = [[]];
+        for (const t of s.slice(open + 1, close))
+          if (t === ",") groups.push([]);
+          else groups.at(-1).push(t);
+        const types = new Set([
+          "uuid",
+          "text",
+          "boolean",
+          "integer",
+          "bigint",
+          "smallint",
+          "jsonb",
+          "timestamptz",
+          "date",
+        ]);
+        const literal = (t) =>
+          ["null", "true", "false"].includes(t) ||
+          /^\d+$/.test(t ?? "") ||
+          /^'(?:[^']|'')*'$/.test(t ?? "");
+        if (
+          s[open] !== "(" ||
+          close < 0 ||
+          !["text", "jsonb"].includes(s[s.indexOf("returns") + 1]) ||
+          groups.some(
+            (g) =>
+              g.length &&
+              (!word.test(g[0]) ||
+                !types.has(g[1]) ||
+                !(
+                  g.length === 2 ||
+                  (g.length === 4 &&
+                    ["default", "="].includes(g[2]) &&
+                    literal(g[3]))
+                )),
+          )
+        )
+          return hold(
+            "Basemap signatures require built-in inputs and literal defaults",
+          );
+      }
       if (
         !name ||
         !["public", "private"].includes(s[at]) ||
@@ -476,7 +523,10 @@ export function inspectAdditive(sql) {
       ["set", "reset"].includes(s[0]) &&
       ["lock_timeout", "statement_timeout"].includes(s[1])
     ) {
-      if (s[0] === "set" && !["'5s'", "'60s'"].includes(s[3]))
+      if (
+        s[0] === "set" &&
+        s[3] !== (s[1] === "lock_timeout" ? "'5s'" : "'60s'")
+      )
         return hold("Unbounded migration timeout");
     } else
       return hold("Unsupported SQL effects require targeted hosted evidence");
@@ -532,27 +582,100 @@ export function migrationCandidate(migration, root = process.cwd()) {
 export const effectCatalogQuery = `select jsonb_build_object(
  'tables',(select coalesce(jsonb_agg(x order by x->>'id'),'[]') from (
   select jsonb_build_object('id',n.nspname||'.'||c.relname,'kind',c.relkind,'owner',pg_get_userbyid(c.relowner),
+   'extension_owned',exists(select 1 from pg_depend e where e.classid='pg_class'::regclass and e.objid=c.oid and e.deptype='e'),
+   'expressions_safe',not exists(
+    select 1 from (
+      select 'pg_attrdef'::regclass classid,d.oid from pg_attrdef d where d.adrelid=c.oid
+      union all select 'pg_constraint'::regclass,k.oid from pg_constraint k where k.conrelid=c.oid
+      union all select 'pg_class'::regclass,i.indexrelid from pg_index i where i.indrelid=c.oid
+    ) expression join pg_depend dep on dep.classid=expression.classid and dep.objid=expression.oid
+    left join pg_proc f on dep.refclassid='pg_proc'::regclass and dep.refobjid=f.oid
+    left join pg_operator o on dep.refclassid='pg_operator'::regclass and dep.refobjid=o.oid
+    left join pg_opclass op on dep.refclassid='pg_opclass'::regclass and dep.refobjid=op.oid
+    where (f.oid is not null and f.pronamespace<>'pg_catalog'::regnamespace and not
+      (f.pronamespace='extensions'::regnamespace and f.proname in ('digest','gen_random_uuid')
+       and exists(select 1 from pg_depend e where e.classid='pg_proc'::regclass and e.objid=f.oid and e.deptype='e')))
+      or (o.oid is not null and o.oprnamespace<>'pg_catalog'::regnamespace)
+      or (op.oid is not null and op.opcnamespace<>'pg_catalog'::regnamespace)),
    'rls',c.relrowsecurity,'forced',c.relforcerowsecurity,
    'access',(select jsonb_object_agg(r.rolname,(select jsonb_object_agg(privilege,has_table_privilege(r.oid,c.oid,privilege)) from unnest(array['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER']) privilege)) from pg_roles r where r.rolname in ('anon','authenticated','service_role')),
    'columns',(select coalesce(jsonb_agg(jsonb_build_object('name',a.attname,'type',format_type(a.atttypid,a.atttypmod),'not_null',a.attnotnull,'default',pg_get_expr(d.adbin,d.adrelid),'identity',a.attidentity,'generated',a.attgenerated,'acl',coalesce(a.attacl::text,'')) order by a.attnum),'[]') from pg_attribute a left join pg_attrdef d on d.adrelid=a.attrelid and d.adnum=a.attnum where a.attrelid=c.oid and a.attnum>0 and not a.attisdropped)) x
   from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','private','auth','storage') and c.relkind in ('r','p')) q),
  'functions',(select coalesce(jsonb_agg(x order by x->>'id'),'[]') from (
   select jsonb_build_object('id',n.nspname||'.'||p.proname||'('||pg_get_function_identity_arguments(p.oid)||')','oid',p.oid,'owner',pg_get_userbyid(p.proowner),
+   'extension_owned',exists(select 1 from pg_depend e where e.classid='pg_proc'::regclass and e.objid=p.oid and e.deptype='e'),
    'returns',pg_get_function_result(p.oid),'arguments',pg_get_function_arguments(p.oid),'input_names',coalesce(p.proargnames[1:p.pronargs],array[]::text[]),'definer',p.prosecdef,'config',p.proconfig,
    'volatility',p.provolatile,'parallel',p.proparallel,'strict',p.proisstrict,'leakproof',p.proleakproof,
+   'language',(select lanname from pg_language where oid=p.prolang),'binary',p.probin,'postgres_execute',has_function_privilege('postgres',p.oid,'execute'),
    'body',md5(pg_get_functiondef(p.oid)),'source_body',md5(p.prosrc),
    'acl',(select coalesce(jsonb_agg(item order by item::text),'[]') from (
      select jsonb_build_object('grantee',case when grantee=0 then 'PUBLIC' else pg_get_userbyid(grantee) end,
        'grantor',pg_get_userbyid(grantor),'privilege',privilege_type,'grantable',is_grantable) item
      from aclexplode(coalesce(p.proacl,acldefault('f',p.proowner)))) a),
    'access',(select jsonb_object_agg(r.rolname,has_function_privilege(r.oid,p.oid,'execute')) from pg_roles r where r.rolname in ('anon','authenticated','service_role'))) x
-  from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','private','auth','storage') and p.prokind in ('f','p')) q),
+  from pg_proc p join pg_namespace n on n.oid=p.pronamespace where (n.nspname in ('public','private','auth','storage') or (n.nspname='extensions' and p.proname in ('digest','gen_random_uuid'))) and p.prokind in ('f','p')) q),
  'policies',(select coalesce(jsonb_agg(jsonb_build_object('id',n.nspname||'.'||c.relname||'.'||p.polname,'definition',pg_get_expr(p.polqual,p.polrelid),'check',pg_get_expr(p.polwithcheck,p.polrelid),'command',p.polcmd,'permissive',p.polpermissive,'roles',(select array_agg(coalesce(r.rolname,'PUBLIC') order by r.rolname) from unnest(p.polroles) a left join pg_roles r on r.oid=a)) order by n.nspname,c.relname,p.polname),'[]') from pg_policy p join pg_class c on c.oid=p.polrelid join pg_namespace n on n.oid=c.relnamespace),
  'triggers',(select coalesce(jsonb_agg(jsonb_build_object('id',n.nspname||'.'||c.relname||'.'||t.tgname,'definition',pg_get_triggerdef(t.oid),'enabled',t.tgenabled) order by n.nspname,c.relname,t.tgname),'[]') from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace where not t.tgisinternal),
  'constraints',(select coalesce(jsonb_agg(jsonb_build_object('id',n.nspname||'.'||c.relname||'.'||t.conname,'definition',pg_get_constraintdef(t.oid)) order by n.nspname,c.relname,t.conname),'[]') from pg_constraint t join pg_class c on c.oid=t.conrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','private','auth','storage')),
- 'indexes',(select coalesce(jsonb_agg(jsonb_build_object('id',schemaname||'.'||indexname,'definition',indexdef) order by schemaname,indexname),'[]') from pg_indexes where schemaname in ('public','private','auth','storage')),
- 'views',(select coalesce(jsonb_agg(jsonb_build_object('id',n.nspname||'.'||c.relname,'definition',pg_get_viewdef(c.oid,true),'acl',coalesce(c.relacl::text,'')) order by n.nspname,c.relname),'[]') from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind in ('v','m') and n.nspname in ('public','private','auth','storage'))
+ 'indexes',(select coalesce(jsonb_agg(jsonb_build_object('id',schemaname||'.'||indexname,'table',schemaname||'.'||tablename,'definition',indexdef) order by schemaname,indexname),'[]') from pg_indexes where schemaname in ('public','private','auth','storage')),
+ 'views',(select coalesce(jsonb_agg(jsonb_build_object('id',n.nspname||'.'||c.relname,'definition',pg_get_viewdef(c.oid,true),'acl',coalesce(c.relacl::text,''),'extension_owned',exists(select 1 from pg_depend e where e.classid='pg_class'::regclass and e.objid=c.oid and e.deptype='e')) order by n.nspname,c.relname),'[]') from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind in ('v','m') and n.nspname in ('public','private','auth','storage'))
 ) as catalog`;
+
+// Compare canonical application objects before any hosted write. Provider-owned
+// Auth/Storage internals and extension objects vary independently; application
+// Storage policies and the approved pgcrypto callees remain in scope.
+export function predecessorCatalog(catalog) {
+  const owned = (v) => /^(?:public|private)\./.test(v.id) && !v.extension_owned;
+  const tables = new Set(catalog.tables.filter(owned).map((t) => t.id));
+  const onOwnedTable = (v) => [...tables].some((t) => v.id.startsWith(t + "."));
+  return Object.fromEntries(
+    Object.entries(catalog).map(([section, objects]) => [
+      section,
+      objects
+        .filter((v) => {
+          if (section === "tables") return tables.has(v.id);
+          if (section === "functions")
+            return (
+              owned(v) || /^extensions\.(?:digest|gen_random_uuid)\(/.test(v.id)
+            );
+          if (section === "indexes") return tables.has(v.table);
+          if (section === "views") return owned(v);
+          if (section === "policies")
+            return onOwnedTable(v) || v.id.startsWith("storage.");
+          return onOwnedTable(v);
+        })
+        .map((v) => {
+          if (section === "functions" && v.id.startsWith("extensions."))
+            return {
+              id: v.id,
+              owner: ["postgres", "supabase_admin"].includes(v.owner)
+                ? "provider-admin"
+                : v.owner,
+              returns: v.returns,
+              arguments: v.arguments,
+              source_body: v.source_body,
+              binary: v.binary,
+              language: v.language,
+              definer: v.definer,
+              extension_owned: v.extension_owned,
+              postgres_execute: v.postgres_execute,
+            };
+          return v;
+        }),
+    ]),
+  );
+}
+export function assertPredecessorCatalog(expected, actual) {
+  const drift = catalogEffects(expected, predecessorCatalog(actual));
+  if (drift.length)
+    throw new ReleaseError(
+      "Unverified live predecessor catalog drift: " +
+        drift
+          .slice(0, 8)
+          .map((d) => d.id)
+          .join(", "),
+    );
+}
 const normalized = (value) => {
   const copy = structuredClone(value);
   if (copy && typeof copy === "object") delete copy.oid;
@@ -675,6 +798,13 @@ export function assertBoundedCatalog(before, after, candidate) {
       );
     if (
       candidate.classification !== "established-contract-candidate" &&
+      !table.expressions_safe
+    )
+      throw new ReleaseError(
+        `New private expressions depend on an unproven function/operator: ${table.id}`,
+      );
+    if (
+      candidate.classification !== "established-contract-candidate" &&
       table.columns.some(
         (c) =>
           ![
@@ -705,6 +835,8 @@ export function assertBoundedCatalog(before, after, candidate) {
       if (
         fn.access.anon ||
         fn.access.authenticated ||
+        fn.leakproof ||
+        fn.parallel !== "u" ||
         !["postgres", "supabase_admin"].includes(fn.owner) ||
         (fn.definer && !fn.config?.includes('search_path=""'))
       )
@@ -721,7 +853,6 @@ export function authorizeVerifiedPending(diff, local, evidence, source, tree) {
     throw new ReleaseError("Standing migration policy is staging-only");
   if (diff.drift.length)
     throw new ReleaseError("Canonical/remote SQL drift blocks staging");
-  if (!diff.pending.length) return [];
   if (
     evidence?.policy_version !== POLICY_VERSION ||
     evidence.project_ref !== STAGING_REF ||
@@ -729,6 +860,9 @@ export function authorizeVerifiedPending(diff, local, evidence, source, tree) {
     evidence.source_tree !== tree ||
     evidence.policy_module_sha256 !== policyModuleHash() ||
     evidence.inventory_sha256 !== inventoryDigest(local) ||
+    !evidence.predecessor_catalog ||
+    evidence.predecessor_catalog_sha256 !==
+      sha256(JSON.stringify(evidence.predecessor_catalog)) ||
     !evidence.no_op_retry ||
     !evidence.resource_auth_rest ||
     !evidence.generated_types ||
@@ -737,6 +871,7 @@ export function authorizeVerifiedPending(diff, local, evidence, source, tree) {
     !evidence.storage_objects_preserved ||
     !evidence.policy_negative_probes ||
     !evidence.single_writer_probe ||
+    !evidence.cli_startup_bounds ||
     !Array.isArray(evidence.migration_safety)
   )
     throw new ReleaseError(

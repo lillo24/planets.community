@@ -24,11 +24,17 @@ import {
 import { inventoryDigest } from "./safety.mjs";
 import { githubClient } from "./reviews.mjs";
 import { assertStagingRecoveryMode, stagingRecovery } from "./recovery.mjs";
-import { stagingTlsOptions, stagingCaPath } from "./transport.mjs";
+import {
+  stagingTlsOptions,
+  stagingCaPath,
+  migrationStartupOptions,
+  migrationStartupProbe,
+} from "./transport.mjs";
 import {
   authorizeVerifiedPending,
   effectCatalogQuery,
   catalogEffects,
+  assertPredecessorCatalog,
 } from "./eligibility.mjs";
 import { preservationTables, preservationSnapshot } from "./preservation.mjs";
 import {
@@ -106,7 +112,7 @@ export async function writeStaging({
         diff.predecessor_sha256,
         env,
       );
-    return { remote, diff }; // verified backend no-op follows in staging.mjs
+    if (env?.GITHUB_ACTIONS !== "true") return { remote, diff };
   }
   assertStagingRecoveryMode(env, diff.project_ref);
   if (policy.staging_safety_version !== 2)
@@ -172,6 +178,27 @@ export async function writeStaging({
     assertWriterSnapshot(lock.acquired, direct, fresh, remote);
     currentMain(env);
     assertNativeDeploymentDisabled(await api.branches());
+    assertPredecessorCatalog(
+      rehearsal.predecessor_catalog,
+      (await sql.unsafe(effectCatalogQuery))[0].catalog,
+    );
+    if (!pending.length) return { remote, diff }; // backend verification records the observed no-op
+    const boundedUrl = new URL(urlValidator(env.STAGING_DB_URL));
+    boundedUrl.searchParams.set("options", migrationStartupOptions);
+    const probe = spawnSync(
+      resolve("node_modules/.bin/supabase"),
+      ["db", "query", "--db-url", boundedUrl.toString(), migrationStartupProbe],
+      {
+        encoding: "utf8",
+        timeout: 60000,
+        maxBuffer: 65536,
+        env: { ...process.env, PGSSLROOTCERT: stagingCaPath },
+      },
+    );
+    if (probe.error || probe.status !== 0)
+      throw new ReleaseError(
+        "Staging CLI strict TLS/startup bound verification failed before apply; diagnostics withheld",
+      );
     const recovery = await stagingRecovery(
       env,
       proofApi,
@@ -191,7 +218,13 @@ export async function writeStaging({
       throw new ReleaseError(
         "Existing staging authorization/Storage drift blocks writes",
       );
-    save("safety", { source_sha: env.GITHUB_SHA, recovery, decisions });
+    save("safety", {
+      source_sha: env.GITHUB_SHA,
+      recovery,
+      decisions,
+      cli_startup_bounds: true,
+      predecessor_catalog_verified: true,
+    });
     await sql.unsafe("set lock_timeout='5s';set statement_timeout='60s'");
     const initialTables = await preservationTables(sql);
     const initialRows = await preservationSnapshot(sql, initialTables);
@@ -214,11 +247,6 @@ export async function writeStaging({
         writeFileSync(join(temp, "supabase", "migrations", m.file), m.sql);
       // Each invocation contains exactly one independently qualified pending
       // file. Include-all cannot select another unexecuted historical file.
-      const boundedUrl = new URL(urlValidator(env.STAGING_DB_URL));
-      boundedUrl.searchParams.set(
-        "options",
-        "-c lock_timeout=5000 -c statement_timeout=60000",
-      );
       const args = [
         "db",
         "push",
@@ -231,6 +259,7 @@ export async function writeStaging({
         ...(planned.historical ? ["--include-all"] : []),
       ];
       lastArgs = args;
+      progress.current_version = migration.version;
       for (const dry of [true, false]) {
         currentMain(env);
         if (!dry) {
@@ -252,7 +281,7 @@ export async function writeStaging({
         );
         if (result.error || result.status !== 0)
           throw new ReleaseError(
-            `Staging CLI ${dry ? "dry run" : "apply"} failed; output withheld to protect credentials`,
+            `Staging ${migration.version} CLI ${dry ? "dry run" : "apply"} failed; output withheld to protect credentials`,
           );
       }
       applied.add(migration.version);

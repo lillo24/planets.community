@@ -11,6 +11,8 @@ import {
   authorizeVerifiedPending,
   policyModuleHash,
   UnsafeCatalogError,
+  predecessorCatalog,
+  assertPredecessorCatalog,
 } from "../release/eligibility.mjs";
 import { STAGING_REF, verifiedDeploymentSet } from "../release/migrations.mjs";
 import { inventoryDigest } from "../release/safety.mjs";
@@ -47,6 +49,7 @@ const table = () => ({
   owner: "postgres",
   rls: true,
   forced: false,
+  expressions_safe: true,
   columns: [
     {
       name: "id",
@@ -153,6 +156,10 @@ const scenario = () => {
       source_tree: tree,
       policy_module_sha256: policyModuleHash(),
       inventory_sha256: inventoryDigest(local),
+      predecessor_catalog: predecessorCatalog(catalog()),
+      predecessor_catalog_sha256: sha256(
+        JSON.stringify(predecessorCatalog(catalog())),
+      ),
       no_op_retry: true,
       resource_auth_rest: true,
       generated_types: true,
@@ -161,6 +168,7 @@ const scenario = () => {
       storage_objects_preserved: true,
       policy_negative_probes: true,
       single_writer_probe: true,
+      cli_startup_bounds: true,
       migration_safety: witnesses,
     },
   };
@@ -492,6 +500,7 @@ for (const [name, mutate] of [
     "storage_objects_preserved",
     "policy_negative_probes",
     "single_writer_probe",
+    "cli_startup_bounds",
   ].map((key) => [key, (s) => (s.evidence[key] = false)]),
 ])
   test("receipt fails closed: " + name, () => {
@@ -777,6 +786,40 @@ test("a no-pending protected deployment cannot erase an unreconciled write", asy
     /Unreconciled/,
   );
   assert.ok(receipts.every((r) => r.value.status === "failed-before-write"));
+});
+test("pre-write catalog covers unchanged helpers and ignores only provider-owned internals", () => {
+  const before = catalog();
+  before.functions.push({
+    ...fn(),
+    id: "auth.provider_internal()",
+    body: "vendor-old",
+  });
+  const after = structuredClone(before);
+  after.functions[0].oid = 999; // same canonical definition, different disposable/live OID
+  after.functions[1].body = "vendor-new";
+  assert.doesNotThrow(() =>
+    assertPredecessorCatalog(predecessorCatalog(before), after),
+  );
+  after.functions[0].body = "unknown out-of-band domain edit";
+  assert.throws(
+    () => assertPredecessorCatalog(predecessorCatalog(before), after),
+    /predecessor catalog drift/,
+  );
+  after.functions[0].body = before.functions[0].body;
+  after.functions.push({ ...fn(), id: "public.hidden_callee()" });
+  assert.throws(
+    () => assertPredecessorCatalog(predecessorCatalog(before), after),
+    /hidden_callee/,
+  );
+});
+test("resolved custom expression dependencies cannot become isolated additive proof", () => {
+  const before = catalog(),
+    after = structuredClone(before);
+  after.tables.push({ ...table(), id: "private.new", expressions_safe: false });
+  assert.throws(
+    () => assertBoundedCatalog(before, after, candidate),
+    /unproven function/,
+  );
 });
 test("a fabricated earlier receipt with another source cannot clear a partial hold", async () => {
   const api = async (path) =>
