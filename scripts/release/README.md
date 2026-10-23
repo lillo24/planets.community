@@ -30,13 +30,17 @@ diagnostics stay out of public Actions output.
   strict client TLS options. The CLI uses that same file via `PGSSLROOTCERT` with
   `sslmode=verify-full`. A certificate rotation requires reviewing/replacing the
   public CA and its hash; no private keys or credentials live in either file.
-- `safety.mjs` owns the complete conservative SQL grammar, canonical inventory
-  digests, catalog/security preservation and whole-set authorization. A nullable
-  column is only a candidate until populated/catalog witnesses prove compatibility.
-- `reviews.mjs` blocks risky PRs in the existing required classification check,
-  scopes its populated rehearsal and verifies owner issue-comment proof against
-  exact pre-merge head/file/predecessor bytes again at deploy. It accepts no
-  post-merge-created/edited authorization. No credentials or raw comments persist.
+- `safety.mjs` retains the original nullable-column grammar, inventory digests
+  and legacy catalog guards. A parsed candidate still requires actual proof.
+- `eligibility.mjs` owns standing policy V2: bounded additive classification,
+  policy/SQL PR separation, independent catalog effects and whole-set receipts.
+  Unknown privileged bodies remain held until an independent contract is installed.
+- `contracts.mjs` exercises real Auth/Storage preservation, service-only denials,
+  MAPMOCK ledger/quota/concurrency behavior, unsafe mutation controls and two
+  real writer sessions on explicitly disposable loopback services.
+- `reviews.mjs` enforces source safety without owner fingerprints. Validation
+  loads it from the trusted pre-change base. Its old comment readers remain
+  available for auditing legacy releases, never for current authorization.
 - `recovery.mjs` requires explicit protected `STAGING_RECOVERY_MODE` for only
   normal staging. `development-no-backup` accepts possible development-data loss,
   skips backup access and records an honest `waived` result. SQL review and all
@@ -46,11 +50,15 @@ diagnostics stay out of public Actions output.
   encrypted/access-controlled DB **and Storage objects** restored against the
   exact predecessor. It never downloads a real backup.
 - `writer.mjs` checks protected readiness, exact tested/rehearsed/current main,
-  the whole mixed set, independent history, advisory lock and recovery before
-  per-file CLI dry/apply. It retains only safe evidence and never repairs history.
-- `reconciliation.json` leaves the exact original two-file historical catch-up
-  disabled, bound to fresh observed history. The third pending ACTAPI file needs
-  its own review and receives no chronology bypass.
+  the complete qualified set, independent history, advisory lock and recovery.
+  Per-file bounded CLI apply must match observed catalog and preserve original
+  rows. A second real CLI invocation proves no-op retry.
+- `writer-state.mjs` reads prior protected writer receipts and withholds writes
+  after interrupted/partial/unverified outcomes until exact reconciliation.
+- `preservation.mjs` keeps PostgreSQL row values private, returning original
+  column identities, counts and digests for before/after comparison.
+- `reconciliation.json` and the original bootstrap allowlist are historical
+  audit data. V2 uses the independently qualified entire live dependency chain.
 - `inventory.mjs REMOTE_STATEMENTS_JSON OUTPUT_JSON` produces an offline review
   manifest from a metadata-only migration export. It never connects to a backend.
 - `rehearse.mjs` reconstructs the observed non-contiguous staging predecessor on

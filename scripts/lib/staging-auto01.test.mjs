@@ -964,6 +964,12 @@ test("session client and migration CLI retain the same reviewed public CA with h
     resolve(root, ".github/workflows/staging-release.yml"),
     "utf8",
   );
+  const observer = workflow.split("\n  observe:")[1].split("\n  rehearse:")[0];
+  assert.match(observer, /github.ref == 'refs\/heads\/main'/);
+  assert.match(observer, /inputs.operation == 'inspect'/);
+  assert.match(observer, /environment: planets-staging/);
   const condition = workflow.split("\n  staging:")[1].split("environment:")[0];
-  assert.match(condition, /inputs.operation == 'inspect'\) \|\|/);
+  assert.match(condition, /needs: \[validate, rehearse, observe\]/);
+  for (const gate of ["observe", "validate", "rehearse"])
+    assert.ok(condition.includes(`needs.${gate}.result == 'success'`));
 });

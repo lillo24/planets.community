@@ -36,72 +36,23 @@ payload is scanned for privileged keys/JWTs. Publication rechecks the variant,
 compiled receipts and exact AAB hash. Marker/config evidence proves build capability;
 it does not prove hosted availability, Play publication or a complete device journey.
 
-## STAGING-AUTO01 safety policy
+## STAGING-AUTO03 standing verified policy
 
-Code merge and activation are separate. After one-time setup, eligible main
-pushes deploy staging SQL without a second founder prompt. Android build and
-Play publication require an explicit manual `build` or `publish` dispatch;
-`STAGING_AUTO_PUBLISH=false` stays in place and cannot enable push delivery.
-Production, Mock, Edge deployment, map provider settings and billing are outside
-this change.
+Eligible development-staging migrations no longer need owner SHA comments.
+The [verified staging policy](staging-auto03-verified-policy.md) defines the
+three eligibility classes, independent contracts, trusted pre-change validation,
+exact observed predecessor, per-file writer, actual no-op and partial-write hold.
 
-`safety.mjs` recognizes one complete, deliberately small SQL grammar:
+The five required Validation checks remain. Source validity and hosted eligibility
+are separate: unproven effects withhold the whole hosted chain; confirmed unsafe
+data/security effects fail source checks. New policy/validator changes must land
+separately before they can qualify privileged product SQL. Legacy comment readers
+and bootstrap manifests are retained solely for historical audit/tests.
 
-```sql
-SET lock_timeout='5s';
-SET statement_timeout='60s';
-ALTER TABLE private.example ADD COLUMN optional_note text NULL;
-RESET lock_timeout;
-RESET statement_timeout;
-```
-
-One or more nullable columns may target an **existing**, non-inherited, regular
-`public`/`private` table owned by postgres/supabase_admin, with RLS enabled and
-no anon/authenticated/service_role table access (RPC-only). Supported built-in
-types are boolean, smallint, integer, bigint, text, uuid, jsonb, date and
-timestamptz. Quoted names, defaults, constraints, data writes, privileged code,
-new tables and all other syntax require review. A candidate is routine only
-when its actual before/after catalog preserves existing columns, grants, RLS,
-policies, triggers, functions, constraints, indexes and views, and the populated
-rehearsal preserves every original row/column. SQL without DROP is not proof.
-This narrow class avoids table rewrites/defaults and caps lock/statement waits.
-
-Destruction, rewrites/backfills, incompatible contracts, permission expansion,
-RLS/Storage changes, function/trigger changes, unknown syntax/history and stale
-or absent evidence fail closed. A reviewed migration still needs the populated
-preservation witness; intentionally destructive upgrades require a separately
-planned recovery/execution path. The whole pending set is authorized before any
-SQL invocation, so an unreviewed dependency cannot leave an intentionally
-applied safe prefix. A later operational failure can still leave a partial
-batch; see incident handling below.
-
-### Review before merge
-
-The existing always-present **Change classification** Validation job enforces
-static risk review and, for SQL/release/baseline/workflow/dependency changes,
-runs the disposable populated semantic rehearsal. Other PRs avoid that cost;
-complete manual Validation always includes it. No path-filtered required check
-is left pending. Canonical history edits/deletions are rejected; add migrations.
-
-For review-required SQL, the failed job uploads `review-required.json`, containing
-only staging identity, exact PR head SHA, migration hashes and the canonical
-predecessor inventory digest. The repository's **numeric owner identity** must
-post a PR issue comment with this exact prefix followed by that JSON:
-
-```text
-STAGING-AUTO01-REVIEW
-{"project_ref":"cllpvruvrrvxczjitlqd","source_sha":"<40 hex PR head>","approvals":[{"version":"<14 digits>","sha256":"<64 hex>","predecessor_inventory_sha256":"<64 hex>"}]}
-```
-
-The owner reviews SQL effects, preservation/security evidence and operational
-risk before posting. Then rerun the failed Validation job (and inspect the
-semantic artifact if that gate requests review). No comments are manufactured
-by automation. A new head or predecessor invalidates approval. Creation **and
-last edit** must predate merge. Comments by bots/other users, malformed proof,
-post-merge edits or wrong source are ignored. Deployment independently finds the
-merged PR, re-fetches the owner's proof and the file at that original PR head,
-and hashes those bytes. Merging despite failed CI cannot erase the missing proof.
-Routine verified migrations need no comment or ongoing safe-manifest ritual.
+Main pushes can deploy eligible SQL after one-time setup; Android build and Play
+publication require explicit manual dispatch. Keep `STAGING_AUTO_PUBLISH=false`.
+Production, mock operator, Edge deployment and provider spending retain separate
+authorization and gates.
 
 ## One-time owner activation
 

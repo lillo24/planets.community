@@ -11,6 +11,11 @@ import { pathToFileURL } from "node:url";
 import { classifyMigration, inventoryDigest } from "./safety.mjs";
 import { readMigrations, STAGING_REF } from "./migrations.mjs";
 import { sha256 } from "./sql-fingerprint.mjs";
+import {
+  assertPolicySeparation,
+  migrationCandidate,
+  policyModuleHash,
+} from "./eligibility.mjs";
 
 export const REVIEW_PREFIX = "STAGING-AUTO01-REVIEW\n";
 export function requiresSafetyRehearsal(paths) {
@@ -167,118 +172,81 @@ export async function checkPullRequest(
   api = githubClient(env),
 ) {
   const event = JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, "utf8"));
-  if (!event.pull_request) {
-    if (env.GITHUB_OUTPUT) appendFileSync(env.GITHUB_OUTPUT, "rehearse=true\n");
-    console.log(
-      "PR review gate: no PR delta; deploy re-verifies prior owner proof independently.",
-    );
-    return;
-  }
-  const pr = event.pull_request;
-  const git = (args) => execFileSync("git", args, { encoding: "utf8" });
+  // Legacy owner-comment readers above remain for auditing old deployments.
+  // They are not an authorization path under the standing staging policy.
+  const git = (args) => execFileSync("git", args, { encoding: "utf8" }).trim();
+  const paths = event.pull_request
+    ? git([
+        "diff",
+        "--no-renames",
+        "--name-only",
+        event.pull_request.base.sha,
+        event.pull_request.head.sha,
+      ])
+        .split("\n")
+        .filter(Boolean)
+    : [];
+  assertPolicySeparation(paths);
   if (env.GITHUB_OUTPUT)
     appendFileSync(
       env.GITHUB_OUTPUT,
-      `rehearse=${requiresSafetyRehearsal(git(["diff", "--no-renames", "--name-only", pr.base.sha, pr.head.sha]).trim().split("\n"))}\n`,
+      `rehearse=${!event.pull_request || requiresSafetyRehearsal(paths)}\n`,
     );
-  const files = git([
-    "diff",
-    "--no-renames",
-    "--name-status",
-    pr.base.sha,
-    pr.head.sha,
-    "--",
-    "supabase/migrations",
-  ])
-    .trim()
-    .split("\n")
-    .filter(Boolean);
   const local = readMigrations(process.cwd());
-  const newFiles = [];
-  for (const line of files) {
-    const [status, path] = line.split("\t");
-    if (status !== "A")
-      throw new ReleaseError(
-        "Canonical history edits/removals require separate reconciliation; add a new migration",
-      );
-    const m = local.find((m) => `supabase/migrations/${m.file}` === path);
-    if (!m) throw new ReleaseError("Invalid new migration path");
-    newFiles.push(m);
-  }
-  const prior = local.filter((m) => !newFiles.includes(m));
-  const needed = [];
-  for (const m of newFiles.sort((a, b) => a.version.localeCompare(b.version))) {
-    const classification = classifyMigration(m.sql);
-    if (classification.classification !== "routine-candidate")
-      needed.push({
+  const added = [];
+  if (event.pull_request) {
+    for (const line of git([
+      "diff",
+      "--no-renames",
+      "--name-status",
+      event.pull_request.base.sha,
+      event.pull_request.head.sha,
+      "--",
+      "supabase/migrations",
+    ])
+      .split("\n")
+      .filter(Boolean)) {
+      const [status, path] = line.split("\t");
+      if (status !== "A")
+        throw new ReleaseError(
+          "Canonical history edits/removals are unsafe; add a migration",
+        );
+      const m = local.find((m) => `supabase/migrations/${m.file}` === path);
+      if (!m) throw new ReleaseError("Unparseable canonical migration path");
+      const candidate = migrationCandidate(m);
+      if (candidate.classification === "blocked-unsafe")
+        throw new ReleaseError(
+          `Migration ${m.version} blocked-unsafe: ${candidate.reason}`,
+        );
+      added.push({
         version: m.version,
         sha256: m.sha256,
-        predecessor_inventory_sha256: inventoryDigest(prior),
+        candidate: candidate.classification,
+        status: "review-required-for-hosted",
+        reason: "Awaiting populated catalog/security/real-actor proof",
       });
-    prior.push(m);
-  }
-  const reconciliation = JSON.parse(
-    readFileSync("scripts/release/reconciliation.json", "utf8"),
-  );
-  const enabledBefore = (() => {
-    try {
-      return JSON.parse(
-        git(["show", `${pr.base.sha}:scripts/release/reconciliation.json`]),
-      ).enabled;
-    } catch {
-      return false;
-    }
-  })();
-  if (reconciliation.enabled && !enabledBefore) {
-    const observed = JSON.parse(
-      readFileSync(
-        "docs/development/evidence/release01/staging-auto01-predecessor.json",
-        "utf8",
-      ),
-    );
-    const base = observed.applied_history;
-    for (const m of observed.pending) {
-      needed.push({
-        version: m.version,
-        sha256: m.sha256,
-        predecessor_inventory_sha256: inventoryDigest(base),
-      });
-      base.push({ version: m.version, canonical_sha256: m.sha256 });
     }
   }
   mkdirSync("build/release01", { recursive: true });
   writeFileSync(
-    "build/release01/review-required.json",
+    "build/release01/staging-eligibility.json",
     JSON.stringify(
-      { project_ref: STAGING_REF, source_sha: pr.head.sha, approvals: needed },
+      {
+        policy_version: 2,
+        source_sha: git(["rev-parse", "HEAD"]),
+        pr_head_sha: event.pull_request?.head.sha ?? null,
+        source_tree: git(["rev-parse", "HEAD^{tree}"]),
+        policy_module_sha256: policyModuleHash(),
+        migration_safety: added,
+      },
       null,
       2,
     ) + "\n",
   );
-  if (!needed.length) {
-    console.log(
-      "Migration safety: no review-required SQL; routine candidates still require catalog/data rehearsal.",
-    );
-    return;
-  }
-  const reviews = await ownerReviewsForPr(api, pr);
-  if (
-    needed.some(
-      (n) =>
-        !reviews.some(
-          (r) =>
-            r.version === n.version &&
-            r.sha256 === n.sha256 &&
-            r.predecessor_inventory_sha256 === n.predecessor_inventory_sha256,
-        ),
-    )
-  )
-    throw new ReleaseError(
-      "Pre-merge owner review required: post STAGING-AUTO01-REVIEW plus the exact review-required.json object, then rerun this gate. No deployment approval can replace it.",
-    );
   console.log(
-    `Migration safety: ${needed.length} exact-content pre-merge owner reviews verified.`,
+    "Source safety: no owner fingerprint required; hosted eligibility awaits independent populated/security proof.",
   );
+  return;
 }
 if (
   process.argv[1] &&

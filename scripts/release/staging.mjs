@@ -1,4 +1,5 @@
 import { writeStaging } from "./writer.mjs";
+import { releaseVariant } from "./config.mjs";
 import { ReleaseError, reportFailure } from "./errors.mjs";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -176,7 +177,7 @@ export async function stagingRelease(mode, env = process.env) {
   checks.map_safe =
     checks.map_safe &&
     Boolean(provider) &&
-    verifyFunctions(root, policy, functions);
+    verifyFunctions(root, policy, functions, releaseVariant(env));
   save("backend", {
     source_sha: env.GITHUB_SHA ?? null,
     verified_at: new Date().toISOString(),
@@ -196,6 +197,15 @@ export async function stagingRelease(mode, env = process.env) {
         source_sha: env.GITHUB_SHA ?? null,
         status: "verified",
         ...(await inspectSessionConnection(env, remote)),
+      });
+      save("observed-history", {
+        project_ref: STAGING_REF,
+        source_sha: env.GITHUB_SHA,
+        workflow_run_id: env.GITHUB_RUN_ID,
+        client_tls_verified: true,
+        session_verified: true,
+        history_matches: true,
+        history: remote,
       });
     } catch (error) {
       const failure = connectionFailure(error);

@@ -35,13 +35,24 @@ jobs:
         id: risk
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node scripts/release/reviews.mjs
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$BASE_SHA" ]]; then
+            mkdir -p build/trusted-release
+            git archive "$BASE_SHA" | tar -x -C build/trusted-release
+            node build/trusted-release/scripts/release/reviews.mjs
+          else
+            node scripts/release/reviews.mjs
+          fi
       - name: Persist exact review request when needed
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: staging-migration-review-${{ github.run_id }}
-          path: build/release01/review-required.json
+          name: staging-migration-eligibility-${{ github.run_id }}
+          path: |
+            build/release01/review-required.json
+            build/release01/staging-eligibility.json
           if-no-files-found: ignore
           retention-days: 7
       - uses: actions/setup-node@v7.0.0
@@ -51,12 +62,27 @@ jobs:
           cache: npm
       - run: npm ci
         if: steps.risk.outputs.rehearse == 'true'
+      - name: Test policy changes against the trusted pre-change base
+        if: github.event_name == 'pull_request' && steps.risk.outputs.rehearse == 'true'
+        run: |
+          # Base files run from their own archive; candidate tests cannot replace them.
+          node --test build/trusted-release/scripts/lib/staging-auto01.test.mjs build/trusted-release/scripts/lib/release01.test.mjs
       - name: Prove populated migration and catalog semantics before merge
         if: steps.risk.outputs.rehearse == 'true'
         env:
           PLANETS_DISPOSABLE_QA: "1"
           GH_TOKEN: ${{ github.token }}
-        run: node scripts/release/rehearse.mjs
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          # A product SQL PR is judged by the already-merged policy. Policy-only
+          # changes exercise the candidate engine after the unchanged base tests.
+          if [[ -n "$BASE_SHA" ]] &&
+             git diff --name-only "$BASE_SHA" HEAD -- supabase/migrations/ | grep -q .; then
+            node build/trusted-release/scripts/release/rehearse.mjs
+          else
+            node scripts/release/rehearse.mjs
+          fi
       - name: Persist populated migration safety evidence
         if: always() && steps.risk.outputs.rehearse == 'true'
         uses: actions/upload-artifact@v6
@@ -65,6 +91,7 @@ jobs:
           path: |
             build/release01/rehearsal.json
             build/release01/review-required.json
+            build/release01/staging-eligibility.json
           if-no-files-found: ignore
           retention-days: 30
       - name: Classify affected validation areas
