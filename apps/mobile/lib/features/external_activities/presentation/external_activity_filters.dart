@@ -216,5 +216,7 @@ String externalDisciplineLabel(String value, AppLocalizations l) =>
       'bocce' => l.activitiesSportBocce,
       'multi-sport' => l.activitiesSportMulti,
       'yoga' => l.activitiesSportYoga,
+      'chess' => l.activitiesSportChess,
+      'other-sports' => l.activitiesSportOther,
       _ => value,
     };

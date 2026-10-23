@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,6 +43,61 @@ void main() {
     await initializeDateFormatting('en');
     await initializeDateFormatting('it');
   });
+  // Explicit local acceptance reads an actual sanitized anonymous DTO saved by
+  // verify-local-trento-facilities. CI stays deterministic and uses no provider.
+  const municipalEvidence = String.fromEnvironment(
+    'ACTIVITIES_MUNICIPAL_EVIDENCE',
+  );
+  if (municipalEvidence.isNotEmpty) {
+    for (final language in ['en', 'it']) {
+      for (final dark in [false, true]) {
+        testWidgets('SPORTDATA01 real municipal $language dark=$dark', (
+          tester,
+        ) async {
+          final evidence = jsonDecode(
+            File(municipalEvidence).readAsStringSync(),
+          ) as Map<String, dynamic>;
+          final page = ExternalActivityPage.parse(evidence['page']);
+          final detail = ExternalActivity.parse(evidence['detail']);
+          tester.view.physicalSize = Size(language == 'it' ? 320 : 360, 900);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final gateway = FakeExternalActivityGateway()
+            ..page = page
+            ..detail = detail;
+          final router = await _pump(
+            tester,
+            gateway,
+            language: language,
+            scale: 2,
+            dark: dark,
+          );
+          await tester.scrollUntilVisible(
+            find.byKey(ValueKey('external-${page.items.first.id}')),
+            250,
+            scrollable: find.byType(Scrollable).hitTestable().first,
+          );
+          await tester.pumpAndSettle();
+          await RenderedEvidence.capture(
+            tester,
+            'sportdata01-real-$language-${dark ? 'dark' : 'light'}-list',
+          );
+          router.go('/activities/external/${detail.id}');
+          await tester.pumpAndSettle();
+          await RenderedEvidence.capture(
+            tester,
+            'sportdata01-real-$language-${dark ? 'dark' : 'light'}-detail',
+          );
+          expect(find.text(detail.title), findsOneWidget);
+          expect(detail.kind, ExternalActivityKind.place);
+          expect(detail.cost, isNull);
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  }
+
   for (final language in ['en', 'it']) {
     for (final dark in [false, true]) {
       for (final sample in [

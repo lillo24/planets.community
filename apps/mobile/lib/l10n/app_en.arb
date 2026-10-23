@@ -3480,5 +3480,7 @@
   "activitiesNextSessionUnknown": "Next session not supplied by the source.",
   "activitiesOfficialInformation": "Official information",
   "activitiesDatasetLink": "View source dataset",
-  "activitiesExternalPartial": "Some sources could not update. Available results from other sources are still shown."
+  "activitiesExternalPartial": "Some sources could not update. Available results from other sources are still shown.",
+  "activitiesSportChess": "Chess",
+  "activitiesSportOther": "Other sports"
 }

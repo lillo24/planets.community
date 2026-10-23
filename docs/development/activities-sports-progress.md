@@ -162,3 +162,28 @@ external suite **67 PASS**, analysis PASS. Lint caught an unused V1 metadata
 variable; removed it, then clean replay, lint and security advisors PASS with no
 issues. Established `db:types:check` PASS. No hosted migration/config/import.
 Next: official municipal adapter and real local qualification (006), then 007.
+
+### 006 SPORTDATA01 — implemented with real local evidence
+
+Reverified official metadata/resource/CC BY 4.0. Actual export: **116 equipment
+records / 60 named places / 10 types / 37 missing item links / zero missing
+geometry / all Notes empty**, 27,085 bytes, decoded UTF-8 SHA-256
+`f7a2820e56ce27a12156a64c7223604734997c1e2b27db8bb224af34e86a7e4b`.
+Counts are observations. One source href has trailing whitespace; boundary-only
+normalization is documented/tested, without relaxing origin/path/security rules.
+
+Real canonical local import: **116 accepted / 0 rejected**, four anonymous pages,
+no duplicate/missing UUIDs. Repeat of the same actually fetched snapshot: **0
+changed**, UUID/revision/hash stable; V1 events and Courses honestly empty.
+Native project count unchanged and all source/records cleaned in finally. No
+hosted publication or scheduler. Dataset fallback is explicitly typed, entrance
+text stays access context and no date/price/opening/organizer is invented.
+
+Scoped tooling **31 PASS**. Final external/ACTMET01/real-render suite **98 PASS**;
+analysis PASS. Four actual municipal EN/IT light/dark 320/360dp 2x journeys/eight
+captures inspected. Initial test-file async IO stalled under the widget fake
+clock; replaced only that test evidence read with synchronous local-file IO and
+reran green. Real rendering exposed verbose repeated card metadata; cards now
+keep concise type/location/source while full entrance/access remains in detail.
+Selected captures are committed with attribution. Next: 007 canonical geographic
+query, then 008 working shared map integration; no live-source dependency wait.

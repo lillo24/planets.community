@@ -82,6 +82,13 @@ class ExternalActivityCard extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final occurrence = item.nextOccurrence;
+    final discipline = item.discipline == null
+        ? null
+        : externalDisciplineLabel(item.discipline!, l);
+    final location = [
+      if (item.venue != null && !item.title.contains(item.venue!)) item.venue,
+      item.city,
+    ].nonNulls.join(' · ');
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -106,18 +113,16 @@ class ExternalActivityCard extends StatelessWidget {
               if (item.kind == ExternalActivityKind.course &&
                   occurrence != null)
                 Text(externalCourseLabel(item.schedule, locale, l)),
-              if (item.kind == ExternalActivityKind.place &&
-                  item.sourceCategories.isNotEmpty)
-                Text(item.sourceCategories.join(' · ')),
               if (item.kind == ExternalActivityKind.course &&
                   occurrence == null)
                 Text(l.activitiesNextSessionUnknown),
-              if (item.discipline != null)
-                Text(externalDisciplineLabel(item.discipline!, l)),
-              if (item.cost != null) Text(item.cost!),
-              if (item.access != null) Text(item.access!),
-              if (item.venue != null || item.city != null)
-                Text([item.venue, item.city].nonNulls.join(' · ')),
+              if (discipline != null &&
+                  !item.title.toLowerCase().contains(discipline.toLowerCase()))
+                Text(discipline),
+              if (item.cost != null)
+                Text(item.cost!, maxLines: 2, overflow: TextOverflow.ellipsis),
+              // Full entrance/access conditions belong in the readable detail.
+              if (location.isNotEmpty) Text(location),
               const SizedBox(height: AppSpacing.small),
               Text(
                 l.activitiesSourceLabel(item.sourceName),

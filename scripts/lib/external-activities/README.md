@@ -25,3 +25,9 @@ reads with the same budgets. `../external-multi-source-verifier.mjs` is invoked
 only by the guarded disposable-local verifier and exercises real HTTP A/A and A/B
 races and cross-source preservation. Tests are in `../external-multi-source.test.mjs`.
 See the [source policy/operations contract](../../../docs/development/activities-sources.md).
+
+`trento-facilities.mjs` owns only the licensed municipal CSV shape, controlled
+sports types, published Item identity and one safe anchor-field extraction. It
+never scrapes linked HTML or manufactures course/event data. The explicit local
+`verify-local-trento-facilities.mjs` command qualifies real ingestion separately
+from deterministic CI; captured anonymous DTOs can drive opt-in widget evidence.

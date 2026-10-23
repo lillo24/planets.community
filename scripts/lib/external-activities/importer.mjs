@@ -103,6 +103,20 @@ export async function runActivityImport({
       throw new ActivityImportError("invalid_payload");
     if (collected.entries.length > limits.records)
       throw new ActivityImportError("limit_exceeded");
+    if (
+      collected.summary != null &&
+      (typeof collected.summary !== "object" ||
+        Array.isArray(collected.summary) ||
+        Object.keys(collected.summary).length > 12 ||
+        Object.entries(collected.summary).some(
+          ([key, value]) =>
+            !/^[a-z_]{1,40}$/.test(key) ||
+            !Number.isSafeInteger(value) ||
+            value < 0 ||
+            value > limits.records,
+        ))
+    )
+      throw new ActivityImportError("invalid_payload");
     const records = [];
     const ids = new Set();
     for (const entry of collected.entries) {
@@ -153,6 +167,9 @@ export async function runActivityImport({
       mode: apply ? "apply" : "dry-run",
       ...result,
       rejection_reasons: reasons,
+      ...(collected.summary == null
+        ? {}
+        : { source_summary: collected.summary }),
       transport: transport.counts,
     };
   } catch (error) {

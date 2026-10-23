@@ -78,3 +78,65 @@ The guarded HTTP verifier uses real local service/anonymous requests for A/A and
 A/B claims, colliding upstream strings, repeats, changed content, obsolete replies,
 partial health, paging/facets, denied configuration and mid-run disable. Synthetic
 source data is removed in `finally`; no hosted source is used as a test fixture.
+
+## SPORTDATA01: official Trento public sports equipment
+
+Source `trento-open-sports-facilities`, parser `trento-free-facilities-csv-v1`,
+display name Comune di Trento. The [official dataset metadata](https://www.comune.trento.it/Amministrazione/Documenti-e-dati/Dataset/Impianti-sportivi-ad-accesso-libero)
+explicitly licenses this dataset under CC BY 4.0 and describes equipment in
+municipal green areas, daily updates, Trento coverage. Resource:
+`https://www.comune.trento.it/customexport/dataset-csv_resource-46671`.
+Attribution: Comune di Trento — Impianti sportivi ad accesso libero — CC BY 4.0;
+[licence](https://creativecommons.org/licenses/by/4.0/). Both transport and public
+page origin are exactly `https://www.comune.trento.it`; transport is confined to
+`/customexport/`, the connector requests only that one explicit CSV resource.
+No image or linked-page rights are inferred.
+
+`Item` is the published stable upstream identifier, never row order/title/URL.
+Each equipment entry remains separate even at a shared park or point. The CSV
+parser handles BOM, UTF-8/Unicode, quoted commas/multiline values/doubled quotes
+and normalized headers; missing/duplicate/unexpected columns, duplicate IDs,
+truncation and nonempty invalid coordinates fail the complete snapshot. An empty
+export is a structural anomaly, not a replacement empty catalogue. New equipment
+types retain source text under honest `other-sports`; known types map to controlled
+disciplines. All records are sports **places**, with no fake appointment,
+organizer, price, capacity, booking or verified opening status.
+
+Only the single CSV `Link` anchor's safe municipal `/Vivere-il-Comune/Luoghi/`
+HTTPS href is extracted and entity-decoded; no HTML page is fetched/executed.
+Boundary attribute whitespace is trimmed (the observed export has one trailing
+space at Item 57); internal whitespace, unapproved destinations, duplicate anchors,
+event handlers and malformed attributes fail. A genuinely empty link uses the
+metadata dataset page with typed `link_scope=dataset`. Source entrance wording
+is access context in detail, not a verified postal address. The optional Notes
+field may stay null without fabricated description.
+
+Published `Coordinate GPS` is interpreted as **latitude, longitude** and recorded
+as source venue geometry with dataset provenance. A broad 45.8–46.3 / 10.9–11.4
+sanity box catches swaps/outliers, not an asserted municipal boundary. Empty
+geometry remains valid in List; nonempty malformed geometry fails loudly. No
+geocoding, GPS permission or native/private location is consulted.
+
+Actual 2026-10-23 qualification: **116 equipment records, 60 named places, 10 source
+types, 37 dataset-level fallback links, zero missing geometry, zero nonempty
+notes**. This is an observation, not a permanent count invariant. Decoded UTF-8
+SHA-256 `f7a2820e56ce27a12156a64c7223604734997c1e2b27db8bb224af34e86a7e4b`,
+27,085 bytes. The real connector fetched one actual export per qualification run;
+all 116 records passed the existing canonical transaction and complete anonymous
+four-page traversal. Repeating that **same fetched snapshot** changed zero
+records and preserved UUIDs/revisions. The disposable source/data were removed.
+No hosted source is configured or scheduled.
+
+Opt-in real-source local qualification (fresh non-default disposable stack):
+
+```text
+PLANETS_DISPOSABLE_QA=1 npm run activities:trento:verify:local -- --evidence <new-local-json-path>
+flutter test test/features/external_activities/external_activities_test.dart --plain-name SPORTDATA01 --dart-define=ACTIVITIES_MUNICIPAL_EVIDENCE=<absolute-json-path> --dart-define=UI_POLISH_CAPTURE_DIR=<absolute-captures-directory>
+```
+
+This live-source command is intentionally outside ordinary CI. CI uses bounded
+synthetic parser/HTTP fixtures. The opt-in render reads actual sanitized anonymous
+DTOs; it does not add product fixtures or provider calls to Flutter. Inspected
+[English list](evidence/activities-sports/municipal-places-en-light-360-2x.png) and
+[Italian detail](evidence/activities-sports/municipal-place-it-dark-320-2x.png)
+captures use 2x text; both themes/languages passed. No physical device is claimed.

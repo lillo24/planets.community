@@ -2742,5 +2742,7 @@
   "activitiesNextSessionUnknown": "La fonte non indica la prossima lezione.",
   "activitiesOfficialInformation": "Vedi informazioni ufficiali",
   "activitiesDatasetLink": "Vedi dataset della fonte",
-  "activitiesExternalPartial": "Alcune fonti non sono aggiornate. I risultati disponibili delle altre fonti restano visibili."
+  "activitiesExternalPartial": "Alcune fonti non sono aggiornate. I risultati disponibili delle altre fonti restano visibili.",
+  "activitiesSportChess": "Scacchi",
+  "activitiesSportOther": "Altri sport"
 }
