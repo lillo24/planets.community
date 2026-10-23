@@ -1,13 +1,18 @@
 # COCREATE-RUNALL progress
 
-Current task: [DEPLOY01 integration and review](cocreate-deploy01.md), on the
+Current task: [RESUME01](../../history-implementations/PLANETS_RESUME01_finish_find_people_integration.md)
+finishes [DEPLOY01 integration and review](cocreate-deploy01.md), on the
 existing isolated `codex/cocreate-fill01` branch and draft PR #297. The user has
 authorized one cumulative main-targeted review of RUNALL, VIS01 and COMM01/FILL01.
-Main `667bf57b` is reconciled; eligible implementation and local qualification
-are complete, and the same draft #297 now targets main. Exact-head owner SQL
-review and green required CI remain prerequisites to merge. DEPLOY02
-is deferred until the reviewed integration merges; no hosted operation is authorized
-by DEPLOY01. [COMM01/FILL01](cocreate-fill01.md) records historical qualification.
+Main `33f0309b` is reconciled; its changes since `667bf57b` are three planning
+documents only. Existing local qualification remains applicable. The founder
+explicitly authorizes delegated SQL review and exact approval through the existing
+verified owner account, superseding the older personal-posting restriction below.
+Fresh exact-head proof and green required CI remain prerequisites to merge.
+Then prepare the local closed-testing artifact within RESUME01; no new hosted
+write or store upload is authorized. The subsequently requested RESUME02 queue
+follows this integration and local preparation. [COMM01/FILL01](cocreate-fill01.md)
+records historical qualification.
 The RUNALL ledger below records its original scope.
 
 Authority: [RUNALL pack](../../history-implementations/PLANETS_COCREATE_RUNALL_autonomous_implementation.md).
@@ -644,3 +649,28 @@ unchanged. This follow-up is not complete or ready for production.
   head before readiness/merge. Do not post owner proof, weaken controls, merge
   duplicate ancestry or begin DEPLOY02. #287/#292 remain preserved/open until
   cumulative reviewed integration succeeds. No hosted action or deployment.
+
+### RESUME01 — delegated review and completion, 2026-10-23
+
+- Inspected primary and existing integration work before fetch: only `.vis01/`
+  and `.local/` untracked, respectively; no unpushed integration commits. Other
+  Activities/Sports, MAPMOCK and PEOPLEHOME branches/worktrees remain separate.
+- Latest main `33f0309bcc02c2a54b872210c4f6ec51a6ccc731` adds only PEOPLEHOME01
+  and RESUME01/02 planning prompts. Clean merge `3ad01486` reconciles those three
+  documents. No product, SQL, seed or configuration predecessor changed.
+- Connected authenticated GitHub account `lillo24`, numeric ID **80243470**,
+  matches the repository's actual numeric owner. Current user authorization
+  expressly permits delegated technical review and posting the exact supported
+  owner-account proof. No claim of personal founder SQL inspection is made.
+- All **16 actual migration bodies** inspected for grants/RLS, fixed search paths,
+  expected-actor/account/policy checks, locking, immutable receipts/history,
+  moderation evidence, normalization/activation, bounded filling projection,
+  old-reader compatibility and default-OFF behavior. No further SQL fix needed.
+  Raw hashes and populated witnesses are rechecked before the fresh exact-head
+  approval. Prior local evidence remains applicable because current main changes
+  only three planning documents; no repeated full replay is represented as run.
+- **Next action:** commit/push the reconciled source and delegated review record,
+  verify the fresh CI review artifact, post its exact proof, rerun that existing
+  Validation and fix ordinary failures. Merge only after valid proof/current-main
+  required green checks. Then verify merge/dependency inclusion, complete local
+  release preparation and proceed to RESUME02; no new hosted writes or upload.

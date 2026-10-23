@@ -1,8 +1,14 @@
 # COCREATE-DEPLOY01 — cumulative integration and owner review
 
-Status: eligible integration/hardening and all local qualification complete,
-2026-10-23. The same draft #297 now targets main. Actual exact-head owner SQL
-review and required GitHub CI remain merge prerequisites; DEPLOY02 is deferred.
+Status: RESUME01 continuation, 2026-10-23. Prior local qualification is retained;
+current-main reconciliation and delegated exact-head review/CI/merge are active.
+The founder explicitly adopted
+[RESUME01](../../history-implementations/PLANETS_RESUME01_finish_find_people_integration.md),
+including delegated technical SQL review and posting its exact approval through
+the existing authenticated owner account. This scoped authorization supersedes
+the earlier agent-posting prohibition and separate owner-readiness wait below.
+It does not relax numeric identity, content/hash/predecessor, semantic rehearsal,
+branch protection or deployment checks. Do not claim personal human SQL review.
 
 The user selected DEPLOY01 before DEPLOY02. Its full handoff prompt,
 `PLANETS_COCREATE_DEPLOY01_integrate_fill01_into_main.md`, was read from the
@@ -38,6 +44,12 @@ the cumulative integration succeeds and their final heads remain fully included.
 
 ## Required review boundary
 
+RESUME01 delegated technical review inspected the actual full SQL bodies of all
+16 files below, their grants/RLS, trigger/composition effects and the populated
+preservation evidence. No new SQL change was needed. Before posting, compare the
+fresh CI request's exact source, every raw file hash and every predecessor digest
+with the qualified inventory; do not reuse the previous head's request.
+
 Exactly 16 additive co-creation migrations are new against selected main:
 
 | Version        | Subject / review focus                                                 |
@@ -59,6 +71,45 @@ Exactly 16 additive co-creation migrations are new against selected main:
 | 20261023002240 | Installed closed-reader compatibility, additive dated readers          |
 | 20261023071604 | Bounded optional activation signals; every private invitation retained |
 
+Review conclusions:
+
+- New domain tables are private with RLS and explicit API-role table revocations;
+  internal helpers have no client execution grant. Public SECURITY DEFINER
+  entry points use fixed empty search paths, expected-actor/Auth/policy/account
+  checks and deliberate narrow public projections. Exit/recovery exceptions
+  expose own identifiers and allow own withdrawal, not transcripts or admission.
+- Post/contact commands retain pair-before-domain locking, immutable intent and
+  exact receipts. General/numbered/meeting writes share canonical hub locking;
+  capacity and meeting attendance cannot overbook, and RSVP does not replace
+  persistent chat membership. Existing episode exit frontiers and HMAC read ACKs
+  remain authoritative. Temporary bans deny actions; erasure ends memberships
+  without a new Auth/Profile retention foreign key or unrelated deletion.
+- Proposal activation serializes normalized category/name/locality identity,
+  current eligibility and distinct interests. It creates/reuses only one hub and
+  its canonical General, never auto-enrolls supporters. Ready invitations remain
+  actor-private and durable beyond the optional signal budget.
+- Moderation extends typed constraints additively and exposes only exact report
+  evidence through current staff/case/version authorization. Source links defer
+  to canonical native visibility/admission; they copy no roster or private text.
+  Filling outbox expansion claims rows with SKIP LOCKED, pages at 25 recipients,
+  atomically persists progress/receipts and rechecks eligibility, blocks, mute,
+  preference, episode and meeting/card lifecycle on reads as well as projection.
+- Existing installed readers/OIDs/ACL/results survive; dated cards have additive
+  readers and old closed-shape clients receive an unavailable card. The final
+  signal-bound patch fail-closes on an unknown predecessor. No production gate
+  enablement, provider activation, destructive historical rewrite or unreviewed
+  release-control change is present.
+
+Evidence is the recorded clean replay/8,285 pgTAP assertions, all eight genuine
+Auth/concurrency/socket verifiers, 185/216/245 populated upgrades with original
+rows and warmed function contracts, native full baseline and two-realm Mock
+concurrency/rollback. Current main `33f0309b` differs from qualified `667bf57b`
+only by three planning documents; all 126 predecessor migrations, client/backend
+source, config, seed/templates and release controls are identical. Thus the local
+evidence is reused honestly; final-head Linux semantic rehearsal and required CI
+must still run after exact-content approval. The PR description records this as
+delegated agent review on the founder's behalf, not personal founder inspection.
+
 Owner SQL review must inspect each file and its exact SHA-256/predecessor digest,
 not approve a summary. Confirm private table grants/RLS; explicit public RPC
 allow-lists and Auth/expected actor/policy/account checks; fixed search paths and
@@ -74,12 +125,14 @@ that run's `staging-migration-review-<run>` artifact. Its `review-required.json`
 contains the exact head, all migration hashes and predecessor inventory digests.
 Only the actual numeric repository owner may post a new issue comment beginning
 `STAGING-AUTO01-REVIEW` followed by that exact JSON, after reviewing SQL/evidence.
-The agent must not post it using the owner's credentials, reuse old proof, change
-the gate, substitute a workflow dispatch for PR checks or claim skipped jobs pass.
+Under the adopted RESUME01 authorization, the agent may post this exact proof
+through the existing verified owner account after delegated technical review.
+Do not reuse old proof, change the gate, substitute a workflow dispatch for PR
+checks or claim skipped jobs pass.
 
 Then rerun the existing failed Validation check, inspect the populated semantic
 artifact and every required area on the exact source head, and recheck main is
-current. Merge only after actual owner approval, green required CI, no draft and
+current. Merge only after valid delegated owner-account approval, green required CI, no draft and
 no unresolved substantive product/security conflict. Any source or predecessor
 change invalidates the old approval. No direct-to-main push or approval bypass.
 
@@ -273,15 +326,16 @@ and exact **16-migration** review artifact without a self-referential docs/SHA
 loop. Previous dependent-base CI failures/artifacts remain historical; no final
 GitHub check is represented as passed without an actual result.
 
-Next action is the actual repository owner's SQL/evidence review and exact
-artifact issue comment described above. Then rerun the existing failed
-Validation gate and complete its populated Linux semantic rehearsal plus every
-required area. Only after actual proof, green current-head required CI, current
-main and owner readiness may this reviewed integration merge. Keep #287/#292
+RESUME01's next action is delegated SQL/evidence review and the exact owner-account
+artifact issue comment described above. Then rerun the existing failed Validation
+gate and complete its populated Linux semantic rehearsal plus every required
+area. After valid proof, green current-head required CI and current main, remove
+draft status and merge without another routine readiness question. Keep #287/#292
 open/preserved until then; inspect their final heads before classifying them as
-fully included. No owner comment is posted by the agent, no gate is changed and
-no alternate workflow substitutes for missing review. This external approval is
-the remaining DEPLOY01 blocker; DEPLOY02 has not started.
+fully included. No gate is changed and no alternate workflow substitutes for
+review. Earlier statements that only the founder may post personally record the
+previous checkpoint, not the current RESUME01 authority. Local closed-testing
+release preparation follows verified merge; hosted changes remain excluded.
 
 ## Deferred deployment
 
