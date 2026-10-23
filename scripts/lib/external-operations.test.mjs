@@ -258,6 +258,34 @@ test("manual dry-run never calls inspection, maintenance or persistence", async 
   assert.equal((await runActivityOperations(settings)).status, "success");
   assert.deepEqual(calls, []);
 });
+test("unexpected record validation drift cannot become a green zero-accepted export", async () => {
+  const { settings } = harness({
+    mode: "dry-run",
+    importSource: runActivityImport,
+  });
+  settings.resolve = (sourceId) => ({
+    sourceId,
+    origins: ["https://example.org"],
+    officialOrigin: "https://example.org",
+    apiPathPrefix: "/api/",
+    collect: async () => ({
+      complete: true,
+      entries: [{ record: { upstream_id: "malformed" } }],
+    }),
+  });
+  const result = await runActivityOperations(settings);
+  assert.equal(result.status, "failure");
+  assert.ok(
+    result.sources.every(
+      (x) =>
+        x.state === "warning" &&
+        x.code === "source_record_drift" &&
+        x.accepted === 0 &&
+        x.rejected === 1 &&
+        x.invalid_records === 1,
+    ),
+  );
+});
 test("parent timeout records interrupted receipt and skips subsequent provider attempts", async () => {
   const { settings, calls } = harness({
     runMs: 20,

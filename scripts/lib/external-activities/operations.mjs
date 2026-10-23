@@ -258,13 +258,28 @@ export async function runActivityOperations({
         const unknown = result.source_summary?.unknown_types ?? 0;
         if (!Number.isSafeInteger(unknown) || unknown < 0 || unknown > 2000)
           throw new ActivityImportError("invalid_payload");
+        const invalidRecords = [
+          "invalid_record",
+          "unsupported_schedule",
+        ].reduce((sum, key) => sum + (result.rejection_reasons?.[key] ?? 0), 0);
+        if (
+          !Number.isSafeInteger(invalidRecords) ||
+          invalidRecords < 0 ||
+          invalidRecords > result.rejected
+        )
+          throw new ActivityImportError("invalid_payload");
+        const warning = unknown
+          ? "unknown_source_types"
+          : invalidRecords
+            ? "source_record_drift"
+            : null;
         results.push({
           id,
-          state: unknown ? "warning" : result.state,
+          state: warning ? "warning" : result.state,
           ...counts,
-          ...(unknown
-            ? { code: "unknown_source_types", unknown_types: unknown }
-            : {}),
+          ...(warning ? { code: warning } : {}),
+          ...(unknown ? { unknown_types: unknown } : {}),
+          ...(invalidRecords ? { invalid_records: invalidRecords } : {}),
         });
       } catch (error) {
         const code = signal.aborted

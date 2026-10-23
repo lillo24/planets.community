@@ -8,9 +8,11 @@ updates, including a corrected listing kind. No source is seeded or enabled.
 
 ## Rollout and released clients
 
-Apply the additive `20261022231354_external_activity_catalogue_kinds.sql`
-migration before releasing this Flutter reader. New clients call
-`list_external_activities_v2` and `get_external_activity_v2`. Missing RPCs remain
+Apply the four additive catalogue-kinds, multi-source, geography and operations
+migrations in canonical order for this integration. The current Flutter reader
+calls `list_external_activities_v3` and `get_external_activity_v2`; the geographic
+migration is required before this client release. The earlier V2 list stays
+available for existing clients. Missing RPCs remain
 visible read failures; there is no client fallback to examples or provider APIs.
 Settings → Sandbox → Activities Split Mode remains off by default.
 

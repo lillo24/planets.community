@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "qualification": "Local code/data qualification complete; final exact-head protected CI and merge tracked in PR298. No hosted activation or deployment.",
+  "base_sha": "3f1ae160b60e2133e2e5d71a7bd401d53c2cbce2",
+  "upgrade": {
+    "from": 142,
+    "to": 146,
+    "preserved_tables": 232,
+    "preserved_original_rows": 271,
+    "per_file_preservation": [
+      {
+        "version": "20261022231354",
+        "sha256": "d94302b99efa93dec14cd849ad7f0cc4b84120017162103644ff1f694eec4a65",
+        "preserved": true
+      },
+      {
+        "version": "20261023093757",
+        "sha256": "f48e5d392709356727bdfb17803088a16a0215d499a81d9feecc7860fe9e2ea4",
+        "preserved": true
+      },
+      {
+        "version": "20261023101305",
+        "sha256": "7884e2367f8572654c96a02697de9c04f761fcf500f47c0f1759270824d147e8",
+        "preserved": true
+      },
+      {
+        "version": "20261023113057",
+        "sha256": "e7f4fa5e094bf6dfbc06e52fc1ad7c12baf037918396615686f192a029a603ae",
+        "preserved": true
+      }
+    ],
+    "legacy_importer_oid_grants_and_identity_preserved": true,
+    "no_op_retry": true
+  },
+  "sql_review": [
+    {
+      "version": "20261022231354",
+      "file": "20261022231354_external_activity_catalogue_kinds.sql",
+      "sha256": "d94302b99efa93dec14cd849ad7f0cc4b84120017162103644ff1f694eec4a65",
+      "predecessor_inventory_sha256": "615974da755586b176db2ed625cc9ec6d47dd3b519897133255e7d690adf0c3b"
+    },
+    {
+      "version": "20261023093757",
+      "file": "20261023093757_external_activity_multi_source.sql",
+      "sha256": "f48e5d392709356727bdfb17803088a16a0215d499a81d9feecc7860fe9e2ea4",
+      "predecessor_inventory_sha256": "7e2d7d76b8aae2c6787918ac3ef31a04d4c08499bb19231df5aa92827aa6a838"
+    },
+    {
+      "version": "20261023101305",
+      "file": "20261023101305_external_activity_geography.sql",
+      "sha256": "7884e2367f8572654c96a02697de9c04f761fcf500f47c0f1759270824d147e8",
+      "predecessor_inventory_sha256": "bf552f1cb9e760396ffe35f81d73bd17c1c5bc9f8927464184e117653254d9aa"
+    },
+    {
+      "version": "20261023113057",
+      "file": "20261023113057_external_activity_operations.sql",
+      "sha256": "e7f4fa5e094bf6dfbc06e52fc1ad7c12baf037918396615686f192a029a603ae",
+      "predecessor_inventory_sha256": "e587f3579b7dbd0b121fe5a0512ea7d80084ab647996b396524d8ad5bd3772c9"
+    }
+  ],
+  "municipal": {
+    "observed_at": "2026-10-23T12:24:21.447Z",
+    "source_id": "trento-open-sports-facilities",
+    "parser_version": "trento-free-facilities-csv-v1",
+    "decoded_utf8_sha256": "f7a2820e56ce27a12156a64c7223604734997c1e2b27db8bb224af34e86a7e4b",
+    "summary": {
+      "equipment_records": 116,
+      "named_places": 60,
+      "dataset_links": 37,
+      "missing_geometry": 0,
+      "unknown_types": 0
+    },
+    "accepted": 116,
+    "rejected": 0,
+    "repeat_changed": 0,
+    "pages": 4,
+    "map_verification": {
+      "list": 116,
+      "mapped": 116,
+      "filtered": 5,
+      "disabled_read_denied": true
+    },
+    "provider_fetches": 1,
+    "statement": "One actual official CSV fetch; complete local canonical import and repeat of that exact fetched snapshot. Fixtures cleaned. No hosted writes."
+  },
+  "checks": {
+    "tooling": 208,
+    "mobile": 4314,
+    "mobile_skips": 2,
+    "web": 405,
+    "web_skips": 2,
+    "site": 60,
+    "rendered_scoped": 125,
+    "rendered_pngs": 120,
+    "mobile_analysis": "no issues",
+    "changed_prettier": "pass",
+    "sql_lint": "pass",
+    "security_advisors": "pass",
+    "generated_types_drift": "pass",
+    "synthetic_service_anonymous_http": "pass",
+    "clean_local_migrations": 146,
+    "pgTAP_files": 175,
+    "pgTAP_assertions": 8452
+  },
+  "android": {
+    "command": "flutter build apk --debug --target-platform android-arm64 --dart-define=ENABLE_DEMO_TOOLS=false",
+    "result": "pass",
+    "apk_sha256": "33c544945ff421d721f08825532c4bc22cff69cebd3d5cc0930be8dc965f1032",
+    "physical_device": "48091FDAS0041A absent; attached emulator not used",
+    "ios": "not run",
+    "release_signing": "not attempted"
+  },
+  "limitations": [
+    "Agenda Trento rights checkpoint remains blocked",
+    "ODH local sports/course coverage checkpoint blocked; no connector",
+    "No verified live course/event source in this queue",
+    "Windows Podman db reset failed twice; task-owned fresh starts succeeded, including all146 migrations and full8452 assertions, without health bypass",
+    "Six unchanged-main Prettier baseline warnings remain; changed paths and full Dart formatting pass"
+  ]
+}

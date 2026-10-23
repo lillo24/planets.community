@@ -58,6 +58,11 @@ new type remains the documented `other-sports` with its source label, and produc
 the parser mapping before calling that run qualified. Empty/duplicate-ID/schema/
 truncated municipal exports fail; no historical row-count threshold is assumed.
 Explicit successful empty traversals remain supported for other capable adapters.
+Unexpected record or schedule validation rejections likewise return nonzero
+`source_record_drift` with counts, even if the existing transaction saved a valid
+subset. An all-rejected malformed export cannot appear as a green empty refresh.
+Routine explicit outside-window or unlicensed-record exclusions retain their
+existing rejection policy; no rejected body is logged or used to delete old rows.
 
 ## Private inspection and maintenance
 

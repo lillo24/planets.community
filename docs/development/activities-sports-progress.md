@@ -16,18 +16,104 @@ Pack: `ACTSPORTS-2026-10-23`. Initial 002 runner: Codex thread
 READY. The file-watching heartbeat was deleted after detection. No competing
 runner for this queue was found in current tasks, worktrees or open PRs.
 
-| Step            | Status                                   | Evidence / next action                                         |
-| --------------- | ---------------------------------------- | -------------------------------------------------------------- |
-| 002 ACTCAT02    | Implemented and locally verified         | Existing 4790cf59; navigation repair ed9127b9; cumulative #298 |
-| 003 ACTUI02     | Implemented and locally verified         | 7940d8c9                                                       |
-| 004 SPORTUI01   | Implemented and locally verified         | 38d302b4                                                       |
-| 005 ACTSRC02    | Implemented and locally verified         | 71d5bf63; 144-migration replay                                 |
-| 006 SPORTDATA01 | Implemented; real local source verified  | 846a256b; 116 records; no hosted publication                   |
-| 007 ACTGEO01    | Implemented and locally verified         | 145 migrations; full 8415 assertions                           |
-| 008 ACTMAP01    | Implemented and locally verified         | Shared renderer; zero provider attempts                        |
-| 009 SPORTAPI02  | Assessment complete; connector blocked   | No eligible local coverage verified; proceed to 010            |
-| 010 ACTOPS01    | Implemented and locally verified         | 146-migration upgrade; 37 SQL assertions; real operator HTTP   |
-| 011 ACTQA01     | Queued final cumulative validation/merge | Fresh current-main SQL proof and all required CI before merge  |
+| Step            | Status                                           | Evidence / next action                                         |
+| --------------- | ------------------------------------------------ | -------------------------------------------------------------- |
+| 002 ACTCAT02    | Implemented and locally verified                 | Existing 4790cf59; navigation repair ed9127b9; cumulative #298 |
+| 003 ACTUI02     | Implemented and locally verified                 | 7940d8c9                                                       |
+| 004 SPORTUI01   | Implemented and locally verified                 | 38d302b4                                                       |
+| 005 ACTSRC02    | Implemented and locally verified                 | 71d5bf63; 144-migration replay                                 |
+| 006 SPORTDATA01 | Implemented; real local source verified          | 846a256b; 116 records; no hosted publication                   |
+| 007 ACTGEO01    | Implemented and locally verified                 | 145 migrations; full 8415 assertions                           |
+| 008 ACTMAP01    | Implemented and locally verified                 | Shared renderer; zero provider attempts                        |
+| 009 SPORTAPI02  | Assessment complete; connector blocked           | No eligible local coverage verified; proceed to 010            |
+| 010 ACTOPS01    | Implemented and locally verified                 | 146-migration upgrade; 37 SQL assertions; real operator HTTP   |
+| 011 ACTQA01     | Locally qualified; final protected CI/merge next | 146 clean migrations; 8,452 SQL / 4,314 mobile; #298           |
+
+## 011 final pre-merge qualification checkpoint
+
+Current main `3f1ae160` is included through merge `412008ad`, preserving the merged
+PEOPLEHOME Home/General-link work. The one cumulative main-targeted
+[PR #298](https://github.com/lillo24/planets.community/pull/298) owns the final
+exact-head CI, delegated SQL proof and merge outcome; no intermediate feature
+merge or takeover of unmerged MAPMOCK/VIS01 work occurred.
+
+Completed local qualification:
+
+- Full `flutter gen-l10n`, Dart formatting, `flutter analyze`: clean; full
+  `flutter test --concurrency=2`: **4,314 PASS, two existing skips**.
+- `npm run check:web`: **208 tooling tests** (fresh tooling rerun after the final
+  operations diagnostic fix), **405 web tests, two existing skips**, lint,
+  typecheck, production build and static-invitation checks pass.
+  `npm run check:site`: **60 tests**, lint/typecheck, build and Wrangler deployment
+  **dry-run** pass. No website deployment occurred.
+- `flutter build apk --debug --target-platform android-arm64
+--dart-define=ENABLE_DEMO_TOOLS=false`: pass. APK SHA-256 is in the
+  [safe evidence manifest](evidence/activities-sports/integration-local-qualification.json).
+  This is a compile qualification, not a signed release or on-device test.
+  Existing sentry_flutter/share_plus built-in Kotlin deprecation warnings remain;
+  no unrequested dependency upgrade or signing change was made.
+- Actual main **142→146** populated upgrade: **232 original tables / 271 rows**
+  and every original column preserved after each file. Warmed old import calls,
+  importer OIDs/grants, event UUID/prose and no-op retry survive. The four raw
+  migration hashes/predecessor digests are recorded in the manifest. Existing
+  published SQL bytes are unchanged. `db:lint`, `db:advisors` and standard
+  `db:types:check` pass. The fresh 146-file clean start and full pgTAP pass: **175 files / 8,452 assertions**.
+- Guarded `activities:verify:local` passes real anonymous/service contracts,
+  legacy upgrade, A/A and A/B races, source isolation/partial/disable, V3 List/Map,
+  signed cursors, 2,406-row GiST/cap, private operations, no-write dry-run,
+  lease recovery and late completion fencing. Fixtures are removed.
+- Fresh opt-in `activities:trento:verify:local -- --evidence <new-path>`:
+  **116 actual equipment records / 60 named places**, zero rejected/unknown types,
+  37 dataset links, four pages, zero-change repeat of the same single fetched
+  snapshot. V3 complete **List 116 / Map 116**, query+discipline **5 / 5**, stable
+  external namespace and post-disable list/detail denial pass. Actual CSV hash is
+  unchanged from 006. All source rows/receipts were cleaned; no hosted data.
+- Fresh scoped external/ACTMET/opt-in municipal run: **125 PASS**, **120 PNGs**.
+  Actual IT/EN, light/dark, 320/360dp, 2× text captures were inspected, including
+  real places, unknown/weekly courses, map/chooser/selection, partial/stale/error.
+  Captures are synthetic except those explicitly labelled real municipal data.
+  The physical phone `48091FDAS0041A` is absent. An attached emulator was not used;
+  there is no physical Android/iOS or store-release claim.
+
+Inspection repaired a monitoring gap: unexpected record/schedule validation
+rejections now produce nonzero `source_record_drift` diagnostics instead of a
+green zero-accepted export. Known outside-window/rights exclusions keep the
+existing explicit policy; no canonical erasure or test weakening was introduced.
+The real-import verifier now proves V3 List/Map equality and source-disable denial.
+
+Windows/Podman `db reset` failed with `DbConnectError` and later `DbSetupError`.
+Only the task-owned `planets-resume02-qa` stack was stopped/restarted from empty;
+the 142 and 146 fresh starts and actual-main upgrade passed without health bypass.
+The shared VM was already running and stays running; peer backends are untouched.
+
+The broad root formatter reports six **unchanged-main** baseline files:
+`scripts/verify-local-proposal-skills.mjs`, `evidence/hero05/README.md`,
+`evidence/navperf01/README.md`, `evidence/tut04/README.md`,
+`docs/development/msgrefresh01-stable-refresh.md` and
+`docs/development/navigation-headers.md`. The three evidence README paths are
+under `docs/development/`. Their diff against main is empty. All changed
+Prettier paths and full Dart formatting pass; unrelated files were preserved.
+
+Immediate next action: commit this fully qualified local checkpoint, push the
+reviewed final head, compare the fresh CI review artifact with all four
+actual SQL hashes/predecessors, post the authorized exact proof through verified
+owner ID **80243470**, and rerun required Validation. Inspect the populated CI
+semantics and every required status; then mark ready and merge #298 at that exact
+head, record its immutable merge/result in the PR, and clean only owned runtime
+and worktree state. The progress file is a pre-merge source checkpoint; the linked
+PR supplies the final merge SHA and exact CI artifacts without a circular commit.
+
+The [operations runbook](activities-operations.md) is the activation/rollback
+handoff. Reconcile any older hosted migration backlog before these four additions;
+the programme does not imply that the existing hosted schemas match main. All new
+sources/schedules remain unactivated, no hosted migration/import was performed,
+and Android signing/configuration/unused Play version-code inputs from RESUME01
+remain external release prerequisites. Agenda rights and ODH useful local coverage
+stay explicitly blocked; no actual course/event source is claimed.
+
+Optional phone review: actual Settings ON/OFF and return; Sports list/map/filter/
+cluster/detail/back; real source/dataset link; account/background invalidation and
+native Tavoli/Messages. Use only the owner's specified serial when available.
 
 ## 010 ACTOPS01 local qualification
 

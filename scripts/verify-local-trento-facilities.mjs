@@ -130,6 +130,58 @@ try {
     p_activity_id: items[0].id,
   });
   assert.equal(detail.id, items[0].id);
+  async function allV3(mapOnly, filters = {}) {
+    const result = [];
+    let cursor;
+    let traversals = 0;
+    do {
+      const page = await read("list_external_activities_v3", {
+        p_kind: "place",
+        p_category: "sports",
+        p_map_only: mapOnly,
+        p_limit: 30,
+        p_cursor: cursor,
+        ...filters,
+      });
+      assert.equal(page.scope, "external_activities");
+      result.push(...page.items);
+      cursor = page.next_cursor;
+      assert.ok(++traversals <= 67, "Bound complete V3 traversal");
+    } while (cursor);
+    return result;
+  }
+  const listV3 = await allV3(false);
+  const mapV3 = await allV3(true);
+  assert.deepEqual(
+    mapV3.map((x) => x.id).sort(),
+    listV3
+      .filter((x) => x.geometry != null)
+      .map((x) => x.id)
+      .sort(),
+    "Actual map is exactly the geometry subset of the complete actual List",
+  );
+  assert.equal(listV3.length, first.accepted);
+  assert.ok(mapV3.every((x) => x.map_identity === `external_activity:${x.id}`));
+  const filters = {
+    p_discipline: listV3[0].discipline,
+    p_query: listV3[0].title.split(" ")[0],
+  };
+  const filteredList = await allV3(false, filters);
+  const filteredMap = await allV3(true, filters);
+  assert.ok(filteredList.length > 0);
+  assert.deepEqual(
+    filteredMap.map((x) => x.id).sort(),
+    filteredList
+      .filter((x) => x.geometry != null)
+      .map((x) => x.id)
+      .sort(),
+  );
+  await sql`update private.external_activity_sources set enabled=false where source_id=${source.sourceId}`;
+  assert.equal((await allV3(true)).length, 0);
+  assert.equal(
+    await read("get_external_activity_v2", { p_activity_id: detail.id }),
+    null,
+  );
   assert.deepEqual(
     await sql`select count(*)::integer as count from public.projects`,
     nativeBefore,
@@ -144,6 +196,12 @@ try {
     page: pages[0],
     detail,
     pages: pages.length,
+    map_verification: {
+      list: listV3.length,
+      mapped: mapV3.length,
+      filtered: filteredList.length,
+      disabled_read_denied: true,
+    },
     statement:
       "One actual official CSV fetch; complete local canonical import and repeat of that exact fetched snapshot. Fixtures cleaned. No hosted writes.",
   };
