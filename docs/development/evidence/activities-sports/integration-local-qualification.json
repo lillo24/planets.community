@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "qualification": "Product/local qualification complete; separate source-only policy prerequisite PR310 CI pending before current-head PR298 validation/merge. No hosted activation or deployment.",
+  "qualification": "Local eligible implementation and integration verified. PR298 is the authoritative current-head CI/protected-merge record. Hosted application/sources/jobs remain withheld.",
   "base_sha": "3f1ae160b60e2133e2e5d71a7bd401d53c2cbce2",
   "upgrade": {
     "from": 142,
@@ -135,15 +135,15 @@
     }
   ],
   "sql_review_inventory_basis": "Exact canonical Git blobs; complete actual PR base inventory, then sorted additions, matching the unmodified CI gate. An earlier timestamp addition does not use only a chronological prefix.",
-  "integration_base_sha": "52e301bb665748065e23171d2a4d6ffc92bdefe1",
+  "integration_base_sha": "34649049db675b1b436e6a0ce0aefefaf4a0a4a0",
   "current_source_gate": {
-    "policy": "STAGING-AUTO03 from independently merged PR306",
-    "status": "blocked-unsafe",
+    "policy": "independently merged PR310 on STAGING-AUTO03",
+    "status": "source-only candidate; actual CI proof required",
     "version": "20261023093757",
-    "reason": "Destructive or role/system DDL: top-level DROP INDEX",
-    "legacy_owner_comment": "Historical technical audit only; no current authorization path",
+    "hosted_status": "review-required-for-hosted; explicit independent writer refusal",
+    "legacy_owner_comment": "Technical audit only; no current hosted authorization",
     "policy_unchanged_in_feature_pr": true,
-    "next": "Separate independently validated policy contract for reviewed single-source index removal; no history rewrite or guard bypass"
+    "next": "Verify PR298 exact-head populated/security receipt and all five required checks, then protected merge; no hosted application."
   },
   "sql_review_basis": "Historical exact-head 274b5233/base3f1ae160 proof. These unchanged canonical SQL hashes remain useful; its predecessor digests and owner comment are not current standing-policy authorization.",
   "latest_main_integration": {
@@ -155,12 +155,33 @@
     "navigation_calendar_widgets": 88,
     "calendar_real_auth_http_assertions": 65,
     "mobile_analysis": "no issues",
-    "mailbox": "Initial default54324 refused; loopback-only MAILPIT_URL support added and successful isolated54924 rerun."
+    "mailbox": "Initial default54324 refused; loopback-only MAILPIT_URL support added and successful isolated54924 rerun.",
+    "code_base_sha": "34649049db675b1b436e6a0ce0aefefaf4a0a4a0",
+    "policy_main_merge": "73110100",
+    "full_pgtap_files": 176,
+    "full_pgtap_assertions": 8503,
+    "tooling_passed": 287,
+    "sql_lint": "pass",
+    "security_advisors": "pass",
+    "calendar_populated_upgrade": {
+      "tables": 196,
+      "functions": 555,
+      "warmed_readers": 6,
+      "historical_fixtures": 3000,
+      "query_ms": 1.605,
+      "rollback_only": true
+    },
+    "android_arm64_debug": {
+      "sha256": "bd42ac3376dc7f9b1aa9a1af2dcb0d4513a93949a978331e666e4e8e1f05e3f6",
+      "demo_tools": false,
+      "compile_only": true,
+      "device_or_release_claim": false
+    }
   },
   "policy_prerequisite": {
     "pr": 310,
     "head": "2a5599026728b4d2854cf0efd4b2a82d37fb4106",
-    "status": "independent required CI pending",
+    "status": "merged; all five required checks passed",
     "scope": "source-only exact ACTSRC02 index retirement; explicit hosted refusal; no generic DROP exception",
     "tooling_passed": 258,
     "focused_passed": 72,
@@ -171,6 +192,47 @@
       "unsafe_effects": 3,
       "source_identity_and_leases": true,
       "original_rows_and_catalog_preserved": true
-    }
+    },
+    "merge_sha": "34649049db675b1b436e6a0ce0aefefaf4a0a4a0",
+    "run_id": 39967502645,
+    "safety_artifact": 12508515489,
+    "safety_zip_sha256": "7bd2ff912bbbd0c19543e976c36df908e4cc385a0c46ceb10f2538acfd08a82b",
+    "ci_preserved_tables": 200,
+    "ci_preserved_rows": 1394,
+    "ci_predecessor_migrations": 123,
+    "ci_final_migrations": 143
+  },
+  "current_upgrade": {
+    "schema_base_sha": "d9f559951b79be568004b7507b16f4b4b216db48",
+    "code_base_sha": "34649049db675b1b436e6a0ce0aefefaf4a0a4a0",
+    "from": 143,
+    "to": 147,
+    "preserved_tables": 232,
+    "preserved_original_rows": 234,
+    "per_file_preservation": [
+      {
+        "version": "20261022231354",
+        "sha256": "d94302b99efa93dec14cd849ad7f0cc4b84120017162103644ff1f694eec4a65",
+        "preserved": true
+      },
+      {
+        "version": "20261023093757",
+        "sha256": "0fec4437bf512a14c6218c3f7e7bc3b810c5414dcc44d8d2c2db72010b742fd6",
+        "preserved": true
+      },
+      {
+        "version": "20261023101305",
+        "sha256": "115555740a898d5a2d32ff9ebe35d188c22a3e8b11e8d8105687ad56253412e4",
+        "preserved": true
+      },
+      {
+        "version": "20261023113057",
+        "sha256": "e7f4fa5e094bf6dfbc06e52fc1ad7c12baf037918396615686f192a029a603ae",
+        "preserved": true
+      }
+    ],
+    "legacy_importer_oid_grants_and_identity_preserved": true,
+    "no_op_retry": true,
+    "canonical_receipt_parity": 147
   }
 }

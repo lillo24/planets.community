@@ -10,18 +10,29 @@ per-step-merge and personal-posting waits below are historical and superseded.
 RESUME01 is merged at 9945ad01 with all required CI green; local release
 preparation is recorded. This cumulative branch now includes that merged code.
 
-Latest-main checkpoint: STAGING-AUTO03 #306 at `52e301bb` is included through
-`e886c946`; calendar #309 at `d9f55995` is included through `26ad03fc`.
-Standing trusted-base policy replaces owner fingerprint authorization. It blocks
-005's published `DROP INDEX private.external_activity_one_enabled_source` until
-a separate independent contract lands. That policy-only prerequisite is
-[PR #310](https://github.com/lillo24/planets.community/pull/310), head `2a559902`:
-exact SQL pin plus actual predecessor/index/identity/RLS/grant proofs and real
-rollback-only negative controls, **source only** with an explicit hosted-writer
-denial. Local policy tooling **258 PASS**, focused **72 PASS**, real PostgreSQL
-controls PASS; its independent CI is pending. The feature PR contains no policy
-or dependency edits and retains all published SQL bytes. Both new CLIs use direct
-Node commands. See [the policy record](activities-sports-policy-blocker.md).
+Final committed local qualification checkpoint: STAGING-AUTO03 #306 is included
+through `e886c946`; calendar #309 through `26ad03fc`. The separate source-only
+policy prerequisite [#310](https://github.com/lillo24/planets.community/pull/310)
+merged at **`34649049`**, reviewed head `2a559902`, after **all five required checks
+passed** in Validation `39967502645`. Its independently verified artifact proves
+123→143 migrations, 200 predecessor tables / 1,394 rows, and all Auth/Storage/
+catalog/type/retry/locking/negative probes. That merged main is included through
+`73110100`. This feature PR has no policy/dependency edits or rewritten SQL.
+Both new CLIs use direct Node commands. See [the policy resolution and hosted
+hold](activities-sports-policy-blocker.md).
+
+Standing trusted-base policy replaces owner fingerprint authorization. The exact
+005 index retirement has an independently installed **source-only** contract;
+actual predecessor, retained identity/index/constraint/RLS/grant and populated
+row checks remain mandatory. Generic destructive-DDL checks and the explicit
+hosted-writer denial remain. Other unproven hosted effects are still held.
+Fresh integrated tooling: **287 PASS**. Actual current schema-base `d9f55995`
+(143 canonical migrations, unchanged by policy-only #310) → **147**: **232 original
+tables / 234 rows** and every original column preserved after each addition;
+legacy event UUID, importer OIDs/grants and no-op retry pass. All four execution
+hashes are canonical Git LF hashes. Full upgraded-schema pgTAP: **176 files /
+8,503 assertions PASS**; canonical executed-receipt parity **147/147 PASS**.
+Standard database lint, security advisors and generated-type drift pass.
 
 Calendar integration on the owned local backend upgrades **146→147** migrations;
 its **50 pgTAP assertions**, standard generated-type check, **88 navigation/calendar
@@ -29,11 +40,25 @@ widget tests**, **65 real Auth/HTTP assertions** and full mobile analysis pass.
 The calendar verifier's default mailbox port initially failed against this
 isolated stack. It now honors a loopback-only `MAILPIT_URL`, matching other local
 verifiers; the successful rerun uses 54924. No peer backend or port was changed.
+The populated calendar rollback probe also preserves **196 tables / 555 functions
+/ six warmed readers** and checks the chronological index over 3,000 synthetic
+meetings (1.605ms observed). Latest ARM64 debug build passes with this calendar
+integration; SHA-256 `bd42ac3376dc7f9b1aa9a1af2dcb0d4513a93949a978331e666e4e8e1f05e3f6`.
+This is compile qualification with Demo tools OFF; no configured release or device
+claim. Windows fresh-start exclusions must be quoted as one argument:
+`--exclude 'studio,edge-runtime,logflare,vector,supavisor,imgproxy'`. An initial
+unquoted attempt pulled excluded images; only its verified task-owned process
+and child pulls were stopped before the successful retry. No peer or VM restart.
+
 The earlier complete product qualification and 274b5233 owner proof/CI remain
-historical evidence, not current merge authorization. Next: finish #310's five
-protected checks and independent safety receipt, merge it normally, incorporate
-that merged main into this existing branch, then run and inspect #298's current
-complete CI before protected merge. Keep hosted application/sources/jobs held.
+historical evidence, not current merge authorization. **#298 is the authoritative
+record of this checkpoint's subsequent exact-head CI and protected merge.** On
+resume, inspect its current state first; do not restart the integration if merged.
+Next at this source checkpoint: publish the cumulative head, inspect the new
+trusted-policy populated/security evidence and all five required checks, refresh
+the delegated source-review audit, then protected-merge that exact current head.
+Keep hosted application/sources/jobs held. A post-merge PR update records the
+immutable result without a circular extra source commit.
 
 Pack: `ACTSPORTS-2026-10-23`. Initial 002 runner: Codex thread
 `01a165d0-5cc8-7ba0-8ce1-c5b76de7b120`. Entry point found on `origin/main` at
@@ -41,18 +66,18 @@ Pack: `ACTSPORTS-2026-10-23`. Initial 002 runner: Codex thread
 READY. The file-watching heartbeat was deleted after detection. No competing
 runner for this queue was found in current tasks, worktrees or open PRs.
 
-| Step            | Status                                            | Evidence / next action                                         |
-| --------------- | ------------------------------------------------- | -------------------------------------------------------------- |
-| 002 ACTCAT02    | Implemented and locally verified                  | Existing 4790cf59; navigation repair ed9127b9; cumulative #298 |
-| 003 ACTUI02     | Implemented and locally verified                  | 7940d8c9                                                       |
-| 004 SPORTUI01   | Implemented and locally verified                  | 38d302b4                                                       |
-| 005 ACTSRC02    | Implemented and locally verified                  | 71d5bf63; 144-migration replay                                 |
-| 006 SPORTDATA01 | Implemented; real local source verified           | 846a256b; 116 records; no hosted publication                   |
-| 007 ACTGEO01    | Implemented and locally verified                  | 145 migrations; full 8415 assertions                           |
-| 008 ACTMAP01    | Implemented and locally verified                  | Shared renderer; zero provider attempts                        |
-| 009 SPORTAPI02  | Assessment complete; connector blocked            | No eligible local coverage verified; proceed to 010            |
-| 010 ACTOPS01    | Implemented and locally verified                  | 146-migration upgrade; 37 SQL assertions; real operator HTTP   |
-| 011 ACTQA01     | Locally qualified; policy prerequisite CI pending | #310 source-only contract, then #298 current-head CI           |
+| Step            | Status                                                   | Evidence / next action                                         |
+| --------------- | -------------------------------------------------------- | -------------------------------------------------------------- |
+| 002 ACTCAT02    | Implemented and locally verified                         | Existing 4790cf59; navigation repair ed9127b9; cumulative #298 |
+| 003 ACTUI02     | Implemented and locally verified                         | 7940d8c9                                                       |
+| 004 SPORTUI01   | Implemented and locally verified                         | 38d302b4                                                       |
+| 005 ACTSRC02    | Implemented and locally verified                         | 71d5bf63; 144-migration replay                                 |
+| 006 SPORTDATA01 | Implemented; real local source verified                  | 846a256b; 116 records; no hosted publication                   |
+| 007 ACTGEO01    | Implemented and locally verified                         | 145 migrations; full 8415 assertions                           |
+| 008 ACTMAP01    | Implemented and locally verified                         | Shared renderer; zero provider attempts                        |
+| 009 SPORTAPI02  | Assessment complete; connector blocked                   | No eligible local coverage verified; proceed to 010            |
+| 010 ACTOPS01    | Implemented and locally verified                         | 146-migration upgrade; 37 SQL assertions; real operator HTTP   |
+| 011 ACTQA01     | Local qualification complete; protected delivery in #298 | 147 migrations; 8,503 assertions; 287 tooling; #310 merged     |
 
 ## 011 historical qualification checkpoint before STAGING-AUTO03
 

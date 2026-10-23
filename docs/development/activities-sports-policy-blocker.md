@@ -1,78 +1,60 @@
-# Activities/Sports source-merge policy blocker
+# Activities/Sports source-policy resolution and hosted hold
 
-Current trusted base: `52e301bb665748065e23171d2a4d6ffc92bdefe1`, merged
-[STAGING-AUTO03 #306](https://github.com/lillo24/planets.community/pull/306).
-Feature integration remains on [#298](https://github.com/lillo24/planets.community/pull/298).
-Current main additionally includes calendar #309 at `d9f55995`; its merge into
-the feature branch does not change this policy. The separately validated
-prerequisite is [#310](https://github.com/lillo24/planets.community/pull/310),
-head `2a559902`. It is pending independent required CI, not yet installed.
+The source blocker introduced by [STAGING-AUTO03 #306](https://github.com/lillo24/planets.community/pull/306)
+was resolved through the **separate, independently validated policy prerequisite
+[#310](https://github.com/lillo24/planets.community/pull/310)**, merged at
+`34649049db675b1b436e6a0ce0aefefaf4a0a4a0`. All five required checks passed in
+[Validation 39967502645](https://github.com/lillo24/planets.community/actions/runs/39967502645).
+The cumulative feature implementation stays in [#298](https://github.com/lillo24/planets.community/pull/298),
+which includes that merged main and supplies its own final CI/merge record.
 
-The new executable source gate classifies
-`20261023093757_external_activity_multi_source.sql` as **blocked-unsafe**:
-`Destructive or role/system DDL`. Its canonical Git SHA-256 is
-`0fec4437bf512a14c6218c3f7e7bc3b810c5414dcc44d8d2c2db72010b742fd6`.
-The triggering statement at line 2 is:
+The original source rejection at trusted base `52e301bb` was 005 line 2:
 
 ```sql
 drop index private.external_activity_one_enabled_source;
 ```
 
-This deliberately removes the predecessor's one-enabled-source exclusivity for
-ACTSRC02. It deletes no catalogue rows and does not widen raw table grants;
-independent source rights/publication, private RLS, V1 compatibility, atomic
-leases, source identity and capacity/failure tests remain in place. Nonetheless,
-the standing policy treats every top-level `DROP` as source-blocking. Successful
-local data/authorization tests cannot override that executable decision.
+ACTSRC02 deliberately retires the MVP's one-enabled-source restriction. It
+deletes no catalogue rows and retains independent source rights/publication,
+private RLS, source/upstream identity, V1 compatibility and leased atomic imports.
+Generic `DROP` remains source-blocking. Only canonical version `20261023093757`,
+file `20261023093757_external_activity_multi_source.sql`, SHA-256
+`0fec4437bf512a14c6218c3f7e7bc3b810c5414dcc44d8d2c2db72010b742fd6`
+selects the new **source-only** contract. The pin alone is insufficient: actual
+catalog proof must find the unique btree `(enabled) WHERE enabled` index on the
+expected private table, retain all other indexes/constraints and identity keys,
+and preserve raw-role denials, owners, column grants, RLS and populated rows.
+Wrong predecessors or unrelated contract loss remain fatal.
 
-The other additions are `review-required-for-hosted`, which alone permits source
-merge while holding hosted application:
+Independent real PostgreSQL controls passed three wrong definitions, unrelated
+index loss, grant widening and RLS-disable denials. Distinct source/upstream IDs
+and per-source lease fences survive; all original catalog/rows match after
+rollback. Policy-only local tooling: 258 PASS; focused: 72 PASS. The independently
+verified CI ZIP digest is
+`7bd2ff912bbbd0c19543e976c36df908e4cc385a0c46ceb10f2538acfd08a82b`, artifact
+`12508515489`: exact reviewed tree, 123→143 migrations, 200 original tables /
+1,394 rows, 20 per-file inventory/preservation/effect witnesses, Auth, Storage,
+types, no-op retry, writer/startup and negative controls passed.
 
-- 002: new direct client projection grants need an established independent contract.
-- 007: existing-table/geographic effects need an established independent contract.
-- 010: its index belongs to an existing private table, outside the isolated-new-table class.
+**Hosted application remains withheld.** This migration's witness is forced to
+`review-required-for-hosted`; the hosted authorizer separately rejects the exact
+pending migration even if a witness incorrectly promotes it. Other required
+hosted contracts remain:
 
-STAGING-AUTO03 intentionally replaces owner fingerprint comments as an
-authorization path. The earlier exact owner-account proof on source `274b5233`
-is retained as historical technical review; another comment cannot unblock the
-new gate. The source PR must not install its own policy exception, edit the
-trusted validator or rewrite already published migration history.
+- 002: new direct client projection grants.
+- 005: importer/source configuration and other privileged effects beyond the
+  narrowly reviewed index retirement.
+- 007: existing-table/geographic effects.
+- 010: existing-table index and operations effects.
 
-The next action is a **separate, independently validated policy contract** for
-this specific reviewed index change, with the original index definition,
-unchanged RLS/grants and prior rows, compatible released readers, real independent
-authorization/identity/concurrency checks and negative controls for unrelated
-index/privilege changes. Hosted eligibility for the other functions/effects must
-remain held until their own contracts qualify. No broad DROP exception or
-head-comment bypass is appropriate.
+These source-valid holds withhold the whole hosted chain. Owner fingerprint
+comments are historical technical audit under the current policy, never an
+authorization bypass. No policy/validator/dependency changes occur in the feature
+PR, no published migration was rewritten, and no hosted schema/configuration,
+source, scheduler or deployment was changed to resolve the source rejection.
 
-#310 implements that prerequisite as a **source-only** contract. Its exact SQL
-pin must also pass real predecessor/index/retained identity and raw-role/RLS
-proofs; a wrong predecessor or unrelated index/constraint loss remains fatal.
-Its PostgreSQL controls pass three wrong definitions and three unsafe mutation
-denials, retain distinct source/upstream identities and leases, and compare
-original catalog/rows after rollback. Local focused tests: 72 PASS; all tooling:
-258 PASS. The hosted authorizer independently rejects the exact pending migration
-even if a witness is incorrectly promoted. It changes no canonical SQL, hosted
-configuration or writer protection. It must pass the existing five required
-checks and merge separately before #298 can use its trusted contract.
-
-Reproduce the source decision without hosted access:
-
-```sh
-node --input-type=module -e "import {readMigrations} from './scripts/release/migrations.mjs'; import {migrationCandidate} from './scripts/release/eligibility.mjs'; console.log(migrationCandidate(readMigrations(process.cwd()).find(m=>m.version==='20261023093757')));"
-```
-
-The integration preserves every trusted policy/dependency file from current
-main. The two convenience npm aliases were removed to keep `package.json`
-unchanged; their entry points remain `node scripts/operate-external-activities.mjs`
-and `node scripts/verify-local-trento-facilities.mjs`. The ingestion workflow
-already invokes the Node entry point directly. The cumulative feature branch,
-all tested earlier commits and published SQL bytes are retained.
-
-See [progress and qualification](activities-sports-progress.md) for the 146-file
-clean replay, 8,452 assertions, actual-main preservation, mobile/Android and real
-116-record municipal evidence. Physical phone review, signing inputs, ODH
-coverage and cleanup are independent limits; they are not this source gate's
-cause. No manual hosted migration, source/scheduler activation or deployment is
-performed to work around it.
+See [progress and qualification](activities-sports-progress.md) for actual-main
+143→147 preservation, 176 pgTAP files / 8,503 assertions, 287 tooling tests,
+mobile/Android, rendered and actual 116-record municipal evidence. Phone review,
+release signing/configuration, ODH coverage and guarded checkout cleanup remain
+independent limits, with precise next actions in the progress/runbook.

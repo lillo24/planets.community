@@ -93,12 +93,16 @@ expiry continues to hide unobserved rows without destroying them.
 
 ## Activation order — prepared, not executed on hosted systems
 
-Current main includes STAGING-AUTO03. Its trusted source gate presently blocks
-005's one-source index removal; see the [exact blocker](activities-sports-policy-blocker.md).
-Old owner fingerprint comments are historical review, not a current override.
-Resolve that separate policy contract and all hosted eligibility holds before
-attempting rollout. This feature PR leaves validator/workflow/dependency policy
-unchanged; direct Node commands above require no new npm aliases.
+Current main includes STAGING-AUTO03 and separately merged #310's exact
+**source-only** contract for 005's one-source index retirement; see the
+[policy resolution and hosted hold](activities-sports-policy-blocker.md).
+The hosted authorizer still refuses that pending migration, and the remaining
+catalogue/importer/geography/operations effects need independently installed
+hosted contracts. Resolve the whole hosted eligibility chain before rollout.
+Owner fingerprint comments are historical technical review, not an override.
+This feature PR leaves validator/workflow/dependency policy unchanged; direct
+Node commands above require no new npm aliases. The steps below are preparation,
+not authorization to apply SQL or activate sources/jobs during RESUME02.
 
 1. Merge reviewed code with protected Validation. Confirm all four forward
    catalogue/source/geography/operations migrations after current main are
