@@ -417,3 +417,8 @@ enabled = true
 # declarative_schema_path = "./schemas"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# Only this cross-issuer imagery route authenticates the fixed mock JWT inside
+# its handler. Ordinary map-provider retains gateway JWT verification.
+[functions.mock-basemap]
+verify_jwt = false

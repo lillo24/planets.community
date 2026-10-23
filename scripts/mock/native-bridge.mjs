@@ -13,6 +13,7 @@ import { createRuntime } from "../../supabase/functions/mock-personas/runtime.mj
 import { createClient } from "@supabase/supabase-js";
 import { NORMAL_ORIGIN, MOCK_ORIGIN, GENERATION } from "./target.mjs";
 import { PERSONAS } from "./world.mjs";
+import { basemapFixture } from "./basemap-fixture.mjs";
 
 export async function nativeBridge({
   directory,
@@ -66,6 +67,12 @@ export async function nativeBridge({
     MOCK_PERSONA_BROKER_URL:
       "http://127.0.0.1:57422/functions/v1/mock-personas",
     MOCK_FIXTURE_GENERATION: GENERATION,
+    LOCATION_MAP_TILES_ENABLED: "true",
+    LOCATION_MAP_CENTERS_ENABLED: "true",
+    LOCATION_DETAIL_TILES_ENABLED: "true",
+    LOCATION_MAP_CACHE_SECONDS: "60",
+    LOCATION_EDITOR_SEARCH_ENABLED: "true",
+    LOCATION_BASEMAP_BUDGET_ENABLED: "true",
     MOCK_QA_NORMAL_ID: normalSentinel.id,
     MOCK_QA_PROJECT: first.project,
     MOCK_QA_TAVOLO: first.tavolo,
@@ -139,6 +146,7 @@ export async function nativeBridge({
       return fetch(url.replace(MOCK_ORIGIN, mock.apiUrl), init);
     },
   });
+  const maps = basemapFixture({ normal, mock });
   async function body(req, max = 65536) {
     const chunks = [];
     let size = 0;
@@ -175,6 +183,32 @@ export async function nativeBridge({
     assert.ok(["127.0.0.1", "localhost"].includes(target.hostname));
     const server = http.createServer(async (req, res) => {
       const url = new URL(req.url, `http://127.0.0.1:${port}`);
+      if (
+        realm === "normal" &&
+        ["/functions/v1/mock-basemap", "/functions/v1/map-provider"].includes(
+          url.pathname,
+        )
+      ) {
+        // The only normal-host exception is the reviewed image-only handler.
+        // Its actual fixed-issuer Auth/RPCs reach the two disposable backends.
+        const imageOnly = url.pathname.endsWith("/mock-basemap");
+        assert.ok(
+          imageOnly || mode === "normal",
+          "Mock cannot use normal map-provider",
+        );
+        const response = await maps[
+          imageOnly ? "mockHandler" : "normalHandler"
+        ](
+          new Request(url, {
+            method: req.method,
+            headers: req.headers,
+            body: await body(req, 2048),
+          }),
+        );
+        res.writeHead(response.status, Object.fromEntries(response.headers));
+        res.end(Buffer.from(await response.arrayBuffer()));
+        return;
+      }
       if (realm === "mock" && url.pathname === "/functions/v1/mock-personas") {
         try {
           const response = await handler(
@@ -520,7 +554,13 @@ export async function nativeBridge({
       uploadReady: false,
       backend: "two-independent-disposable-local-Supabase-stacks",
       hostedProof: false,
-      personas: 5,
+      basemap: {
+        pixels: "controlled-PNG-fixture",
+        hostedProof: false,
+        ...maps.counts,
+      },
+      personas: PERSONAS.length,
+      nativePersonaJourneys: 5,
       schemaGeneration: GENERATION,
       processRestart: true,
       success: true,

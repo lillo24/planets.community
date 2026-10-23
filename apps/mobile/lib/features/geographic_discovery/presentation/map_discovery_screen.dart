@@ -14,6 +14,7 @@ import '../../auth/application/auth_session_controller.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../cover_media/presentation/cover_image.dart';
 import '../../drafts/domain/draft_entry.dart';
+import '../../mock_mode/application/mock_mode_coordinator.dart';
 import '../../locations/presentation/location_attribution.dart';
 import '../../proposals/application/proposal_controllers.dart';
 import '../../proposals/domain/proposal_time.dart';
@@ -190,6 +191,7 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
         _tiles = BudgetTileProvider(
           ref.read(budgetBasemapTilesProvider),
           warmTrento:
+              !ref.read(activeMockRealmProvider) &&
               _preferences.cameraLatitude == 46.0748 &&
               _preferences.cameraLongitude == 11.1217,
           onReduced: () => _basemapStatus(reduced: true),

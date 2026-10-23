@@ -91,6 +91,13 @@ def compiled_capability(data, enabled):
     return marker.decode("ascii")
 
 
+def compiled_map(data, budget):
+    marker = b"PLANETS_COMPILED_MAP_V1=11111" + (b"1" if budget else b"0")
+    if set(re.findall(rb"PLANETS_COMPILED_MAP_V1=[01]{6}", data)) != {marker}:
+        raise ValueError("Compiled map defines are absent, conflicting or incorrect")
+    return marker.decode("ascii")
+
+
 def scan_payload(data):
     if re.search(rb"sb_secret_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+", data):
         raise ValueError("Privileged key or JWT found in AAB")
@@ -155,6 +162,8 @@ def inspect(bundle, code, policy, build_manifest, source_sha, variant="staging")
         libraries = [n for n in archive.namelist() if n.endswith("/libapp.so")]
         if not libraries or not all(build_manifest["backend"].encode() in archive.read(n) for n in libraries):
             raise ValueError("Staging origin absent from compiled app libraries")
+        evidence["compiled_map_defines"] = {
+            n: compiled_map(archive.read(n), policy["budget_basemap"]) for n in libraries}
         evidence["compiled_capabilities"] = {
             n: compiled_capability(archive.read(n), evidence["mock_capability"]) for n in libraries}
         for name in archive.namelist():

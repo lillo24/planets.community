@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { operator } from "./operator.mjs";
+import { seedPublicReference } from "./public-geography.mjs";
 
 export const PERSONAS = Object.freeze(
   [
@@ -521,6 +522,9 @@ export async function seed(context) {
         }),
       );
       await cover(`listing:${key}`, marco, id, "resource", "repair-cafe.webp");
+      await once(`geography:listing:${key}`, () =>
+        seedPublicReference(context, "resource", id),
+      );
     }
     for (const person of [marco, sara]) {
       const key = `participation:${person.key}`;
@@ -609,6 +613,12 @@ export async function seed(context) {
         p_episode_id: memberChat.episode_id,
         p_body: "Porterò il disegno delle cassette.",
       }),
+    );
+    await once("geography:project", () =>
+      seedPublicReference(context, "project", project),
+    );
+    await once("geography:tavolo", () =>
+      seedPublicReference(context, "tavolo", tavolo),
     );
     const { seedPeopleWorld } = await import("./people-world.mjs");
     const coCreation = await seedPeopleWorld(context, people, once, at);
