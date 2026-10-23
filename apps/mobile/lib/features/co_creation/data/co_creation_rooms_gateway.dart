@@ -132,6 +132,26 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     before,
     structured: true,
   );
+  Future<CoRecruitmentReview> recruitmentReview(
+    String actor,
+    HubId hub,
+    CoRoomId general,
+    CoEpisodeId episode,
+    String id,
+  ) async => CoRecruitmentReview.parse(
+    await rpc('get_cocreate_recruitment_review_v1', {
+      'p_expected_profile_id': peopleUuid(actor),
+      'p_general_room_id': general.value,
+      'p_episode_id': episode.value,
+      'p_recruitment_id': peopleUuid(id),
+    }),
+    actor,
+    hub,
+    general,
+    episode,
+    id,
+  );
+
   Future<CoRecruitment?> recruitment(
     String actor,
     HubId hub,

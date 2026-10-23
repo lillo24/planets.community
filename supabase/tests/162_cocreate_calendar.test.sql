@@ -13,9 +13,9 @@ $$;
 create function pg_temp.cal_as(n integer) returns uuid language plpgsql as $$
 begin perform set_config('request.jwt.claim.sub',pg_temp.cal_actor(n)::text,true);return pg_temp.cal_actor(n);end;
 $$;
-insert into auth.users(id,email) select pg_temp.cal_actor(n),'calendar-'||n||'@planets.invalid' from generate_series(1,6)n;
-insert into public.profiles(id,display_name) select pg_temp.cal_actor(n),'Synthetic calendar tester '||n from generate_series(1,6)n;
-insert into private.policy_acceptances(account_id,bundle_version) select pg_temp.cal_actor(n),'POLICY01-2026-10-08-v1' from generate_series(1,6)n;
+insert into auth.users(id,email) select pg_temp.cal_actor(n),'calendar-'||n||'@planets.invalid' from generate_series(1,7)n;
+insert into public.profiles(id,display_name) select pg_temp.cal_actor(n),'Synthetic calendar tester '||n from generate_series(1,7)n;
+insert into private.policy_acceptances(account_id,bundle_version) select pg_temp.cal_actor(n),'POLICY01-2026-10-08-v1' from generate_series(1,7)n;
 update private.cocreate_settings set enabled=true;
 select set_config('cal.proposal',(public.propose_cocreate_community(pg_temp.cal_as(1),gen_random_uuid(),
  'videogames','Synthetic calendar Valorant','Synthetic calendar locality')->>'proposal_id'),true);
@@ -24,7 +24,7 @@ select public.mutate_cocreate_community_interest(pg_temp.cal_as(3),gen_random_uu
 select set_config('cal.hub',public.get_cocreate_community_proposal(current_setting('cal.proposal')::uuid)->>'hub_id',true);
 create temp table cal_admissions(actor integer primary key, membership jsonb);
 insert into cal_admissions select n,public.mutate_cocreate_hub(pg_temp.cal_as(n),gen_random_uuid(),current_setting('cal.hub')::uuid,'join')
- from unnest(array[1,2,3,4,6])n;
+ from unnest(array[1,2,3,4,6,7])n;
 select set_config('cal.start',date_trunc('day',statement_timestamp())::text,true);
 select set_config('cal.end',(date_trunc('day',statement_timestamp())+interval '31 days')::text,true);
 create function pg_temp.cal_read(n integer,lim integer default 25,cur text default null) returns jsonb language plpgsql as $$
@@ -89,6 +89,84 @@ select pg_temp.cal_read(6);
 select is((select jsonb_agg(jsonb_build_array(id,read_sequence) order by id)::text from private.cocreate_room_episodes),current_setting('cal.acks'),'calendar never advances read/unread state');
 
 -- An expired invitation does not expire a still-future meeting or member RSVP.
+-- FIX01 review keeps meeting/card availability distinct from actor admission.
+create function pg_temp.cal_review(n integer,key text default 'valorant') returns jsonb language plpgsql as $$
+declare member jsonb;card uuid;begin
+ select membership into member from cal_admissions where actor=n;
+ select (result->>'recruitment_id')::uuid into card from cal_meetings where cal_meetings.key=cal_review.key;
+ return public.get_cocreate_recruitment_review_v1(pg_temp.cal_as(n),
+  (member->>'room_id')::uuid,(member->>'episode_id')::uuid,card);
+end; $$;
+select is(pg_temp.cal_review(7)->>'can_join','true','fresh eligible review allows deliberate command');
+select ok(has_function_privilege('authenticated','public.get_cocreate_recruitment_review_v1(uuid,uuid,uuid,uuid)','EXECUTE'),'review available to authenticated actors');
+select ok(not has_function_privilege(role,'public.get_cocreate_recruitment_review_v1(uuid,uuid,uuid,uuid)','EXECUTE'),role||' has no review grant')
+ from unnest(array['anon','service_role'])role;
+select ok(not has_function_privilege('authenticated','private.cocreate_can_join_recruitment(uuid,uuid)','EXECUTE'),'eligibility helper has no direct client grant');
+select is((select count(*)::int from jsonb_object_keys(pg_temp.cal_review(7))),6,'review has its own closed actor-scoped envelope');
+select is(pg_temp.cal_review(7)->'recruitment',public.get_cocreate_recruitment_v2(pg_temp.cal_as(7),
+ (membership->>'room_id')::uuid,(membership->>'episode_id')::uuid,
+ (select (result->>'recruitment_id')::uuid from cal_meetings where key='valorant')),
+ 'installed eleven-field card payload remains unchanged') from cal_admissions where actor=7;
+update private.cocreate_rooms set capacity=5 where id=(select (result->>'room_id')::uuid from cal_meetings where key='valorant');
+select is(pg_temp.cal_review(7)->>'can_join','false','full persistent chat denies newcomer with meeting seats');
+select is(pg_temp.cal_review(7)->'recruitment'->>'available','true','meeting with seats is not mislabeled full');
+select throws_ok($$select public.join_cocreate_recruitment(pg_temp.cal_as(7),gen_random_uuid(),current_setting('cal.hub')::uuid,
+ (result->>'room_id')::uuid,(result->>'recruitment_id')::uuid) from cal_meetings where key='valorant'$$,'PT409',null,'atomic command independently denies full chat');
+update private.cocreate_rooms set capacity=50 where id=(select (result->>'room_id')::uuid from cal_meetings where key='valorant');
+update private.cocreate_settings set max_numbered_memberships=1;
+select is(pg_temp.cal_review(7)->>'can_join','true','viewer below membership limit stays eligible');
+-- Actor 6 has one chat, whereas actor 7 remains General-only.
+update private.cocreate_meeting_attendance set attending=false where actor_id=pg_temp.cal_actor(2)
+ and meeting_id=(select (result->>'meeting_id')::uuid from cal_meetings where key='lupus');
+select is(pg_temp.cal_review(6,'lupus')->'recruitment'->>'available','true','membership-limit review still has meeting seats');
+select is(pg_temp.cal_review(6,'lupus')->>'can_join','false','viewer membership limit denies ordinary review action');
+update private.cocreate_meeting_attendance set attending=true where actor_id=pg_temp.cal_actor(2)
+ and meeting_id=(select (result->>'meeting_id')::uuid from cal_meetings where key='lupus');
+update private.cocreate_settings set max_numbered_memberships=50;
+select is((select count(*)::int from private.cocreate_room_episodes where actor_id=pg_temp.cal_actor(7)),1,'review never admits a viewer');
+select is((select count(*)::int from private.cocreate_meeting_attendance where actor_id=pg_temp.cal_actor(7)),0,'review never creates attendance');
+
+-- Current-member authority survives both block directions and a decline.
+select public.block_user(pg_temp.cal_as(2),pg_temp.cal_actor(1));
+select is((select x->>'attending' from jsonb_array_elements(pg_temp.cal_read(2)->'meetings')x where x->>'capacity'='7'),'true','blocked creator does not erase current-member attendance');
+select is(public.get_cocreate_current_meeting(pg_temp.cal_as(2),(result->>'room_id')::uuid,(result->>'episode_id')::uuid)->>'attending','true','canonical current review agrees while blocked') from cal_members where actor=2 and room_key='valorant';
+select set_config('cal.decline',gen_random_uuid()::text,true);
+select public.mutate_cocreate_meeting(pg_temp.cal_as(2),current_setting('cal.decline')::uuid,current_setting('cal.hub')::uuid,
+ (result->>'room_id')::uuid,(result->>'episode_id')::uuid,(select (result->>'meeting_id')::uuid from cal_meetings where key='valorant'),'decline')
+ from cal_members where actor=2 and room_key='valorant';
+select public.mutate_cocreate_meeting(pg_temp.cal_as(2),current_setting('cal.decline')::uuid,current_setting('cal.hub')::uuid,
+ (result->>'room_id')::uuid,(result->>'episode_id')::uuid,(select (result->>'meeting_id')::uuid from cal_meetings where key='valorant'),'decline')
+ from cal_members where actor=2 and room_key='valorant';
+select is((select x->>'occupied' from jsonb_array_elements(pg_temp.cal_read(2)->'meetings')x where x->>'capacity'='7'),'3','blocked decline releases exactly one place');
+select is((select x->>'can_confirm' from jsonb_array_elements(pg_temp.cal_read(2)->'meetings')x where x->>'capacity'='7'),'true','declined current member retains canonical review/confirm authority');
+select public.mutate_cocreate_meeting(pg_temp.cal_as(2),gen_random_uuid(),current_setting('cal.hub')::uuid,
+ (result->>'room_id')::uuid,(result->>'episode_id')::uuid,(select (result->>'meeting_id')::uuid from cal_meetings where key='valorant'),'attend')
+ from cal_members where actor=2 and room_key='valorant';
+select public.unblock_user(pg_temp.cal_as(2),pg_temp.cal_actor(1));
+select public.block_user(pg_temp.cal_as(1),pg_temp.cal_actor(2));
+select is((select x->>'attending' from jsonb_array_elements(pg_temp.cal_read(2)->'meetings')x where x->>'capacity'='7'),'true','reverse block preserves exact current episode review');
+select public.unblock_user(pg_temp.cal_as(1),pg_temp.cal_actor(2));
+select public.block_user(pg_temp.cal_as(7),pg_temp.cal_actor(1));
+select is(jsonb_array_length(pg_temp.cal_read(7)->'meetings'),1,'blocked card-only viewer contributes no row or continuation');
+select is(pg_temp.cal_review(7)->>'can_join','false','blocked card-only review cannot join');
+select throws_ok($$select public.join_cocreate_recruitment(pg_temp.cal_as(7),gen_random_uuid(),current_setting('cal.hub')::uuid,
+ (result->>'room_id')::uuid,(result->>'recruitment_id')::uuid) from cal_meetings where key='valorant'$$,'42501',null,'blocked newcomer command remains denied');
+select public.unblock_user(pg_temp.cal_as(7),pg_temp.cal_actor(1));
+update auth.users set banned_until=statement_timestamp()+interval '1 day' where id=pg_temp.cal_actor(1);
+select is((select x->>'can_confirm' from jsonb_array_elements(pg_temp.cal_read(6)->'meetings')x where x->>'capacity'='7'),'true','nonattending current member retains review during creator unavailability');
+select is(jsonb_array_length(pg_temp.cal_read(7)->'meetings'),1,'unavailable creator still omitted for card-only viewer');
+update auth.users set banned_until=null where id=pg_temp.cal_actor(1);
+select public.block_user(pg_temp.cal_as(6),pg_temp.cal_actor(1));
+select public.mutate_cocreate_numbered_group(pg_temp.cal_as(6),gen_random_uuid(),current_setting('cal.hub')::uuid,
+ 'leave',(result->>'room_id')::uuid,(result->>'episode_id')::uuid) from cal_members where actor=6 and room_key='valorant';
+select is(jsonb_array_length(pg_temp.cal_read(6)->'meetings'),1,'ended membership cannot retain blocked calendar exception');
+select throws_ok($$select public.get_cocreate_current_meeting(pg_temp.cal_as(6),
+ (result->>'room_id')::uuid,(result->>'episode_id')::uuid) from cal_members where actor=6 and room_key='valorant'$$,
+ '42501',null,'old exact episode loses canonical current-meeting review');
+select public.unblock_user(pg_temp.cal_as(6),pg_temp.cal_actor(1));
+select public.mutate_cocreate_numbered_group(pg_temp.cal_as(6),gen_random_uuid(),current_setting('cal.hub')::uuid,
+ 'join',(result->>'room_id')::uuid) from cal_meetings where key='valorant';
+
 update private.cocreate_recruitments set created_at=statement_timestamp()-interval '8 days',expires_at=statement_timestamp()-interval '1 second'
  where id=(select (result->>'recruitment_id')::uuid from cal_meetings where key='valorant');
 select is((select x->>'can_confirm' from jsonb_array_elements(pg_temp.cal_read(6)->'meetings')x where x->>'capacity'='7'),'true','member can confirm after recruitment expiry');
@@ -102,6 +180,8 @@ select public.mutate_cocreate_hub(pg_temp.cal_as(4),gen_random_uuid(),current_se
  (membership->>'episode_id')::uuid) from cal_admissions where actor=4;
 insert into cal_meetings values ('later',public.schedule_cocreate_meeting(pg_temp.cal_as(2),gen_random_uuid(),
  current_setting('cal.hub')::uuid,current_setting('cal.start')::timestamptz+interval '3 days 18 hours',5));
+select is(pg_temp.cal_review(4)->>'can_join','false','former General review remains historical without new admission');
+select throws_ok($$select pg_temp.cal_review(4,'later')$$,'42501',null,'new review cannot cross exact frozen General history');
 select is(jsonb_array_length(pg_temp.cal_read(4)->'meetings'),2,'former episode cannot see a later card through aggregation or count');
 select ok(not exists(select 1 from jsonb_array_elements(pg_temp.cal_read(4)->'meetings')x where (x->>'can_join')::boolean or (x->>'can_confirm')::boolean or (x->>'attending')::boolean),'former history does not grant fresh attendance');
 select public.mutate_cocreate_meeting(pg_temp.cal_as(1),gen_random_uuid(),current_setting('cal.hub')::uuid,

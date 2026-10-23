@@ -28,8 +28,20 @@ Map<String, Object?> card({String state = 'open'}) => {
 class CardFixture extends n.NumberedFixture {
   String state = 'open';
   bool lose = false;
+  bool eligible = true;
   @override
   Future<Object?> rpc(String name, Map<String, dynamic> args) async {
+    if (name == 'get_cocreate_recruitment_review_v1') {
+      calls.add(name);
+      return {
+        'profile_id': args['p_expected_profile_id'],
+        'hub_id': f.hub,
+        'general_room_id': f.room,
+        'episode_id': args['p_episode_id'],
+        'recruitment': card(state: state),
+        'can_join': eligible && state == 'open',
+      };
+    }
     if (name == 'get_cocreate_recruitment_v2' ||
         name == 'get_own_cocreate_recruitment_v2') {
       calls.add(name);
@@ -39,6 +51,7 @@ class CardFixture extends n.NumberedFixture {
       calls.add(name);
       commands.add(args);
       joined = true;
+      eligible = false;
       state = 'full';
       if (lose && commands.length == 1) {
         throw StateError('Lost committed admission');
@@ -94,6 +107,53 @@ List<RouteBase> routes() => [
 ];
 void main() {
   setUpAll(RenderedEvidence.loadFonts);
+  for (final reason in ['persistent chat full', 'membership limit']) {
+    testWidgets(
+      'direct recruitment review rechecks $reason and later recovery',
+      (tester) async {
+        tester.view.physicalSize = const Size(360, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final fixture = CardFixture()..eligible = false;
+        final (app, _) = await f.pump(
+          tester,
+          fixture,
+          path: coRecruitmentRoute(
+            HubId.parse(f.hub),
+            CoRoomId.parse(f.room),
+            CoEpisodeId.parse(f.episode(f.b)),
+            cardId,
+          ),
+          extraRoutes: routes(),
+        );
+        (app.read(authSessionProvider.notifier) as f.Session).change(f.b);
+        await tester.pumpAndSettle();
+        expect(find.byType(FilledButton), findsNothing);
+        expect(find.text('Full'), findsNothing);
+        expect(
+          find.text('Places remain; joining is currently unavailable.'),
+          findsOneWidget,
+        );
+        expect(fixture.commands, isEmpty);
+        expect(fixture.calls, contains('get_cocreate_recruitment_review_v1'));
+        await RenderedEvidence.capture(
+          tester,
+          'cal01-fix01-ineligible-${reason.replaceAll(' ', '-')}',
+        );
+        fixture.eligible = true;
+        await f.tap(tester, find.text('Refresh'));
+        expect(
+          find.widgetWithText(FilledButton, 'Join this group'),
+          findsOneWidget,
+        );
+        fixture.eligible = false;
+        await f.tap(tester, find.text('Refresh'));
+        expect(find.byType(FilledButton), findsNothing);
+        expect(fixture.commands, isEmpty);
+      },
+    );
+  }
   test('structured room entries reject forged kinds/references and invalid lifecycle counts', () {
     final raw = {
       'message_id': messageId,

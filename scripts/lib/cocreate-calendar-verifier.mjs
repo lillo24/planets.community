@@ -51,7 +51,8 @@ export async function verifyCocreateCalendar({ sql, status }) {
     });
     return p;
   }
-  const [settings] = await sql`select enabled from private.cocreate_settings`;
+  const [settings] =
+    await sql`select enabled,max_numbered_memberships from private.cocreate_settings`;
   try {
     await sql`update private.cocreate_settings set enabled=true`;
     const people = [];
@@ -107,6 +108,14 @@ export async function verifyCocreateCalendar({ sql, status }) {
     };
     const read = (p, extra) =>
       rpc(p, "get_cocreate_calendar_v1", args(p, extra));
+    const reviewArgs = (p, card = meeting.recruitment_id) => ({
+      ...actor(p),
+      p_general_room_id: admissions.get(p.id).room_id,
+      p_episode_id: admissions.get(p.id).episode_id,
+      p_recruitment_id: card,
+    });
+    const review = (p, card) =>
+      rpc(p, "get_cocreate_recruitment_review_v1", reviewArgs(p, card));
     let page = await read(b);
     equal(page.meetings.length, 1, "one authorized dated meeting");
     equal(
@@ -128,6 +137,19 @@ export async function verifyCocreateCalendar({ sql, status }) {
     const [{ acks: before }] =
       await sql`select jsonb_agg(jsonb_build_array(id,read_sequence) order by id) acks from private.cocreate_room_episodes where actor_id=${b.id}::uuid`;
     await read(b);
+    equal(
+      (await review(b)).can_join,
+      true,
+      "fresh exact review authorizes eligible newcomer",
+    );
+    await denied(b, "get_cocreate_recruitment_review_v1", {
+      ...reviewArgs(b),
+      p_expected_profile_id: a.id,
+    });
+    await denied(b, "get_cocreate_recruitment_review_v1", {
+      ...reviewArgs(b),
+      p_episode_id: admissions.get(a.id).episode_id,
+    });
     const [{ acks: after }] =
       await sql`select jsonb_agg(jsonb_build_array(id,read_sequence) order by id) acks from private.cocreate_room_episodes where actor_id=${b.id}::uuid`;
     equal(after, before, "HTTP calendar never acknowledges a transcript");
@@ -176,14 +198,57 @@ export async function verifyCocreateCalendar({ sql, status }) {
       1,
       "no duplicate chat membership",
     );
-    await rpc(winner, "mutate_cocreate_meeting", {
+    await rpc(winner, "block_user", {
+      p_expected_blocker_profile_id: winner.id,
+      p_blocked_profile_id: a.id,
+    });
+    let memberRow = (await read(winner)).meetings.find(
+      (m) => m.meeting_id === meeting.meeting_id,
+    );
+    equal(
+      memberRow.episode_id,
+      winning.episode_id,
+      "block retains exact current membership",
+    );
+    equal(memberRow.attending, true, "block retains canonical attendance");
+    const currentArgs = {
+      ...actor(winner),
+      p_room_id: meeting.room_id,
+      p_episode_id: winning.episode_id,
+    };
+    equal(
+      (await rpc(winner, "get_cocreate_current_meeting", currentArgs))
+        .attending,
+      true,
+      "current reader agrees after blocking",
+    );
+    await rpc(a, "block_user", {
+      p_expected_blocker_profile_id: a.id,
+      p_blocked_profile_id: winner.id,
+    });
+    await rpc(winner, "unblock_user", {
+      p_expected_blocker_profile_id: winner.id,
+      p_blocked_profile_id: a.id,
+    });
+    equal(
+      (await read(winner)).meetings[0].attending,
+      true,
+      "reverse block retains member calendar row",
+    );
+    const decline = {
       ...command(winner),
       p_hub_id: hub,
       p_room_id: meeting.room_id,
       p_episode_id: winning.episode_id,
       p_meeting_id: meeting.meeting_id,
       p_operation: "decline",
-    });
+    };
+    const declined = await rpc(winner, "mutate_cocreate_meeting", decline);
+    equal(
+      await rpc(winner, "mutate_cocreate_meeting", decline),
+      declined,
+      "blocked decline exact retry releases once",
+    );
     equal(
       (await read(b)).meetings[0].can_join,
       true,
@@ -193,6 +258,44 @@ export async function verifyCocreateCalendar({ sql, status }) {
       (await read(winner)).meetings[0].can_confirm,
       true,
       "decline preserves chat membership",
+    );
+    equal(
+      (await rpc(winner, "get_cocreate_current_meeting", currentArgs))
+        .attending,
+      false,
+      "declined member still reviews while blocked",
+    );
+    await rpc(a, "unblock_user", {
+      p_expected_blocker_profile_id: a.id,
+      p_blocked_profile_id: winner.id,
+    });
+    await sql`update auth.users set banned_until=clock_timestamp()+interval '1 hour' where id=${a.id}::uuid`;
+    equal(
+      (await read(winner)).meetings[0].can_confirm,
+      true,
+      "creator unavailable preserves member attendance authority",
+    );
+    equal(
+      (await read(b)).meetings.length,
+      0,
+      "creator unavailable still hides card-only meetings",
+    );
+    await sql`update auth.users set banned_until=null where id=${a.id}::uuid`;
+    // Persistent-chat capacity is independent of meeting seats.
+    await sql`update private.cocreate_rooms set capacity=2 where id=${meeting.room_id}::uuid`;
+    const fullChat = await review(b);
+    equal(
+      fullChat.recruitment.available,
+      true,
+      "non-full meeting stays available as a card",
+    );
+    equal(fullChat.can_join, false, "full chat blocks ordinary review Join");
+    await denied(b, "join_cocreate_recruitment", joinArgs(b), "PT409");
+    await sql`update private.cocreate_rooms set capacity=50 where id=${meeting.room_id}::uuid`;
+    equal(
+      (await review(b)).can_join,
+      true,
+      "fresh review recovers eligibility after chat opens",
     );
     await sql`update private.cocreate_recruitments set created_at=clock_timestamp()-interval '8 days',expires_at=clock_timestamp()-interval '1 second' where id=${meeting.recruitment_id}::uuid`;
     equal(
@@ -222,12 +325,36 @@ export async function verifyCocreateCalendar({ sql, status }) {
       true,
       "current eligible repost is selected",
     );
-    await rpc(b, "schedule_cocreate_meeting", {
+    const otherMeeting = await rpc(b, "schedule_cocreate_meeting", {
       ...command(b),
       p_hub_id: hub,
       p_starts_at: instant,
       p_capacity: 7,
     });
+    await sql`update private.cocreate_settings set max_numbered_memberships=1`;
+    const limited = await review(winner, otherMeeting.recruitment_id);
+    equal(
+      limited.recruitment.available,
+      true,
+      "membership limit never labels spare meeting seats full",
+    );
+    equal(
+      limited.can_join,
+      false,
+      "fresh review denies actor at numbered membership limit",
+    );
+    await denied(
+      winner,
+      "join_cocreate_recruitment",
+      {
+        ...command(winner),
+        p_hub_id: hub,
+        p_room_id: otherMeeting.room_id,
+        p_recruitment_id: otherMeeting.recruitment_id,
+      },
+      "PT429",
+    );
+    await sql`update private.cocreate_settings set max_numbered_memberships=${settings.max_numbered_memberships}`;
     const first = await read(b);
     assert.ok(first.next_cursor);
     checks++;
@@ -296,6 +423,6 @@ export async function verifyCocreateCalendar({ sql, status }) {
     );
     return checks;
   } finally {
-    await sql`update private.cocreate_settings set enabled=${settings.enabled}`;
+    await sql`update private.cocreate_settings set enabled=${settings.enabled},max_numbered_memberships=${settings.max_numbered_memberships}`;
   }
 }

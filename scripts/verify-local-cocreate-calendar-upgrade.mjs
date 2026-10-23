@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { openCocreateLocalBackend } from "./lib/cocreate-local-backend.mjs";
 
-// This owned-loopback rehearsal rolls back ALL fixture/DDL changes. It removes
-// only CAL01's two new objects inside the transaction to reconstruct its exact
-// main predecessor, warms installed readers, then applies the real source file.
+// Rollback-only rehearsal from the immutable CAL01-installed main predecessor.
+// Warm its exact readers, then apply the actual forward correction source.
 assert.equal(
   process.env.PLANETS_DISPOSABLE_QA,
   "1",
@@ -13,16 +13,36 @@ assert.equal(
 );
 const { sql } = openCocreateLocalBackend();
 const migration = readFileSync(
-  "supabase/migrations/20261023113719_cocreate_community_calendar_v1.sql",
+  "supabase/migrations/20261023155513_cocreate_calendar_corrections.sql",
   "utf8",
 );
+const predecessor = "fef1c343501a43712f997aca269a09ca6f245b75";
+const installedCalendar = execFileSync(
+  "git",
+  [
+    "show",
+    `${predecessor}:supabase/migrations/20261023113719_cocreate_community_calendar_v1.sql`,
+  ],
+  { encoding: "utf8" },
+);
+const calendarBody = installedCalendar
+  .slice(
+    installedCalendar.indexOf(
+      "create function public.get_cocreate_calendar_v1(",
+    ),
+    installedCalendar.indexOf(
+      "\nrevoke all on function public.get_cocreate_calendar_v1",
+    ),
+  )
+  .replace("create function public.", "create or replace function public.");
 const rollback = new Error("CAL01 successful qualification rollback");
 let evidence;
 try {
   await sql.begin("isolation level repeatable read", async (tx) => {
     await tx.unsafe(
-      "drop function public.get_cocreate_calendar_v1(uuid,uuid,uuid,uuid,timestamptz,timestamptz,integer,text); drop index private.cocreate_meetings_calendar",
+      "drop function if exists public.get_cocreate_recruitment_review_v1(uuid,uuid,uuid,uuid); drop function if exists private.cocreate_can_join_recruitment(uuid,uuid)",
     );
+    await tx.unsafe(calendarBody);
     await tx`update private.cocreate_settings set enabled=true`;
     const ids = [randomUUID(), randomUUID(), randomUUID()];
     for (const id of ids) {
@@ -45,6 +65,7 @@ try {
       await tx`select public.mutate_cocreate_hub(${actor}::uuid,${randomUUID()}::uuid,${hub}::uuid,'join') member`;
     const [{ meeting }] =
       await tx`select public.schedule_cocreate_meeting(${actor}::uuid,${randomUUID()}::uuid,${hub}::uuid,clock_timestamp()+interval '2 days',7) meeting`;
+    await tx`select public.schedule_cocreate_meeting(${actor}::uuid,${randomUUID()}::uuid,${hub}::uuid,clock_timestamp()+interval '3 days',7)`;
     async function readers() {
       const [r] = await tx`select
         public.get_cocreate_current_meeting(${actor}::uuid,${meeting.room_id}::uuid,${meeting.episode_id}::uuid) current,
@@ -52,16 +73,30 @@ try {
         public.get_own_cocreate_recruitment_v2(${actor}::uuid,${meeting.room_id}::uuid,${meeting.episode_id}::uuid) dated,
         public.get_cocreate_recruitment_v2(${actor}::uuid,${member.room_id}::uuid,${member.episode_id}::uuid,${meeting.recruitment_id}::uuid) exact,
         public.get_cocreate_room_page_v2(${actor}::uuid,${member.room_id}::uuid,${member.episode_id}::uuid) feed2,
-        public.get_cocreate_room_page_v3(${actor}::uuid,${member.room_id}::uuid,${member.episode_id}::uuid) feed3`;
+        public.get_cocreate_room_page_v3(${actor}::uuid,${member.room_id}::uuid,${member.episode_id}::uuid) feed3,
+        public.get_cocreate_calendar_v1(${actor}::uuid,${hub}::uuid,${member.room_id}::uuid,${member.episode_id}::uuid,
+          date_trunc('day',statement_timestamp()),date_trunc('day',statement_timestamp())+interval '31 days',1) calendar`;
       assert.equal(Object.keys(r.legacy).length, 9);
       assert.equal(Object.keys(r.dated).length, 11);
       return r;
     }
     const warmed = await readers();
+    assert.ok(
+      warmed.calendar.next_cursor,
+      "warm a real installed chronological cursor",
+    );
+    async function continuation() {
+      const [r] =
+        await tx`select public.get_cocreate_calendar_v1(${actor}::uuid,${hub}::uuid,
+        ${member.room_id}::uuid,${member.episode_id}::uuid,date_trunc('day',statement_timestamp()),
+        date_trunc('day',statement_timestamp())+interval '31 days',1,${warmed.calendar.next_cursor}) page`;
+      return r.page;
+    }
+    const warmedContinuation = await continuation();
     async function functions() {
       return tx`select oid::text,proacl,pg_get_functiondef(oid) source,pg_get_function_result(oid) result
         from pg_proc where pronamespace='public'::regnamespace
-        and proname<>'get_cocreate_calendar_v1' order by oid`;
+        and proname not in('get_cocreate_calendar_v1','get_cocreate_recruitment_review_v1') order by oid`;
     }
     async function tables() {
       const result = [];
@@ -77,6 +112,11 @@ try {
     }
     const beforeFunctions = await functions(),
       beforeTables = await tables();
+    const [calendarContract] =
+      await tx`select oid::text,proacl,provolatile,prosecdef,proconfig,
+      pg_get_function_identity_arguments(oid) signature,pg_get_function_arguments(oid) defaults,
+      pg_get_function_result(oid) result from pg_proc
+      where oid='public.get_cocreate_calendar_v1(uuid,uuid,uuid,uuid,timestamptz,timestamptz,integer,text)'::regprocedure`;
     await tx.unsafe(migration);
     assert.deepEqual(
       await functions(),
@@ -89,9 +129,36 @@ try {
       "warmed installed payloads and ACK tokens unchanged",
     );
     assert.deepEqual(
+      await continuation(),
+      warmedContinuation,
+      "installed signed cursor remains usable after replacement",
+    );
+    assert.deepEqual(
       await tables(),
       beforeTables,
       "all populated canonical rows unchanged",
+    );
+    const [afterCalendar] =
+      await tx`select oid::text,proacl,provolatile,prosecdef,proconfig,
+      pg_get_function_identity_arguments(oid) signature,pg_get_function_arguments(oid) defaults,
+      pg_get_function_result(oid) result from pg_proc where oid=${calendarContract.oid}::oid`;
+    assert.deepEqual(
+      afterCalendar,
+      calendarContract,
+      "calendar OID, ACL, stability, definer, path, signature/defaults and result preserved",
+    );
+    await tx.unsafe(
+      migration.replace(/create function /g, "create or replace function "),
+    );
+    assert.deepEqual(
+      await readers(),
+      warmed,
+      "repeat forward body installation preserves all warmed contracts",
+    );
+    assert.deepEqual(
+      await tables(),
+      beforeTables,
+      "repeat installation preserves all populated rows",
     );
 
     // Many plausible historical occurrences make the bounded future-window
@@ -154,9 +221,12 @@ try {
     );
     evidence = {
       migration_sha256: createHash("sha256").update(migration).digest("hex"),
+      installed_predecessor: predecessor,
+      calendar_contract_preserved: true,
+      installed_cursor_preserved: true,
       populated_tables_preserved: beforeTables.length,
       installed_functions_preserved: beforeFunctions.length,
-      warmed_readers_preserved: 6,
+      warmed_readers_preserved: 7,
       legacy_card_fields: 9,
       dated_card_fields: 11,
       historical_fixture_meetings: 3000,
@@ -180,5 +250,5 @@ writeFileSync(
   JSON.stringify(evidence, null, 2) + "\n",
 );
 console.log(
-  `CAL01 populated upgrade preserved ${evidence.populated_tables_preserved} tables / ${evidence.installed_functions_preserved} functions / six warmed readers; chronological query ${evidence.execution_ms}ms over 3,000 historical fixtures. All changes rolled back.`,
+  `CAL01-FIX01 populated upgrade preserved ${evidence.populated_tables_preserved} tables / ${evidence.installed_functions_preserved} installed functions / seven warmed readers including CAL01; chronological query ${evidence.execution_ms}ms over 3,000 historical fixtures. All changes rolled back.`,
 );

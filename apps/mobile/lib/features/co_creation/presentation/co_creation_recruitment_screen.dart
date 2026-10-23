@@ -73,39 +73,47 @@ class CoRecruitmentJoinScreen extends ConsumerWidget {
         children: [
           Text(l.coGroupsDisclosure),
           PeopleAccess(
-            child: PeopleList<CoRecruitment>(
-              load: (ref, actor, before) async => [
-                (await ref
-                    .read(coCreationRoomsGatewayProvider)
-                    .recruitment(actor!, hub, general, episode, id: id))!,
-              ],
-              row: (context, c, refresh) => Column(
-                children: [
-                  CoRecruitmentCard(card: c),
-                  if (c.available || pending)
-                    PeopleCommand(
-                      slot: 'recruitment-join/${c.id}',
-                      rpc: 'join_cocreate_recruitment',
-                      gateway: (ref) =>
-                          ref.read(coCreationRoomsGatewayProvider),
-                      intent: {
-                        'p_hub_id': c.hub.value,
-                        'p_room_id': c.room.value,
-                        'p_recruitment_id': c.id,
-                      },
-                      label: l.coGroupsJoin,
-                      onSuccess: (r) async {
-                        await context.push(
-                          coNumberedRoute(
-                            c.hub,
-                            c.room,
-                            CoEpisodeId.parse(r['episode_id']),
-                          ),
-                        );
-                        await refresh();
-                      },
-                    ),
+            child: KeyedSubtree(
+              key: ValueKey(ref.watch(coCreationRoomsGatewayProvider)),
+              child: PeopleList<CoRecruitmentReview>(
+                load: (ref, actor, before) async => [
+                  (await ref
+                      .read(coCreationRoomsGatewayProvider)
+                      .recruitmentReview(actor!, hub, general, episode, id)),
                 ],
+                row: (context, review, refresh) {
+                  final c = review.card;
+                  return Column(
+                    children: [
+                      CoRecruitmentCard(card: c),
+                      if (c.available && !review.canJoin && !pending)
+                        Text(l.coCalendarNoRecruitment),
+                      if (review.canJoin || pending)
+                        PeopleCommand(
+                          slot: 'recruitment-join/${c.id}',
+                          rpc: 'join_cocreate_recruitment',
+                          gateway: (ref) =>
+                              ref.read(coCreationRoomsGatewayProvider),
+                          intent: {
+                            'p_hub_id': c.hub.value,
+                            'p_room_id': c.room.value,
+                            'p_recruitment_id': c.id,
+                          },
+                          label: l.coGroupsJoin,
+                          onSuccess: (r) async {
+                            await context.push(
+                              coNumberedRoute(
+                                c.hub,
+                                c.room,
+                                CoEpisodeId.parse(r['episode_id']),
+                              ),
+                            );
+                            await refresh();
+                          },
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
           ),

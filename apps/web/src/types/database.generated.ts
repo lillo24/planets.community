@@ -3760,6 +3760,15 @@ export type Database = {
         }
         Returns: Json
       }
+      get_cocreate_recruitment_review_v1: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_general_room_id: string
+          p_recruitment_id: string
+        }
+        Returns: Json
+      }
       get_cocreate_recruitment_v2: {
         Args: {
           p_episode_id: string
