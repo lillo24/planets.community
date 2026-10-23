@@ -26,8 +26,8 @@
   "coverageSummary": {
     "captured": 235,
     "not applicable": 6,
-    "blocked": 33,
-    "planned": 274
+    "blocked": 35,
+    "planned": 276
   },
   "personas": [
     {
@@ -1946,7 +1946,7 @@
       "category": "route",
       "status": "blocked",
       "evidence": [],
-      "reason": "PR #309 merged during the audit after native captures were frozen on b9a8603. The new calendar/review surfaces and changed hub/meeting entry controls are unreviewed. Source and migration are recorded separately from the captured baseline."
+      "reason": "Merged during the audit after native capture was frozen on b9a8603: PR #309 calendar/review and PR #298 external catalogue/map surfaces. These later surfaces and changed entry controls are unreviewed; they are separate from the captured baseline."
     },
     {
       "id": "L002",
@@ -1958,7 +1958,30 @@
       "category": "route",
       "status": "blocked",
       "evidence": [],
-      "reason": "PR #309 merged during the audit after native captures were frozen on b9a8603. The new calendar/review surfaces and changed hub/meeting entry controls are unreviewed. Source and migration are recorded separately from the captured baseline."
+      "reason": "Merged during the audit after native capture was frozen on b9a8603: PR #309 calendar/review and PR #298 external catalogue/map surfaces. These later surfaces and changed entry controls are unreviewed; they are separate from the captured baseline."
+    },
+    {
+      "id": "L003",
+      "route": "/activities/map",
+      "owner": "ExternalActivitiesMapScreen",
+      "line": 1656,
+      "kind": "GoRoute",
+      "introducedAtSource": "67eee7b402986266116d92d4efe5d8fc690f3a7b",
+      "category": "route",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "Merged during the audit after native capture was frozen on b9a8603: PR #309 calendar/review and PR #298 external catalogue/map surfaces. These later surfaces and changed entry controls are unreviewed; they are separate from the captured baseline."
+    },
+    {
+      "id": "L004",
+      "owner": "apps/mobile/lib/features/external_activities/presentation/external_activities_map_screen.dart",
+      "line": 216,
+      "kind": "showModalBottomSheet",
+      "introducedAtSource": "67eee7b402986266116d92d4efe5d8fc690f3a7b",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "The external-map entry chooser was added by PR #298 after the captured baseline. No native image is claimed for this new callsite."
     },
     {
       "id": "M001",
@@ -3074,5 +3097,5 @@
       "reason": "Guidance and draft preview are native. License pages and external browser/email application success were not reviewed; no email sent."
     }
   ],
-  "integrationSourceSha": "34649049db675b1b436e6a0ce0aefefaf4a0a4a0"
+  "integrationSourceSha": "67eee7b402986266116d92d4efe5d8fc690f3a7b"
 }
