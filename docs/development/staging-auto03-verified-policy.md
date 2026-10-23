@@ -83,6 +83,10 @@ Sanitized `staging-eligibility.json`, `rehearsal.json`, `connection.json`,
 statuses and effect digests, never credentials, function bodies or user data.
 The writer reads prior protected run artifacts. An interrupted/partial/unverified
 write holds future writes until its real outcome is independently reconciled.
+Unrelated read-only runs cannot push that state outside a fixed lookback: history
+is paginated with a fail-closed audit bound. Expired ZIPs cannot manufacture
+success; only a genuinely successful protected writer job at the matching source
+can preserve an independently completed reconciliation without its old artifact.
 Only then may protected `STAGING_RECONCILED_FAILURE_RUN_ID` and
 `STAGING_RECONCILED_PREDECESSOR_SHA256` identify that exact run/live inventory;
 they are incident recovery settings, not recurring SQL approval comments.

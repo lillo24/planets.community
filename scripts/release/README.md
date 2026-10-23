@@ -92,5 +92,5 @@ diagnostics stay out of public Actions output.
   creates tracks, modifies testers/countries or submits production releases.
 
 Run `npm run test:tooling`. The focused suite is
-`node --test scripts/lib/release01.test.mjs scripts/lib/staging-auto01.test.mjs`; it uses fictional files/mock HTTP,
+`node --test scripts/lib/release01.test.mjs scripts/lib/staging-auto01.test.mjs scripts/lib/staging-auto03.test.mjs`; it uses fictional files/mock HTTP,
 never a real Play account. See the [operator runbook](../../docs/development/release01-staging-play.md).

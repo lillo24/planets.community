@@ -533,3 +533,101 @@ test("trusted workflow selects pre-change engine for privileged SQL and keeps re
   ])
     assert.ok(replay.includes(call));
 });
+
+test("a hundred unrelated runs cannot hide an earlier unresolved writer", async () => {
+  const harmless = Array.from({ length: 100 }, (_, i) => ({
+    id: 1000 - i,
+    event: "workflow_dispatch",
+    head_sha: source,
+  }));
+  const failed = { id: 10, event: "push", head_sha: source };
+  const state = {
+    workflow_run_id: 10,
+    source_sha: source,
+    status: "failed-partial",
+  };
+  const pages = [];
+  const api = async (path) => {
+    if (path.includes("/actions/workflows/")) {
+      pages.push(path);
+      return { workflow_runs: path.endsWith("page=1") ? harmless : [failed] };
+    }
+    if (path.includes("/artifacts"))
+      return {
+        artifacts: path.includes("/10/")
+          ? [{ name: "release-staging-10", expired: false }]
+          : [],
+      };
+    if (path.includes("/jobs")) return { jobs: [] };
+    assert.fail("Unexpected API path");
+  };
+  assert.deepEqual(
+    await previousWriterState(
+      api,
+      { GITHUB_RUN_ID: "2000" },
+      async () => state,
+    ),
+    state,
+  );
+  assert.equal(pages.length, 2);
+  assert.throws(
+    () => assertReconciledWriter(state, "current", {}),
+    /Unreconciled/,
+  );
+});
+test("expired artifacts retain only actual protected writer success; never infer partial success", async () => {
+  const run = { id: 10, event: "push", head_sha: source };
+  const base = {
+    name: "staging",
+    head_sha: source,
+    conclusion: "success",
+    steps: [
+      {
+        name: "Preflight, classified migration apply, backend verification",
+        status: "completed",
+        conclusion: "success",
+      },
+    ],
+  };
+  const api = (writer) => async (path) => {
+    if (path.includes("/actions/workflows/")) return { workflow_runs: [run] };
+    if (path.includes("/artifacts"))
+      return { artifacts: [{ name: "release-staging-10", expired: true }] };
+    if (path.includes("/jobs")) return { jobs: [writer] };
+    if (path.includes("/contents/"))
+      return {
+        encoding: "base64",
+        content: Buffer.from('{"staging_safety_version":2}').toString("base64"),
+      };
+    assert.fail("Unexpected API path");
+  };
+  assert.equal((await previousWriterState(api(base), {})).status, "verified");
+  const failed = structuredClone(base);
+  failed.conclusion = "failure";
+  failed.steps[0].conclusion = "failure";
+  assert.equal(
+    (await previousWriterState(api(failed), {})).status,
+    "unknown-write-outcome",
+  );
+  const wrong = structuredClone(base);
+  wrong.head_sha = "b".repeat(40);
+  assert.equal(
+    (await previousWriterState(api(wrong), {})).status,
+    "unknown-write-outcome",
+  );
+});
+test("a fabricated earlier receipt with another source cannot clear a partial hold", async () => {
+  const api = async (path) =>
+    path.includes("/artifacts")
+      ? { artifacts: [{ name: "release-staging-10", expired: false }] }
+      : { workflow_runs: [{ id: 10, event: "push", head_sha: source }] };
+  await assert.rejects(
+    () =>
+      previousWriterState(api, {}, async () => ({
+        workflow_run_id: 10,
+        source_sha: "b".repeat(40),
+        status: "verified",
+      })),
+    /protected source/,
+  );
+});

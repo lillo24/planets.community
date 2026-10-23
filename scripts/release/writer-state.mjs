@@ -17,49 +17,88 @@ export function assertReconciledWriter(state, predecessor, env) {
 }
 // Read only protected main's own sanitized artifacts; no token/DB URL is logged.
 export async function previousWriterState(api, env, load = loadArtifact) {
-  const runs = await api(
-    "/actions/workflows/staging-release.yml/runs?branch=main&per_page=20",
-  );
-  for (const run of runs.workflow_runs) {
-    if (
-      String(run.id) === env.GITHUB_RUN_ID ||
-      !["push", "workflow_dispatch"].includes(run.event)
-    )
-      continue;
-    const artifacts = await api(
-      `/actions/runs/${run.id}/artifacts?per_page=100`,
+  // Read-only/failed-preflight runs cannot push an unresolved writer out of a
+  // fixed lookback. Bound API cost explicitly and fail closed if history is longer.
+  for (let page = 1; page <= 10; page++) {
+    const response = await api(
+      `/actions/workflows/staging-release.yml/runs?branch=main&per_page=100&page=${page}`,
     );
-    const artifact = artifacts.artifacts.find(
-      (a) => a.name === `release-staging-${run.id}` && !a.expired,
-    );
-    const state = artifact ? await load(run.id, artifact.name, env) : null;
-    if (state) return state;
-    if (["failure", "cancelled", "timed_out"].includes(run.conclusion)) {
+    if (!Array.isArray(response.workflow_runs))
+      throw new ReleaseError(
+        "Cannot independently enumerate staging writer history",
+      );
+    for (const run of response.workflow_runs) {
+      if (
+        String(run.id) === env.GITHUB_RUN_ID ||
+        !["push", "workflow_dispatch"].includes(run.event)
+      )
+        continue;
+      const artifacts = await api(
+        `/actions/runs/${run.id}/artifacts?per_page=100`,
+      );
+      const artifact = artifacts.artifacts.find(
+        (a) => a.name === `release-staging-${run.id}` && !a.expired,
+      );
+      const state = artifact ? await load(run.id, artifact.name, env) : null;
+      if (state) {
+        if (
+          state.source_sha !== run.head_sha ||
+          String(state.workflow_run_id) !== String(run.id)
+        )
+          throw new ReleaseError(
+            "Previous staging receipt does not match its protected source/run",
+          );
+        return state;
+      }
       const jobs = await api(
         `/actions/runs/${run.id}/jobs?per_page=100&filter=latest`,
       );
       const writer = jobs.jobs.find((j) => j.name === "staging");
-      if (
-        writer?.steps.some(
-          (s) =>
-            s.name ===
-              "Preflight, classified migration apply, backend verification" &&
-            ["failure", "cancelled", "timed_out"].includes(s.conclusion),
-        )
-      ) {
-        const file = await api(
-          `/contents/scripts/release/policy.json?ref=${run.head_sha}`,
+      const step = writer?.steps.find(
+        (s) =>
+          s.name ===
+            "Preflight, classified migration apply, backend verification" &&
+          s.status !== "queued" &&
+          s.conclusion !== "skipped",
+      );
+      if (!step) continue;
+      const file = await api(
+        `/contents/scripts/release/policy.json?ref=${run.head_sha}`,
+      );
+      if (file.encoding !== "base64")
+        throw new ReleaseError(
+          "Cannot independently identify the previous staging policy",
         );
-        if (
-          file.encoding === "base64" &&
-          JSON.parse(Buffer.from(file.content, "base64"))
-            .staging_safety_version === 2
-        )
-          return { workflow_run_id: run.id, status: "unknown-write-outcome" };
-      }
+      const version = JSON.parse(
+        Buffer.from(file.content, "base64"),
+      ).staging_safety_version;
+      if (version === 1) return null; // Before standing-policy activation; legacy audit.
+      if (version !== 2)
+        throw new ReleaseError("Unknown previous staging writer policy");
+      // Artifact retention must not erase a later verified reconciliation.
+      // The protected job's actual success persists independently of its ZIP.
+      if (
+        writer.conclusion === "success" &&
+        step.conclusion === "success" &&
+        writer.head_sha === run.head_sha
+      )
+        return {
+          workflow_run_id: run.id,
+          source_sha: run.head_sha,
+          status: "verified",
+          verification: "protected-job-success",
+        };
+      return {
+        workflow_run_id: run.id,
+        source_sha: run.head_sha,
+        status: "unknown-write-outcome",
+      };
     }
+    if (response.workflow_runs.length < 100) return null;
   }
-  return null;
+  throw new ReleaseError(
+    "Staging writer history exceeds the bounded audit; independently reconcile before writing",
+  );
 }
 function loadArtifact(run, name, env) {
   const directory = mkdtempSync(join(tmpdir(), "planets-writer-state-"));
