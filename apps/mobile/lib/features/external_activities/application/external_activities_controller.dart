@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../settings/application/activities_split_preference_controller.dart';
+import '../../auth/application/auth_session_controller.dart';
 import '../data/external_activity_gateway.dart';
 import '../domain/external_activity.dart';
 
@@ -13,10 +15,12 @@ class ExternalActivitiesState {
     this.loading = false,
     this.failed = false,
     this.moreFailed = false,
+    this.areaTooBroad = false,
   });
   final ExternalActivityFilter filter;
   final ExternalActivityPage? page;
   final bool loading, failed, moreFailed;
+  final bool areaTooBroad;
 }
 
 class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
@@ -25,6 +29,14 @@ class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
 
   @override
   ExternalActivitiesState build() {
+    ref.listen(authSessionProvider.select((s) => (s.phase, s.identity?.id)), (
+      _,
+      _,
+    ) {
+      _generation++;
+      state = ExternalActivitiesState(filter: state.filter);
+      if (_canRead) unawaited(refresh());
+    });
     ref.onDispose(() {
       _generation++;
       _active = false;
@@ -94,6 +106,8 @@ class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
             kind: filter.kind,
             from: filter.from,
             to: filter.to,
+            area: filter.area,
+            mappedOnly: filter.mappedOnly,
           ),
         );
         return;
@@ -117,6 +131,13 @@ class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
           nextCursor: page.nextCursor,
           lastSuccessAt: page.lastSuccessAt,
         ),
+      );
+    } on ExternalActivityAreaTooBroad {
+      if (!ref.mounted || generation != _generation || !_canRead) return;
+      state = ExternalActivitiesState(
+        filter: filter,
+        failed: true,
+        areaTooBroad: true,
       );
     } on ExternalActivityCursorExpired {
       if (!ref.mounted || generation != _generation || !_canRead) return;
@@ -146,6 +167,7 @@ final externalActivitiesControllerProvider =
 
 final externalActivityDetailProvider = FutureProvider.autoDispose
     .family<ExternalActivity?, String>((ref, id) {
+      ref.watch(authSessionProvider.select((s) => (s.phase, s.identity?.id)));
       if (!ref.watch(activitiesSplitPreferenceProvider).enabled) return null;
       return ref.read(externalActivityGatewayProvider).get(id);
     }, dependencies: [activitiesSplitPreferenceProvider]);

@@ -16,18 +16,18 @@ Pack: `ACTSPORTS-2026-10-23`. Initial 002 runner: Codex thread
 READY. The file-watching heartbeat was deleted after detection. No competing
 runner for this queue was found in current tasks, worktrees or open PRs.
 
-| Step            | Status                                                  | Dependency base / PR / merge                                                                                                                                                          |
-| --------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 002 ACTCAT02    | Navigation regression repaired and locally verified     | Existing `4790cf59`; main `33f0309b` reconciled in `79b57979`; same cumulative [#298](https://github.com/lillo24/planets.community/pull/298), final consolidated review/merge pending |
-| 003 ACTUI02     | Implemented, locally qualified                          | Not started; tested 002 is the dependency, no intermediate merge wait                                                                                                                 |
-| 004 SPORTUI01   | Implemented, locally qualified                          | Not started                                                                                                                                                                           |
-| 005 ACTSRC02    | Implemented, locally qualified                          | Not started                                                                                                                                                                           |
-| 006 SPORTDATA01 | Queued after 005 and source re-verification             | Not started; no current live counts asserted                                                                                                                                          |
-| 007 ACTGEO01    | Queued after tested 005                                 | Not started; independent of live 006                                                                                                                                                  |
-| 008 ACTMAP01    | Queued after tested 003, 004, 007                       | Not started                                                                                                                                                                           |
-| 009 SPORTAPI02  | Queued after tested 005 and bounded source verification | Not started; sports/course coverage unverified                                                                                                                                        |
-| 010 ACTOPS01    | Queued after tested 005                                 | Not started                                                                                                                                                                           |
-| 011 ACTQA01     | Queued after all ready implementations                  | Not started                                                                                                                                                                           |
+| Step            | Status                                   | Evidence / next action                                         |
+| --------------- | ---------------------------------------- | -------------------------------------------------------------- |
+| 002 ACTCAT02    | Implemented and locally verified         | Existing 4790cf59; navigation repair ed9127b9; cumulative #298 |
+| 003 ACTUI02     | Implemented and locally verified         | 7940d8c9                                                       |
+| 004 SPORTUI01   | Implemented and locally verified         | 38d302b4                                                       |
+| 005 ACTSRC02    | Implemented and locally verified         | 71d5bf63; 144-migration replay                                 |
+| 006 SPORTDATA01 | Implemented; real local source verified  | 846a256b; 116 records; no hosted publication                   |
+| 007 ACTGEO01    | Implemented and locally verified         | 145 migrations; full 8415 assertions                           |
+| 008 ACTMAP01    | Next: shared renderer and working route  | No intermediate merge wait                                     |
+| 009 SPORTAPI02  | Queued: bounded official verification    | 005 tested; optional source block must not halt queue          |
+| 010 ACTOPS01    | Queued                                   | 005 tested; keep all schedules/sources OFF                     |
+| 011 ACTQA01     | Queued final cumulative validation/merge | Fresh current-main SQL proof and all required CI before merge  |
 
 ## 002 implementation and evidence
 
@@ -187,3 +187,27 @@ reran green. Real rendering exposed verbose repeated card metadata; cards now
 keep concise type/location/source while full entrance/access remains in detail.
 Selected captures are committed with attribution. Next: 007 canonical geographic
 query, then 008 working shared map integration; no live-source dependency wait.
+
+### 007 ACTGEO01 — implemented and locally qualified
+
+Additive `20261023101305` stores/indexes only canonical source-public geometry,
+adds an isolated external V3 query with shared MAP04 bounds/complexity limits and
+15-minute HMAC-signed full-tuple cursors. Existing V1/V2/native geography are
+unchanged. Map identity is `external_activity:<UUID>`; distance is from an explicit
+radius reference and available only for venue precision. Same eligibility helper
+handles cancellation, expiry, current course terms and every source gate.
+
+**145-migration clean replay; full pgTAP 174 files / 8,415 assertions PASS**.
+Scoped external/native geography includes exact geodesic/viewport boundaries,
+HMAC tampering/expiry and source disable. Real HTTP list/map equality, mixed kinds,
+two-source paging/precision, signed continuations and disable PASS. A **2,406-row**
+synthetic catalogue selected radius/bounds GiST indexes (6.236ms / 0.093ms observed)
+and enforced >2,000 matching spatial candidates; a full query refinement narrows
+before that cap. Fixtures cleaned. No native geometry or provider was used.
+
+Lint identified an over-strong IMMUTABLE annotation on JSON area normalization;
+changed it to STABLE and reran lint/advisors with **no issues**. Standard database
+types regenerated. Scoped mobile/ACTMET01 **96 PASS**, analysis PASS, including
+A→B→A pending-response cancellation and strict area/namespace/distance tests.
+Next: 008 working List/Map route using a modest shared-renderer extraction,
+retaining the one external filter authority and all native cache/provider rules.

@@ -544,7 +544,7 @@ void main() {
       'https://planets.example.org',
       'test-key',
       httpClient: MockClient((request) async {
-        expect(request.url.path, '/rest/v1/rpc/list_external_activities_v2');
+        expect(request.url.path, '/rest/v1/rpc/list_external_activities_v3');
         final params = jsonDecode(request.body) as Map<String, dynamic>;
         expect(params['p_category'], 'culture');
         expect(params['p_query'], 'source text');
@@ -779,6 +779,67 @@ void main() {
     await controller.loadMore();
     expect(gateway.calls, hasLength(count));
   });
+  test('ACTGEO01 account A to B to A discards stale public responses and inactive reads', () async {
+    final pendingA = Completer<ExternalActivityPage>();
+    final pendingB = Completer<ExternalActivityPage>();
+    final gateway = FakeExternalActivityGateway()
+      ..onList = (_, _) => pendingA.future;
+    final container = ProviderContainer(
+      overrides: [
+        initialActivitiesSplitPreferenceProvider.overrideWithValue(
+          const ActivitiesSplitPreferenceState(mode: ActivitiesSplitMode.on),
+        ),
+        externalActivityGatewayProvider.overrideWithValue(gateway),
+      ],
+    );
+    addTearDown(container.dispose);
+    container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'A'));
+    final subscription = container.listen(
+      externalActivitiesControllerProvider,
+      (_, _) {},
+    );
+    addTearDown(subscription.close);
+    final controller = container.read(
+      externalActivitiesControllerProvider.notifier,
+    )..setActive(true);
+    gateway.onList = (_, _) => pendingB.future;
+    container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'B'));
+    await Future<void>.delayed(Duration.zero);
+    pendingA.complete(
+      externalPageFixture(
+        items: [ExternalActivity.parse(externalActivityPayload())],
+        health: ExternalCatalogueHealth.healthy,
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(container.read(externalActivitiesControllerProvider).page, isNull);
+    pendingB.complete(
+      externalPageFixture(health: ExternalCatalogueHealth.empty),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      container.read(externalActivitiesControllerProvider).page!.items,
+      isEmpty,
+    );
+    gateway.onList = (_, _) async =>
+        externalPageFixture(health: ExternalCatalogueHealth.empty);
+    container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'A'));
+    await Future<void>.delayed(Duration.zero);
+    expect(gateway.calls, hasLength(3));
+    controller.setActive(false);
+    container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'B'));
+    await Future<void>.delayed(Duration.zero);
+    expect(gateway.calls, hasLength(3));
+  });
+
   test('refresh failure retains public rows with an explicit error; invalidated cursor restarts reads', () async {
     final gateway = FakeExternalActivityGateway()
       ..page = externalPageFixture(

@@ -40,6 +40,7 @@ class ExternalActivityFilters extends StatelessWidget {
                 onSelected: (_) => onChanged(
                   ExternalActivityFilter(
                     category: category,
+                    area: filter.area,
                     query: filter.query,
                     // Discipline is sports-specific. Culture has no place lane.
                     kind:
@@ -69,6 +70,7 @@ class ExternalActivityFilters extends StatelessWidget {
                   onSelected: (_) => onChanged(
                     ExternalActivityFilter(
                       category: filter.category,
+                      area: filter.area,
                       query: filter.query,
                       discipline: filter.discipline,
                       kind: kind,
@@ -109,6 +111,7 @@ class ExternalActivityFilters extends StatelessWidget {
                 onChanged: (value) => onChanged(
                   ExternalActivityFilter(
                     category: filter.category,
+                    area: filter.area,
                     query: filter.query,
                     kind: filter.kind,
                     discipline: value,
@@ -163,6 +166,7 @@ class ExternalActivityFilters extends StatelessWidget {
                   onChanged(
                     ExternalActivityFilter(
                       category: filter.category,
+                      area: filter.area,
                       query: filter.query,
                       discipline: filter.discipline,
                       kind: filter.kind,

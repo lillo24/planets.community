@@ -5235,6 +5235,21 @@ export type Database = {
         }
         Returns: Json
       }
+      list_external_activities_v3: {
+        Args: {
+          p_area?: Json
+          p_category?: string
+          p_cursor?: Json
+          p_discipline?: string
+          p_from?: string
+          p_kind?: string
+          p_limit?: number
+          p_map_only?: boolean
+          p_query?: string
+          p_to?: string
+        }
+        Returns: Json
+      }
       list_group_authority_invitations: {
         Args: {
           p_before_created_at?: string

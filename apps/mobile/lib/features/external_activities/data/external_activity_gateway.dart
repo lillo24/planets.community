@@ -8,6 +8,10 @@ class ExternalActivityCursorExpired implements Exception {
   const ExternalActivityCursorExpired();
 }
 
+class ExternalActivityAreaTooBroad implements Exception {
+  const ExternalActivityAreaTooBroad();
+}
+
 abstract interface class ExternalActivityGateway {
   Future<ExternalActivityPage> list(
     ExternalActivityFilter filter, {
@@ -28,7 +32,7 @@ class SupabaseExternalActivityGateway implements ExternalActivityGateway {
     Object? result;
     try {
       result = await _client.rpc(
-        'list_external_activities_v2',
+        'list_external_activities_v3',
         params: {
           'p_category': filter.category,
           'p_query': filter.query,
@@ -38,9 +42,12 @@ class SupabaseExternalActivityGateway implements ExternalActivityGateway {
           'p_to': filter.to,
           'p_limit': 20,
           'p_cursor': cursor,
+          'p_area': filter.area?.toJson(),
+          'p_map_only': filter.mappedOnly,
         },
       );
     } on PostgrestException catch (error) {
+      if (error.code == '54000') throw const ExternalActivityAreaTooBroad();
       if (cursor != null && error.code == '22023') {
         throw const ExternalActivityCursorExpired();
       }

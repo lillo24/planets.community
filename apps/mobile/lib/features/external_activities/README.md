@@ -61,3 +61,9 @@ remain visible while known server facets use EN/IT labels.
 ACTSRC02 V2 partial health retains readable healthy-source results and shows a
 sanitized warning. It does not turn failure into an empty or fictional catalogue.
 The V1 event API remains compatible; public source configuration stays private.
+
+ACTGEO01: the gateway now uses the additive external V3 list with shared `GeoArea`,
+explicit mapped-only scope and canonical namespaced/precision-safe distances.
+Existing detail remains V2. Old clients retain V1/V2 readers. Controllers fence
+account transitions, inactive state and stale continuations. This client requires
+the V3 migration before live use; no production provider/source gate changes.

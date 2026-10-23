@@ -140,3 +140,46 @@ DTOs; it does not add product fixtures or provider calls to Flutter. Inspected
 [English list](evidence/activities-sports/municipal-places-en-light-360-2x.png) and
 [Italian detail](evidence/activities-sports/municipal-place-it-dark-320-2x.png)
 captures use 2x text; both themes/languages passed. No physical device is claimed.
+
+## ACTGEO01 canonical external geography
+
+V3 `list_external_activities_v3` adds an explicit `p_area` and `p_map_only`; V1/V2
+signatures and native `search_public_geography_v1` remain unchanged. It reuses
+`external_catalogue_rows` for all source/rights/publication/cancellation/freshness,
+course and date predicates. Category/kind/query/discipline/date/area filter the
+complete eligible catalogue before keyset paging. Map is the geometry-bearing
+subset of that query, with `external_activity:<canonical UUID>` identity. No
+native proposal/resource UUID or protected coordinate enters this scope.
+
+The generated private `published_point` follows canonical content updates and
+has geography and geometry-expression GiST indexes. Radius uses PostGIS geodesic
+metres; bounds use inclusive index-backed point boxes. Shared MAP04 limits are
+unchanged: radius 1–100,000m; ordered non-antimeridian bounds within ±85° latitude,
+≤4° spans and ≤50,000km²; 2,000 complete matching spatial candidates. Overly broad
+queries fail with `54000`, never truncate silently. Unscoped List retains records
+without geometry. Geographic filtering cannot infer whether an unlocated item
+lies in an area. No guessed map completeness count is exposed.
+
+V3 cursors bind full filters/area/map-only scope, every eligible source/version,
+canonical order and a 15-minute reference. A private database-local 32-byte key
+HMAC-signs each cursor, including the keyset position; arbitrary edits/expired
+references/source changes fail explicitly. Key table and signer have RLS/denied
+raw execution for anon/authenticated/service roles. An owner key rotation safely
+invalidates cursors; no client credential or externally configured secret is
+required. Older V2 cursor semantics stay compatible.
+
+Distance is rounded geodesic metres from an **explicit selected radius reference**
+to a source **venue** point. Locality precision yields null distance, never exact
+venue proximity. No GPS, entrance guarantee or nearest ranking is inferred.
+Clients use the shared `GeoArea` validation and the strict namespace/distance
+parser. Account changes fence pending list/detail results; inactive/mode-OFF
+reads remain denied. V3 requires this migration before a live client upgrade;
+no backend flag or hosted deployment was enabled here.
+
+Tests include real service/anonymous list/map equality, both sources and all three
+kinds, identical points, radius/box boundaries, missing/locality geometry,
+cancelled/expired/unpublished records, HMAC tampering/expiry, disabled-source
+continuations and unchanged native map contracts. A 2,406-row local synthetic
+catalogue selected both GiST indexes (observed 6.236ms radius / 0.093ms bounds,
+not permanent timing assertions) and enforced the full-scope cap. No N+1 detail
+reads or provider search is involved.

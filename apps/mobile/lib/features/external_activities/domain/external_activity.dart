@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import '../../../core/backend/public_external_link.dart';
 import '../../../core/time/event_time.dart';
+import '../../geographic_discovery/domain/geographic_discovery.dart';
 
 enum ExternalCatalogueHealth {
   unconfigured,
@@ -23,12 +26,37 @@ class ExternalActivityFilter {
     this.kind,
     this.from,
     this.to,
+    this.area,
+    this.mappedOnly = false,
   });
   final String? category, discipline;
   final String query;
   final ExternalActivityKind? kind;
   // Explicit catalogue date window [from,to); places are outside its scope.
   final String? from, to;
+  final GeoArea? area;
+  final bool mappedOnly;
+
+  ExternalActivityFilter withArea(GeoArea? value) => ExternalActivityFilter(
+    category: category,
+    query: query,
+    discipline: discipline,
+    kind: kind,
+    from: from,
+    to: to,
+    area: value,
+    mappedOnly: mappedOnly,
+  );
+  ExternalActivityFilter forMap() => ExternalActivityFilter(
+    category: category,
+    query: query,
+    discipline: discipline,
+    kind: kind,
+    from: from,
+    to: to,
+    area: area,
+    mappedOnly: true,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -38,10 +66,21 @@ class ExternalActivityFilter {
       discipline == other.discipline &&
       kind == other.kind &&
       from == other.from &&
-      to == other.to;
+      to == other.to &&
+      mappedOnly == other.mappedOnly &&
+      jsonEncode(area?.toJson()) == jsonEncode(other.area?.toJson());
 
   @override
-  int get hashCode => Object.hash(category, query, discipline, kind, from, to);
+  int get hashCode => Object.hash(
+    category,
+    query,
+    discipline,
+    kind,
+    from,
+    to,
+    jsonEncode(area?.toJson()),
+    mappedOnly,
+  );
 }
 
 class ExternalOccurrence {
@@ -130,6 +169,7 @@ class ExternalActivity {
     this.suppliedNextOccurrence,
     this.linkScope = ExternalActivityLinkScope.item,
     this.discipline,
+    this.distanceMeters,
   });
   final String id, title, category, status;
   final String? description;
@@ -140,6 +180,8 @@ class ExternalActivity {
   final ExternalOccurrence? suppliedNextOccurrence;
   final ExternalActivityLinkScope linkScope;
   final String? discipline;
+  final double? distanceMeters;
+  String get mapIdentity => 'external_activity:$id';
   final PublicExternalLink officialLink, licenseLink;
   final String sourceName, attribution;
   final DateTime observedAt;
@@ -189,6 +231,17 @@ class ExternalActivity {
     final geometry = row['geometry'] == null
         ? null
         : ExternalActivityGeometry.parse(row['geometry']);
+    final distance = row['distance_m'];
+    if ((row['map_identity'] != null &&
+            row['map_identity'] != 'external_activity:$id') ||
+        (distance != null &&
+            (distance is! num ||
+                !distance.isFinite ||
+                distance < 0 ||
+                distance > 200000 ||
+                geometry?.precision != 'venue'))) {
+      throw const FormatException('Invalid external map identity/distance.');
+    }
     if (!RegExp(r'^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$')
             .hasMatch(id) ||
         !{'sports', 'culture', 'other'}.contains(category) ||
@@ -213,6 +266,7 @@ class ExternalActivity {
         _ => throw const FormatException('Invalid external link scope.'),
       },
       discipline: activityOptionalString(row, 'discipline', max: 64),
+      distanceMeters: (distance as num?)?.toDouble(),
       schedule: schedule,
       geometry: geometry,
       level: activityOptionalString(row, 'level', max: 2000),

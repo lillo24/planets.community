@@ -88,6 +88,7 @@ class _ExternalActivitiesScreenState
     _apply(
       ExternalActivityFilter(
         category: filter.category,
+        area: filter.area,
         discipline: filter.discipline,
         kind: filter.kind,
         from: filter.from,

@@ -7,6 +7,9 @@ import 'package:planets_mobile/features/external_activities/presentation/externa
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../support/fake_external_activities.dart';
+
+import 'package:planets_mobile/features/geographic_discovery/domain/geographic_discovery.dart';
+
 import '../../support/rendered_evidence.dart';
 
 Map<String, dynamic> listing(String kind) => externalActivityPayload()
@@ -39,6 +42,36 @@ void main() {
     await RenderedEvidence.loadFonts(force: true);
     await initializeDateFormatting('en');
     await initializeDateFormatting('it');
+  });
+  test('ACTGEO01 full filter area and namespaced distance are strict', () {
+    final base = ExternalActivityFilter(
+      category: 'sports',
+      kind: ExternalActivityKind.place,
+      query: 'court',
+      discipline: 'basketball',
+      area: const GeoRadius(46, 11, 5000),
+    );
+    expect(base.forMap().category, 'sports');
+    expect(base.forMap().query, 'court');
+    expect(base.forMap().area!.toJson(), base.area!.toJson());
+    expect(base.forMap().mappedOnly, isTrue);
+    expect(base.withArea(const GeoRadius(46, 11, 5000)), base);
+    expect(base.withArea(null), isNot(base));
+    final payload = listing('place')
+      ..['geometry'] = {
+        'latitude': 46,
+        'longitude': 11,
+        'precision': 'venue',
+        'provenance_url': 'https://calendar.example.org/data',
+      }
+      ..['map_identity'] = 'external_activity:$externalActivityFixtureId'
+      ..['distance_m'] = 120;
+    expect(ExternalActivity.parse(payload).distanceMeters, 120);
+    payload['map_identity'] = 'proposal:$externalActivityFixtureId';
+    expect(() => ExternalActivity.parse(payload), throwsFormatException);
+    payload['map_identity'] = 'external_activity:$externalActivityFixtureId';
+    (payload['geometry'] as Map)['precision'] = 'locality';
+    expect(() => ExternalActivity.parse(payload), throwsFormatException);
   });
   test(
     'ACTSRC02 partial health retains real items and typed dataset links',
