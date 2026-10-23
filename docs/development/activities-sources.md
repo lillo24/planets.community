@@ -133,7 +133,7 @@ No hosted source is configured or scheduled.
 Opt-in real-source local qualification (fresh non-default disposable stack):
 
 ```text
-PLANETS_DISPOSABLE_QA=1 npm run activities:trento:verify:local -- --evidence <new-local-json-path>
+PLANETS_DISPOSABLE_QA=1 node scripts/verify-local-trento-facilities.mjs --evidence <new-local-json-path>
 flutter test test/features/external_activities/external_activities_test.dart --plain-name SPORTDATA01 --dart-define=ACTIVITIES_MUNICIPAL_EVIDENCE=<absolute-json-path> --dart-define=UI_POLISH_CAPTURE_DIR=<absolute-captures-directory>
 ```
 

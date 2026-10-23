@@ -7,18 +7,18 @@ freshness and public visibility. The [map contract](activities-map.md) owns V3.
 
 ## Commands and budgets
 
-`npm run activities:operate --` accepts exactly one mode: `--dry-run`, `--apply`,
+`node scripts/operate-external-activities.mjs` accepts exactly one mode: `--dry-run`, `--apply`,
 `--inspect` or `--maintain`. Select one to four distinct code-owned IDs with
 `--sources id,id` or private `ACTIVITIES_SOURCES`; no default source is selected.
 Unknown IDs are rejected. Agenda Trento and ODH return their existing separate
 rights/coverage errors before provider traffic. Other selected sources continue.
 
 ```text
-npm run activities:operate -- --sources trento-open-sports-facilities --dry-run
-npm run activities:operate -- --sources trento-open-sports-facilities --inspect --target <target-id>
-npm run activities:operate -- --sources trento-open-sports-facilities --apply --target <target-id>
-npm run activities:operate -- --sources trento-open-sports-facilities --apply --due-only --target <target-id>
-npm run activities:operate -- --sources trento-open-sports-facilities --maintain --target <target-id>
+node scripts/operate-external-activities.mjs --sources trento-open-sports-facilities --dry-run
+node scripts/operate-external-activities.mjs --sources trento-open-sports-facilities --inspect --target <target-id>
+node scripts/operate-external-activities.mjs --sources trento-open-sports-facilities --apply --target <target-id>
+node scripts/operate-external-activities.mjs --sources trento-open-sports-facilities --apply --due-only --target <target-id>
+node scripts/operate-external-activities.mjs --sources trento-open-sports-facilities --maintain --target <target-id>
 ```
 
 Dry-run validates a bounded fresh export without database access or writes.
