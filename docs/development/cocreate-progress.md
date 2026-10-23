@@ -1,8 +1,10 @@
 # COCREATE-RUNALL progress
 
-Current active follow-up: [COMM01/FILL01 contract and resumable progress](cocreate-fill01.md),
+Current follow-up: [COMM01/FILL01 contract and final local qualification](cocreate-fill01.md),
 on separate unmerged `codex/cocreate-fill01`, integrating RUNALL and VIS01 under
-the user's latest request. The RUNALL ledger below records its original scope.
+the user's latest request. All eligible follow-up implementation/local checks
+are complete; draft PR #297 records the final-head CI/owner-review gate.
+The RUNALL ledger below records its original scope.
 
 Authority: [RUNALL pack](../../history-implementations/PLANETS_COCREATE_RUNALL_autonomous_implementation.md).
 Pre-programme base: `675bc592`. Latest integrated main: `217ce73e`
@@ -473,3 +475,85 @@ unchanged. This follow-up is not complete or ready for production.
   correction/evidence, push once final local qualification is complete, refresh
   draft #297 and its exact owner-review CI artifact. No hosted operation,
   deployment, main merge, external delivery or approval bypass.
+
+### Compatibility qualified / final mock replay active
+
+- Correction committed as **`9bfa662e`**. Final clean replay plus complete
+  database suite passes **170 files / 8,273 assertions**; scoped compatibility
+  **314**, lint/advisors clean. Actual selected-base upgrade passes **216** again,
+  preserving **187 native/co table snapshots / six function OID/ACL/result
+  contracts**. Manifest: `.local/cocreate-upgrade-b85d132f-3d4d-4942-b0b9-4b13458954d8/manifest.json`.
+- Final populated real OTP/socket programme passes **139**, final Auth verifier
+  **112** (prior race ordering **113**; one conditional branch adds its rejection
+  assertion). New generated types are committed and standard drift check passes.
+  Web typecheck passes again. Current mobile: **139** Co-Creation tests, clean
+  analysis/947-file formatting and updated debug APK **45.2s** pass. Complete
+  preceding native/mobile aggregate **4,179 / two existing skips** remains valid
+  for unchanged areas; the versioned-reader change was requalified in full for
+  its affected area. No test/assertion was removed or relaxed.
+- The owned backend is stopped **with backup**, gate OFF, original config bytes
+  restored and hash checked. Journal state is
+  `stopped_with_backup_compatibility_qualified`; no config diff remains. The QA
+  VM stays running only for two newly owned disposable mock stacks.
+- **Active final check:** session **55580**, log
+  `.local/qa-api-overlay/compat-mock-realms.log`, repeats genuine two-realm
+  notification/fixture/control replay with the final four-migration inventory.
+  The old 382-pass digest above is historical until this check completes. Next:
+  finish/repair it, confirm its cleanup and zero running owned containers, stop
+  the owned VM, record the final digest/results, final docs/diff/commit/push and
+  update draft PR #297 with its exact-head owner-review artifact. Main remains
+  `d735bb88`, RUNALL `a0e810d0`, VIS01 `512192ec`. Other worktrees remain untouched.
+
+## COMM01/FILL01 final local qualification
+
+- **All eligible requested work is implemented and locally qualified.** This
+  branch contains latest RUNALL `a0e810d0`, VIS01 `512192ec` and merged main
+  `d735bb88` (including ACTAPI01/ACTMET01). Four additive follow-up migrations
+  preserve published history, legacy readers/episode rules, RLS and owner gates.
+  Separate reviewable stage commits and the installed-reader fix `9bfa662e`
+  remain on `codex/cocreate-fill01`; no other branch/worktree was modified.
+- Delivered curated category → community → General/separate numbered rooms;
+  normalized three-account proposal activation and private deliberate Join
+  invitations; timed General requests, per-meeting places/RSVP and persistent
+  chats; bounded typed in-app notifications with time, privacy/mute/preferences;
+  scoped proposal moderation; exclusive presentation selection and independent
+  five-person mock login catalogs with all eleven requested interests; and only
+  a disabled coming-later Crazy Ideas Home button, without Project/data wiring.
+- Final clean database **170 files / 8,273 assertions PASS**, scoped new contracts
+  **314 PASS**, lint/advisors clean. Final selected RUNALL-base upgrade **216 PASS**,
+  **187 table snapshots / six function OID/ACL/result contracts** preserved.
+  Final genuine OTP/socket programme **139 PASS**, Auth **112 PASS** (earlier valid
+  race order 113), public types generated with the standard command and drift
+  check PASS. No parser/security assertion was relaxed for compatibility.
+- Complete mobile **4,179 PASS / two existing opt-in smoke skips**; final affected
+  Co-Creation **139 PASS** after reader correction, clean analysis and formatting
+  **947 / zero changes**, final Android debug APK **PASS (45.2s)**. Twenty-four
+  EN/IT 320dp light/dark 1x/2x contract-fixture PNGs were rendered/inspected.
+  Complete Web **405 PASS / two existing skips**, lint/typecheck/build/invitation
+  check PASS; typecheck repeated after final generation. Tooling **181 PASS**.
+  Unchanged Site has historical RUNALL evidence; no new Site run is claimed.
+- Final actual two-realm mock test **382 PASS / ten personas / zero normal-realm
+  product calls**, real notification rollback/concurrency, populated control
+  replay and repeat seed. Final canonical schema digest:
+  `45b81eeca3f4e7ca4d09cc8adc33076768df54229dbff045f6087243a1b562aa`.
+  Mock target/broker/fixture unit tests **14 PASS**. No hosted mock update occurred.
+- Restoration complete: activation OFF, owned backend stopped with backup,
+  original config hash **2e67b7a5cda9ffc671c31b4461c1c8b896cc75c3bf727f6e406ee573eefbd8f6**
+  restored, both newly created mock stacks cleaned up, zero running owned
+  containers verified and `planets-cocreate-qa` VM stopped. Private diagnostics,
+  extra renders and recovery manifests remain untracked in `.local` only.
+- **Precise remaining gate/next action:** see draft
+  [PR #297](https://github.com/lillo24/planets.community/pull/297) for the final
+  source SHA, CI run and exact migration-review artifact. The repository owner
+  must review its complete SQL inventory (including pending RUNALL migrations),
+  post `STAGING-AUTO01-REVIEW` plus that artifact's exact `review-required.json`,
+  and rerun the existing gate. No approval is posted/forged or alternate workflow
+  used to bypass it. Final-head GitHub CI is not claimed passed before that gate.
+  Keep this dependent PR draft/unmerged; no production/hosted migration,
+  deployment, store submission or external push delivery was performed.
+- Physical Android/voice/accessibility, founder visual review and iOS remain
+  unrun owner qualification; `adb devices -l` found no attached device. These did
+  not stop eligible implementation. Production experimental-policy activation,
+  hosted mock adoption and provider setup remain separately controlled. Exact
+  commands, assumptions, compatibility/access matrix and evidence are in
+  [cocreate-fill01.md](cocreate-fill01.md). No further eligible code stage remains.

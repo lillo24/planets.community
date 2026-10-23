@@ -1,7 +1,7 @@
 # COCREATE-COMM01/FILL01 — communities, meetings and mock data
 
-Status: implementation complete; final integrated qualification in progress,
-2026-10-23. New isolated branch
+Status: implemented and locally qualified, 2026-10-23; exact-head GitHub owner
+review and production activation remain separate. New isolated branch
 `codex/cocreate-fill01` builds on RUNALL `a0e810d0` and preserves VIS01
 `512192ec` through an explicit merge. Latest merged main `d735bb88` is integrated,
 preserving ACTAPI01 and merged ACTMET01. Other branches/worktrees are untouched.
@@ -150,48 +150,29 @@ there is no fallback to a dateless admission or Demo data.
   run by this task; the owner must approve/apply the schema and mock control/seed
   update before this data exists on the hosted mock.
 
-## Progress and next action
+## Delivery and next action
 
 - Crazy Ideas is a disabled, accessible Home button beside Find people in the
   same presentation, with localized coming-later copy. It has no destination,
   Project connection, write action or fixture data. Existing native Home entries
   remain available.
 
-- Inspected local/unpushed state before changes: RUNALL has only its preserved
-  untracked `.local/`; VIS01 is clean/pushed; primary main has preserved
-  untracked `.vis01/`. Fetched origin safely; main remains `217ce73e`.
-- Created managed worktree `cocreate-fill01`, branch `codex/cocreate-fill01`.
-  Integrated the existing tested VIS01 source without conflicts.
-- Read current architecture, tooling, recruitment, room membership, notification
-  composition and mock control code. Existing recruitment has no meeting time
-  or durable notification, and mock personas currently serve one shared catalog.
-- Implemented additive meeting/attendance/card RPCs, canonical atomic admission,
-  bounded in-app notice fanout, categories, normalized proposals/support and scoped
-  moderation. UI and mock work is in progress, not yet fully qualified.
-- Initial checks: 85 genuine OTP assertions passed; new pgTAP passed 286; populated
-  upgrade from selected RUNALL a0e810d0 passed 216 assertions and preserved 187
-  original native/co-creation table snapshots plus six critical function
-  OID/ACL/result contracts. Exact manifest is retained in task-owned .local.
-- Full fresh replay and all 170 pgTAP files passed 8,234 assertions after repairing
-  the worker composition and removing a duplicate General insertion (the existing
-  hub trigger already creates it). No predecessor assertion was weakened.
-- Final additional persistent-chat capacity assertion passes with all 287 scoped
-  assertions. Genuine Auth verification now passes 90, including explicit RSVP
-  and exact retry from a retained chat member for the next occurrence. Standard
-  public type generation completed (112 additive lines). Backend source is
-  locally qualified; final aggregate checks and owner CI gates remain pending.
-- Mobile initial regression: 298 passed / one new cross-preference fixture lacked
-  its second store. Added the missing fake store; that test passes. New flow
-  matrix passes 19 tests, including 320dp EN/IT, light/dark, 1x/2x, deliberate Join,
-  exact lost-reply retry and account-input clearing. New parser/mode/notice tests
-  passed except a widget lazy-scroll issue repaired in the 19-test rerun. A full
-  final aggregate, captures, analysis, build and actual mock replay remain pending.
-- Next: finish RSVP/manager/mock/admin negative tests and final qualification;
-  inspect rendered evidence; commit each qualified stage, then add only the Crazy
-  Ideas Home button and complete the final cumulative draft PR/checkpoint.
-- No hosted migrations, deployment, provider activation, approval bypass or
-  automatic merge is authorized/performed. RUNALL owner migration review remains
-  an inherited CI gate, to be refreshed for the exact cumulative head.
+- All eligible implementation and local qualification are complete. Reviewable
+  stages are `2225a88f` (canonical schema/security), `e6fdf8f5` (race/moderation
+  tests), `ba60e60d` (staff review), `d6a7e12b` (mock world), `a41e71a6` (typed
+  readers/notices), `387a8852` (mobile), `f5a25f25` (latest main), `81dd40f9`
+  (phone renders) and `9bfa662e` (installed-reader compatibility).
+- The precise final-head CI state and migration-review artifact are linked from
+  draft PR #297. The next owner action is to inspect the SQL diff and complete
+  migration inventory, including unreviewed inherited RUNALL migrations, and use
+  the artifact's exact `review-required.json` with the existing
+  `STAGING-AUTO01-REVIEW` control, then rerun that gate. This task never posts or
+  fabricates owner approval. Full final-head GitHub CI is not claimed passed.
+- Separate owner work remains for VIS01/combined visual review, physical Android,
+  iOS and production experimental-policy approval. Hosted mock adoption requires
+  separately approved schema/control/seed updates. External push provider and
+  delivery activation remain under existing controls. No hosted migration,
+  deployment, store submission, external delivery or automatic merge occurred.
 
 ## Access, privacy and rollback
 
@@ -242,18 +223,21 @@ upgrade. The journaled task config used project `planets-cocreate-fill01-qa`, AP
 QA requires a new verified owned setup, not running these resets on the default
 project. No private signing/API keys are recorded in source or evidence.
 
-- Final strengthened backend tests: **299 pgTAP** and **104 genuine Auth**
+- Final strengthened backend tests: **314 scoped pgTAP** and **112 genuine Auth**
   assertions pass, including normalized concurrent proposals from different
   accounts, withdrawal versus activation, existing-hub reuse, scoped staff CAS,
-  and more than one bounded notification-recipient page. Clean aggregate remains
-  **170 files / 8,234 assertions** before these twelve additional assertions.
+  and more than one bounded notification-recipient page. Final clean replay and
+  complete aggregate pass **170 files / 8,273 assertions**, including installed
+  nine-field/new eleven-field card readers and identical ACK boundaries. A prior
+  Auth run passes **113**: the valid withdrawal/activation race ordering adds one
+  conditional rejection assertion; the final populated run passes 112.
 - Populated selected-base upgrade: **216 pass**, 137 immutable migrations,
   **187 table snapshots / six warmed function OID/ACL/result contracts**
   preserved. The integrated predecessor OTP/socket programme passes **139**.
 - `node scripts/mock/qualify-local.mjs` with `PLANETS_DISPOSABLE_QA=1` passes
   **382 checks / ten personas / zero normal-realm calls**, real notification
   worker rollback/concurrency, populated mock-control replay and repeat seed.
-  Source schema digest: `838382e1803838ee880ea19ea18a3dd5876fcb1a317bac0bbf7cb8a76c4e2478`.
+  Final four-migration source digest: `45b81eeca3f4e7ca4d09cc8adc33076768df54229dbff045f6087243a1b562aa`.
   The script owns two new stacks with unique private signing/API keys and cleans
   up only those stacks. Mock target/broker/people fixture unit tests pass **14**.
 - Complete Web: `npm run test --workspace @planets/web -- --pool=forks` passes
@@ -261,11 +245,12 @@ project. No private signing/API keys are recorded in source or evidence.
   invitation check pass. Default-thread aggregate was stopped after stalling;
   the fork pool ran identical coverage. Existing build-size/Vite future-config
   warnings are retained. Root `npm run test:tooling` passes **181**.
-- Mobile community/meeting/Home renders pass **36 targeted tests** with EN/IT,
-  320dp, light/dark and 1x/2x text. Captures under `evidence/cocreate-fill01`
-  are actual contract-fixture renders, not live-device screenshots. Italian
-  category headings now give large text its own line. Final retry extensions,
-  full aggregate/analysis/debug APK and latest-main reconciliation are in progress.
+- Complete mobile aggregate passes **4,179 / two existing opt-in smoke skips**.
+  After the reader-only correction, the entire affected Co-Creation suite passes
+  **139** again, analysis is clean, formatting checks **947 files / zero changes**
+  and Android debug APK builds (**45.2s** final build). EN/IT 320dp, light/dark and
+  1x/2x text captures are actual contract-fixture renders, not device screenshots.
+  Current sources also include the latest merged ACTMET01 with its gates intact.
 - `adb devices -l` finds no attached device. Physical Android/accessibility and
   iOS qualification are unrun. No emulator belonging to another task was booted.
   QA activation is OFF, the owned project is stopped with backup, root config
@@ -290,11 +275,10 @@ inspection then found cramped availability copy; count and label now have full
 width with occupancy still aligned right. The final entire Co-Creation suite
 passes **139**, including that repair and both new journeys.
 
-Final format covers **947 files / zero changes** and analysis is clean. The
-complete serial mobile run is still active on the integrated source, followed
-by the debug APK. The small visual repair is independently requalified by all
-139 Co-Creation tests after the full run had already passed this area; no test
-or assertion is disabled. Twenty-four focused PNGs are retained in
+Final format covers **947 files / zero changes** and analysis is clean. Complete
+serial mobile passes **4,179 / two existing skips**; all 139 affected Co-Creation
+tests and debug APK pass again after final reader versioning. No test or assertion
+is disabled. Twenty-four focused PNGs are retained in
 `evidence/cocreate-fill01`; extra predecessor/Demo renders are preserved only in
 task-owned `.local` diagnostics.
 
@@ -315,3 +299,21 @@ same directory. Mock unit command from root:
 Web/root commands and their qualified results are recorded above. Final GitHub
 CI remains dependent on the existing exact-head owner migration review; no
 owner approval is posted or fabricated by this task.
+
+The other Web commands run from root were:
+
+```text
+npm run lint --workspace @planets/web
+npm run typecheck --workspace @planets/web
+npm run build --workspace @planets/web
+npm run invitation:check --workspace @planets/web
+npm run test:tooling
+```
+
+The final scoped database command was
+`npm exec supabase -- test db supabase/tests/160_cocreate_community_meetings.test.sql --local`.
+All commands above were run; full repository `check:db` was not redundantly
+rerun end-to-end for this follow-up. Its affected canonical contracts were
+qualified by the complete database suite, real Auth/worker/socket verifiers and
+actual-base upgrade listed above. Unchanged Site qualification remains the
+historical RUNALL evidence, not a new claimed Site execution.
