@@ -17,6 +17,7 @@ const safeCodes = new Set([
   "persistence_error",
   "upstream_error",
   "invalid_payload",
+  "source_record_drift",
   "limit_exceeded",
   "transport_error",
   "duplicate_upstream_id",

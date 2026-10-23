@@ -85,7 +85,7 @@
     "statement": "One actual official CSV fetch; complete local canonical import and repeat of that exact fetched snapshot. Fixtures cleaned. No hosted writes."
   },
   "checks": {
-    "tooling": 208,
+    "tooling": 210,
     "mobile": 4314,
     "mobile_skips": 2,
     "web": 405,
@@ -101,7 +101,8 @@
     "synthetic_service_anonymous_http": "pass",
     "clean_local_migrations": 146,
     "pgTAP_files": 175,
-    "pgTAP_assertions": 8452
+    "pgTAP_assertions": 8452,
+    "malformed_complete_export": "Both CLI paths fail before success; real incomplete receipt, partial public health and unchanged prior success/data verified"
   },
   "android": {
     "command": "flutter build apk --debug --target-platform android-arm64 --dart-define=ENABLE_DEMO_TOOLS=false",

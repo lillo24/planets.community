@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { runActivityImport } from "./external-activities/importer.mjs";
+import { ActivityImportError } from "./external-activities/transport.mjs";
 import {
   activityOperationStore,
   runActivityOperations,
@@ -72,6 +74,43 @@ export async function verifyExternalOperations(sql, service, guest) {
     const before =
       await sql`select activity_id,content_hash,revision,last_observed_at from private.external_activities where source_id=any(${sources}) order by source_id`;
     assert.equal(before.length, 2);
+    const successful = await store.inspect(sources, AbortSignal.timeout(5000));
+    await assert.rejects(
+      () =>
+        runActivityImport({
+          apply: true,
+          store,
+          connector: {
+            ...resolve(sources[0]),
+            collect: async () => ({
+              complete: true,
+              entries: [{ record: { upstream_id: "malformed" } }],
+            }),
+          },
+        }),
+      (error) =>
+        error instanceof ActivityImportError &&
+        error.code === "source_record_drift",
+    );
+    const rejected = await store.inspect(sources, AbortSignal.timeout(5000));
+    assert.equal(rejected.sources[0].last_run.state, "incomplete");
+    assert.equal(rejected.sources[0].last_run.error_code, "invalid_payload");
+    assert.equal(rejected.sources[0].last_run.accepted, 0);
+    assert.equal(rejected.sources[0].last_run.rejected, 1);
+    assert.equal(
+      rejected.sources[0].last_success_at,
+      successful.sources[0].last_success_at,
+    );
+    const visible = await guest.rpc("list_external_activities_v2", {
+      p_kind: "place",
+    });
+    assert.equal(visible.error, null);
+    assert.equal(visible.data.state, "partial");
+    assert.equal(
+      visible.data.items.length,
+      2,
+      "Rejected source A preserves its prior valid row and healthy B",
+    );
     const due = await runActivityOperations({
       sources,
       store,
@@ -121,7 +160,7 @@ export async function verifyExternalOperations(sql, service, guest) {
     assert.equal(disabled.status, "failure");
     assert.ok(disabled.sources.every((x) => x.state === "disabled"));
     console.log(
-      "ACTOPS01: real service/private inspection, anonymous denial, dry-run zero writes, two-source apply/due skip, locked-source skip, expired lease/late finish fencing and canonical preservation PASS.",
+      "ACTOPS01: real service/private inspection, anonymous denial, dry-run zero writes, all-rejected incomplete receipt/partial health/prior success preservation, two-source apply/due skip, locked-source skip, expired lease/late finish fencing and canonical preservation PASS.",
     );
   } finally {
     await sql`delete from private.external_activities where source_id=any(${sources})`;

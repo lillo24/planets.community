@@ -60,7 +60,12 @@ truncated municipal exports fail; no historical row-count threshold is assumed.
 Explicit successful empty traversals remain supported for other capable adapters.
 Unexpected record or schedule validation rejections likewise return nonzero
 `source_record_drift` with counts, even if the existing transaction saved a valid
-subset. An all-rejected malformed export cannot appear as a green empty refresh.
+subset. When no valid candidates remain and any unexpected validation rejection
+occurred, the **shared importer** fails before success for both CLI paths. Apply
+stores `incomplete/invalid_payload`, preserves the previous success/observations
+and exposes unavailable/partial public health. Unsupported source kinds never
+count as accepted. An all-rejected malformed export cannot appear as a healthy
+empty refresh.
 Routine explicit outside-window or unlicensed-record exclusions retain their
 existing rejection policy; no rejected body is logged or used to delete old rows.
 

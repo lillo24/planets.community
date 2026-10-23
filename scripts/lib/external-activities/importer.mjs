@@ -143,7 +143,7 @@ export async function runActivityImport({
           if (error?.code !== "invalid_record") throw error;
           rejection = "invalid_record";
         }
-        if (record) {
+        if (record && !rejection) {
           if (ids.has(record.upstream_id))
             throw new ActivityImportError("duplicate_upstream_id");
           ids.add(record.upstream_id);
@@ -155,6 +155,16 @@ export async function runActivityImport({
         reasons[rejection] = (reasons[rejection] ?? 0) + 1;
       }
     }
+    // A complete traversal with no entries, or only deliberate window/rights
+    // exclusions, can be a valid empty catalogue. Unexpected validation drift
+    // rejecting every candidate is not an observed healthy empty snapshot.
+    // Fail before success persistence for both single-source and set-based CLIs.
+    if (
+      fetched > 0 &&
+      records.length === 0 &&
+      (reasons.invalid_record ?? 0) + (reasons.unsupported_schedule ?? 0) > 0
+    )
+      throw new ActivityImportError("source_record_drift");
     const result = apply
       ? await store.finish(
           run.run_id,
@@ -189,13 +199,20 @@ export async function runActivityImport({
           run.run_id,
           {
             state:
-              code === "limit_exceeded" || code === "invalid_payload"
+              code === "limit_exceeded" ||
+              code === "invalid_payload" ||
+              code === "source_record_drift"
                 ? "incomplete"
                 : "failure",
             records: [],
             fetched,
             rejected,
-            errorCode: storedCodes.has(code) ? code : "internal_error",
+            errorCode:
+              code === "source_record_drift"
+                ? "invalid_payload"
+                : storedCodes.has(code)
+                  ? code
+                  : "internal_error",
           },
           AbortSignal.timeout(10_000),
         );

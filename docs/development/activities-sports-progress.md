@@ -41,7 +41,7 @@ Completed local qualification:
 
 - Full `flutter gen-l10n`, Dart formatting, `flutter analyze`: clean; full
   `flutter test --concurrency=2`: **4,314 PASS, two existing skips**.
-- `npm run check:web`: **208 tooling tests** (fresh tooling rerun after the final
+- `npm run check:web`: **210 tooling tests** (fresh tooling rerun after the final
   operations diagnostic fix), **405 web tests, two existing skips**, lint,
   typecheck, production build and static-invitation checks pass.
   `npm run check:site`: **60 tests**, lint/typecheck, build and Wrangler deployment
@@ -80,6 +80,14 @@ rejections now produce nonzero `source_record_drift` diagnostics instead of a
 green zero-accepted export. Known outside-window/rights exclusions keep the
 existing explicit policy; no canonical erasure or test weakening was introduced.
 The real-import verifier now proves V3 List/Map equality and source-disable denial.
+Final shared-importer inspection also closes the legacy single-source CLI path:
+an entirely malformed/rejected export throws before success, stores an incomplete
+receipt and retains prior success/data while public health becomes partial or
+unavailable. A kind-rejected normalized record is never also counted as accepted.
+Genuine empty traversals/routine exclusions and valid subsets keep their explicit
+policies. Fresh tooling **210 PASS** and real HTTP receipt/partial-health/unchanged
+observation assertions pass; SQL bytes/signatures remain unchanged. This final
+code fix requires a fresh exact-head review and CI after the earlier 274b5233 run.
 
 The exact CI request also exposed a reporting distinction: two Windows local
 SQL inputs used CRLF while their published Git blobs use LF. Byte comparison

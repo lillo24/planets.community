@@ -277,10 +277,49 @@ test("unexpected record validation drift cannot become a green zero-accepted exp
   assert.equal(result.status, "failure");
   assert.ok(
     result.sources.every(
+      (x) => x.state === "failed" && x.code === "source_record_drift",
+    ),
+  );
+});
+test("valid subset with unexpected rejected rows keeps explicit nonzero operator warning", async () => {
+  const { settings } = harness({
+    mode: "dry-run",
+    importSource: runActivityImport,
+  });
+  settings.resolve = (sourceId) => ({
+    sourceId,
+    origins: ["https://example.org"],
+    officialOrigin: "https://example.org",
+    apiPathPrefix: "/api/",
+    collect: async () => ({
+      complete: true,
+      entries: [
+        {
+          record: {
+            upstream_id: "good",
+            title: "Synthetic valid place",
+            description: null,
+            kind: "place",
+            category: "sports",
+            source_categories: [],
+            canonical_url: "https://example.org/place",
+            status: "scheduled",
+            publishable: true,
+            occurrences: [],
+          },
+        },
+        { record: { upstream_id: "bad" } },
+      ],
+    }),
+  });
+  const result = await runActivityOperations(settings);
+  assert.equal(result.status, "failure");
+  assert.ok(
+    result.sources.every(
       (x) =>
         x.state === "warning" &&
         x.code === "source_record_drift" &&
-        x.accepted === 0 &&
+        x.accepted === 1 &&
         x.rejected === 1 &&
         x.invalid_records === 1,
     ),
