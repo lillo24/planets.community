@@ -23,6 +23,8 @@ import {
   policyModuleHash,
   UnsafeCatalogError,
   predecessorCatalog,
+  SOURCE_INDEX_RETIREMENT,
+  assertSourceIndexRetirementCatalog,
 } from "./eligibility.mjs";
 import {
   mockBasemapContract,
@@ -30,6 +32,7 @@ import {
   seedStorageWitness,
   mapPolicyNegativeControls,
   writerLockContract,
+  sourceIndexRetirementControls,
 } from "./contracts.mjs";
 import { sha256 } from "./sql-fingerprint.mjs";
 import {
@@ -256,6 +259,13 @@ try {
     witness.reason = classification.reason;
     witness.catalog_effects = catalogEffects(beforeEffects, afterEffects);
     witness.effect_sha256 = sha256(JSON.stringify(witness.catalog_effects));
+    const sourceOnly =
+      classification.classification === SOURCE_INDEX_RETIREMENT.classification;
+    if (sourceOnly) {
+      // Unlike a hosted hold, a false index predecessor/removal is source-fatal.
+      assertSourceIndexRetirementCatalog(beforeEffects, afterEffects);
+      witness.source_index_retirement_verified = true;
+    }
     try {
       if (classification.classification === "routine-candidate") {
         assertRoutineCatalog(
@@ -270,6 +280,7 @@ try {
             "private-additive-candidate",
             "mock-basemap-contract-candidate",
             "established-contract-candidate",
+            SOURCE_INDEX_RETIREMENT.classification,
           ].includes(classification.classification)
         )
           throw new ReleaseError(classification.reason);
@@ -284,6 +295,11 @@ try {
       )
         throw error;
       witness.reason = error.message;
+    }
+    if (sourceOnly) {
+      witness.status = "review-required-for-hosted";
+      witness.reason =
+        "Exact ACTSRC02 predecessor index retirement verified for source only; other migration effects require a separately installed hosted contract";
     }
     witnesses.push(witness);
     previousInventory.push(migration);
@@ -418,12 +434,16 @@ try {
         "b20c20758f6addfa1a15b670b6155e09cac614f6:supabase/migrations/20261023054839_mapmock01_shared_public_basemap.sql",
       ]);
   await mapPolicyNegativeControls(status, proposedMapSql);
+  await sourceIndexRetirementControls(status.databaseUrl);
   await writerLockContract(status.databaseUrl);
   for (const w of witnesses) {
     if (w.candidate === "mock-basemap-contract-candidate")
       await mockBasemapContract(status.databaseUrl);
     w.independent_contracts = true;
-    if (w.catalog_verified)
+    if (
+      w.catalog_verified &&
+      w.candidate !== SOURCE_INDEX_RETIREMENT.classification
+    )
       w.reason =
         "Populated rows, observed catalog, trusted security tests and real actor API denials verified";
   }
@@ -478,6 +498,7 @@ try {
     denial_probes: denials,
     storage_objects_preserved: true,
     policy_negative_probes: true,
+    source_index_retirement_controls: true,
     single_writer_probe: true,
     cli_startup_bounds: true,
   };
