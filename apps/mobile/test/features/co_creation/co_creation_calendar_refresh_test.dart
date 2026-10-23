@@ -111,6 +111,25 @@ Future<AppLocalizations> laterDay(
 void main() {
   setUpAll(RenderedEvidence.loadFonts);
   testWidgets(
+    'socket loss clears rows and retains authorized HTTP polling fallback',
+    (tester) async {
+      final fixture = PagesFixture()..count = 27;
+      await c.open(tester, fixture);
+      await laterDay(tester, fixture);
+      fixture.hints.add((connected: false, event: 1));
+      await tester.pumpAndSettle();
+      expect(month(tester).meetings, isEmpty);
+      final before = fixture.requests.length;
+      fixture.changed = true;
+      await tester.pump(const Duration(seconds: 20));
+      await tester.pumpAndSettle();
+      expect(month(tester).meetings, hasLength(27));
+      expect(month(tester).meetings.last.full, isTrue);
+      expect(fixture.requests.length - before, 2);
+      expect(fixture.requests[before]['p_cursor'], isNull);
+    },
+  );
+  testWidgets(
     'nonmember calendar review reads fresh eligibility after navigation',
     (tester) async {
       final fixture = PagesFixture()

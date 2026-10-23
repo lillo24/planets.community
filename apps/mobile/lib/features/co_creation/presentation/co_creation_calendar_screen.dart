@@ -59,7 +59,7 @@ class _CalendarState extends ConsumerState<_CalendarBody>
   // Non-private coverage intent survives invalidation; rows/cursors do not.
   int wantedRows = 25;
   (DateTime, String)? frontier;
-  bool reading = false, refreshQueued = false, disconnected = false;
+  bool reading = false, refreshQueued = false;
   bool wasActive = false;
   double savedOffset = 0;
   Timer? timer;
@@ -74,9 +74,10 @@ class _CalendarState extends ConsumerState<_CalendarBody>
     });
   }
 
+  // Socket hints invalidate rows; they do not grant or disable canonical HTTP
+  // access. Keep foreground polling usable when metadata delivery is down.
   bool get activeView =>
       mounted &&
-      !disconnected &&
       ModalRoute.of(context)?.isCurrent == true &&
       TickerMode.valuesOf(context).enabled &&
       (WidgetsBinding.instance.lifecycleState == null ||
@@ -308,7 +309,6 @@ class _CalendarState extends ConsumerState<_CalendarBody>
   @override
   Widget build(BuildContext context) {
     ref.listen(peopleSignalsProvider, (_, next) {
-      disconnected = next.asData?.value.connected != true;
       setState(() {
         clear();
         busy = next.asData?.value.connected == true;

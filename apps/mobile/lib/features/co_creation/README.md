@@ -32,6 +32,7 @@ CAL01-FIX01 retains loaded pagination intent while clearing protected rows and
 revalidates up to four 25-row pages per pass, with honest partial coverage and
 explicit continuation. Refresh triggers serialize; inactive/hidden hints cannot
 reload or adopt private rows. Date nodes expose a semantic tap action.
+Metadata disconnects invalidate rows without disabling the authorized HTTP fallback.
 `CoRecruitmentReview` and `recruitmentReview` add a separate strict actor-scoped
 read used by all recruitment review entry paths; card availability stays distinct
 from server-derived viewer eligibility. Frozen Join recovery remains independent

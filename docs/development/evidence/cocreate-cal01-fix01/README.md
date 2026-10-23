@@ -12,6 +12,8 @@ Qualified on 23 October 2026 against the CAL01-installed predecessor
   loss, inactive/hidden response fencing and foreground resume. A 127-meeting
   fixture plus three earlier inserts proves the four-page cap and practical
   continuation without losing the old frontier or duplicating rows.
+  Socket loss clears protected rows immediately while retaining fresh authorized
+  HTTP polling when metadata delivery remains unavailable.
 - **F02:** [recruitment review tests](../../../../apps/mobile/test/features/co_creation/co_creation_recruitment_test.dart)
   exercise ineligible direct entry, eligibility loss/recovery and exact frozen
   Join retry after the card fills. The calendar flow independently rechecks
@@ -51,8 +53,13 @@ new serialized controller no longer discards that operation on a timer tick.
 - Database lint/security advisors: no schema errors or issues.
 - Public database types regenerated from the replayed source; only the new
   review RPC is added. Web consumer typecheck passed.
-- Complete Co-Creation and native router suites: **307 tests passed**. Root
-  tooling: **287 tests passed**. Affected Dart/Markdown/JavaScript formatting
+- Latest combined-main verification also passed the map/calendar SQL pair
+  (**124 assertions**), 98 calendar HTTP assertions and regenerated-type comparison.
+  Its [upgrade summary](database-qualification-current-main.json) preserves
+  **198 tables / 557 other public functions**, including the independently merged
+  map objects, while using the same immutable CAL01 reader predecessor contract.
+- Complete Co-Creation and native router suites: **308 tests passed**. Root
+  tooling: **343 tests passed**. Affected Dart/Markdown/JavaScript formatting
   and whitespace checks passed. Representative render tests also passed.
 
 The complete mobile/router and tooling checks, analysis and required GitHub

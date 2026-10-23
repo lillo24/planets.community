@@ -100,6 +100,9 @@ Initiation and response adoption both require the current foreground route and
 resumed lifecycle. Connected hints while inactive/hidden cannot repopulate rows;
 foreground resume revalidates. Date semantics expose the same tap action as
 pointer input, with full localized date, selection and mixed markers.
+Metadata-socket loss clears and fences existing rows but does not disable the
+authorized HTTP fallback. Foreground polling or an explicit retry starts a fresh
+server-authorized read even while the socket remains disconnected.
 Loading, backend failure, unavailable admission and a truly empty day have
 different presentations. There is no persistent private cache or mock fallback.
 
