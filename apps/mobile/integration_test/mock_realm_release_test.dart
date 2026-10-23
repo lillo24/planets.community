@@ -293,9 +293,9 @@ void main() {
             final offset = (y * painted.width + x) * 4;
             if (rgba!.getUint8(offset) == 210 &&
                 rgba.getUint8(offset + 1) == 210 &&
-                  rgba.getUint8(offset + 2) == 210) {
+                rgba.getUint8(offset + 2) == 210) {
               fixturePixels++;
-              }
+            }
           }
         }
         painted.dispose();

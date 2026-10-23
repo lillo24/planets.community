@@ -8,11 +8,22 @@ create table private.mock_basemap_config (
  client_daily_units integer not null default 160 check(client_daily_units between 1 and 400),
  actor_minute_requests integer not null default 24 check(actor_minute_requests between 1 and 30),
  client_minute_requests integer not null default 36 check(client_minute_requests between 1 and 60),
- aggregate_minute_requests integer not null default 60 check(aggregate_minute_requests between 1 and 120)
+ aggregate_minute_requests integer not null default 60 check(aggregate_minute_requests between 1 and 120),
+ max_concurrent_tiles integer not null default 6 check(max_concurrent_tiles between 1 and 6)
 );
 insert into private.mock_basemap_config(singleton) values(true);
 alter table private.mock_basemap_config enable row level security;
 revoke all on private.mock_basemap_config from public,anon,authenticated,service_role;
+
+-- Transient server IO leases contain only reservation tokens. No actor, bearer,
+-- tile selection or overlay is attached to the shared public pixel cache. The
+-- same config lock caps this table at six outstanding mock acquisitions.
+create table private.mock_basemap_claims (
+ token uuid primary key,
+ expires_at timestamptz not null
+);
+alter table private.mock_basemap_claims enable row level security;
+revoke all on private.mock_basemap_claims from public,anon,authenticated,service_role;
 
 -- Lock order: search -> provider -> mock -> baseline. Both the global ledger
 -- and tile pending rows are serialized by the SAME installed provider lock.
@@ -32,6 +43,9 @@ begin
  if cfg.blocked_until>statement_timestamp() then return 'unavailable'; end if;
  select * into mock from private.mock_basemap_config where singleton for update;
  if not found or not mock.enabled then return 'disabled'; end if;
+ delete from private.mock_basemap_claims c where c.expires_at<=statement_timestamp()
+  or not exists(select 1 from private.map_baseline_tiles t where t.token=c.token and t.state='pending' and t.expires_at>statement_timestamp())
+     and not exists(select 1 from private.map_provider_cache t where t.token=c.token and t.kind='tile' and t.state='pending' and t.expires_at>statement_timestamp());
  delete from private.location_provider_usage where bucket<day;
  if not p_charge then
   if coalesce((select used from private.location_provider_usage where scope='requests:global' and bucket=minute),0)>=cfg.global_minute_requests
@@ -43,6 +57,9 @@ begin
    on conflict(scope,bucket) do update set used=private.location_provider_usage.used+1;
   return 'ok';
  end if;
+ -- Apply before charging a cold miss; duplicate requests and ready cache hits
+ -- are handled by the shared algorithm before it reaches this acquisition gate.
+ if (select count(*) from private.mock_basemap_claims)>=mock.max_concurrent_tiles then return 'pending'; end if;
  -- Mock can never spend over one quarter of the configured global allowance,
  -- even after operator configuration lowers the existing global ceiling.
  if coalesce((select used from private.location_provider_usage where scope='units:global' and bucket=day),0)+1>cfg.daily_units_limit
@@ -140,10 +157,16 @@ $$;
 
 create function public.reserve_mock_basemap_tile_v1(p_actor_scope text,p_client_scope text,p_z integer,p_x integer,p_y integer,p_cache_only boolean)
 returns jsonb language plpgsql security definer set search_path='' as $$
+declare result jsonb;
 begin
  if p_actor_scope is null or p_client_scope is null then
   raise exception using errcode='22023',message='Invalid mock map scope'; end if;
- return private.reserve_basemap_tile_internal_v3(null,p_actor_scope,p_client_scope,p_z,p_x,p_y,p_cache_only);
+ result := private.reserve_basemap_tile_internal_v3(null,p_actor_scope,p_client_scope,p_z,p_x,p_y,p_cache_only);
+ if result->>'status'='ok' and result->>'cached'='false' then
+  insert into private.mock_basemap_claims(token,expires_at)
+   values((result->>'token')::uuid,statement_timestamp()+interval '30 seconds');
+ end if;
+ return result;
 end;
 $$;
 create function public.finish_mock_basemap_tile_v1(p_z integer,p_x integer,p_y integer,p_token uuid,p_image_base64 text default null)
@@ -151,8 +174,9 @@ returns jsonb language plpgsql security definer set search_path='' as $$
 begin
  perform 1 from private.location_search_config where singleton for update;
  perform 1 from private.location_provider_config where singleton for update;
- perform 1 from private.mock_basemap_config where singleton and enabled for update;
- if not found then return jsonb_build_object('status','disabled'); end if;
+ perform 1 from private.mock_basemap_config where singleton for update;
+ delete from private.mock_basemap_claims where token=p_token;
+ if not exists(select 1 from private.mock_basemap_config where singleton and enabled) then return jsonb_build_object('status','disabled'); end if;
  return public.finish_basemap_tile_v2(p_z,p_x,p_y,p_token,p_image_base64);
 end;
 $$;

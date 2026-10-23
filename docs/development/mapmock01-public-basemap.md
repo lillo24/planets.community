@@ -55,18 +55,24 @@ circuit breaker and 30-second pending/15-second failed entries remain in force.
 
 Default mock bounds (all independently configurable downwards):
 
-| Setting                   | Default | Hard bound / additional shared constraint              |
-| ------------------------- | ------: | ------------------------------------------------------ |
-| enabled                   |   false | Separate mock kill switch                              |
-| daily_units_limit         |     800 | ≤2,000 and ≤one quarter of the configured global limit |
-| actor_daily_units         |     120 | 1–320, shared by all clients using that persona        |
-| client_daily_units        |     160 | 1–400, shared across persona changes                   |
-| actor_minute_requests     |      24 | 1–30, including cache hits                             |
-| client_minute_requests    |      36 | 1–60, including cache hits                             |
-| aggregate_minute_requests |      60 | ≤120 and ≤half the configured global minute limit      |
+| Setting                   | Default | Hard bound / additional shared constraint                       |
+| ------------------------- | ------: | --------------------------------------------------------------- |
+| enabled                   |   false | Separate mock kill switch                                       |
+| daily_units_limit         |     800 | ≤2,000 and ≤one quarter of the configured global limit          |
+| actor_daily_units         |     120 | 1–320, shared by all clients using that persona                 |
+| client_daily_units        |     160 | 1–400, shared across persona changes                            |
+| actor_minute_requests     |      24 | 1–30, including cache hits                                      |
+| client_minute_requests    |      36 | 1–60, including cache hits                                      |
+| aggregate_minute_requests |      60 | ≤120 and ≤half the configured global minute limit               |
+| max_concurrent_tiles      |       6 | 1–6 outstanding cold mock acquisitions; cache hits need no slot |
 
 One unit is 0.25 credit. The default mock allowance is at most 200 credits/day
-inside the existing account ceiling, not an additional budget. New public broker
+inside the existing account ceiling. A separate private table holds only the
+opaque tokens of at most six pending mock acquisitions, with 30-second leases;
+completion releases a slot and expired/non-pending tokens are pruned on the
+next reservation. A full IO pool returns pending before any credit charge.
+
+New public broker
 clients are discoverable and cannot be treated as trusted people; even client
 churn cannot bypass persona or aggregate subcaps. No new key/account, crawl,
 scheduled fill, provider fallback or public OSM tile endpoint is introduced.

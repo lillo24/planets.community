@@ -198,6 +198,53 @@ export async function verifyMockBasemap({
     );
     await clear();
     await db`update private.mock_basemap_config set daily_units_limit=800`;
+    await db`update private.mock_basemap_config set max_concurrent_tiles=2`;
+    const beforeSlots = await units();
+    const slots = await Promise.all(
+      Array.from({ length: 12 }, (_, i) =>
+        rpc("reserve_mock_basemap_tile_v1", {
+          ...mockArgs,
+          p_z: 18,
+          p_x: 3300 + i,
+          p_y: 3300,
+        }),
+      ),
+    );
+    equal(
+      slots.filter((r) => r.status === "ok").length,
+      2,
+      "MAPMOCK server cold IO concurrency cap is atomic",
+    );
+    equal(
+      slots.filter((r) => r.status === "pending").length,
+      10,
+      "MAPMOCK excess parallel mock IO waits without acquisition",
+    );
+    equal(
+      await units(),
+      beforeSlots + 2,
+      "MAPMOCK concurrency refusals never spend unseen units",
+    );
+    await Promise.all(
+      slots.map((r, i) =>
+        r.token
+          ? rpc("finish_mock_basemap_tile_v1", {
+              p_z: 18,
+              p_x: 3300 + i,
+              p_y: 3300,
+              p_token: r.token,
+            })
+          : null,
+      ),
+    );
+    equal(
+      (await db`select count(*)::int as n from private.mock_basemap_claims`)[0]
+        .n,
+      0,
+      "MAPMOCK completion releases every acquired IO slot",
+    );
+    await db`update private.mock_basemap_config set max_concurrent_tiles=6`;
+    await clear();
     await db`update private.location_provider_config set daily_units_limit=8`;
     await db`delete from private.location_provider_usage where scope like 'units:%'`;
     // Put both consumers one unit below their own ceilings, then race different

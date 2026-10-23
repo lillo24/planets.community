@@ -14,7 +14,7 @@ export function createRuntime({
   key = "",
   fetcher = fetch,
 }) {
-  const json = async (url, headers, body) => {
+  const json = async (url, headers, body, maximum = 400000) => {
     const response = await fetcher(url, {
       method: body === undefined ? "GET" : "POST",
       headers: { ...headers, "Content-Type": "application/json" },
@@ -24,7 +24,7 @@ export function createRuntime({
       cache: "no-store",
     });
     if (!response.ok) return null;
-    return boundedJson(response, 400000);
+    return boundedJson(response, maximum);
   };
   return createMockBasemapHandler({
     enabled: enabled && normalOrigin === NORMAL_ORIGIN,
@@ -42,7 +42,12 @@ export function createRuntime({
       )
         return null;
       const headers = { apikey: mockPublicKey, Authorization: authorization };
-      const user = await json(MOCK_ORIGIN + "/auth/v1/user", headers);
+      const user = await json(
+        MOCK_ORIGIN + "/auth/v1/user",
+        headers,
+        undefined,
+        16384,
+      );
       if (!user?.id) return null;
       // PostgREST verifies this same bearer against mock signing keys. The SQL
       // verifier checks auth.sessions, active delivery, persona and environment.
@@ -50,6 +55,7 @@ export function createRuntime({
         MOCK_ORIGIN + "/rest/v1/rpc/mock_basemap_identity_v1",
         headers,
         {},
+        1024,
       );
     },
     rpc: async (name, args) => {

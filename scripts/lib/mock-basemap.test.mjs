@@ -236,6 +236,34 @@ test("fixed mock Auth and RPC trust anchors, no bearer forwarding to normal RPC"
   assert.equal(calls[2][1].headers.Authorization, "Bearer " + service);
   assert.equal(calls[2][1].body.includes(token), false);
 });
+test("oversized mock Auth and identity proofs stop before privileged metering", async () => {
+  for (const identityOverflow of [false, true]) {
+    let calls = 0;
+    const runtime = createRuntime({
+      enabled: true,
+      normalOrigin: NORMAL_ORIGIN,
+      service: "fixture",
+      mockPublicKey: "sb_publishable_" + "x".repeat(24),
+      key: "provider",
+      fetcher: async () => {
+        calls++;
+        return Response.json(
+          calls === 1
+            ? {
+                id: "verified",
+                ...(identityOverflow ? {} : { padding: "x".repeat(17000) }),
+              }
+            : { ...identity, padding: "x".repeat(1100) },
+        );
+      },
+    });
+    assert.equal(
+      (await (await runtime(request())).json()).status,
+      "unavailable",
+    );
+    assert.equal(calls, identityOverflow ? 2 : 1);
+  }
+});
 test("unconfigured target, normal/forged/revoked mock Auth denials never reach the ledger", async () => {
   for (const failureAt of [0, 1]) {
     let calls = 0;

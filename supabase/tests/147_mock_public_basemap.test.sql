@@ -3,6 +3,8 @@ select no_plan();
 select ok((select not enabled and daily_units_limit=800 from private.mock_basemap_config),'Mock route defaults off with conservative subcap');
 select ok((select relrowsecurity from pg_class where oid='private.mock_basemap_config'::regclass),'Mock configuration RLS');
 select ok(not has_table_privilege('service_role','private.mock_basemap_config','SELECT'),'Service cannot bypass bounded APIs');
+select ok(not has_table_privilege('authenticated','private.mock_basemap_claims','SELECT'),'Acquisition leases are private');
+select ok((select relrowsecurity from pg_class where oid='private.mock_basemap_claims'::regclass),'Acquisition lease RLS');
 select ok(not has_function_privilege('anon','public.reserve_mock_basemap_tile_v1(text,text,integer,integer,integer,boolean)','execute'),'No guest reservation');
 select ok(not has_function_privilege('authenticated','public.reserve_mock_basemap_tile_v1(text,text,integer,integer,integer,boolean)','execute'),'No member-asserted mock identity');
 select ok(not has_function_privilege('authenticated','public.finish_mock_basemap_tile_v1(integer,integer,integer,uuid,text)','execute'),'No member finish');
@@ -30,8 +32,14 @@ select is(public.reserve_basemap_tile_v2('a9540000-0000-4000-8000-000000000001',
 select is((select used from private.location_provider_usage where scope='units:global'),1,'One global quarter unit');
 select is((select used from private.location_provider_usage where scope='units:mock'),1,'Same unit also consumes mock subcap');
 select is((select count(*) from private.location_provider_usage where scope like 'units:actor:%'),0::bigint,'No fictitious normal profile actor');
+update private.mock_basemap_config set max_concurrent_tiles=1;
+select is(public.reserve_mock_basemap_tile_v1(repeat('a',64),repeat('b',64),18,2003,2001,false)->>'status','pending','Server IO concurrency bound applies before another acquisition');
+select is((select used from private.location_provider_usage where scope='units:global'),1,'Concurrency refusal never charges');
+select is((select count(*) from private.mock_basemap_claims),1::bigint,'Only the pending acquisition owns a lease');
+update private.mock_basemap_config set max_concurrent_tiles=6;
 select is(public.finish_mock_basemap_tile_v1(12,2174,1456,(current_setting('test.mapmock.claim')::jsonb->>'token')::uuid,
  encode(decode('89504e470d0a1a0a0000000d4948445200000100000001000806000000000000000000000049454e44ae426082','hex'),'base64'))->>'status','ok','SQL header fixture finishes shared baseline');
+select is((select count(*) from private.mock_basemap_claims),0::bigint,'Finish releases the server IO slot');
 select is(public.finish_mock_basemap_tile_v1(12,2174,1456,(current_setting('test.mapmock.claim')::jsonb->>'token')::uuid)->>'status','expired','Replay cannot finish or charge twice');
 select is(public.reserve_basemap_tile_v2('a9540000-0000-4000-8000-000000000001',12,2174,1456,false)->>'cached','true','Normal consumes identical public cache entry');
 update private.mock_basemap_config set daily_units_limit=1;
