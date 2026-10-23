@@ -7,6 +7,7 @@ import '../../../core/backend/supabase_backend.dart';
 import '../domain/basemap_fallback.dart';
 import '../domain/basemap_tile.dart';
 import 'map_provider_gateway.dart';
+import 'mock_public_basemap_gateway.dart';
 
 class BudgetBasemapFailure extends MapProviderFailure {
   const BudgetBasemapFailure(super.status, {this.retryAfter = Duration.zero});
@@ -214,5 +215,7 @@ final budgetBasemapEnabledProvider = Provider<bool>(
   (ref) => const bool.fromEnvironment('LOCATION_BASEMAP_BUDGET_ENABLED'),
 );
 final budgetBasemapGatewayProvider = Provider<BudgetBasemapGateway>(
-  (ref) => ServerBudgetBasemapGateway(ref.watch(supabaseClientProvider)),
+  (ref) =>
+      ref.watch(mockPublicBasemapGatewayProvider) ??
+      ServerBudgetBasemapGateway(ref.watch(supabaseClientProvider)),
 );

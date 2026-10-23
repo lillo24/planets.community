@@ -6,6 +6,7 @@ import {
   createHash,
 } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { writeFileSync } from "node:fs";
 import { cp, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -52,10 +53,16 @@ function run(cwd, args) {
       maxBuffer: 32 * 1024 * 1024,
     },
   );
-  if (result.status !== 0)
-    throw new Error(
-      `Disposable ${args[0]} failed (${result.error?.code ?? result.status}); private CLI output suppressed.`,
+  if (result.status !== 0) {
+    writeFileSync(
+      path.join(taskRoot, "cli-failure.log"),
+      `${result.stdout ?? ""}\n${result.stderr ?? ""}`,
+      { mode: 0o600 },
     );
+    throw new Error(
+      `Disposable ${args[0]} failed (${result.error?.code ?? result.status}); private CLI output at ${taskRoot}.`,
+    );
+  }
   return result.stdout;
 }
 async function stack(name, offset) {
@@ -166,6 +173,16 @@ async function login(status, id, email) {
 try {
   const normal = await stack("normal", 1000),
     mock = await stack("mock", 2000);
+  run(normal.directory, [
+    "test",
+    "db",
+    path.join(root, "supabase/tests/124_map_discovery_provider.test.sql"),
+    path.join(root, "supabase/tests/146_basemap_budget.test.sql"),
+    path.join(root, "supabase/tests/147_mock_public_basemap.test.sql"),
+  ]);
+  console.log(
+    "MAPMOCK01 and installed MAP05/MAP-COST01 pgTAP contracts passed.",
+  );
   // Run the real service-worker concurrency/rollback regression early on this
   // owned loopback realm, before any expensive native build. No hosted inputs.
   const notificationRegression = spawnSync(
@@ -543,6 +560,16 @@ try {
     refresh_token: deliveryA.refresh_token,
   });
   await candidateA.auth.signOut({ scope: "local" });
+  const { verifyMockBasemap } = await import("./verify-basemap.mjs");
+  await verifyMockBasemap({
+    normal,
+    mock,
+    sql,
+    token: delivery2.access_token,
+    revokedToken: deliveryA.access_token,
+    normalSentinel,
+    equal,
+  });
   equal(
     (await otherPersona.auth.refreshSession()).error,
     null,

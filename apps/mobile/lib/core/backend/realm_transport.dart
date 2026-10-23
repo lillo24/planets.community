@@ -53,7 +53,14 @@ class RealmTransport extends http.BaseClient {
     request.followRedirects = false;
     final product = !auth;
     if (!product) return _inner.send(request);
-    final mutation = request.method != 'GET' && request.method != 'HEAD';
+    // The fixed map API reads public imagery/centers. Its server-owned quota
+    // reservation is not an uncertain product edit when route cancellation
+    // aborts a POST; treating it as one blocks later realm departure.
+    final providerRead =
+        request.method == 'POST' &&
+        request.url.path == '/functions/v1/map-provider';
+    final mutation =
+        !providerRead && request.method != 'GET' && request.method != 'HEAD';
     final name = request.url.path.startsWith('/rest/v1/rpc/')
         ? request.url.path.substring('/rest/v1/rpc/'.length)
         : request.url.path.split('/').take(3).join('/');

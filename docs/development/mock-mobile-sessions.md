@@ -102,3 +102,11 @@ generation and capability; it excludes client keys and states that hosted
 readiness has not been established by a build.
 No production fake gateway fallback exists. Hosted setup and the normal
 staging migration gap remain separately recorded in `mock-hosted-status.json`.
+
+# MAPMOCK01 public-image exception
+
+The active mock product client remains mock-only. A dedicated image transport
+can call staging's separately authenticated `mock-basemap` route with the current
+mock bearer; normal product RPCs and ordinary map-provider never accept that
+token. This route shares only public cartography and one global budget. See the
+[trust, cancellation, activation and rollback contract](mapmock01-public-basemap.md).

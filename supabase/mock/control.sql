@@ -248,6 +248,39 @@ end $$;
 revoke all on function public.mock_control_retire_candidate(uuid,uuid) from public,anon,authenticated;
 grant execute on function public.mock_control_retire_candidate(uuid,uuid) to service_role;
 
+-- MAPMOCK01: authenticated mock-only identity proof, with no caller arguments.
+-- getUser alone does not reject every revoked JWT; require its live recorded
+-- Auth session and current broker delivery. No normal profile or data is read.
+create or replace function public.mock_basemap_identity_v1()
+returns jsonb language plpgsql stable security definer set search_path='' as $$
+declare result jsonb; session_text text := auth.jwt()->>'session_id';
+begin
+  if auth.uid() is null or session_text is null or session_text !~
+    '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$' then
+    raise exception using errcode='42501',message='Mock map session unavailable';
+  end if;
+  select jsonb_build_object(
+    'actor_scope',encode(extensions.digest('mapmock01:actor:'||s.user_id::text,'sha256'),'hex'),
+    'client_scope',encode(extensions.digest('mapmock01:client:'||d.client_id::text,'sha256'),'hex'))
+    into result
+    from auth.sessions s
+    join mock_control.client_deliveries d on d.session_id=s.id and d.state='issued'
+    join mock_control.personas p on p.persona_key=d.persona_key and p.user_id=s.user_id and p.available
+    cross join mock_control.environment e
+    where s.id=session_text::uuid and s.user_id=auth.uid()
+      and (s.not_after is null or s.not_after>statement_timestamp())
+      and e.singleton and e.enabled and e.operator_confirmed
+      and e.project_ref='pnolarmzxmmjtguligfc' and e.generation='mock-world-2026-10-21-v1'
+    limit 1;
+  if result is null then
+    raise exception using errcode='42501',message='Mock map session unavailable';
+  end if;
+  return result;
+end;
+$$;
+revoke all on function public.mock_basemap_identity_v1() from public,anon,authenticated,service_role;
+grant execute on function public.mock_basemap_identity_v1() to authenticated;
+
 -- Mock-only Auth protection. Ordinary profile/content edits remain canonical.
 -- No weakening of normal OTP or product policies; this trigger is never shipped
 -- as a product migration. Auth provider/MFA mutation is unsupported for fixtures.

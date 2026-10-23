@@ -8,7 +8,8 @@ activation, explicit General/group admission, timed 4/7 and full meeting cards,
 persistent chat messages and pending proposals through the canonical RPCs.
 `verify.mjs` checks those exact fixtures without repairing tester edits.
 Settings presentation selection filters Home Help's offered login profiles;
-Mock remains an independent realm. This task does not apply hosted changes.
+Mock remains an independent realm. Hosted changes use the separate guarded
+operator and require their own executed receipts.
 
 This package owns explicitly invoked mock-only operations. It never imports the
 local demo seeder and never removes its loopback guard.
@@ -22,6 +23,11 @@ local demo seeder and never removes its loopback guard.
   Its private `verifyOnly` boolean skips control/seed mutations after a schema-only
   upgrade. Auth sessions remain real; failures export bounded codes/status only.
 - `world.mjs` owns non-destructive ordinary-persona fixture operations.
+- `public-geography.mjs` adds once-receipted fictional public references under
+  the verified mock marker; it preserves existing points and edited localities.
+- `basemap-fixture.mjs` replaces only provider PNGs for real two-realm Auth/SQL
+  qualification; `verify-basemap.mjs` proves shared cache, subcaps, global races,
+  revocation and kills without hosted/provider access.
 - `verify.mjs` reads canonical fixtures without repairing them.
 - `target.test.mjs` exercises target-confusion and credential rejection.
 - `qualify-local.mjs` owns two new disposable stacks, unique signing/API keys,
@@ -37,6 +43,8 @@ local demo seeder and never removes its loopback guard.
   defines, signing inputs, raw runtime logs and APKs never become artifacts.
   A failed synthetic native test includes at most four redacted assertion summaries
   with its current operation; release-mode Flutter omits those details by default.
+  Qualification checks the current persona manifest; native metadata separately
+  records the five activity-persona journeys exercised by the device fixture.
 
 The operator configuration is an ignored JSON file outside source control. See
 `docs/development/mock-environment.md`. Secrets are environment variables, never

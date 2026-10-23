@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import struct
 import zipfile
-from artifact import validate_manifest, validate_jarsigner, verify_payloads, validate_build, native_alignment, mock_target, compiled_capability, scan_payload
+from artifact import validate_manifest, validate_jarsigner, verify_payloads, validate_build, native_alignment, mock_target, compiled_capability, compiled_map, scan_payload
 
 
 class ArtifactTests(unittest.TestCase):
@@ -73,6 +73,19 @@ class ArtifactTests(unittest.TestCase):
             validate_build(14, {"budget_basemap": False}, build, "a" * 40)
         with self.assertRaises(ValueError):
             validate_build(14, {"budget_basemap": False}, {**build, "mock": {"capability": True}}, "a" * 40, "closed-test-mock")
+
+    def test_compiled_map_defines(self):
+        for budget in [False, True]:
+            bits = b"11111" + (b"1" if budget else b"0")
+            marker = b"PLANETS_COMPILED_MAP_V1=" + bits
+            self.assertEqual(compiled_map(marker, budget), marker.decode())
+            for index in range(6):
+                changed = bytearray(bits)
+                changed[index] = ord("0") if changed[index] == ord("1") else ord("1")
+                wrong = b"PLANETS_COMPILED_MAP_V1=" + changed
+                for data in [wrong, marker + wrong, b"manifest only"]:
+                    with self.assertRaises(ValueError):
+                        compiled_map(data, budget)
 
     def test_native_alignment(self):
         data = bytearray(128)

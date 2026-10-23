@@ -289,3 +289,10 @@ MAP-COST01 native APK, real imagery comparison and signed/Play release are
 **not** claimed. Hosted deployment/activation is separately verified in the
 [rollout report](map-staging-rollout.md). Code merge, local synthetic acceptance,
 hosted activation and distribution remain separate states.
+
+# MAPMOCK01 shared demand
+
+The optional mock image route reuses this same public v2 cache and global ledger,
+with independently disabled mock subcaps inside the existing ceiling. It performs
+no mock baseline warm-up. See [MAPMOCK01](mapmock01-public-basemap.md) for the
+fixed mock-session verifier and separate hosted activation requirements.

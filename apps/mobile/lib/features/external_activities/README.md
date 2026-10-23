@@ -70,7 +70,8 @@ the V3 migration before live use; no production provider/source gate changes.
 
 ACTMAP01: `application/external_map_session.dart` owns RAM-only camera/selection.
 `presentation/external_activities_map_screen.dart` composes the shared public map,
-clustering, loaded-entry chooser and existing scoped basemap caches. The second
+clustering, loaded-entry chooser and existing scoped basemap caches. Mock Mode
+draws demanded public imagery through MAPMOCK and keeps baseline warmup off. The second
 result controller listens to the base filter authority; it owns no second filter
 store. See `docs/development/activities-map.md` for routes, lifecycle, attribution,
 no-provider behavior and reproducible qualification. The kind choice is a compact

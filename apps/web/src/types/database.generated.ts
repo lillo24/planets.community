@@ -3679,6 +3679,16 @@ export type Database = {
         }
         Returns: Json
       }
+      finish_mock_basemap_tile_v1: {
+        Args: {
+          p_image_base64?: string
+          p_token: string
+          p_x: number
+          p_y: number
+          p_z: number
+        }
+        Returns: Json
+      }
       get_authorized_item_location_v1: {
         Args: { p_expected_profile_id: string; p_item: string; p_kind: string }
         Returns: Json
@@ -8023,6 +8033,17 @@ export type Database = {
       }
       reserve_map_provider_v1: {
         Args: { p_actor: string; p_cache_key: string; p_kind: string }
+        Returns: Json
+      }
+      reserve_mock_basemap_tile_v1: {
+        Args: {
+          p_actor_scope: string
+          p_cache_only: boolean
+          p_client_scope: string
+          p_x: number
+          p_y: number
+          p_z: number
+        }
         Returns: Json
       }
       resolve_location_selection_v1: {

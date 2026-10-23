@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import os from "node:os";
+import { PERSONAS } from "./world.mjs";
 
 const [directory, result, phase] = process.argv.slice(2);
 assert.equal(process.env.GITHUB_ACTIONS, "true");
@@ -65,7 +66,7 @@ try {
         proof.checks > 0 &&
         proof.checks < 10000,
     );
-    assert.equal(proof.personas, 5);
+    assert.equal(proof.personas, PERSONAS.length);
     assert.match(proof.sourceSchema, /^[a-f0-9]{64}$/);
     await writeFile(
       path.join(output, "qualification.json"),
