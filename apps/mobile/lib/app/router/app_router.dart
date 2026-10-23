@@ -5,6 +5,7 @@ import '../../features/co_creation/presentation/co_creation_numbered_screen.dart
 import '../../features/co_creation/presentation/co_creation_hubs_screen.dart';
 import '../../features/co_creation/presentation/co_creation_community_screens.dart';
 import '../../features/co_creation/presentation/co_creation_meeting_screen.dart';
+import '../../features/co_creation/presentation/co_creation_calendar_screen.dart';
 import '../../features/co_creation/presentation/co_creation_general_screen.dart';
 import '../../features/co_creation/presentation/co_creation_room_items.dart';
 import '../../features/co_creation/domain/co_creation_rooms.dart';
@@ -1519,6 +1520,25 @@ RoutingConfig _routingConfig(
                   GoRoute(
                     path: 'hubs',
                     builder: (_, _) => const CoCreationHubsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'hubs/:id/calendar',
+                    builder: (_, state) => CoCreationCalendarScreen(
+                      key: state.pageKey,
+                      hub: HubId.parse(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'hubs/:id/calendar/meetings/:meetingId/:roomId/:episodeId',
+                    builder: (_, state) => CoCalendarMeetingReviewScreen(
+                      key: state.pageKey,
+                      hub: HubId.parse(state.pathParameters['id']),
+                      room: CoRoomId.parse(state.pathParameters['roomId']),
+                      episode: CoEpisodeId.parse(
+                        state.pathParameters['episodeId'],
+                      ),
+                      meeting: peopleUuid(state.pathParameters['meetingId']),
+                    ),
                   ),
                   GoRoute(
                     path: 'hubs/:id/create-group',
