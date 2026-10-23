@@ -184,6 +184,9 @@ export async function stagingRelease(mode, env = process.env) {
     verifyFunctions(root, policy, functions, releaseVariant(env));
   save("backend", {
     source_sha: env.GITHUB_SHA ?? null,
+    workflow_run_id: env.GITHUB_RUN_ID ?? null,
+    release_variant: releaseVariant(env),
+    policy_sha256: sha256(readFileSync("scripts/release/policy.json")),
     verified_at: new Date().toISOString(),
     ...diff,
     checks,
@@ -226,6 +229,7 @@ export async function stagingRelease(mode, env = process.env) {
     assertBackendReady(diff, checks);
     save("http-smoke", {
       source_sha: env.GITHUB_SHA,
+      workflow_run_id: env.GITHUB_RUN_ID,
       checks: await publicSmoke(env.STAGING_CONFIG_JSON),
     });
     if (mode === "deploy" && !hadPending)
