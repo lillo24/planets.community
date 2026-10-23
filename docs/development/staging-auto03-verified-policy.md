@@ -41,6 +41,16 @@ old rows and independent tests must still pass. Any unproven existing contract
 change is held with its exact object/version. New contracts must first land in a
 separate policy PR.
 
+CAL01 merged at `d9f559951b79be568004b7507b16f4b4b216db48` during the
+MAPMOCK integration. Only its exact `20261023113719` reader/index source is an
+additional established candidate. The original product baseline stays fixed.
+The independent replay loads CAL01's already merged pgTAP, genuine Auth/privacy
+and populated rollback/warmed-reader tests from that immutable commit. Replacing
+the reader's expected-actor validation with `auth.uid()` at the same signature
+must fail the actual HTTP denial contract. Its `extensions.hmac` dependency is
+also fingerprinted. `calendar_security_contracts` is required in deployment
+receipts; neither the pin nor a source merge alone authorizes hosted application.
+
 Validation loads its classifier and SQL rehearsal from the PR's pre-change base.
 A policy-only PR exercises its candidate engine after unchanged base tests.
 Canonical migrations cannot be added in the same PR as release policy, workflow,

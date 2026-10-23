@@ -10,6 +10,12 @@ import { STAGING_REF } from "./migrations.mjs";
 // Its SQL still needs populated replay, independent security tests and observed
 // catalog effects. This is not authorization to apply arbitrary merged SQL.
 export const TRUSTED_PRODUCT_BASE = "ec4c57060331b96577d512794b8c5bd78ac16d2b";
+// CAL01 merged independently while the staging/MAPMOCK work was in flight.
+// Only its exact reader/index source is a candidate; its pinned Auth, privacy,
+// warmed-reader and mutation contracts below remain required before deployment.
+export const TRUSTED_CALENDAR_BASE = "d9f559951b79be568004b7507b16f4b4b216db48";
+export const CALENDAR_MIGRATION =
+  "20261023113719_cocreate_community_calendar_v1.sql";
 export const POLICY_VERSION = 2;
 export class UnsafeCatalogError extends ReleaseError {}
 export const policyModuleHash = () =>
@@ -556,20 +562,25 @@ export function inspectAdditive(sql) {
   };
 }
 export function migrationCandidate(migration, root = process.cwd()) {
-  try {
-    const old = execFileSync(
-      "git",
-      ["show", `${TRUSTED_PRODUCT_BASE}:supabase/migrations/${migration.file}`],
-      { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
-    );
-    if (sha256(old) === migration.sha256)
-      return {
-        classification: "established-contract-candidate",
-        reason:
-          "Exact trusted product baseline; effects and independent security witnesses still required",
-      };
-  } catch {
-    /* A new migration must satisfy the bounded policy below. */
+  for (const base of [
+    TRUSTED_PRODUCT_BASE,
+    ...(migration.file === CALENDAR_MIGRATION ? [TRUSTED_CALENDAR_BASE] : []),
+  ]) {
+    try {
+      const old = execFileSync(
+        "git",
+        ["show", `${base}:supabase/migrations/${migration.file}`],
+        { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+      );
+      if (sha256(old) === migration.sha256)
+        return {
+          classification: "established-contract-candidate",
+          reason:
+            "Exact trusted source; observed effects and independent security contracts still required",
+        };
+    } catch {
+      /* Unknown/new source must satisfy the bounded policy below. */
+    }
   }
   const routine = classifyMigration(migration.sql);
   return routine.classification === "routine-candidate"
@@ -613,7 +624,7 @@ export const effectCatalogQuery = `select jsonb_build_object(
        'grantor',pg_get_userbyid(grantor),'privilege',privilege_type,'grantable',is_grantable) item
      from aclexplode(coalesce(p.proacl,acldefault('f',p.proowner)))) a),
    'access',(select jsonb_object_agg(r.rolname,has_function_privilege(r.oid,p.oid,'execute')) from pg_roles r where r.rolname in ('anon','authenticated','service_role'))) x
-  from pg_proc p join pg_namespace n on n.oid=p.pronamespace where (n.nspname in ('public','private','auth','storage') or (n.nspname='extensions' and p.proname in ('digest','gen_random_uuid'))) and p.prokind in ('f','p')) q),
+  from pg_proc p join pg_namespace n on n.oid=p.pronamespace where (n.nspname in ('public','private','auth','storage') or (n.nspname='extensions' and p.proname in ('digest','gen_random_uuid','hmac'))) and p.prokind in ('f','p')) q),
  'policies',(select coalesce(jsonb_agg(jsonb_build_object('id',n.nspname||'.'||c.relname||'.'||p.polname,'definition',pg_get_expr(p.polqual,p.polrelid),'check',pg_get_expr(p.polwithcheck,p.polrelid),'command',p.polcmd,'permissive',p.polpermissive,'roles',(select array_agg(coalesce(r.rolname,'PUBLIC') order by r.rolname) from unnest(p.polroles) a left join pg_roles r on r.oid=a)) order by n.nspname,c.relname,p.polname),'[]') from pg_policy p join pg_class c on c.oid=p.polrelid join pg_namespace n on n.oid=c.relnamespace),
  'triggers',(select coalesce(jsonb_agg(jsonb_build_object('id',n.nspname||'.'||c.relname||'.'||t.tgname,'definition',pg_get_triggerdef(t.oid),'enabled',t.tgenabled) order by n.nspname,c.relname,t.tgname),'[]') from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace where not t.tgisinternal),
  'event_triggers',(select coalesce(jsonb_agg(jsonb_build_object('id',e.evtname,'owner',pg_get_userbyid(e.evtowner),'event',e.evtevent,'enabled',e.evtenabled,'tags',e.evttags,'function',n.nspname||'.'||p.proname||'('||pg_get_function_identity_arguments(p.oid)||')') order by e.evtname),'[]') from pg_event_trigger e join pg_proc p on p.oid=e.evtfoid join pg_namespace n on n.oid=p.pronamespace),
@@ -638,7 +649,8 @@ export function predecessorCatalog(catalog) {
           if (section === "tables") return tables.has(v.id);
           if (section === "functions")
             return (
-              owned(v) || /^extensions\.(?:digest|gen_random_uuid)\(/.test(v.id)
+              owned(v) ||
+              /^extensions\.(?:digest|gen_random_uuid|hmac)\(/.test(v.id)
             );
           if (section === "indexes") return tables.has(v.table);
           if (section === "views") return owned(v);
@@ -885,6 +897,7 @@ export function authorizeVerifiedPending(diff, local, evidence, source, tree) {
     !evidence.single_writer_probe ||
     !evidence.cli_startup_bounds ||
     !evidence.hosted_runtime_callback ||
+    !evidence.calendar_security_contracts ||
     !Array.isArray(evidence.migration_safety)
   )
     throw new ReleaseError(

@@ -16,6 +16,7 @@ import {
 import {
   POLICY_VERSION,
   TRUSTED_PRODUCT_BASE,
+  TRUSTED_CALENDAR_BASE,
   effectCatalogQuery,
   catalogEffects,
   migrationCandidate,
@@ -101,6 +102,20 @@ command("git", [
   TRUSTED_PRODUCT_BASE,
 ]);
 command("tar", ["-xf", "build/release01/trusted-product.tar", "-C", trusted]);
+const trustedCalendar = resolve("build/release01/trusted-calendar");
+mkdirSync(trustedCalendar, { recursive: true });
+command("git", [
+  "archive",
+  "--format=tar",
+  "--output=build/release01/trusted-calendar.tar",
+  TRUSTED_CALENDAR_BASE,
+]);
+command("tar", [
+  "-xf",
+  "build/release01/trusted-calendar.tar",
+  "-C",
+  trustedCalendar,
+]);
 if (process.env.RELEASE_OBSERVED_HISTORY_FILE) {
   const observed = JSON.parse(
     readFileSync(process.env.RELEASE_OBSERVED_HISTORY_FILE, "utf8"),
@@ -425,6 +440,45 @@ try {
     "Clean security fixture catalog differs from actual populated upgrade",
   );
   command(cli, ["test", "db", resolve(trusted, "supabase/tests")]);
+  command(cli, [
+    "test",
+    "db",
+    resolve(trustedCalendar, "supabase/tests/162_cocreate_calendar.test.sql"),
+  ]);
+  command("node", [
+    resolve(
+      trustedCalendar,
+      "scripts/verify-local-cocreate-calendar-upgrade.mjs",
+    ),
+  ]);
+  command("node", [
+    resolve(trustedCalendar, "scripts/verify-local-cocreate-calendar.mjs"),
+  ]);
+  // Exercise a real wrong-actor body at the same signature/OID. A copied source
+  // hash is insufficient if this independent Auth/privacy contract cannot fail.
+  const calendarDefinition = (
+    await sql`select pg_get_functiondef('public.get_cocreate_calendar_v1(uuid,uuid,uuid,uuid,timestamptz,timestamptz,integer,text)'::regprocedure) definition`
+  )[0].definition;
+  const wrongActorCalendar = calendarDefinition.replace(
+    "private.require_cocreate_actor(p_expected_profile_id)",
+    "auth.uid()",
+  );
+  assert.notEqual(wrongActorCalendar, calendarDefinition);
+  try {
+    await sql.unsafe(wrongActorCalendar);
+    const rejected = spawnSync(
+      "node",
+      [resolve(trustedCalendar, "scripts/verify-local-cocreate-calendar.mjs")],
+      { encoding: "utf8", timeout: 120000, maxBuffer: 1024 * 1024 },
+    );
+    assert.ok(
+      rejected.status !== 0 &&
+        /get_cocreate_calendar_v1 must deny/.test(rejected.stderr ?? ""),
+      "Calendar wrong-actor mutation must fail the independent genuine Auth contract",
+    );
+  } finally {
+    await sql.unsafe(calendarDefinition);
+  }
   const effective = (await sql.unsafe(effectCatalogQuery))[0].catalog;
   const addedFunctions = effective.functions.filter((f) =>
     witnesses.some((w) =>
@@ -485,6 +539,7 @@ try {
     source_tree: command("git", ["rev-parse", "HEAD^{tree}"]).trim(),
     policy_module_sha256: policyModuleHash(),
     trusted_product_base: TRUSTED_PRODUCT_BASE,
+    trusted_calendar_base: TRUSTED_CALENDAR_BASE,
     workflow_run_id: process.env.GITHUB_RUN_ID,
     inventory_sha256: inventoryDigest(local),
     predecessor_catalog: predecessorCatalogProof,
@@ -509,6 +564,7 @@ try {
     single_writer_probe: true,
     cli_startup_bounds: true,
     hosted_runtime_callback: true,
+    calendar_security_contracts: true,
   };
   writeFileSync(
     "build/release01/rehearsal.json",

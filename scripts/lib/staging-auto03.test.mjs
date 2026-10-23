@@ -13,6 +13,8 @@ import {
   UnsafeCatalogError,
   predecessorCatalog,
   assertPredecessorCatalog,
+  migrationCandidate,
+  CALENDAR_MIGRATION,
 } from "../release/eligibility.mjs";
 import { STAGING_REF, verifiedDeploymentSet } from "../release/migrations.mjs";
 import { inventoryDigest } from "../release/safety.mjs";
@@ -84,6 +86,26 @@ const catalog = () => ({
   event_triggers: [],
 });
 const candidate = { classification: "private-additive-candidate" };
+test("only the exact independently merged CAL01 source can use its installed reader contract", () => {
+  const sql = readFileSync("supabase/migrations/" + CALENDAR_MIGRATION, "utf8");
+  const m = { file: CALENDAR_MIGRATION, sql, sha256: sha256(sql) };
+  assert.equal(
+    migrationCandidate(m).classification,
+    "established-contract-candidate",
+  );
+  const changed = sql.replace("to authenticated;", "to anon;");
+  assert.notEqual(changed, sql);
+  assert.equal(
+    migrationCandidate({ ...m, sql: changed, sha256: sha256(changed) })
+      .classification,
+    "review-required-for-hosted",
+  );
+  assert.notEqual(
+    migrationCandidate({ ...m, file: "20261023113720_other_calendar.sql" })
+      .classification,
+    "established-contract-candidate",
+  );
+});
 test("global DDL callbacks are part of the predecessor and cannot change through an additive candidate", () => {
   const before = catalog();
   const event = {
@@ -223,6 +245,7 @@ const scenario = () => {
       single_writer_probe: true,
       cli_startup_bounds: true,
       hosted_runtime_callback: true,
+      calendar_security_contracts: true,
       migration_safety: witnesses,
     },
   };
@@ -556,6 +579,7 @@ for (const [name, mutate] of [
     "single_writer_probe",
     "cli_startup_bounds",
     "hosted_runtime_callback",
+    "calendar_security_contracts",
   ].map((key) => [key, (s) => (s.evidence[key] = false)]),
 ])
   test("receipt fails closed: " + name, () => {
