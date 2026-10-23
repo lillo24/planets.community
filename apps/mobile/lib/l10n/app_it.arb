@@ -2738,5 +2738,8 @@
   "activitiesSportTennis": "Tennis",
   "activitiesSportBocce": "Bocce",
   "activitiesSportMulti": "Più sport",
-  "activitiesSportYoga": "Yoga"
+  "activitiesSportYoga": "Yoga",
+  "activitiesNextSessionUnknown": "La fonte non indica la prossima lezione.",
+  "activitiesOfficialInformation": "Vedi informazioni ufficiali",
+  "activitiesDatasetLink": "Vedi dataset della fonte"
 }

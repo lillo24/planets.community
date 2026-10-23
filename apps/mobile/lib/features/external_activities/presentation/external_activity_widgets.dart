@@ -5,6 +5,27 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/time/event_time.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../domain/external_activity.dart';
+import 'external_activity_filters.dart';
+
+/// Repeat only the source's known term and rules. Never calculate a next lesson
+/// on the device; cancellations/exceptions are canonical backend decisions.
+String externalCourseLabel(
+  ExternalCourseSchedule? schedule,
+  String locale,
+  AppLocalizations l,
+) {
+  if (schedule == null) return l.activitiesScheduleUnknown;
+  final lines = <String>[
+    if (schedule.seasonStart != null && schedule.seasonEnd != null)
+      '${DateFormat.yMMMd(locale).format(schedule.seasonStart!)} – '
+          '${DateFormat.yMMMd(locale).format(schedule.seasonEnd!)}',
+    if (schedule.weekly case final weekly?)
+      '${weekly.days.map((day) => DateFormat.E(locale).format(DateTime.utc(2024, 1, day))).join(', ')} '
+          '${weekly.startTime}${weekly.endTime == null ? '' : '–${weekly.endTime}'} · ${schedule.timezone}',
+    if (schedule.text != null) schedule.text!,
+  ];
+  return lines.isEmpty ? l.activitiesScheduleUnknown : lines.join('\n');
+}
 
 String externalOccurrenceLabel(
   ExternalOccurrence occurrence,
@@ -69,15 +90,31 @@ class ExternalActivityCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(
+                externalKindLabel(item.kind, l),
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
               Text(item.title, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: AppSpacing.small),
-              Text(
-                occurrence == null
-                    ? item.kind == ExternalActivityKind.place
-                          ? l.activitiesPlace
-                          : item.schedule?.text ?? l.activitiesScheduleUnknown
-                    : externalOccurrenceLabel(occurrence, locale, l),
-              ),
+              if (item.kind != ExternalActivityKind.place)
+                Text(
+                  occurrence == null
+                      ? externalCourseLabel(item.schedule, locale, l)
+                      : externalOccurrenceLabel(occurrence, locale, l),
+                ),
+              if (item.kind == ExternalActivityKind.course &&
+                  occurrence != null)
+                Text(externalCourseLabel(item.schedule, locale, l)),
+              if (item.kind == ExternalActivityKind.place &&
+                  item.sourceCategories.isNotEmpty)
+                Text(item.sourceCategories.join(' · ')),
+              if (item.kind == ExternalActivityKind.course &&
+                  occurrence == null)
+                Text(l.activitiesNextSessionUnknown),
+              if (item.discipline != null)
+                Text(externalDisciplineLabel(item.discipline!, l)),
+              if (item.cost != null) Text(item.cost!),
+              if (item.access != null) Text(item.access!),
               if (item.venue != null || item.city != null)
                 Text([item.venue, item.city].nonNulls.join(' · ')),
               const SizedBox(height: AppSpacing.small),

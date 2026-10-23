@@ -12,6 +12,8 @@ enum ExternalCatalogueHealth {
 
 enum ExternalActivityKind { event, course, place }
 
+enum ExternalActivityLinkScope { item, dataset }
+
 class ExternalActivityFilter {
   const ExternalActivityFilter({
     this.category,
@@ -125,6 +127,8 @@ class ExternalActivity {
     this.level,
     this.access,
     this.suppliedNextOccurrence,
+    this.linkScope = ExternalActivityLinkScope.item,
+    this.discipline,
   });
   final String id, title, category, status;
   final String? description;
@@ -133,6 +137,8 @@ class ExternalActivity {
   final ExternalActivityGeometry? geometry;
   final String? level, access;
   final ExternalOccurrence? suppliedNextOccurrence;
+  final ExternalActivityLinkScope linkScope;
+  final String? discipline;
   final PublicExternalLink officialLink, licenseLink;
   final String sourceName, attribution;
   final DateTime observedAt;
@@ -200,6 +206,12 @@ class ExternalActivity {
       title: activityString(row, 'title', max: 300),
       description: activityOptionalString(row, 'description', max: 12000),
       kind: kind,
+      linkScope: switch (row['link_scope']) {
+        null || 'item' => ExternalActivityLinkScope.item,
+        'dataset' => ExternalActivityLinkScope.dataset,
+        _ => throw const FormatException('Invalid external link scope.'),
+      },
+      discipline: activityOptionalString(row, 'discipline', max: 64),
       schedule: schedule,
       geometry: geometry,
       level: activityOptionalString(row, 'level', max: 2000),

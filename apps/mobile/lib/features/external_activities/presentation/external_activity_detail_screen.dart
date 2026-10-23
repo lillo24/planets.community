@@ -10,6 +10,7 @@ import '../../settings/application/activities_split_preference_controller.dart';
 import '../application/external_activities_controller.dart';
 import '../domain/external_activity.dart';
 import 'external_activity_widgets.dart';
+import 'external_activity_filters.dart';
 import '../../co_creation/presentation/co_creation_event_widgets.dart';
 import 'external_activity_share_actions.dart';
 
@@ -58,7 +59,10 @@ class ExternalActivityDetailScreen extends ConsumerWidget {
                           item.title,
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
+                        Text(externalKindLabel(item.kind, l)),
                         Text(l.activitiesSourceLabel(item.sourceName)),
+                        if (item.discipline != null)
+                          Text(externalDisciplineLabel(item.discipline!, l)),
                         // The existing D03 handoff revalidates the event-only V1
                         // reader. Courses/places have no event participation.
                         if (item.kind == ExternalActivityKind.event)
@@ -93,18 +97,15 @@ class ExternalActivityDetailScreen extends ConsumerWidget {
                               externalOccurrenceLabel(occurrence, locale, l),
                             ),
                           ),
-                        if (item.kind == ExternalActivityKind.course &&
-                            item.schedule?.text != null)
-                          Text(item.schedule!.text!),
-                        if (item.occurrences.isEmpty &&
-                            item.nextOccurrence == null &&
-                            item.schedule?.text == null &&
-                            item.kind != ExternalActivityKind.place)
-                          Text(
-                            item.kind == ExternalActivityKind.course
-                                ? l.activitiesScheduleUnknown
-                                : l.activitiesExternalScheduleUnknown,
-                          ),
+                        if (item.kind == ExternalActivityKind.course) ...[
+                          Text(externalCourseLabel(item.schedule, locale, l)),
+                          if (item.nextOccurrence == null)
+                            Text(l.activitiesNextSessionUnknown),
+                        ],
+                        if (item.kind == ExternalActivityKind.event &&
+                            item.occurrences.isEmpty &&
+                            item.nextOccurrence == null)
+                          Text(l.activitiesExternalScheduleUnknown),
                         if (item.venue != null || item.city != null)
                           Text([item.venue, item.city].nonNulls.join(' · ')),
                         for (final text in [
@@ -131,7 +132,11 @@ class ExternalActivityDetailScreen extends ConsumerWidget {
                           key: const Key('external-activity-official-link'),
                           onPressed: () =>
                               _open(context, ref, item.officialLink),
-                          child: Text(l.activitiesOfficialEvent),
+                          child: Text(
+                            item.linkScope == ExternalActivityLinkScope.dataset
+                                ? l.activitiesDatasetLink
+                                : l.activitiesOfficialInformation,
+                          ),
                         ),
                         TextButton(
                           onPressed: () =>

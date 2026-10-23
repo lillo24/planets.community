@@ -126,3 +126,19 @@ navigation/analytics assertion removed. Rendered IT/EN × 320/360dp × light/dar
 results inspected. Source heading reduced after inspection to avoid redundant
 oversized headings. No device or live source claim. Remaining detailed Sports
 metadata and final integrated matrix belong to 004/011. Next: implement 004.
+
+### 004 SPORTUI01 — implemented and locally qualified
+
+Sports now shares All/Courses & sessions/Events/Places controls, server discipline
+labels and reset. Cards/details show known term/weekly schedule, explicit unknown
+next session, source place/access and optional conditions. Item and dataset
+information actions have distinct typed labels. No price/date/opening/capacity,
+booking or native membership is inferred. D03 remains limited to actual events.
+
+Scoped analysis PASS; external catalogue and ACTMET01 suites **93 PASS** after
+removing accidentally repeated visual registrations. Twenty distinct rendered
+weekly/unknown/cancelled/place/dataset journeys cover EN/IT, 320/360dp, both themes
+and 2x text; top/provenance captures inspected, with no clipping or layout error.
+Existing link failure, account replacement, unavailable detail and denied metrics
+regressions remain. The final canonical link-scope reader is wired in 005, then
+final integrated acceptance in 011. Next: additive multi-source schema/imports.

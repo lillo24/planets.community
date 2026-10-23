@@ -3476,5 +3476,8 @@
   "activitiesSportTennis": "Tennis",
   "activitiesSportBocce": "Bocce",
   "activitiesSportMulti": "Multiple sports",
-  "activitiesSportYoga": "Yoga"
+  "activitiesSportYoga": "Yoga",
+  "activitiesNextSessionUnknown": "Next session not supplied by the source.",
+  "activitiesOfficialInformation": "Official information",
+  "activitiesDatasetLink": "View source dataset"
 }

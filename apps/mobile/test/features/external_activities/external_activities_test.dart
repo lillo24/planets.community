@@ -43,6 +43,118 @@ void main() {
     await initializeDateFormatting('it');
   });
   for (final language in ['en', 'it']) {
+    for (final dark in [false, true]) {
+      for (final sample in [
+        'weekly',
+        'unknown',
+        'cancelled',
+        'place',
+        'dataset',
+      ]) {
+        testWidgets('SPORTUI01 $sample $language 2x dark=$dark', (
+          tester,
+        ) async {
+          final width = language == 'it' ? 320.0 : 360.0;
+          tester.view.physicalSize = Size(width, 900);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final payload = externalActivityPayload()..['category'] = 'sports';
+          if (sample == 'weekly' || sample == 'unknown') {
+            payload['kind'] = 'course';
+            payload['occurrences'] = [];
+            payload['next_at'] = sample == 'unknown'
+                ? null
+                : '2026-10-25T09:00:00Z';
+            payload['next_occurrence'] = sample == 'unknown'
+                ? null
+                : {
+                    'kind': 'timed',
+                    'start': '2026-10-25T10:00:00+01:00',
+                    'end': null,
+                    'timezone': 'Europe/Rome',
+                  };
+            payload['schedule'] = {
+              'season_start': '2026-10-01',
+              'season_end': '2026-11-30',
+              'timezone': 'Europe/Rome',
+              if (sample == 'weekly')
+                'weekly': {
+                  'days': [1, 3],
+                  'start_time': '10:00',
+                  'end_time': '11:00',
+                },
+            };
+          } else if (sample == 'cancelled') {
+            payload['status'] = 'cancelled';
+          } else {
+            payload['kind'] = 'place';
+            payload['description'] = null;
+            payload['occurrences'] = [];
+            payload['next_at'] = null;
+            payload['link_scope'] = sample == 'dataset' ? 'dataset' : 'item';
+            payload['access'] =
+                'Access stated by the source; opening times unknown';
+          }
+          payload['title'] = switch (sample) {
+            'weekly' => 'Synthetic weekly fitness',
+            'unknown' => 'Synthetic course with unconfirmed sessions',
+            'cancelled' => 'Synthetic cancelled running event',
+            _ => 'Synthetic public basketball court',
+          };
+          payload['source_categories'] = [
+            sample == 'place' || sample == 'dataset'
+                ? 'Basketball court'
+                : 'Fitness',
+          ];
+          final item = ExternalActivity.parse(payload);
+          final gateway = FakeExternalActivityGateway()..detail = item;
+          final router = await _pump(
+            tester,
+            gateway,
+            language: language,
+            scale: 2,
+            dark: dark,
+          );
+          router.go('/activities/external/${item.id}');
+          await tester.pumpAndSettle();
+          await RenderedEvidence.capture(
+            tester,
+            'sportui01-$sample-$language-${dark ? 'dark' : 'light'}-top',
+          );
+          final link = find.byKey(const Key('external-activity-official-link'));
+          await tester.scrollUntilVisible(
+            link,
+            250,
+            scrollable: find.byType(Scrollable).hitTestable().first,
+          );
+          await tester.pumpAndSettle();
+          expect(
+            find.descendant(
+              of: link,
+              matching: find.text(
+                sample == 'dataset'
+                    ? (language == 'it'
+                          ? 'Vedi dataset della fonte'
+                          : 'View source dataset')
+                    : (language == 'it'
+                          ? 'Vedi informazioni ufficiali'
+                          : 'Official information'),
+              ),
+            ),
+            findsOneWidget,
+          );
+          await RenderedEvidence.capture(
+            tester,
+            'sportui01-$sample-$language-${dark ? 'dark' : 'light'}-source',
+          );
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  }
+
+  for (final language in ['en', 'it']) {
     for (final width in [320.0, 360.0]) {
       for (final dark in [false, true]) {
         testWidgets('ACTUI02 rendered $language $width 2x dark=$dark', (

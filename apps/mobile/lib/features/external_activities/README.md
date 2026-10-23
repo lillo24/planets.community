@@ -48,3 +48,12 @@ place clears dates. Dates are an explicit exclusive-end window of at most 90
 calendar dates and exclude undated places. Reset keeps the selected category.
 Search, filters and scroll are RAM-only within the retained route; no history is
 persisted or background fetching introduced. Examples are a secondary footer.
+
+SPORTUI01 cards/details render known course terms and weekly rules without
+computing next lessons locally. No supplied next session is explicit. Places
+have source type/access text and no event date; unknown price is never free.
+Optional typed `link_scope=dataset` changes the action to View source dataset;
+missing scope keeps the compatible item action. The canonical source extension
+in ACTSRC02 supplies this field; the UI never guesses from a URL or opens a
+booking/join flow. D03 remains event-only. Unknown controlled discipline slugs
+remain visible while known server facets use EN/IT labels.
