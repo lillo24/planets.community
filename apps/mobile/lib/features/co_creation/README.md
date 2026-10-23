@@ -1,5 +1,16 @@
 # Co-creation experiment
 
+PEOPLEHOME01 changes the experimental Home to Find your people (real `/people`),
+Find activities (Coming soon), and Propose an idea (Coming soon). Only the first
+acts; native Projects/Resources/Activities routes remain available elsewhere.
+`domain/general_message_links.dart` owns local likely-link detection, and
+`presentation/co_creation_general_screen.dart` owns cancellable review only for
+new ordinary General messages. The optional `PeopleCommand.beforeSend` in
+`presentation/people_widgets.dart` precedes acquisition; frozen delivery and UI
+completion retries bypass it. Numbered chats and structured cards are unaffected.
+Existing Report/Spam remains manual; no account suspension is implemented.
+See the [behavior, retry and proposed 09C policy contract](../../../../../docs/development/peoplehome01-home-and-links.md).
+
 This feature owns Trova persone independently of native Projects, Tavoli,
 registered Groups and imported events.
 

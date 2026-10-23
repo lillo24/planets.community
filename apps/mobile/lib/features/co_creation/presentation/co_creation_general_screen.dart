@@ -7,14 +7,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
 import '../../auth/application/auth_session_controller.dart';
+import '../../auth/domain/auth_models.dart';
 import '../../messages/presentation/conversation_history_list.dart';
 import '../../messages/presentation/message_read_viewport.dart';
 import '../../moderation/domain/moderation_models.dart';
 import '../../moderation/presentation/moderation_routes.dart';
 import '../../policies/application/policy_acceptance_controller.dart';
+import '../../policies/application/policy_documents.dart';
 import '../data/co_creation_rooms_gateway.dart';
 import '../domain/co_creation_rooms.dart';
 import '../domain/co_creation_identity.dart';
+import '../domain/general_message_links.dart';
 import '../../messages/application/message_unread_controller.dart';
 import '../application/people_signals.dart';
 import 'people_widgets.dart';
@@ -54,6 +57,7 @@ class _CoCreationGeneralScreenState
       more = false,
       closed = true;
   int epoch = 0;
+  int reviewGeneration = 0;
   Timer? timer;
   @override
   void initState() {
@@ -72,10 +76,97 @@ class _CoCreationGeneralScreenState
 
   void invalidate() {
     epoch++;
+    reviewGeneration++;
     messages = [];
     token = null;
     roomContext = null;
     closed = true;
+  }
+
+  @override
+  void didUpdateWidget(CoCreationGeneralScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.hubId.value != widget.hubId.value ||
+        oldWidget.roomId.value != widget.roomId.value ||
+        oldWidget.episodeId.value != widget.episodeId.value ||
+        oldWidget.numbered != widget.numbered) {
+      invalidate();
+      body.clear();
+      Future<void>.microtask(load);
+    }
+  }
+
+  bool canReview(String actor) {
+    final session = ref.read(authSessionProvider);
+    return session.identity?.id == actor &&
+        session.phase == AuthSessionPhase.ready &&
+        ref
+            .read(policyAcceptanceProvider)
+            .allows(actor, ref.read(policyVersionProvider)) &&
+        !busy &&
+        !failed &&
+        !closed &&
+        roomContext?.closed == false;
+  }
+
+  Future<bool> reviewLink(String text) async {
+    // Inspect only an explicit new send; non-link drafts need no dialog.
+    if (!containsLikelyWebLink(text)) return true;
+    final actor = ref.read(authSessionProvider).identity?.id;
+    if (actor == null || !canReview(actor) || body.text != text) return false;
+    final generation = reviewGeneration;
+    final scope = (
+      widget.hubId.value,
+      widget.roomId.value,
+      widget.episodeId.value,
+      widget.numbered,
+    );
+    var draftChanged = false;
+    void observeDraft() {
+      if (body.text != text) draftChanged = true;
+    }
+
+    body.addListener(observeDraft);
+    final l = AppLocalizations.of(context);
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          key: const Key('co-general-link-warning'),
+          scrollable: true,
+          title: Text(l.coGeneralLinkTitle),
+          content: Text(l.coGeneralLinkWarning),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l.coGeneralLinkEdit),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l.coGeneralLinkSend),
+            ),
+          ],
+        ),
+      );
+      // A confirmation is scoped to this live eligibility and exact draft.
+      // Invalidation/reconnect, policy/account changes or backgrounding revoke it.
+      return mounted &&
+          confirmed == true &&
+          !draftChanged &&
+          body.text == text &&
+          generation == reviewGeneration &&
+          scope ==
+              (
+                widget.hubId.value,
+                widget.roomId.value,
+                widget.episodeId.value,
+                widget.numbered,
+              ) &&
+          canReview(actor);
+    } finally {
+      // Disposing the controller also discards its listeners.
+      if (mounted) body.removeListener(observeDraft);
+    }
   }
 
   @override
@@ -140,6 +231,9 @@ class _CoCreationGeneralScreenState
         return;
       }
       setState(() {
+        if (closed != page.closed || roomContext?.closed != meta.closed) {
+          reviewGeneration++;
+        }
         messages = [...page.messages.reversed, if (older) ...messages];
         closed = page.closed;
         roomContext = meta;
@@ -341,23 +435,29 @@ class _CoCreationGeneralScreenState
                     ),
                     ListenableBuilder(
                       listenable: body,
-                      builder: (context, _) => PeopleCommand(
-                        slot:
-                            'room/${widget.roomId.value}/${widget.episodeId.value}/send',
-                        rpc: 'send_cocreate_room_message',
-                        gateway: (ref) =>
-                            ref.read(coCreationRoomsGatewayProvider),
-                        intent: {
-                          'p_room_id': widget.roomId.value,
-                          'p_episode_id': widget.episodeId.value,
-                          'p_body': body.text,
-                        },
-                        label: l.coPeopleSend,
-                        onSuccess: (_) async {
-                          body.clear();
-                          await load();
-                        },
-                      ),
+                      builder: (context, _) {
+                        final text = body.text;
+                        return PeopleCommand(
+                          slot:
+                              'room/${widget.roomId.value}/${widget.episodeId.value}/send',
+                          rpc: 'send_cocreate_room_message',
+                          gateway: (ref) =>
+                              ref.read(coCreationRoomsGatewayProvider),
+                          intent: {
+                            'p_room_id': widget.roomId.value,
+                            'p_episode_id': widget.episodeId.value,
+                            'p_body': text,
+                          },
+                          beforeSend: widget.numbered
+                              ? null
+                              : () => reviewLink(text),
+                          label: l.coPeopleSend,
+                          onSuccess: (_) async {
+                            body.clear();
+                            await load();
+                          },
+                        );
+                      },
                     ),
                   ],
                 ),
