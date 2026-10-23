@@ -210,27 +210,35 @@ real-Auth verifier alongside group membership. The existing path classifier and
 required statuses remain unchanged. Requests/chat/unread compatibility and safety
 changes share the Database gate; schema changes also regenerate Web contracts.
 
-# RELEASE01 and STAGING-AUTO01 staged delivery
+# RELEASE01 and STAGING-AUTO03 staged delivery
 
-`staging-release.yml` is separate from Validation and stays disabled unless
-`STAGING_RELEASE_ENABLED=true`. The existing always-present **Change
-classification** job in Validation now blocks unreviewed risky migration PRs
-and performs the populated semantic rehearsal for migration/release/baseline,
-workflow and dependency changes (and full manual Validation). Unrelated PRs skip
-that expensive step without leaving a required status pending. No duplicate PR
-rehearsal runs in the release workflow. SQL history edits/deletions fail closed.
+`staging-release.yml` is separate from Validation and disabled unless
+`STAGING_RELEASE_ENABLED=true`. Protected main-only manual `inspect` verifies
+actual secret/session TLS and independent history before activation. The
+`observe` job supplies that same-run exact non-contiguous predecessor to the
+disposable rehearsal. The writer waits for observation, rehearsal and complete
+exact-source Validation, then verifies the whole pending chain before any apply.
 
-After one-time protected recovery/credential/environment setup, main pushes run
-exact-source complete Validation, populated rehearsal and serialized staging SQL
-only. Routine nullable-column candidates need real catalog/data preservation;
-other SQL needs owner proof bound to the pre-merge head/hash/predecessor. The
-writer independently rechecks that proof, so merging a failed gate cannot erase
-it. Fresh main, history parity, TLS, advisory lock and backend checks remain.
+The five existing required checks remain. Classification/rehearsal use the PR's
+trusted pre-change policy for product SQL; a policy-only PR must pass unchanged
+base tests first. Privileged product SQL and policy changes require separate PRs.
+No owner fingerprint comments are required. Confirmed unsafe changes block source;
+unproven hosted compatibility produces a concrete hold. Changed shared workflows
+select all existing areas. Unrelated PRs avoid expensive rehearsal; full manual
+Validation stays available. The live proof uses actual observed history and
+reuses exact-source Validation rather than duplicating unrelated runs.
+Web's tooling tests fetch full history to inspect the immutable untrusted SQL
+fixture used by the policy's negative controls; a shallow checkout lacks it.
 
-Android/Play jobs require explicit manual `build`/`publish` dispatch, regardless
-of `STAGING_AUTO_PUBLISH`. Keep that variable false and the separate publication
-reviewer. No live variables, secrets or environment rules change by code merge.
-The [runbook](../../docs/development/release01-staging-play.md) owns classification,
-one-time activation, real encrypted DB **and Storage-object** recovery, bounded
-two-file reconciliation and incident steps. Current external blockers and the
-123/126 read-only observation are in the existing release status.
+Recovery mode, strict pinned CA/hostname/session TLS, one writer, canonical
+history, populated Auth/profile/Storage preservation, real security contracts,
+per-file catalog verification, actual CLI no-op and partial-write reconciliation
+remain mandatory. The [policy](../../docs/development/staging-auto03-verified-policy.md)
+and [runbook](../../docs/development/release01-staging-play.md) define one-time
+activation, development-no-backup scope and incident handling.
+
+Main pushes use ordinary staging verification and never build/upload Android.
+Android/Play require explicit manual `build`/`publish`, independently configured
+environments and the Play reviewer. Keep `STAGING_AUTO_PUBLISH=false`. Code merge
+does not change live variables, secrets, native Supabase deployment or environment
+rules, and the SQL writer deploys no Edge functions or paid map requests.
