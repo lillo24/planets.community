@@ -10,6 +10,9 @@
   persistence. It exposes the deliberately blocked official connector boundary.
 - `../../import-external-activities.mjs` owns explicit CLI modes/targets and safe
   process failure reporting. No user-supplied provider URL or connector module.
+- `operations.mjs` composes sequential explicit source sets with a parent deadline,
+  private cadence, independent outcomes and service-only operator projections.
+  `../../operate-external-activities.mjs` owns signals and safe process exit.
 
 Tests live in `../external-activities.test.mjs` and `../external-catalogue.test.mjs` so the existing tooling test
 command discovers them. The source-independent contract, constants, target

@@ -12,6 +12,7 @@ import { ActivityImportError } from "./lib/external-activities/transport.mjs";
 import { verifyExternalCatalogueUpgrade } from "./lib/external-activities-upgrade-verifier.mjs";
 import { verifyExternalMultiSource } from "./lib/external-multi-source-verifier.mjs";
 import { verifyExternalGeography } from "./lib/external-geography-verifier.mjs";
+import { verifyExternalOperations } from "./lib/external-operations-verifier.mjs";
 
 const ci = process.env.CI === "true";
 if (!ci && process.env.PLANETS_DISPOSABLE_QA !== "1") {
@@ -81,6 +82,7 @@ try {
   await verifyExternalCatalogueUpgrade(sql);
   await verifyExternalMultiSource(sql, service, guest);
   await verifyExternalGeography(sql, service, guest);
+  await verifyExternalOperations(sql, service, guest);
   assert.equal(
     (await list()).state,
     "unconfigured",

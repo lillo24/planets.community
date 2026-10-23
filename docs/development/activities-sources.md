@@ -5,6 +5,9 @@ ACTSRC02 adds independent sources without enabling any source. Import credential
 can claim/finish existing enabled licensed sources; only a database owner can
 configure rights, origins, capabilities or publication. Private source/run tables
 remain denied to anon, authenticated and service roles. RLS is retained.
+ACTOPS01 adds narrow service-only inspection and bounded maintenance RPCs without
+raw grants or source configuration power; the [operations runbook](activities-operations.md)
+owns commands, cadence, activation order and recovery.
 
 ## Source policy
 

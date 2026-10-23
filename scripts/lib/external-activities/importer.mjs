@@ -59,17 +59,22 @@ export async function runActivityImport({
   limits: overrides = {},
   fetchImpl,
   sleep,
+  parentSignal,
 }) {
   const limits = { ...activityImportLimits, ...overrides };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), limits.runMs);
-  const signal = controller.signal;
+  const signal = parentSignal
+    ? AbortSignal.any([controller.signal, parentSignal])
+    : controller.signal;
   let run;
   let fetched = 0;
   let rejected = 0;
   const reasons = {};
   try {
+    signal.throwIfAborted();
     if (apply) run = await store.begin(connector.sourceId, signal);
+    signal.throwIfAborted();
     const start = run ? new Date(run.started_at) : now();
     if (!Number.isFinite(start.getTime()))
       throw new ActivityImportError("invalid_payload");

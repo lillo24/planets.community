@@ -147,7 +147,8 @@
     "contact:discussions:upgrade:verify:local": "node scripts/verify-local-contact-discussion-upgrades.mjs",
     "activities:import": "node scripts/import-external-activities.mjs",
     "activities:verify:local": "node scripts/verify-local-external-activities.mjs",
-    "activities:trento:verify:local": "node scripts/verify-local-trento-facilities.mjs"
+    "activities:trento:verify:local": "node scripts/verify-local-trento-facilities.mjs",
+    "activities:operate": "node scripts/operate-external-activities.mjs"
   },
   "devDependencies": {
     "prettier": "3.9.6",

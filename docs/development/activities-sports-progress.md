@@ -26,8 +26,38 @@ runner for this queue was found in current tasks, worktrees or open PRs.
 | 007 ACTGEO01    | Implemented and locally verified         | 145 migrations; full 8415 assertions                           |
 | 008 ACTMAP01    | Implemented and locally verified         | Shared renderer; zero provider attempts                        |
 | 009 SPORTAPI02  | Assessment complete; connector blocked   | No eligible local coverage verified; proceed to 010            |
-| 010 ACTOPS01    | Queued                                   | 005 tested; keep all schedules/sources OFF                     |
+| 010 ACTOPS01    | Implemented and locally verified         | 146-migration upgrade; 37 SQL assertions; real operator HTTP   |
 | 011 ACTQA01     | Queued final cumulative validation/merge | Fresh current-main SQL proof and all required CI before merge  |
+
+## 010 ACTOPS01 local qualification
+
+The existing importer/disabled daily job now handles an explicit allow-listed
+source set, independent outcomes, durable daily due cadence, a seven-minute
+parent deadline and safe interruption. All failed/blocked/disabled/unconfigured
+and partial runs return nonzero; a healthy source never conceals another's
+failure. Dry-run writes nothing. Unknown municipal types produce a bounded
+actionable warning while retaining honest source labels; structural empty,
+duplicate/schema/truncated exports fail without hard-coding 116.
+
+The additive migration adds service-only sanitized inspection and bounded
+selected-source expired-lease/30-day compact receipt maintenance, even when
+disabled. Canonical records/provenance and raw table grants remain unchanged.
+Begin retains its function identity and ten-minute lease, replacing global
+unbounded pruning with source-scoped maintenance. No hosted source or workflow
+is enabled. See [activation and recovery](activities-operations.md).
+
+Evidence: `npm run test:tooling` **207 PASS** (including 14 operation tests);
+task-owned 145→146 upgrade; `supabase test db ...164_external_operations.test.sql`
+**37 PASS**; `npm run db:lint` and `db:advisors` clean; standard `db:types`
+regenerated. Guarded `activities:verify:local` passed predecessor compatibility,
+multi-source/geographic checks and real service/anonymous operations: no-write
+dry-run, apply/due skip, private denial, locked-source skip, expired lease/late
+completion fencing and canonical row preservation. All synthetic fixtures were
+cleaned. Full clean replay, final drift and broad regression are next in 011.
+
+Next: reconcile newly merged main (PEOPLEHOME and current planning/docs), qualify
+the complete integration, build Android, review exact final SQL/evidence and
+post delegated owner proof; required CI and protected #298 merge follow.
 
 ## 002 implementation and evidence
 

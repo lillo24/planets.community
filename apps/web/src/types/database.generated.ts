@@ -5019,6 +5019,10 @@ export type Database = {
         Args: { p_chat_id: string; p_expected_profile_id: string }
         Returns: boolean
       }
+      inspect_external_activity_sources: {
+        Args: { p_source_ids: string[] }
+        Returns: Json
+      }
       invite_group_discussion_member: {
         Args: {
           p_client_request_id: string
@@ -7339,6 +7343,10 @@ export type Database = {
           title: string
           title_evidence: string
         }[]
+      }
+      maintain_external_activity_imports: {
+        Args: { p_limit?: number; p_source_ids: string[] }
+        Returns: Json
       }
       mark_all_notifications_read: {
         Args: { p_expected_profile_id: string }
