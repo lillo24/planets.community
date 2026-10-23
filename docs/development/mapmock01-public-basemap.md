@@ -1,9 +1,12 @@
 # MAPMOCK01 public imagery in Mock Mode
 
-Source implementation begins at main `667bf57b`. Hosted activation is a separate
-owner action. No new function, SQL, provider spending or Play upload is deployed
-by this implementation task. Fixture Android pixels do not establish a working
-hosted Android map.
+Source implementation begins at main `667bf57b`. The STAGING-AUTO03 continuation
+now authorizes guarded staging/mock migration catch-up, the narrow mock-basemap
+deployment and a hosted smoke of at most 12 quarter-credit units. Policy PR #306
+merged first at `52e301bb`; product SQL uses that independently validated policy.
+Hosted receipts remain separate from source/native qualification. Fixture
+Android pixels do not establish a working hosted Android map. Play upload is
+outside this authorization.
 
 ## Trust and ownership
 
@@ -161,7 +164,7 @@ Screenshots are explicitly **fixture evidence**. Hosted logs/credentials/APKs
 are excluded from uploaded artifacts. Final executed results are recorded in
 the implementation PR; an unrun gate must not be described as passed.
 
-## Hosted activation and rollback — separate owner gate
+## Hosted activation and rollback
 
 Read-only inspection on 23 October 2026 confirmed staging map-provider v5 with
 JWT verification on; no mock map function existed. Staging provider master,
@@ -172,15 +175,16 @@ usage row was returned. This is an observed configuration snapshot, not a
 provider-account invoice or evidence of a hosted tile request. No real provider
 charge was incurred or measured by this task.
 
-After explicit owner authorization for the exact projects and bytes:
+The continuation authorizes the following steps for the two fixed projects:
 
 1. Re-read live quota/license/ledger settings and actual remaining provider
    allowance. Keep the account ceiling unchanged. Review public-image proxy and
    caching rights, attribution and ingress log retention for this route.
-2. Complete the existing exact-SQL owner review and populated migration
-   rehearsal. Apply the additive canonical migration through the approved
-   migration owner, not an ad-hoc SQL dashboard. This task authorizes no hosted
-   migration. Keep `private.mock_basemap_config.enabled=false`.
+2. Qualify the entire live pending chain under the merged STAGING-AUTO03 policy
+   and its populated migration rehearsal. Apply eligible canonical bytes through
+   the protected single staging writer. Per-file owner fingerprint comments are
+   no longer required. Keep `private.mock_basemap_config.enabled=false` until
+   separate mock-control readiness and actual Edge deployment are verified.
 3. On the independently verified **mock** project, review/install the updated
    `supabase/mock/control.sql` identity RPC using the existing guarded operator
    maintenance process and approved canonical schema inventory. Review the
