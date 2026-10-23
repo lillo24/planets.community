@@ -4,6 +4,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/planets_app.dart';
+import '../features/settings/application/co_creation_preference_controller.dart';
+import '../features/settings/data/co_creation_preference_store.dart';
+import '../features/settings/domain/co_creation_preference.dart';
 import '../features/settings/application/activities_split_preference_controller.dart';
 import '../features/settings/data/activities_split_preference_store.dart';
 import '../features/settings/domain/activities_split_preference.dart';
@@ -46,6 +49,9 @@ Future<ActivitiesSplitPreferenceState> loadActivitiesSplitPreference() =>
       SharedPreferencesActivitiesSplitPreferenceStore(),
     );
 
+Future<CoCreationPreferenceState> loadCoCreationPreference() =>
+    restoreCoCreationPreference(SharedPreferencesCoCreationPreferenceStore());
+
 Future<void> bootstrapApplication({
   AppConfigLoader configLoader = AppConfig.fromCompileTime,
   BackendInitializer backendInitializer = initializeSupabase,
@@ -57,6 +63,8 @@ Future<void> bootstrapApplication({
   Future<ActivitiesSplitPreferenceState> Function()
       activitiesSplitPreferenceLoader =
       loadActivitiesSplitPreference,
+  Future<CoCreationPreferenceState> Function() coCreationPreferenceLoader =
+      loadCoCreationPreference,
   StartupPreferenceLoader startupPreferenceLoader = loadStartupPreference,
 }) async {
   final config = configLoader();
@@ -80,6 +88,12 @@ Future<void> bootstrapApplication({
       restoreFailed: true,
     );
   }
+  CoCreationPreferenceState coCreationPreference;
+  try {
+    coCreationPreference = await coCreationPreferenceLoader();
+  } catch (_) {
+    coCreationPreference = const CoCreationPreferenceState(restoreFailed: true);
+  }
   await backendInitializer(config);
   StartupPreference startupPreference;
   try {
@@ -96,10 +110,14 @@ Future<void> bootstrapApplication({
               language: languagePreference,
               navigation: navigationPreference,
               activitiesSplit: activitiesSplitPreference,
+              coCreation: coCreationPreference,
               startup: startupPreference,
             )
           : ProviderScope(
               overrides: [
+                initialCoCreationPreferenceProvider.overrideWithValue(
+                  coCreationPreference,
+                ),
                 appConfigProvider.overrideWithValue(config),
                 realmPreferenceNamespaceProvider.overrideWithValue(
                   'normal:${config.supabaseUrl.origin}:',

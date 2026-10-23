@@ -1,5 +1,15 @@
 # Dedicated mock environment
 
+`world.mjs` now registers two separate five-person login catalogs: Activities
+(Giulia, Marco, Sara, Dario, Elena) and Find people (Luca, Maya, Nora, Teo, Iris).
+The mock-only registry's dataset field is presentation metadata, never authority.
+`people-world.mjs` creates the requested categorized interests, three-account
+activation, explicit General/group admission, timed 4/7 and full meeting cards,
+persistent chat messages and pending proposals through the canonical RPCs.
+`verify.mjs` checks those exact fixtures without repairing tester edits.
+Settings presentation selection filters Home Help's offered login profiles;
+Mock remains an independent realm. This task does not apply hosted changes.
+
 This package owns explicitly invoked mock-only operations. It never imports the
 local demo seeder and never removes its loopback guard.
 

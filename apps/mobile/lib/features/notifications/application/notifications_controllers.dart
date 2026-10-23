@@ -38,6 +38,7 @@ class NotificationsUnreadController extends Notifier<NotificationsUnreadState> {
 
   @override
   NotificationsUnreadState build() {
+    ref.listen(notificationCoChangesProvider, (_, _) => _invalidateContacts());
     ref.listen(contactAccessChangesProvider, (_, _) => _invalidateContacts());
     ref.listen(
       memberContactAccessChangesProvider,
@@ -232,6 +233,7 @@ class NotificationsInboxController extends Notifier<NotificationsInboxState> {
 
   @override
   NotificationsInboxState build() {
+    ref.listen(notificationCoChangesProvider, (_, _) => _invalidateContacts());
     ref.listen(contactAccessChangesProvider, (_, _) => _invalidateContacts());
     ref.listen(
       memberContactAccessChangesProvider,

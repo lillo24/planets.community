@@ -11,8 +11,12 @@ import 'package:planets_mobile/features/mock_mode/application/mock_mode_coordina
 import 'package:planets_mobile/features/mock_mode/domain/mock_models.dart';
 import 'package:planets_mobile/features/mock_mode/presentation/mock_accounts_screen.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
+import 'package:planets_mobile/features/settings/application/co_creation_preference_controller.dart';
+import 'package:planets_mobile/features/settings/domain/co_creation_preference.dart';
+import 'package:planets_mobile/features/settings/data/co_creation_preference_store.dart';
 
 import '../../support/fake_auth.dart';
+import '../../support/fake_settings.dart';
 import 'mock_mode_coordinator_test.dart' as fixtures;
 
 class PickerAccess extends fixtures.FakeAccess {
@@ -51,11 +55,20 @@ void main() {
     String language = 'en',
     bool dark = false,
     bool mock = false,
+    bool people = false,
     Widget child = const MockAccountsScreen(),
   }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          coCreationPreferenceStoreProvider.overrideWithValue(
+            FakeCoCreationPreferenceStore(),
+          ),
+          initialCoCreationPreferenceProvider.overrideWithValue(
+            CoCreationPreferenceState(
+              mode: people ? CoCreationMode.on : CoCreationMode.off,
+            ),
+          ),
           mockModeCoordinatorProvider.overrideWithValue(coordinator),
           closedTestMockCapabilityProvider.overrideWithValue(true),
           activeMockRealmProvider.overrideWithValue(mock),
@@ -77,6 +90,41 @@ void main() {
     );
     await tester.pump();
   }
+
+  testWidgets(
+    'Find people and Activities offer different mock login profiles',
+    (tester) async {
+      access.people = [
+        fixtures.giulia,
+        fixtures.marco,
+        const MockPersona(
+          key: 'luca',
+          userId: '82000000-0000-4000-8000-000000000001',
+          name: 'Luca',
+          email: 'luca@personas.planets.invalid',
+          scenario: 'Meeting filling',
+          dataset: 'people',
+        ),
+      ];
+      await mount(tester, people: true);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mock-login-luca')), findsOneWidget);
+      expect(find.byKey(const Key('mock-login-giulia')), findsNothing);
+      expect(find.byKey(const Key('mock-login-marco')), findsNothing);
+      final scope = ProviderScope.containerOf(
+        tester.element(find.byType(MockAccountsScreen)),
+      );
+      expect(
+        await scope
+            .read(coCreationPreferenceProvider.notifier)
+            .select(CoCreationMode.off),
+        isTrue,
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('mock-login-giulia')), findsOneWidget);
+      expect(find.byKey(const Key('mock-login-luca')), findsNothing);
+    },
+  );
 
   for (final language in ['en', 'it']) {
     for (final dark in [false, true]) {

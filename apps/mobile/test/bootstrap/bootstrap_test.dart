@@ -1,3 +1,5 @@
+import 'package:planets_mobile/features/settings/application/co_creation_preference_controller.dart';
+import 'package:planets_mobile/features/settings/domain/co_creation_preference.dart';
 import 'package:planets_mobile/features/settings/application/activities_split_preference_controller.dart';
 import 'package:planets_mobile/features/settings/domain/activities_split_preference.dart';
 import 'package:flutter/widgets.dart';
@@ -25,6 +27,10 @@ void main() {
 
       await bootstrapApplication(
         // This fixture verifies the launched navigation preference after onboarding.
+        coCreationPreferenceLoader: () async {
+          events.add('co-creation');
+          return const CoCreationPreferenceState();
+        },
         startupPreferenceLoader: () async =>
             StartupPreference(completedVersion: productionTutorial.version),
         configLoader: () {
@@ -67,6 +73,7 @@ void main() {
         'language',
         'navigation',
         'activities-split',
+        'co-creation',
         'backend',
         'monitoring',
         'application',
@@ -100,6 +107,7 @@ void main() {
         BottomTabDestination.browse,
       );
       expect(container.read(activitiesSplitPreferenceProvider).enabled, isTrue);
+      expect(container.read(coCreationPreferenceProvider).enabled, isFalse);
       expect(find.byKey(const Key('browse-activities-button')), findsOneWidget);
       expect(find.byKey(const Key('nav-browse')), findsOneWidget);
       expect(find.byKey(const Key('nav-messages')), findsNothing);
@@ -117,6 +125,8 @@ void main() {
             throw StateError('platform detail'),
         activitiesSplitPreferenceLoader: () async =>
             throw StateError('split platform detail'),
+        coCreationPreferenceLoader: () async =>
+            throw StateError('co-creation platform detail'),
         navigationPreferenceLoader: () async =>
             throw StateError('navigation platform detail'),
         backendInitializer: (_) async {},
@@ -156,6 +166,10 @@ void main() {
       );
       expect(
         container.read(activitiesSplitPreferenceProvider).restoreFailed,
+        isTrue,
+      );
+      expect(
+        container.read(coCreationPreferenceProvider).restoreFailed,
         isTrue,
       );
     },

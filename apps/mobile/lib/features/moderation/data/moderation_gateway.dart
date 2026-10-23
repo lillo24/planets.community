@@ -30,6 +30,20 @@ class ModerationRpcContract {
     required String explanation,
     required ModerationReportTarget target,
   }) {
+    if (target.kind == ModerationTargetKind.cocreateRoomMessage) {
+      if (target.contextKind != null || target.contextId != null) {
+        throw const FormatException(
+          'Room evidence cannot carry another context.',
+        );
+      }
+      return {
+        'p_expected_reporter_profile_id': expectedProfileId,
+        'p_client_submission_id': clientSubmissionId,
+        'p_category': category.wireValue,
+        'p_explanation': explanation.trim(),
+        'p_target_id': target.id,
+      };
+    }
     if (target.kind == ModerationTargetKind.groupDiscussionMessage) {
       if (target.contextKind != null || target.contextId != null) {
         throw const FormatException(
@@ -163,7 +177,9 @@ class SupabaseModerationGateway implements ModerationGateway {
     required ModerationReportTarget target,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      target.kind == ModerationTargetKind.groupDiscussionMessage
+      target.kind == ModerationTargetKind.cocreateRoomMessage
+          ? 'submit_cocreate_room_report'
+          : target.kind == ModerationTargetKind.groupDiscussionMessage
           ? 'submit_group_discussion_report'
           : 'submit_moderation_report',
       params: contract.submitParams(

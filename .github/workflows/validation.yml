@@ -388,6 +388,47 @@ jobs:
       - name: Verify reviewed conversion and opt-in Project invitations
         run: npm run group:conversion:verify:local
 
+      # Co-creation is enabled only inside this disposable runner and restored
+      # OFF by the verifier. This exercises private consent/block/report races.
+      - name: Verify experimental co-creation posts and accepted contacts
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: npm run cocreate:posts:verify:local
+
+      - name: Verify experimental co-creation hubs and General episodes
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: npm run cocreate:hubs:verify:local
+
+      - name: Verify experimental numbered-group capacity and exit races
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: npm run cocreate:numbered:verify:local
+      - name: Verify structured recruitment and stale card admission
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: npm run cocreate:recruitment:verify:local
+      - name: Verify explicit source links and native personal drafts
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: npm run cocreate:links:verify:local
+      - name: Verify reviewed event handoff without importing or enrollment
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: npm run cocreate:events:verify:local
+
+      - name: Verify proposed communities, meeting places and filling notifications
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+        run: npm run cocreate:communities:verify:local
+
+      - name: Verify continuous co-creation journey and retained socket
+        # The continuous journey uses the same disposable backend; no extra reset.
+        # Its finally restores the experimental gate even on an assertion failure.
+        run: npm run cocreate:programme:verify:local
+        env:
+          PLANETS_DISPOSABLE_QA: "1"
+
       - name: Regenerate public database types
         run: npm run db:types
 

@@ -40,8 +40,55 @@ export const PERSONAS = Object.freeze(
       asset: "sara.webp",
       scenario: "Discovery and explicit first-join scenarios.",
     },
+    {
+      key: "luca",
+      name: "Luca",
+      id: "82000000-0000-4000-8000-000000000001",
+      asset: "giulia.webp",
+      dataset: "people",
+      scenario: "Organize Valorant meetings and ask General for a filling.",
+    },
+    {
+      key: "maya",
+      name: "Maya",
+      id: "82000000-0000-4000-8000-000000000002",
+      asset: "marco.webp",
+      dataset: "people",
+      scenario:
+        "Join a meeting and its persistent group chat; organize board games.",
+    },
+    {
+      key: "nora",
+      name: "Nora",
+      id: "82000000-0000-4000-8000-000000000003",
+      asset: "sara.webp",
+      dataset: "people",
+      scenario:
+        "Running, travel and creative meetings; pending community interests.",
+    },
+    {
+      key: "teo",
+      name: "Teo",
+      id: "82000000-0000-4000-8000-000000000004",
+      asset: null,
+      dataset: "people",
+      scenario: "Join, free a meeting place and remain in the group chat.",
+    },
+    {
+      key: "iris",
+      name: "Iris",
+      id: "82000000-0000-4000-8000-000000000005",
+      asset: "sara.webp",
+      dataset: "people",
+      scenario:
+        "Newcomer: browse categories, explicitly join General, then a meeting.",
+    },
   ].map((p) =>
-    Object.freeze({ ...p, email: `${p.key}@personas.planets.invalid` }),
+    Object.freeze({
+      dataset: "activities",
+      ...p,
+      email: `${p.key}@personas.planets.invalid`,
+    }),
   ),
 );
 
@@ -224,8 +271,8 @@ export async function seed(context) {
           });
           return object;
         });
-      await sql`insert into mock_control.personas(persona_key,user_id,email,display_name,scenario)
-        values(${person.key},${person.id}::uuid,${person.email},${person.name},${person.scenario}) on conflict(persona_key) do nothing`;
+      await sql`insert into mock_control.personas(persona_key,user_id,email,display_name,scenario,dataset)
+        values(${person.key},${person.id}::uuid,${person.email},${person.name},${person.scenario},${person.dataset}) on conflict(persona_key) do nothing`;
     }
     const { giulia, marco, sara, dario } = people;
     async function group(key, owner, name) {
@@ -563,7 +610,16 @@ export async function seed(context) {
         p_body: "Porterò il disegno delle cassette.",
       }),
     );
-    return { personas: PERSONAS.length, groups: 2, project, tavolo, history };
+    const { seedPeopleWorld } = await import("./people-world.mjs");
+    const coCreation = await seedPeopleWorld(context, people, once, at);
+    return {
+      personas: PERSONAS.length,
+      groups: 2,
+      project,
+      tavolo,
+      history,
+      coCreation,
+    };
   } finally {
     if (people)
       for (const person of Object.values(people))

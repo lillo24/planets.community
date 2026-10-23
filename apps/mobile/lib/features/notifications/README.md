@@ -10,7 +10,7 @@ outbox, register devices, deliver push, or own participation/chat actions.
 - `domain/notification_models.dart` defines forward-safe category/kind/target
   enums, notification rows, paired keyset cursors/pages, and preferences.
 - `data/notifications_gateway.dart` is the only Supabase boundary. It calls the
-  six expected-identity-bound 06A client RPCs and strictly parses their narrow
+  expected-identity-bound client RPCs and strictly parses their narrow
   results. It never calls the service-only projector.
 - `application/notifications_controllers.dart` owns inbox paging, unread state,
   mark-one/mark-all, duplicate-action guards, rollback/reload behavior,
@@ -39,8 +39,17 @@ The gateway calls only `list_own_notifications`,
 `mark_all_notifications_read`, `list_own_notification_preferences`, and
 `set_own_notification_preference`. Flutter contains no service-role credential
 and never calls `process_notification_outbox_batch`. Notification source JSON,
-request messages, exact meeting information, email, tokens, and outbox/audit
+request messages, private meeting details, email, tokens, and outbox/audit
 identifiers are neither requested nor rendered.
+
+COMM01/FILL01 composes the existing contacts feed through additive `with_cocreate`
+read/count/read-state RPCs. `domain/co_filling_notification.dart` parses only the
+scheduled General card's authorized instant, current meeting occupancy and exact
+episode-bound review destination. It grants no group admission. Typed copy shows
+date/time and UTC offset before opening the card. The gateway's actor-only
+co-creation signal invalidates inbox/count; no date, room ID or body is broadcast.
+Legacy native rows retain their contracts and destinations. No device provider
+or external push delivery is configured here.
 
 Known participation, Project-chat, Resource, and Matching rows are strictly validated,
 including exact Resource request/chat/exchange shapes, event/leg consistency,

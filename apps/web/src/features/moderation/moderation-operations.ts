@@ -12,6 +12,67 @@ import {
   requireModerationStaff,
   type ModerationServerClientFactory,
 } from "./moderation-server";
+import type {
+  CoProposalModerationInput,
+  CoProposalModerationResult,
+} from "./cocreate-proposal-models";
+
+export async function moderateCoProposal(
+  input: CoProposalModerationInput,
+  createClient?: ModerationServerClientFactory,
+): Promise<CoProposalModerationResult> {
+  if (
+    !isUuid(input.caseId) ||
+    !isUuid(input.proposalId) ||
+    !isUuid(input.commandId) ||
+    !Number.isSafeInteger(input.version) ||
+    input.version < 1 ||
+    !["suppress", "restore", "reject"].includes(input.operation)
+  )
+    return { status: "invalid" };
+  const access = await requireModerationStaff(createClient);
+  if (!access) return { status: "denied" };
+  try {
+    const response = await access.client.rpc(
+      "moderate_cocreate_community_proposal",
+      {
+        p_expected_staff_profile_id: access.profileId,
+        p_command_id: input.commandId,
+        p_case_id: input.caseId,
+        p_expected_version: input.version,
+        p_operation: input.operation,
+      },
+    );
+    if (response.error) {
+      const code =
+        typeof response.error === "object" && "code" in response.error
+          ? response.error.code
+          : null;
+      return {
+        status:
+          code === "42501"
+            ? "denied"
+            : code === "PT409"
+              ? "stale"
+              : code === "22023"
+                ? "invalid"
+                : "error",
+      };
+    }
+    const r = response.data as Record<string, unknown>;
+    if (
+      !r ||
+      Object.keys(r).length !== 3 ||
+      r.proposal_id !== input.proposalId ||
+      r.operation !== input.operation ||
+      r.version !== input.version + 1
+    )
+      return { status: "error" };
+    return { status: "accepted" };
+  } catch {
+    return { status: "error" };
+  }
+}
 
 export async function setGroupSuppression(
   input: GroupSuppressionInput,

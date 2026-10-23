@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { pathToFileURL } from "node:url";
 import { operator } from "./operator.mjs";
 import { PERSONAS, personaSessions, rpc } from "./world.mjs";
+import { PEOPLE_TOPICS } from "./people-world.mjs";
 
 // Authentication changes only Auth session state. All product verification below
 // is read-only: no seed, repair, invitation acceptance or read acknowledgement.
@@ -20,16 +21,20 @@ export async function verify(context) {
   };
   try {
     const registry =
-      await sql`select persona_key,user_id,email from mock_control.personas order by persona_key`;
+      await sql`select persona_key,user_id,email,dataset from mock_control.personas order by persona_key`;
     equal(
       registry.map((r) => ({
         key: r.persona_key,
         id: r.user_id,
         email: r.email,
+        dataset: r.dataset,
       })),
-      PERSONAS.map((p) => ({ key: p.key, id: p.id, email: p.email })).sort(
-        (a, b) => a.key.localeCompare(b.key),
-      ),
+      PERSONAS.map((p) => ({
+        key: p.key,
+        id: p.id,
+        email: p.email,
+        dataset: p.dataset,
+      })).sort((a, b) => a.key.localeCompare(b.key)),
       "Exact persona registry; no staff",
     );
     equal(
@@ -129,6 +134,70 @@ export async function verify(context) {
       equal(bytes.error, null, "Ordinary owner Storage access");
       has(bytes.data?.size > 0, "Usable image bytes");
     }
+    for (const [category, name] of PEOPLE_TOPICS) {
+      const [stored] =
+        await sql`select receipt from mock_control.fixtures where fixture_key=${`people:${category}:${name}:proposal`}`;
+      has(stored, "Find people proposal receipt exists");
+      const proposal = await rpc(
+        people.iris,
+        "get_cocreate_community_proposal",
+        { p_proposal_id: stored.receipt.proposal_id },
+      );
+      equal(
+        proposal.state,
+        "activated",
+        "Mock topic activated through distinct support",
+      );
+      const entries = await rpc(people.iris, "list_cocreate_communities", {
+        p_category_id: category,
+        p_search: name,
+        p_locality: "Trento · Mock",
+      });
+      has(
+        entries.some((e) => e.hub?.hub_id === proposal.hub_id),
+        "Topic appears under its curated category",
+      );
+    }
+    const [valorant] =
+      await sql`select receipt from mock_control.fixtures where fixture_key='people:videogames:Valorant:meeting'`;
+    const meeting = await rpc(people.luca, "get_cocreate_current_meeting", {
+      p_expected_profile_id: people.luca.id,
+      p_room_id: valorant.receipt.room_id,
+      p_episode_id: valorant.receipt.episode_id,
+    });
+    equal(meeting.occupied, 4, "Valorant meeting has four explicit attendees");
+    equal(meeting.capacity, 7, "Valorant meeting has seven places");
+    const filling = (
+      await rpc(people.maya, "list_own_notifications_with_cocreate", {
+        p_expected_profile_id: people.maya.id,
+      })
+    ).find(
+      (n) => n.cocreate_recruitment_id === valorant.receipt.recruitment_id,
+    );
+    has(
+      filling?.cocreate_starts_at,
+      "Filling notification includes meeting time",
+    );
+    equal(
+      filling.cocreate_occupied,
+      4,
+      "Notification already shows current occupancy",
+    );
+    equal(
+      await rpc(people.iris, "list_own_cocreate_rooms_v2", {
+        p_expected_profile_id: people.iris.id,
+      }),
+      [],
+      "Newcomer has not been enrolled in a chat",
+    );
+    equal(
+      await rpc(people.iris, "get_own_cocreate_numbered_membership", {
+        p_expected_profile_id: people.iris.id,
+        p_room_id: valorant.receipt.room_id,
+      }),
+      null,
+      "Meeting fixture grants no membership to the newcomer",
+    );
     return { checks, personas: PERSONAS.length };
   } finally {
     for (const person of Object.values(people))

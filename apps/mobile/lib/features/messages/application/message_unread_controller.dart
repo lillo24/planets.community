@@ -1,4 +1,5 @@
 import '../../member_contact/application/member_contact_access_changes.dart';
+import '../../co_creation/application/people_signals.dart';
 
 import 'dart:async';
 
@@ -64,6 +65,20 @@ class MessageUnreadController extends Notifier<MessageUnreadState>
         disconnected: _baseDisconnected || _discussionDisconnected,
       );
       if (signal?.connected == true) _schedule(id);
+    });
+    ref.listen(peopleSignalsProvider, (_, next) {
+      if (id == null ||
+          state.profileId != id ||
+          ref.read(authSessionProvider).identity?.id != id) {
+        return;
+      }
+      _request++;
+      state = MessageUnreadState(
+        profileId: id,
+        stale: true,
+        disconnected: state.disconnected,
+      );
+      if (next.asData?.value.connected == true) _schedule(id);
     });
     ref.listen(contactAccessChangesProvider, (_, next) {
       if (id != null && next.$1 == id && state.profileId == id) {

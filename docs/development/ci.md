@@ -17,6 +17,16 @@ leave required checks pending.
 
 ## Validation areas
 
+COCREATE-RUNALL adds one post/contact verifier inside the existing Database job,
+after the clean pgTAP suite and other domain fixtures. It uses genuine synthetic
+Auth sessions and bounded consent/block/report races, temporarily enables only
+the runner-local experiment and restores OFF. CI passes the existing explicit
+`PLANETS_DISPOSABLE_QA=1` opt-in; local operators must select a disposable stack.
+The same verifier is in `check:db`. No hosted activation, new trigger, duplicate
+post-merge run or required-check change is introduced. Root script/workflow
+changes retain conservative full classification; the added recurring work is
+one bounded integration verifier only when Database already runs.
+
 MSG01 adds a populated predecessor migration rehearsal before Database's clean
 reset, plus its pair/privacy/race/Realtime verifier after the notification
 consumer fixtures and blocking producer, immediately before the unrestricted
@@ -105,3 +115,17 @@ the `merge_group` trigger before making these checks queue requirements.
 
 The existing concurrency group is retained, so a newer commit to the same pull
 request cancels its obsolete validation run.
+
+The experimental co-creation Database steps also run the owned-local hub/General
+OTP/concurrency verifier with PLANETS_DISPOSABLE_QA=1. It checks loopback targets,
+uses synthetic identities, and restores server activation OFF even on failure.
+It follows rolled-back tests and precedes exact public type generation; no CI
+trigger/path boundary or required-status policy changed.
+
+Q00 also runs the continuous `cocreate:programme:verify:local` journey in the
+same Database job and disposable stack, after the individual co-creation checks.
+It adds no reset or trigger. The separate destructive actual-pre-A00 upgrade
+command requires an explicitly named local QA project; its exact inventory and
+native snapshot evidence are recorded in cocreate-progress.md. STAGING-AUTO01's
+owner migration review/rehearsal gate remains unchanged and may prevent area
+jobs from starting until the exact-content review exists.
