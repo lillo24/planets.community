@@ -118,3 +118,14 @@ ownership and every loopback endpoint before opening SQL; its test rejects
 hosted/implicit targets. cocreate-local-fixtures.mjs owns only three deterministic
 synthetic topics/hubs, shared by the seed command and genuine hub verifier. It
 does not enable the gate or create people.
+
+## Calendar verification
+
+`cocreate-calendar-verifier.mjs` owns bounded synthetic real-Auth checks for the
+CAL01 calendar: exact admitted scope, occupancy, reposts/expiry, signed pagination,
+blocking, unread invariance and competing last-place joins. The existing
+community/meeting verifier calls it in Database CI; the standalone
+`../verify-local-cocreate-calendar.mjs` uses the same owned-loopback guard.
+`../verify-local-cocreate-calendar-upgrade.mjs` additionally preserves populated
+rows, installed function contracts and warmed readers across the actual additive
+migration, then explains its query over 3,000 rollback-only historical fixtures.

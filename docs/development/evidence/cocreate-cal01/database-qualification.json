@@ -1,0 +1,22 @@
+{
+  "migration_sha256": "a5900e2b2f990f06667cc66f9bbc85b31516c5eeb0b89bb2cce88078f9b8eb5b",
+  "populated_tables_preserved": 195,
+  "installed_functions_preserved": 550,
+  "warmed_readers_preserved": 6,
+  "legacy_card_fields": 9,
+  "dated_card_fields": 11,
+  "historical_fixture_meetings": 3000,
+  "query_indexes": [
+    "cocreate_meeting_attendance_pkey",
+    "cocreate_meetings_calendar",
+    "cocreate_meetings_room",
+    "cocreate_recruitment_meeting",
+    "cocreate_room_exclusions_pkey",
+    "cocreate_room_messages_pkey",
+    "cocreate_rooms_pkey"
+  ],
+  "planning_ms": 1.094,
+  "execution_ms": 1.572,
+  "rollback": true,
+  "hosted_changes": false
+}

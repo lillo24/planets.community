@@ -3684,6 +3684,19 @@ export type Database = {
         Returns: Json
       }
       get_cocreate_availability: { Args: never; Returns: Json }
+      get_cocreate_calendar_v1: {
+        Args: {
+          p_cursor?: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_general_room_id: string
+          p_hub_id: string
+          p_limit?: number
+          p_window_end: string
+          p_window_start: string
+        }
+        Returns: Json
+      }
       get_cocreate_community_proposal: {
         Args: { p_proposal_id: string }
         Returns: Json

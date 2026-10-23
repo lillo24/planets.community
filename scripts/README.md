@@ -234,3 +234,14 @@ OTP accounts preserve a two-supporter pending proposal and immutable command
 receipt, nine native/community OID/ACL/result contracts, legacy chat/history and
 all original table columns/rows. Exact retry remains pending; only a new third
 interest activates after upgrade, with private invitations and no chat admission.
+
+## CAL01 calendar qualification
+
+`verify-local-cocreate-calendar.mjs` exercises the calendar with genuine local
+OTP sessions and actor-bound HTTP calls. The existing community/meeting verifier
+also runs it and `verify-local-cocreate-calendar-upgrade.mjs`; the latter requires
+explicit `PLANETS_DISPOSABLE_QA=1` even on the owned local engine. That bounded
+rollback rehearsal checks populated-row/function/reader compatibility and
+explains the real query over 3,000 historical fixtures. Its safe count/hash-only
+summary goes to `build/cocreate-cal01/qualification.json`. See the
+[calendar contract](../docs/development/cocreate-cal01-calendar.md).
