@@ -20,6 +20,7 @@ import {
   managementClient,
   verifyFunctions,
   publicSmoke,
+  assertNativeDeploymentDisabled,
 } from "./backend.mjs";
 
 export function assertDatabaseUrl(value) {
@@ -137,6 +138,7 @@ export async function stagingRelease(mode, env = process.env) {
   )
     throw new ReleaseError("Staging identity/health mismatch");
   const local = readMigrations(root);
+  const nativeOwner = assertNativeDeploymentDisabled(await api.branches());
   let remote = summarizeHistory(await api.query(historyQuery));
   let diff = migrationDiff(local, remote, identity.id ?? identity.ref);
   mkdirSync("build/release01", { recursive: true });
@@ -150,6 +152,7 @@ export async function stagingRelease(mode, env = process.env) {
     ...diff,
     approval_digest: sha256(JSON.stringify(diff)),
     history: remote,
+    ...nativeOwner,
   });
   if (mode === "deploy") {
     ({ remote, diff } = await writeStaging({
@@ -205,6 +208,7 @@ export async function stagingRelease(mode, env = process.env) {
         client_tls_verified: true,
         session_verified: true,
         history_matches: true,
+        ...nativeOwner,
         history: remote,
       });
     } catch (error) {

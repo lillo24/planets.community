@@ -14,6 +14,7 @@ import {
 import { STAGING_REF, verifiedDeploymentSet } from "../release/migrations.mjs";
 import { inventoryDigest } from "../release/safety.mjs";
 import { sha256 } from "../release/sql-fingerprint.mjs";
+import { assertNativeDeploymentDisabled } from "../release/backend.mjs";
 import {
   assertReconciledWriter,
   previousWriterState,
@@ -77,6 +78,31 @@ const catalog = () => ({
   views: [],
 });
 const candidate = { classification: "private-additive-candidate" };
+test("single native migration owner is verified from the real default branch metadata", () => {
+  const base = {
+    id: "synthetic",
+    is_default: true,
+    project_ref: STAGING_REF,
+    parent_project_ref: STAGING_REF,
+  };
+  assert.equal(
+    assertNativeDeploymentDisabled([base]).native_deployment_disabled,
+    true,
+  );
+  assert.equal(
+    assertNativeDeploymentDisabled([{ ...base, git_branch: "" }])
+      .native_deployment_disabled,
+    true,
+  );
+  for (const branches of [
+    null,
+    [],
+    [base, base],
+    [{ ...base, project_ref: "pnolarmzxmmjtguligfc" }],
+    [{ ...base, git_branch: "main" }],
+  ])
+    assert.throws(() => assertNativeDeploymentDisabled(branches));
+});
 const scenario = () => {
   const base = {
     version: "20261021000000",

@@ -19,6 +19,7 @@ import {
   historyQuery,
   summarizeHistory,
   verificationQuery,
+  assertNativeDeploymentDisabled,
 } from "./backend.mjs";
 import { inventoryDigest } from "./safety.mjs";
 import { githubClient } from "./reviews.mjs";
@@ -150,6 +151,7 @@ export async function writeStaging({
     const fresh = summarizeHistory(await api.query(historyQuery));
     assertWriterSnapshot(lock.acquired, direct, fresh, remote);
     currentMain(env);
+    assertNativeDeploymentDisabled(await api.branches());
     const recovery = await stagingRecovery(
       env,
       proofApi,

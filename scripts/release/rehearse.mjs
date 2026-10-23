@@ -47,6 +47,8 @@ if (
 }
 mkdirSync("build/release01", { recursive: true });
 const cli = resolve("node_modules/.bin/supabase");
+// Direct immutable fixture scripts do not receive npm's implicit executable PATH.
+process.env.PATH = `${resolve("node_modules/.bin")}:${process.env.PATH ?? ""}`;
 function command(program, args) {
   console.log(`Disposable step: ${program} ${args.join(" ")}`);
   const result = spawnSync(program, args, {
@@ -103,6 +105,7 @@ if (process.env.RELEASE_OBSERVED_HISTORY_FILE) {
     "client_tls_verified",
     "session_verified",
     "history_matches",
+    "native_deployment_disabled",
   ])
     assert.equal(observed[key], true);
   assert.equal(
@@ -377,6 +380,10 @@ try {
     policy_version: POLICY_VERSION,
     project_ref: STAGING_REF,
     source_sha: process.env.GITHUB_SHA,
+    pr_head_sha: process.env.GITHUB_EVENT_PATH
+      ? (JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"))
+          .pull_request?.head.sha ?? null)
+      : null,
     source_tree: command("git", ["rev-parse", "HEAD^{tree}"]).trim(),
     policy_module_sha256: policyModuleHash(),
     trusted_product_base: TRUSTED_PRODUCT_BASE,
