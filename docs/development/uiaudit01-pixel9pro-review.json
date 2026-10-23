@@ -1,0 +1,3078 @@
+{
+  "schemaVersion": 1,
+  "status": "partial",
+  "auditedSourceSha": "b9a8603fb9b28e07d07c36bf855d60959454de19",
+  "appVersion": "0.1.10+14",
+  "device": {
+    "avd": "PLANETS_UIAUDIT01_PIXEL9PRO",
+    "sdkHardwareProfile": "pixel_9_pro",
+    "os": "Android 16 / API 36 / Google APIs x86_64",
+    "panelPixels": [1280, 2856],
+    "logicalDensity": 480,
+    "devicePixelRatio": 3,
+    "logicalSizeDp": [426.6666666666667, 952],
+    "fontScale": 1.0,
+    "navigationMode": "2 (gesture)",
+    "safeAreaPhysicalPx": {
+      "top": 156,
+      "bottom": 72
+    },
+    "systemImageRevision": 7,
+    "timeZone": "Europe/Rome",
+    "guestMemTotalKiB": 4014516
+  },
+  "captureCount": 418,
+  "individuallyReviewedCount": 418,
+  "coverageSummary": {
+    "captured": 235,
+    "not applicable": 6,
+    "blocked": 33,
+    "planned": 274
+  },
+  "personas": [
+    {
+      "key": "giulia",
+      "captures": 169
+    },
+    {
+      "key": "marco",
+      "captures": 46
+    },
+    {
+      "key": "sara",
+      "captures": 13
+    },
+    {
+      "key": "dario",
+      "captures": 23
+    },
+    {
+      "key": "elena",
+      "captures": 17
+    },
+    {
+      "key": "luca",
+      "captures": 35
+    },
+    {
+      "key": "maya",
+      "captures": 14
+    },
+    {
+      "key": "nora",
+      "captures": 6
+    },
+    {
+      "key": "teo",
+      "captures": 5
+    },
+    {
+      "key": "iris",
+      "captures": 52
+    }
+  ],
+  "findings": [
+    {
+      "id": "A1",
+      "title": "Give repeated-person chat rows visible context",
+      "visible": "R shows two Marco rows with different previews and no conversation label. The supplied real-account image is missing, so its hidden cause remains unconfirmed.",
+      "proposal": "Add a compact context line to private inbox rows, identifying the conversation type and the relevant listing, project or group without merging histories.",
+      "type": "copy/usability",
+      "impact": "medium",
+      "confidence": "high for the local reproduction; unconfirmed for the supplied installed build",
+      "decision": "pending",
+      "evidence": ["R", "U", "BE", "IL", "IM"],
+      "diagnosis": "Task-local typed results identify separate Resource and participation chat kinds. Reversed Project/Tavolo requests retain one pair conversation; 24 native composite keys remain distinct through pagination. These checks do not establish the hidden cause in the missing installed-app reference."
+    },
+    {
+      "id": "P1",
+      "title": "Use the discovery name in Settings",
+      "visible": "The setting says “Modalità Co-creazione”, while the feature and help describe “Trova persone”.",
+      "proposal": "Rename this setting to “Trova persone (sperimentale)”.",
+      "type": "copy/usability",
+      "impact": "low",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["P"]
+    },
+    {
+      "id": "AA1",
+      "title": "Replace lifecycle jargon in the management menu",
+      "visible": "The menu labels an ordinary organizer action “Dettagli del progetto e ciclo di vita”.",
+      "proposal": "Rename this menu item to “Dettagli e stato del progetto”.",
+      "type": "copy/usability",
+      "impact": "low",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["AA", "IH"]
+    },
+    {
+      "id": "AU1",
+      "title": "Shorten the Resource search hint",
+      "visible": "The default Italian search placeholder is truncated to “Cerca nel titolo e nella descrizio…”.",
+      "proposal": "Use “Cerca un annuncio” as the placeholder, retaining the existing title-and-description search behavior.",
+      "type": "copy/usability",
+      "impact": "low",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["AU", "BJ"]
+    },
+    {
+      "id": "BL1",
+      "title": "Keep the full privacy audience statement visible",
+      "visible": "The private-note helper ends with an ellipsis at default text size, hiding the end of the audience explanation.",
+      "proposal": "Allow the note privacy helper to wrap to show the complete sentence.",
+      "type": "confirmed layout defect",
+      "impact": "medium",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["BL"]
+    },
+    {
+      "id": "BL2",
+      "title": "Call the listing an annuncio",
+      "visible": "The agreement sheet says “Il proprietario della lista fornisce”, using lista for the listing.",
+      "proposal": "Replace this label with “Il proprietario dell’annuncio offre”.",
+      "type": "copy/usability",
+      "impact": "low",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["BL", "JI", "NY"]
+    },
+    {
+      "id": "CQ1",
+      "title": "Format People chat timestamps for reading",
+      "visible": "General and numbered chat messages show full numeric dates with six fractional-second digits. This makes routine message metadata unnecessarily long.",
+      "proposal": "Use the existing localized compact message date/time format for People chat metadata, omitting seconds and microseconds.",
+      "type": "copy/usability",
+      "impact": "low",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["CQ", "CS", "DI", "DT", "DX", "EA", "ED", "EG", "EH", "LL"]
+    },
+    {
+      "id": "DE1",
+      "title": "Give post authors a management action",
+      "visible": "Maya sees Mi interessa and a private request field on her own published post. My posts separately identifies her as its owner.",
+      "proposal": "When the active user owns a People post, replace its interest form with a Gestisci il tuo annuncio link to the existing own-post controls.",
+      "type": "copy/usability",
+      "impact": "medium",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["DE", "DF", "DD"]
+    },
+    {
+      "id": "DK1",
+      "title": "Explain People close and withdraw confirmations",
+      "visible": "The close page repeats Chiudi for its title, toolbar exit and main button. The withdrawal page similarly shows only Ritira. Neither identifies the affected conversation/post or explains the consequence.",
+      "proposal": "Add clear action/consequence confirmations for closing a People contact or withdrawing interest. Use currently authorized post/contact context when available, preserve identity-only recovery privacy, and distinguish the action from Annulla.",
+      "type": "copy/usability",
+      "impact": "medium",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["DK", "DR", "IU", "KH"]
+    },
+    {
+      "id": "DU1",
+      "title": "Show inbox empty states only when all sections are empty",
+      "visible": "Teo has a pending People request above Nessun messaggio. Iris has an accepted contact and unread badge above Ancora nessuna chat privata. Both screens contradict their visible content.",
+      "proposal": "Compute the inbox empty state across native, People and discussion sections, showing it only after all applicable sections have loaded and are empty.",
+      "type": "confirmed defect",
+      "impact": "medium",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["DU", "DZ", "FQ"]
+    },
+    {
+      "id": "DY1",
+      "title": "Name the numbered-group exit correctly",
+      "visible": "A numbered group chat and its exit page say Lascia la comunità, although the warning describes leaving this group and retaining other groups. This can look like a broader community exit.",
+      "proposal": "Use Lascia il gruppo on numbered-group chat and exit controls, reserving Lascia la comunità for the hub exit. Keep the existing access and archive rules.",
+      "type": "copy/usability",
+      "impact": "medium",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["DY", "DX", "EG", "EH", "KE", "LL"]
+    },
+    {
+      "id": "FW1",
+      "title": "Show template duration in hours and minutes",
+      "visible": "The template detail displays Durata indicativa: 10800.0 secondi. This requires mental conversion and exposes unnecessary numeric precision.",
+      "proposal": "Format template durations in localized hours and minutes, for example Durata indicativa: 3 ore, while keeping the stored duration unchanged.",
+      "type": "copy/usability",
+      "impact": "low",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["FW", "FX"]
+    },
+    {
+      "id": "GI1",
+      "title": "Translate the safety request target label",
+      "visible": "An Italian review-request card contains the English target label Resource request.",
+      "proposal": "Localize the resource-request target label as Richiesta Scambio-Dona in the safety request list.",
+      "type": "copy/localization",
+      "impact": "low",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["GI"]
+    },
+    {
+      "id": "GL1",
+      "title": "Show every witness response in full",
+      "visible": "All three witness-response buttons cut off their Italian sentences. A safety response should be readable before selection.",
+      "proposal": "Allow the three witness-response labels to wrap and grow vertically so each complete existing sentence is visible at default and increased text sizes.",
+      "type": "confirmed layout defect",
+      "impact": "medium",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["GL", "GM", "JP", "JQ", "JR"]
+    },
+    {
+      "id": "FO1",
+      "title": "Keep submitted People reports readable in My reports",
+      "visible": "The report receipt succeeds, then My reports displays a read failure.",
+      "proposal": "Complete the own-report projection for People targets so it returns a privacy-safe localized summary accepted by the existing parser, with regression coverage for a newly submitted People report.",
+      "type": "confirmed contract defect",
+      "impact": "medium",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["FO", "FN", "KI"],
+      "diagnosis": "A separate ordinary Iris v4 RPC read returns a cocreate_post row with target_summary=null. The current mobile parser requires bounded nonempty text. This supports a projection/parser contract defect; it is not visible in the screenshot itself."
+    },
+    {
+      "id": "HS1",
+      "title": "Name General history correctly",
+      "visible": "The Generale chat footer says Cronologia completa dell’Idea, although this is the Group General conversation.",
+      "proposal": "Use the General-specific history label in General conversations while retaining the existing access warning.",
+      "type": "copy",
+      "impact": "low",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["HS"]
+    },
+    {
+      "id": "IR1",
+      "title": "Remove the raw creator UUID from Idea discovery",
+      "visible": "Before joining an Idea, Dario sees Creatore dell’Idea followed by a 36-character profile UUID.",
+      "proposal": "Replace the UUID line with Creatore: disponibile nella vista Persone autorizzata when no authorized display name is already available. Keep the current read permissions and avoid adding profile or roster lookups.",
+      "type": "copy/usability",
+      "impact": "low",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["IR", "MD"],
+      "diagnosis": "Current source intentionally avoids an additional profile lookup. The proposed copy keeps that privacy boundary."
+    },
+    {
+      "id": "KT1",
+      "title": "Describe invalid codes accurately",
+      "visible": "Fresh 000000 is described only as expired. The actual delivered code still worked immediately afterward, so requesting another code was unnecessary.",
+      "proposal": "For the ambiguous backend OTP error, use “Il codice non è valido o è scaduto. Controllalo o richiedine uno nuovo.”",
+      "type": "copy/usability",
+      "impact": "low",
+      "confidence": "high for observed behavior; backend error classification is ambiguous",
+      "decision": "pending",
+      "evidence": ["KT"]
+    },
+    {
+      "id": "KX1",
+      "title": "Show the complete profile-name validation",
+      "visible": "The display-name validation message ends in an ellipsis before explaining the complete whitespace restriction.",
+      "proposal": "Allow the existing display-name validation error to wrap onto enough lines to show its complete text.",
+      "type": "confirmed layout defect",
+      "impact": "low",
+      "confidence": "high",
+      "decision": "pending",
+      "evidence": ["KX", "KY", "KZ"]
+    },
+    {
+      "id": "MT1",
+      "title": "Localize the generic blocking target",
+      "visible": "The Italian blocking confirmation is titled “Bloccare this user?”.",
+      "proposal": "Replace the hardcoded English fallback “this user” with the localized Italian generic “questo utente”, retaining the existing privacy boundary.",
+      "type": "copy/localization",
+      "impact": "low",
+      "confidence": "high; hardcoded fallback verified in BlockingActionButton",
+      "decision": "pending",
+      "evidence": ["MT"]
+    },
+    {
+      "id": "OA1",
+      "title": "Label public Group saves accurately",
+      "visible": "The departure dialog for a published Group offers “Salva bozza”, while the editor explains that saving updates the public page immediately. This can mislead an organizer about visibility.",
+      "proposal": "For published Groups, label this departure action “Salva modifiche pubbliche”; retain “Salva bozza” only for private drafts.",
+      "type": "copy/usability",
+      "impact": "medium",
+      "confidence": "high; published editor and shared departure label verified",
+      "decision": "pending",
+      "evidence": ["OA"]
+    }
+  ],
+  "coverageEntries": [
+    {
+      "id": "R001",
+      "route": "/settings/mock-accounts",
+      "line": 552,
+      "owner": "MockAccountsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["Q", "CK"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R002",
+      "route": "/mock/normal-link",
+      "line": 556,
+      "owner": "MockBoundaryScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FJ"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R003",
+      "route": "/mock/action-unavailable",
+      "line": 560,
+      "owner": "MockBoundaryScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FD", "FF", "FG"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R004",
+      "route": "/policies/accept",
+      "line": 564,
+      "owner": "PolicyAcceptanceScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["KU", "KV"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R005",
+      "route": "/settings/delete-account",
+      "line": 568,
+      "owner": "AccountDeletionScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["LB", "LC"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R006",
+      "route": "/help",
+      "line": 572,
+      "owner": "HelpScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FE", "KM"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R007",
+      "route": "/help/contact",
+      "line": 576,
+      "owner": "HelpContactScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["KN"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R008",
+      "route": "/help/bug",
+      "line": 580,
+      "owner": "BugReportScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["KO", "LD"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R009",
+      "route": "/help/person",
+      "line": 584,
+      "owner": "HelpPersonScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FH"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R010",
+      "route": "/welcome",
+      "line": 590,
+      "owner": "WelcomeScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["C"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R011",
+      "route": "/intro",
+      "line": 594,
+      "owner": "TutorialScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R012",
+      "route": "/link-unavailable",
+      "line": 603,
+      "owner": "_UnknownRouteScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FI", "LF"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R013",
+      "route": "/groups",
+      "line": 607,
+      "owner": "GroupDirectoryScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AG"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R014",
+      "route": "/groups/mine",
+      "line": 611,
+      "owner": "MyGroupRelationshipsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AR"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R015-managed",
+      "route": "/groups/mine/managed",
+      "line": 621,
+      "owner": "GroupRelationshipsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GN"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R015-memberships",
+      "route": "/groups/mine/memberships",
+      "line": 621,
+      "owner": "GroupRelationshipsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GO"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R015-requests",
+      "route": "/groups/mine/requests",
+      "line": 621,
+      "owner": "GroupRelationshipsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GP"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R015-offers",
+      "route": "/groups/mine/offers",
+      "line": 621,
+      "owner": "GroupRelationshipsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GQ"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R016",
+      "route": "/groups/create",
+      "line": 628,
+      "owner": "GroupEditorScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GE", "GF"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R017",
+      "route": "/groups/:groupId",
+      "line": 633,
+      "owner": "GroupDetailScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AH", "AI", "CE"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R018",
+      "route": "/groups/:groupId/member-contact/:recipientId",
+      "line": 638,
+      "owner": "MemberContactComposeScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GW"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R019",
+      "route": "/groups/:groupId/contact",
+      "line": 649,
+      "owner": "GroupContactComposeScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GV"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R020",
+      "route": "/groups/:groupId/edit",
+      "line": 661,
+      "owner": "GroupEditorScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GY"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R021",
+      "route": "/groups/:groupId/structural-edit",
+      "line": 669,
+      "owner": "GroupEditorScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GH"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R022",
+      "route": "/groups/:groupId/people",
+      "line": 678,
+      "owner": "GroupRelationshipsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AJ", "LX"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R023",
+      "route": "/groups/:groupId/participant-links",
+      "line": 684,
+      "owner": "GroupLinkScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AQ"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R024-requests",
+      "route": "/groups/:groupId/requests",
+      "line": 697,
+      "owner": "GroupRelationshipsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AL"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R024-memberships",
+      "route": "/groups/:groupId/memberships",
+      "line": 697,
+      "owner": "GroupRelationshipsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AM"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R024-team",
+      "route": "/groups/:groupId/team",
+      "line": 697,
+      "owner": "GroupRelationshipsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AK"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R024-authority-invitations",
+      "route": "/groups/:groupId/authority-invitations",
+      "line": 697,
+      "owner": "GroupRelationshipsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AN"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R024-role-history",
+      "route": "/groups/:groupId/role-history",
+      "line": 697,
+      "owner": "GroupRelationshipsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AO"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R024-link-history",
+      "route": "/groups/:groupId/link-history",
+      "line": 697,
+      "owner": "GroupRelationshipsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AP"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R025",
+      "route": "/groups/:groupId/report",
+      "line": 704,
+      "owner": "GroupDetailScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["LP"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R026",
+      "route": "/auth",
+      "line": 715,
+      "owner": "SignInScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["KP"],
+      "reason": "Google OAuth is unconfigured. SignInScreen returns the same RequestCodeScreen as R027 in this build; KP/KQ are equivalent email-only entries. Google method choice/provider handoff is unreviewed.",
+      "equivalentInRunTo": "R027"
+    },
+    {
+      "id": "R027",
+      "route": "/auth/email",
+      "line": 723,
+      "owner": "RequestCodeScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["KQ", "KR"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R028",
+      "route": "/auth/verify",
+      "line": 732,
+      "owner": "VerifyCodeScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["KS", "KT"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R029",
+      "route": "/join/group/:token",
+      "line": 736,
+      "owner": "GroupInviteScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["IW"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R030",
+      "route": "/invite/group/:token",
+      "line": 743,
+      "owner": "GroupInviteScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["MK", "ML"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R031",
+      "route": "/invite/project/:token",
+      "line": 751,
+      "owner": "ProjectInviteScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["IP"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R032",
+      "route": "/join/project/:token",
+      "line": 758,
+      "owner": "ParticipantInviteScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["IV"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R033",
+      "route": "/profile/reports/review-requests/corroboration/:requestId",
+      "line": 765,
+      "owner": "See route builder",
+      "category": "route",
+      "status": "not applicable",
+      "evidence": ["GL"],
+      "reason": "Router redirects the legacy corroboration path to the current detail route.",
+      "aliasOf": "R042"
+    },
+    {
+      "id": "R034",
+      "route": "/profile/reports/review-requests/counterstatement/:requestId",
+      "line": 771,
+      "owner": "See route builder",
+      "category": "route",
+      "status": "not applicable",
+      "evidence": ["GJ"],
+      "reason": "Router redirects the legacy counterstatement path to the current detail route.",
+      "aliasOf": "R043"
+    },
+    {
+      "id": "R035",
+      "route": "/profile/reports/review-requests",
+      "line": 777,
+      "owner": "See route builder",
+      "category": "route",
+      "status": "not applicable",
+      "evidence": ["GI"],
+      "reason": "Router redirects the legacy review list to the current review list.",
+      "aliasOf": "R041"
+    },
+    {
+      "id": "R036",
+      "route": "/profile",
+      "line": 787,
+      "owner": "ProfileScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AT", "BY", "BM"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R037",
+      "route": "/profile/edit",
+      "line": 791,
+      "owner": "ProfileEditScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["EP", "EQ", "KW", "KX", "KY", "KZ", "JT"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R038",
+      "route": "/profile/blocked-users",
+      "line": 828,
+      "owner": "BlockedUsersScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FA", "MU", "MV"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R039",
+      "route": "/profile/reports",
+      "line": 832,
+      "owner": "OwnReportsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FB", "FO", "KI"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R040",
+      "route": "/profile/reports/new",
+      "line": 836,
+      "owner": "_UnknownRouteScreen",
+      "category": "route",
+      "status": "not applicable",
+      "evidence": ["FI"],
+      "reason": "The untyped new-report path deliberately constructs UnknownRouteScreen. Reports require a target-specific entry; actual forms are FL/LP/MJ."
+    },
+    {
+      "id": "R041",
+      "route": "/profile/review-requests",
+      "line": 848,
+      "owner": "ModerationEvidenceRequestsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FC", "GI"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R042",
+      "route": "/profile/review-requests/corroboration/:requestId",
+      "line": 853,
+      "owner": "CorroborationDetailScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GL", "GM", "JO", "JP", "JQ", "JR"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R043",
+      "route": "/profile/review-requests/counterstatement/:requestId",
+      "line": 859,
+      "owner": "CounterstatementDetailScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GJ", "GK"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R044",
+      "route": "/",
+      "line": 874,
+      "owner": "FoundationScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["B", "KL", "LA"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R045",
+      "route": "/settings",
+      "line": 878,
+      "owner": "SettingsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["P", "FP", "JS"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R046",
+      "route": "/settings/language",
+      "line": 882,
+      "owner": "LanguageSelectionScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["EW"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R047",
+      "route": "/settings/profile-visibility",
+      "line": 887,
+      "owner": "ProfileVisibilityScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["EX"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R048",
+      "route": "/settings/navigation",
+      "line": 892,
+      "owner": "NavigationSelectionScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["EY"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R049",
+      "route": "/messages",
+      "line": 899,
+      "owner": "MessagesLandingScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": [
+        "R",
+        "V",
+        "W",
+        "U",
+        "BE",
+        "DU",
+        "DZ",
+        "FQ",
+        "IL",
+        "IM",
+        "LE",
+        "IS"
+      ],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R050",
+      "route": "/messages/cocreate/hubs/:hubId/schedule",
+      "line": 903,
+      "owner": "CoMeetingScheduleScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["LG"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R051",
+      "route": "/messages/cocreate/hubs/:hubId/groups/:roomId/:episodeId/schedule",
+      "line": 910,
+      "owner": "CoMeetingScheduleScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CV"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R052",
+      "route": "/messages/cocreate/hubs/:hubId/review",
+      "line": 921,
+      "owner": "CoCreationHubScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["KK"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R053",
+      "route": "/messages/cocreate/hubs/:hubId/:episodeId/leave",
+      "line": 928,
+      "owner": "CoHubLeaveScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["KD"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R054",
+      "route": "/messages/cocreate/hubs/:hubId/groups/:roomId/join",
+      "line": 938,
+      "owner": "CoNumberedDetailScreen",
+      "category": "route",
+      "status": "not applicable",
+      "evidence": ["EE"],
+      "reason": "Both construct CoNumberedDetailScreen with the same hub and room arguments; the join suffix introduces no alternate screen.",
+      "aliasOf": "R117"
+    },
+    {
+      "id": "R055",
+      "route": "/messages/cocreate/hubs/:hubId/groups/:roomId/:episodeId",
+      "line": 951,
+      "owner": "CoCreationGeneralScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CS", "DX", "EG", "EH", "LL"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R056",
+      "route": "/messages/cocreate/hubs/:hubId/groups/:roomId/:episodeId/manage",
+      "line": 967,
+      "owner": "CoNumberedManageScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CU", "DM", "JU", "DV", "DW"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R057",
+      "route": "/messages/cocreate/hubs/:hubId/groups/:roomId/:episodeId/leave",
+      "line": 983,
+      "owner": "CoNumberedLeaveScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["DY", "KE"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R058",
+      "route": "/messages/cocreate/hubs/:hubId/groups/:roomId/:episodeId/people",
+      "line": 999,
+      "owner": "CoNumberedRosterScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CT"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R059",
+      "route": "/messages/cocreate/hubs/:hubId/general/:roomId/:episodeId",
+      "line": 1017,
+      "owner": "CoCreationGeneralScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CQ", "DT", "ED"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R060",
+      "route": "/messages/cocreate/hubs/:hubId/general/:roomId/:episodeId/recruitment/:id",
+      "line": 1032,
+      "owner": "CoRecruitmentJoinScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CW", "EF"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R061",
+      "route": "/messages/cocreate/hubs/:hubId/general/:roomId/:episodeId/people",
+      "line": 1045,
+      "owner": "CoRoomPeopleScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CR"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R062",
+      "route": "/messages/cocreate/posts/:postId/interests/:id/withdraw",
+      "line": 1065,
+      "owner": "PeopleInterestWithdrawScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["DR"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R063",
+      "route": "/messages/cocreate/contacts/:id/close",
+      "line": 1072,
+      "owner": "PeopleContactCloseScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["DK", "KH"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R064",
+      "route": "/messages/cocreate/contacts/:id/group",
+      "line": 1078,
+      "owner": "CoContactGroupScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["DJ", "OH"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R065",
+      "route": "/messages/cocreate/contacts/:id",
+      "line": 1085,
+      "owner": "PeopleContactScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["DI", "EA"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R066",
+      "route": "/messages/cocreate/requests",
+      "line": 1092,
+      "owner": "PeopleRequestsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["DH", "DQ"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R067",
+      "route": "/messages/discussions/groups/:groupId",
+      "line": 1099,
+      "owner": "DiscussionGroupScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AS"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R068",
+      "route": "/messages/discussions/groups/:groupId/create",
+      "line": 1106,
+      "owner": "DiscussionGroupScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["HR"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R069",
+      "route": "/messages/discussions/invite/:token",
+      "line": 1116,
+      "owner": "DiscussionInvitationLinkScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["MB"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R070",
+      "route": "/messages/discussions/:roomId",
+      "line": 1123,
+      "owner": "DiscussionChatScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BR", "HS", "MC", "MD", "MI", "OT"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R071",
+      "route": "/messages/discussions/:roomId/people",
+      "line": 1130,
+      "owner": "DiscussionPeopleScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BS", "ME"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R072",
+      "route": "/messages/discussions/:roomId/links",
+      "line": 1137,
+      "owner": "DiscussionLinksScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BT"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R073",
+      "route": "/messages/discussions/:roomId/leave/:admissionId",
+      "line": 1144,
+      "owner": "DiscussionExitScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["MG", "MH"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R074",
+      "route": "/messages/discussions/:roomId/decline/:invitationId",
+      "line": 1153,
+      "owner": "DiscussionExitScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["IU"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R075",
+      "route": "/messages/requests/resource/:requestId",
+      "line": 1164,
+      "owner": "ResourceRequestScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["IK"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R076",
+      "route": "/messages/requests/:requestId",
+      "line": 1171,
+      "owner": "ParticipationRequestMessageScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["LQ", "LR"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R077",
+      "route": "/messages/requests/member-contact/:requestId",
+      "line": 1179,
+      "owner": "MemberContactRequestScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BQ"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R078",
+      "route": "/messages/chats/member-contact/:chatId",
+      "line": 1189,
+      "owner": "MemberContactChatScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BO", "CB"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R079",
+      "route": "/messages/chats/member-contact/:chatId/info",
+      "line": 1199,
+      "owner": "MemberContactInfoScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BP"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R080",
+      "route": "/messages/requests/group-contact/:requestId",
+      "line": 1208,
+      "owner": "GroupContactRequestScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GR"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R081",
+      "route": "/messages/requests/group-coordination/:proposalId",
+      "line": 1215,
+      "owner": "CoordinationScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["IN", "IO"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R082",
+      "route": "/messages/chats/group-contact/:chatId",
+      "line": 1222,
+      "owner": "GroupContactChatScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GS"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R083",
+      "route": "/messages/chats/group-contact/:chatId/coordinate",
+      "line": 1229,
+      "owner": "CoordinationScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GU"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R084",
+      "route": "/messages/chats/group-contact/:chatId/info",
+      "line": 1236,
+      "owner": "GroupContactInfoScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GT"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R085",
+      "route": "/messages/chats/resource/:chatId",
+      "line": 1245,
+      "owner": "ResourceChatScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["T"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R086",
+      "route": "/messages/chats/request/:requestId",
+      "line": 1252,
+      "owner": "ProjectRequestChatScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["S"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R087",
+      "route": "/messages/chats/:chatId",
+      "line": 1259,
+      "owner": "ProjectChatScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BW"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R088",
+      "route": "/messages/chats/:chatId/info",
+      "line": 1266,
+      "owner": "ProjectChatInfoScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BX", "LT"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R089",
+      "route": "/notifications",
+      "line": 1277,
+      "owner": "NotificationsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["DC", "JZ", "LJ", "LK"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R090",
+      "route": "/notifications/preferences",
+      "line": 1281,
+      "owner": "NotificationPreferencesScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["EZ", "FK"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R091",
+      "route": "/discover/map/:origin",
+      "line": 1293,
+      "owner": "_UnknownRouteScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BK"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R092",
+      "route": "/drafts",
+      "line": 1309,
+      "owner": "DraftsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FU", "JW", "JX", "JY"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R093",
+      "route": "/proposals",
+      "line": 1320,
+      "owner": "PublicProposalsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FS"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R094",
+      "route": "/proposals/workshop",
+      "line": 1329,
+      "owner": "TemplateWorkshopScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FV"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R095",
+      "route": "/proposals/workshop/:templateId",
+      "line": 1338,
+      "owner": "TemplateWorkshopDetailScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FW", "FX"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R096",
+      "route": "/proposals/mine",
+      "line": 1350,
+      "owner": "OwnProposalsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FT"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R097",
+      "route": "/proposals/create",
+      "line": 1357,
+      "owner": "ProposalEditorScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CA"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R098",
+      "route": "/proposals/create/scratch",
+      "line": 1366,
+      "owner": "ProposalEditorScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["FY", "FZ", "GA"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R099",
+      "route": "/proposals/:id",
+      "line": 1378,
+      "owner": "ProposalDetailScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["X", "Y", "BU", "BV", "NI", "NJ"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R100",
+      "route": "/proposals/:id/participant-links",
+      "line": 1387,
+      "owner": "ParticipantLinkManagementScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AF"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R101",
+      "route": "/proposals/:id/edit",
+      "line": 1395,
+      "owner": "ProposalEditorScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["GC", "GD", "GZ", "NB", "NE", "NF", "NK"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R102",
+      "route": "/proposals/:id/needs",
+      "line": 1413,
+      "owner": "ProposalNeedsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AD"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R103",
+      "route": "/proposals/:id/resources",
+      "line": 1423,
+      "owner": "ProjectResourceNeedsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AE", "JC"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R104",
+      "route": "/proposals/:id/resources/:resourceNeedId/matches",
+      "line": 1430,
+      "owner": "ProjectResourceMatchesScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["JD", "JE"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R105",
+      "route": "/proposals/:id/join",
+      "line": 1441,
+      "owner": "JoinRequestScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BZ", "CF", "IT"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R106",
+      "route": "/proposals/:id/participants",
+      "line": 1448,
+      "owner": "CreatorParticipationScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["Z", "GX"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R107",
+      "route": "/proposals/:id/manage",
+      "line": 1455,
+      "owner": "ProjectManageScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AA"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R108",
+      "route": "/proposals/:id/co-organizers",
+      "line": 1462,
+      "owner": "ProjectTeamScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AB"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R109",
+      "route": "/proposals/:id/workspace",
+      "line": 1469,
+      "owner": "ProjectWorkspaceScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AC"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R110",
+      "route": "/people",
+      "line": 1480,
+      "owner": "PeopleEntryScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CM", "KB", "KF", "KG"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R111",
+      "route": "/people/intro",
+      "line": 1491,
+      "owner": "PeopleInterestsIntro",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["EI"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R112",
+      "route": "/people/categories/:category/propose",
+      "line": 1498,
+      "owner": "CoCommunityComposeScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CZ"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R113",
+      "route": "/people/community-proposals/:id",
+      "line": 1508,
+      "owner": "CoCommunityProposalScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["DP"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R114",
+      "route": "/people/community-interests",
+      "line": 1515,
+      "owner": "CoCommunityInterestsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CY", "DO", "DS"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R115",
+      "route": "/people/hubs",
+      "line": 1519,
+      "owner": "CoCreationHubsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CN", "CO"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R116",
+      "route": "/people/hubs/:id/create-group",
+      "line": 1523,
+      "owner": "CoNumberedCreateScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CX"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R117",
+      "route": "/people/hubs/:id/groups/:roomId",
+      "line": 1535,
+      "owner": "CoNumberedDetailScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["EE"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R118",
+      "route": "/people/hubs/:id",
+      "line": 1548,
+      "owner": "CoCreationHubScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["CP", "EB", "EC"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R119",
+      "route": "/people/demo",
+      "line": 1555,
+      "owner": "CoCreationDemoBrowseScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["EJ"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R120",
+      "route": "/people/from-event/:id",
+      "line": 1559,
+      "owner": "CoEventComposerScreen",
+      "category": "route",
+      "status": "blocked",
+      "evidence": ["HE"],
+      "reason": "External Activities catalogue/provider is unconfigured in the task-local client; no genuine imported event ID or event-to-People handoff was available. Built-in HF/HO previews do not substitute."
+    },
+    {
+      "id": "R121",
+      "route": "/people/compose",
+      "line": 1566,
+      "owner": "PeopleComposerScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["DA", "DB", "LO"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R122",
+      "route": "/people/mine",
+      "line": 1575,
+      "owner": "PeopleOwnPostsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["DD"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R123",
+      "route": "/people/posts/:id/group",
+      "line": 1579,
+      "owner": "CoPostGroupLinkScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["LM", "LN"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R124",
+      "route": "/people/posts/:id",
+      "line": 1586,
+      "owner": "PeoplePostScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["DE"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R125",
+      "route": "/people/demo/compose",
+      "line": 1593,
+      "owner": "See route builder",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["EL"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R126",
+      "route": "/people/demo/posts/:id",
+      "line": 1597,
+      "owner": "CoCreationDemoPostScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["EK"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R127",
+      "route": "/people/demo/hubs/:id",
+      "line": 1603,
+      "owner": "CoCreationDemoHubScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["EM"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R128",
+      "route": "/people/demo/hubs/:id/general",
+      "line": 1609,
+      "owner": "CoCreationDemoRoomScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["EN"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R129",
+      "route": "/people/demo/hubs/:id/groups/:number",
+      "line": 1615,
+      "owner": "CoCreationDemoRoomScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["EO"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R130",
+      "route": "/activities",
+      "line": 1628,
+      "owner": "ExternalActivitiesScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["HE"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R131",
+      "route": "/activities/examples",
+      "line": 1635,
+      "owner": "ActivitiesScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["HF"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R132",
+      "route": "/activities/external/:activityId",
+      "line": 1639,
+      "owner": "ExternalActivityDetailScreen",
+      "category": "route",
+      "status": "blocked",
+      "evidence": ["HE"],
+      "reason": "External Activities catalogue/provider is unconfigured in the task-local client; no genuine imported event ID or event-to-People handoff was available. Built-in HF/HO previews do not substitute."
+    },
+    {
+      "id": "R133",
+      "route": "/activities/examples/:exampleId",
+      "line": 1645,
+      "owner": "ActivityExampleDetailScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["HO"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R134",
+      "route": "/tavoli",
+      "line": 1653,
+      "owner": "PublicRecurringActivitiesScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BA"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R135",
+      "route": "/tavoli/mine",
+      "line": 1660,
+      "owner": "OwnRecurringActivitiesScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["HA", "IC"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R136",
+      "route": "/tavoli/create",
+      "line": 1667,
+      "owner": "RecurringActivityEditorScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["HB", "HC", "HL", "HM", "HU", "HV"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R137",
+      "route": "/tavoli/:id",
+      "line": 1673,
+      "owner": "PublicRecurringActivityDetailScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BB", "BC", "HT"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R138",
+      "route": "/tavoli/:id/participant-links",
+      "line": 1684,
+      "owner": "ParticipantLinkManagementScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["MM"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R139",
+      "route": "/tavoli/:id/edit",
+      "line": 1692,
+      "owner": "RecurringActivityEditorScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["ID", "IE", "IF", "IG"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R140",
+      "route": "/tavoli/:id/resources",
+      "line": 1700,
+      "owner": "ProjectResourceNeedsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["MN", "MP"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R141",
+      "route": "/tavoli/:id/resources/:resourceNeedId/matches",
+      "line": 1707,
+      "owner": "ProjectResourceMatchesScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["MQ"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R142",
+      "route": "/tavoli/:id/join",
+      "line": 1718,
+      "owner": "JoinRequestScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["MS"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R143",
+      "route": "/tavoli/:id/participants",
+      "line": 1725,
+      "owner": "CreatorParticipationScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BD"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R144",
+      "route": "/tavoli/:id/manage",
+      "line": 1732,
+      "owner": "ProjectManageScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["IH"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R145",
+      "route": "/tavoli/:id/co-organizers",
+      "line": 1739,
+      "owner": "ProjectTeamScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["IJ"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R146",
+      "route": "/tavoli/:id/workspace",
+      "line": 1746,
+      "owner": "ProjectWorkspaceScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["II"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R147",
+      "route": "/resources",
+      "line": 1757,
+      "owner": "PublicResourceListingsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AU", "BJ"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R148",
+      "route": "/resources/mine",
+      "line": 1762,
+      "owner": "OwnResourceListingsScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AV"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R149",
+      "route": "/resources/create",
+      "line": 1769,
+      "owner": "ResourceListingEditorScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["HG", "HH"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R150",
+      "route": "/resources/saved-searches",
+      "line": 1774,
+      "owner": "ResourceSavedSearchesScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["BI", "JF"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R151",
+      "route": "/resources/:listingId",
+      "line": 1779,
+      "owner": "PublicResourceListingDetailScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AW", "AX", "CG", "CH", "IX"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R152",
+      "route": "/resources/:listingId/edit",
+      "line": 1786,
+      "owner": "ResourceListingEditorScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AY", "BH"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "R153",
+      "route": "/resources/:listingId/loan-schedule",
+      "line": 1794,
+      "owner": "ResourceLoanScheduleScreen",
+      "category": "route",
+      "status": "captured",
+      "evidence": ["AZ"],
+      "reason": "Reviewed native evidence for the implemented screen; state limits are listed separately."
+    },
+    {
+      "id": "L001",
+      "route": "/people/hubs/:id/calendar",
+      "owner": "apps/mobile/lib/app/router/app_router.dart",
+      "line": 1525,
+      "kind": "GoRoute",
+      "introducedAtSource": "34649049db675b1b436e6a0ce0aefefaf4a0a4a0",
+      "category": "route",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "PR #309 merged during the audit after native captures were frozen on b9a8603. The new calendar/review surfaces and changed hub/meeting entry controls are unreviewed. Source and migration are recorded separately from the captured baseline."
+    },
+    {
+      "id": "L002",
+      "route": "/people/hubs/:id/calendar/meetings/:meetingId/:roomId/:episodeId",
+      "owner": "apps/mobile/lib/app/router/app_router.dart",
+      "line": 1532,
+      "kind": "GoRoute",
+      "introducedAtSource": "34649049db675b1b436e6a0ce0aefefaf4a0a4a0",
+      "category": "route",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "PR #309 merged during the audit after native captures were frozen on b9a8603. The new calendar/review surfaces and changed hub/meeting entry controls are unreviewed. Source and migration are recorded separately from the captured baseline."
+    },
+    {
+      "id": "M001",
+      "owner": "apps/mobile/lib/features/blocking/presentation/blocking_action.dart",
+      "line": 145,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["MT", "MV"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M002",
+      "owner": "apps/mobile/lib/features/co_creation/presentation/co_creation_general_screen.dart",
+      "line": 132,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "General URL disclosure requires a new drafted link message; no link message was submitted in this pass."
+    },
+    {
+      "id": "M003",
+      "owner": "apps/mobile/lib/features/co_creation/presentation/co_creation_meeting_screen.dart",
+      "line": 62,
+      "kind": "showDatePicker",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["LH"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M004",
+      "owner": "apps/mobile/lib/features/co_creation/presentation/co_creation_meeting_screen.dart",
+      "line": 69,
+      "kind": "showTimePicker",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["LI"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M005",
+      "owner": "apps/mobile/lib/features/geographic_discovery/presentation/map_discovery_screen.dart",
+      "line": 418,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "No authorized populated pin cluster was available with the unconfigured basemap/location environment; BK covers the unavailable map UI."
+    },
+    {
+      "id": "M006",
+      "owner": "apps/mobile/lib/features/group_contact/presentation/group_contact_info_screen.dart",
+      "line": 144,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["NU", "NV"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M007",
+      "owner": "apps/mobile/lib/features/group_contact/presentation/group_contact_request_screen.dart",
+      "line": 135,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "Canonical Group contact was already accepted before native entry. A new pending pair was not constructed."
+    },
+    {
+      "id": "M008",
+      "owner": "apps/mobile/lib/features/group_contact/presentation/group_contact_widgets.dart",
+      "line": 46,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OJ"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M009",
+      "owner": "apps/mobile/lib/features/group_coordination/presentation/coordination_screen.dart",
+      "line": 166,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OS"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M010",
+      "owner": "apps/mobile/lib/features/group_discussions/presentation/discussion_chat_screen.dart",
+      "line": 593,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OX", "OY"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M011",
+      "owner": "apps/mobile/lib/features/group_discussions/presentation/discussion_link_open.dart",
+      "line": 41,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OU"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M012",
+      "owner": "apps/mobile/lib/features/group_discussions/presentation/discussion_links_screen.dart",
+      "line": 245,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["HX"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M013",
+      "owner": "apps/mobile/lib/features/group_discussions/presentation/discussion_links_screen.dart",
+      "line": 322,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OV"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M014",
+      "owner": "apps/mobile/lib/features/group_discussions/presentation/discussion_person_invite.dart",
+      "line": 256,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["LY"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M015",
+      "owner": "apps/mobile/lib/features/group_discussions/presentation/discussion_project_start.dart",
+      "line": 44,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["HW", "MY", "MZ", "NA", "NH"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M016",
+      "owner": "apps/mobile/lib/features/group_discussions/presentation/discussion_share_link.dart",
+      "line": 77,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "No populated Idea link and published destination Project existed together; explicit link-copy review was not exercised."
+    },
+    {
+      "id": "M017",
+      "owner": "apps/mobile/lib/features/group_membership/presentation/group_membership_widgets.dart",
+      "line": 62,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["ML", "MH"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M018",
+      "owner": "apps/mobile/lib/features/group_membership/presentation/group_relationship_screens.dart",
+      "line": 217,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["LZ"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M019",
+      "owner": "apps/mobile/lib/features/group_membership/presentation/group_relationship_screens.dart",
+      "line": 239,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "Invitation capability was created by ordinary RPC and kept private. The result handoff displays a bearer link; exporting unaltered pixels would disclose it, so no handoff image is delivered."
+    },
+    {
+      "id": "M020",
+      "owner": "apps/mobile/lib/features/group_membership/presentation/group_relationship_screens.dart",
+      "line": 271,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["LX"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M021",
+      "owner": "apps/mobile/lib/features/group_projects/presentation/group_project_widgets.dart",
+      "line": 113,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["ND"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M022",
+      "owner": "apps/mobile/lib/features/groups/presentation/group_editor_screen.dart",
+      "line": 181,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OA"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M023",
+      "owner": "apps/mobile/lib/features/member_contact/presentation/member_contact_info_screen.dart",
+      "line": 89,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OB"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M024",
+      "owner": "apps/mobile/lib/features/member_contact/presentation/member_contact_request_screen.dart",
+      "line": 136,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "The canonical member contact was accepted before native entry; a new pending episode was not constructed."
+    },
+    {
+      "id": "M025",
+      "owner": "apps/mobile/lib/features/messages/presentation/participation_request_details.dart",
+      "line": 21,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["NZ"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M026",
+      "owner": "apps/mobile/lib/features/moderation/presentation/moderation_evidence_session_prompt.dart",
+      "line": 68,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["IZ", "JA", "JB"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M027",
+      "owner": "apps/mobile/lib/features/participation/presentation/actual_contribution_sheet.dart",
+      "line": 16,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["HQ"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M028",
+      "owner": "apps/mobile/lib/features/participation/presentation/creator_participation_screen.dart",
+      "line": 447,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OO"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M029",
+      "owner": "apps/mobile/lib/features/participation/presentation/creator_participation_screen.dart",
+      "line": 509,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["HI"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M030",
+      "owner": "apps/mobile/lib/features/participation/presentation/creator_participation_screen.dart",
+      "line": 693,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "No historic departed Project membership with its action sheet was constructed."
+    },
+    {
+      "id": "M031",
+      "owner": "apps/mobile/lib/features/participation/presentation/join_acceptance_triage_sheet.dart",
+      "line": 21,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "Seeded join requests were accepted through ordinary fixture RPCs; native contribution-triage acceptance was not opened."
+    },
+    {
+      "id": "M032",
+      "owner": "apps/mobile/lib/features/participation/presentation/membership_commitment_sheet.dart",
+      "line": 16,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["HP"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M033",
+      "owner": "apps/mobile/lib/features/participation/presentation/project_participation_section.dart",
+      "line": 524,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["PA"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M034",
+      "owner": "apps/mobile/lib/features/profile/presentation/person_preview_sheet.dart",
+      "line": 24,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["HI", "LX"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M035",
+      "owner": "apps/mobile/lib/features/profile/presentation/profile_edit_screen.dart",
+      "line": 238,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["MW"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M036",
+      "owner": "apps/mobile/lib/features/profile_photo/presentation/profile_photo_section.dart",
+      "line": 48,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["ES"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M037",
+      "owner": "apps/mobile/lib/features/profile_photo/presentation/profile_photo_trust_gate.dart",
+      "line": 36,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["IT"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M038",
+      "owner": "apps/mobile/lib/features/project_chat/presentation/project_needs_sheet.dart",
+      "line": 16,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["LW"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M039",
+      "owner": "apps/mobile/lib/features/project_delegates/presentation/project_coorganizers_screen.dart",
+      "line": 209,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "Project Team was empty; Group delegate roles do not grant Project delegate rows."
+    },
+    {
+      "id": "M040",
+      "owner": "apps/mobile/lib/features/project_delegates/presentation/project_coorganizers_screen.dart",
+      "line": 386,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "A Project delegate invitation was created through ordinary RPC and previewed in IP. Its bearer-link result handoff is omitted to preserve the explicit no-capability export boundary."
+    },
+    {
+      "id": "M041",
+      "owner": "apps/mobile/lib/features/project_delegates/presentation/project_coorganizers_screen.dart",
+      "line": 448,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "No current Project delegate row was mutated or revoked in the native pass."
+    },
+    {
+      "id": "M042",
+      "owner": "apps/mobile/lib/features/project_organization/presentation/project_organization_sheet.dart",
+      "line": 17,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["LU", "NK"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M043",
+      "owner": "apps/mobile/lib/features/project_organization/presentation/project_organization_sheet.dart",
+      "line": 341,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["LV"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M044",
+      "owner": "apps/mobile/lib/features/project_organization/presentation/project_organization_sheet.dart",
+      "line": 361,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OZ"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M045",
+      "owner": "apps/mobile/lib/features/project_organization/presentation/project_organization_sheet.dart",
+      "line": 701,
+      "kind": "showDatePicker",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["NN"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M046",
+      "owner": "apps/mobile/lib/features/project_organization/presentation/project_organization_sheet.dart",
+      "line": 708,
+      "kind": "showTimePicker",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["NO"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M047",
+      "owner": "apps/mobile/lib/features/project_participant_invites/presentation/ordinary_share_intent.dart",
+      "line": 73,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "The real Mock realm disables external sharing (OM/FJ). The normal account has no Project in its separate realm; an actual OS share sheet was not reached."
+    },
+    {
+      "id": "M048",
+      "owner": "apps/mobile/lib/features/project_participant_invites/presentation/participant_link_management_screen.dart",
+      "line": 88,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OL"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M049",
+      "owner": "apps/mobile/lib/features/project_participant_invites/presentation/participant_link_management_screen.dart",
+      "line": 153,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OK"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M050",
+      "owner": "apps/mobile/lib/features/project_participant_invites/presentation/project_share_action.dart",
+      "line": 33,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OM"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M051",
+      "owner": "apps/mobile/lib/features/project_resource_needs/presentation/project_resource_needs_screen.dart",
+      "line": 172,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["MO"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M052",
+      "owner": "apps/mobile/lib/features/project_resource_needs/presentation/project_resource_needs_screen.dart",
+      "line": 201,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["MR"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M053",
+      "owner": "apps/mobile/lib/features/project_workspace/presentation/project_workspace_link_editor.dart",
+      "line": 283,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "No concurrent workspace-link edit was induced; latest-version conflict review remains untested."
+    },
+    {
+      "id": "M054",
+      "owner": "apps/mobile/lib/features/project_workspace/presentation/project_workspace_open.dart",
+      "line": 44,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["NT"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M055",
+      "owner": "apps/mobile/lib/features/project_workspace/presentation/project_workspace_widgets.dart",
+      "line": 410,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["NR"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M056",
+      "owner": "apps/mobile/lib/features/project_workspace/presentation/project_workspace_widgets.dart",
+      "line": 429,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["NS"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M057",
+      "owner": "apps/mobile/lib/features/proposals/presentation/own_proposals_screen.dart",
+      "line": 503,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["ON"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M058",
+      "owner": "apps/mobile/lib/features/proposals/presentation/proposal_editor_screen.dart",
+      "line": 429,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["NC"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M059",
+      "owner": "apps/mobile/lib/features/proposals/presentation/proposal_editor_screen.dart",
+      "line": 565,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "No failed draft autosave/partial cover-save was induced. Ordinary profile dirty departure is a separate dialog MW."
+    },
+    {
+      "id": "M060",
+      "owner": "apps/mobile/lib/features/proposals/presentation/proposal_editor_screen.dart",
+      "line": 812,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["NW"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M061",
+      "owner": "apps/mobile/lib/features/proposals/presentation/proposal_editor_screen.dart",
+      "line": 842,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "not applicable",
+      "evidence": [],
+      "reason": "ENABLE_DEMO_TOOLS=false. This sample-data replacement dialog is intentionally unavailable in the audited profile build."
+    },
+    {
+      "id": "M062",
+      "owner": "apps/mobile/lib/features/proposals/presentation/proposal_editor_screen.dart",
+      "line": 916,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["NQ"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M063",
+      "owner": "apps/mobile/lib/features/proposals/presentation/proposal_editor_screen.dart",
+      "line": 956,
+      "kind": "showDatePicker",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["GB"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M064",
+      "owner": "apps/mobile/lib/features/proposals/presentation/proposal_editor_screen.dart",
+      "line": 968,
+      "kind": "showTimePicker",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OP"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M065",
+      "owner": "apps/mobile/lib/features/proposals/presentation/proposal_needs_screen.dart",
+      "line": 89,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OQ"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M066",
+      "owner": "apps/mobile/lib/features/proposals/presentation/proposal_needs_screen.dart",
+      "line": 126,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OR"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M067",
+      "owner": "apps/mobile/lib/features/recurring_activities/presentation/own_recurring_activities_screen.dart",
+      "line": 535,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["PB"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M068",
+      "owner": "apps/mobile/lib/features/recurring_activities/presentation/recurring_activity_editor_screen.dart",
+      "line": 946,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OD"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M069",
+      "owner": "apps/mobile/lib/features/recurring_activities/presentation/recurring_activity_editor_screen.dart",
+      "line": 968,
+      "kind": "showTimePicker",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OE"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M070",
+      "owner": "apps/mobile/lib/features/recurring_activities/presentation/recurring_activity_editor_screen.dart",
+      "line": 978,
+      "kind": "showDatePicker",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OF"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M071",
+      "owner": "apps/mobile/lib/features/resource_exchange/presentation/resource_exchange_widgets.dart",
+      "line": 213,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["JI", "JJ"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M072",
+      "owner": "apps/mobile/lib/features/resource_exchange/presentation/resource_exchange_widgets.dart",
+      "line": 228,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["BL"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M073",
+      "owner": "apps/mobile/lib/features/resource_exchange/presentation/resource_exchange_widgets.dart",
+      "line": 236,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["JL"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M074",
+      "owner": "apps/mobile/lib/features/resource_exchange/presentation/resource_exchange_widgets.dart",
+      "line": 244,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["JN"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M075",
+      "owner": "apps/mobile/lib/features/resource_exchange/presentation/resource_exchange_widgets.dart",
+      "line": 324,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OG"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M076",
+      "owner": "apps/mobile/lib/features/resource_exchange/presentation/resource_exchange_widgets.dart",
+      "line": 358,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["JM"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M077",
+      "owner": "apps/mobile/lib/features/resource_exchange/presentation/resource_exchange_widgets.dart",
+      "line": 722,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["NY"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M078",
+      "owner": "apps/mobile/lib/features/resource_exchange/presentation/resource_exchange_widgets.dart",
+      "line": 1267,
+      "kind": "showDatePicker",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "Donation terms were used; no loan/return time term was selected to open this date picker."
+    },
+    {
+      "id": "M079",
+      "owner": "apps/mobile/lib/features/resource_exchange/presentation/resource_exchange_widgets.dart",
+      "line": 1274,
+      "kind": "showTimePicker",
+      "category": "modal",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "Donation terms were used; no loan/return time term was selected to open this time picker."
+    },
+    {
+      "id": "M080",
+      "owner": "apps/mobile/lib/features/resource_listings/presentation/resource_listing_editor_screen.dart",
+      "line": 564,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["OC"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M081",
+      "owner": "apps/mobile/lib/features/resource_requests/presentation/resource_request_composer.dart",
+      "line": 15,
+      "kind": "showModalBottomSheet",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["IY"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M082",
+      "owner": "apps/mobile/lib/features/resource_saved_searches/presentation/resource_saved_search_editor.dart",
+      "line": 17,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["JG"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "M083",
+      "owner": "apps/mobile/lib/features/resource_saved_searches/presentation/resource_saved_searches_screen.dart",
+      "line": 178,
+      "kind": "showDialog",
+      "category": "modal",
+      "status": "captured",
+      "evidence": ["NX"],
+      "reason": "Actual native overlay opened and individually reviewed."
+    },
+    {
+      "id": "P001",
+      "owner": "apps/mobile/lib/features/cover_media/presentation/cover_editor_section.dart",
+      "line": 97,
+      "kind": "MaterialPageRoute",
+      "category": "pushed",
+      "status": "captured",
+      "evidence": ["MX"],
+      "reason": "Actual native pushed page inspected."
+    },
+    {
+      "id": "P002",
+      "owner": "apps/mobile/lib/features/group_discussions/presentation/discussion_chat_screen.dart",
+      "line": 404,
+      "kind": "MaterialPageRoute",
+      "category": "pushed",
+      "status": "captured",
+      "evidence": ["MJ"],
+      "reason": "Actual native pushed page inspected."
+    },
+    {
+      "id": "P003",
+      "owner": "apps/mobile/lib/features/group_membership/presentation/group_membership_widgets.dart",
+      "line": 47,
+      "kind": "MaterialPageRoute",
+      "category": "pushed",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "All ten Mock profiles had already accepted policy; normal first acceptance KU was router-owned, so this Group-policy native wrapper was not triggered."
+    },
+    {
+      "id": "P004",
+      "owner": "apps/mobile/lib/features/groups/presentation/group_editor_screen.dart",
+      "line": 223,
+      "kind": "MaterialPageRoute",
+      "category": "pushed",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "No incomplete-profile Group editor save was attempted; the normal required setup KW and complete Group editor GY are separate entries."
+    },
+    {
+      "id": "P005",
+      "owner": "apps/mobile/lib/features/locations/presentation/location_editor_section.dart",
+      "line": 261,
+      "kind": "DialogRoute",
+      "category": "pushed",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "Place/geocoder provider was unconfigured, so no genuine search suggestions or exact-place selection dialog could be reviewed."
+    },
+    {
+      "id": "P006",
+      "owner": "apps/mobile/lib/features/profile/presentation/post_setup_group_offer.dart",
+      "line": 60,
+      "kind": "DialogRoute",
+      "category": "pushed",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "First normal profile save returned to Home LA without the optional Group offer. The DialogRoute exists in source but was not observed."
+    },
+    {
+      "id": "P007",
+      "owner": "apps/mobile/lib/features/profile_photo/presentation/profile_photo_section.dart",
+      "line": 37,
+      "kind": "MaterialPageRoute",
+      "category": "pushed",
+      "status": "captured",
+      "evidence": ["EV"],
+      "reason": "Actual native pushed page inspected."
+    },
+    {
+      "id": "P008",
+      "owner": "apps/mobile/lib/features/profile_photo/presentation/profile_photo_trust_gate.dart",
+      "line": 79,
+      "kind": "MaterialPageRoute",
+      "category": "pushed",
+      "status": "captured",
+      "evidence": ["OI"],
+      "reason": "Actual native pushed page inspected."
+    },
+    {
+      "id": "P009",
+      "owner": "apps/mobile/lib/features/project_workspace/presentation/project_workspace_link_editor.dart",
+      "line": 246,
+      "kind": "MaterialPageRoute",
+      "category": "pushed",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "Workspace latest-link review links to policy only conditionally; the conflict editor was not reached."
+    },
+    {
+      "id": "P010",
+      "owner": "apps/mobile/lib/features/project_workspace/presentation/project_workspace_widgets.dart",
+      "line": 267,
+      "kind": "MaterialPageRoute",
+      "category": "pushed",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "Existing accepted policy prevented the workspace policy handoff. KU/KV cover the policy content, not this native entry."
+    },
+    {
+      "id": "S001",
+      "category": "state",
+      "title": "All ten fixed personas",
+      "status": "captured",
+      "evidence": [
+        "Q",
+        "CK",
+        "R",
+        "AT",
+        "BM",
+        "BY",
+        "CD",
+        "CL",
+        "DD",
+        "DO",
+        "DU",
+        "DZ"
+      ],
+      "reason": "All entered through the real selector; native identity/realm metadata retained. The matrix below lists all captures per persona."
+    },
+    {
+      "id": "S002",
+      "category": "state",
+      "title": "Native photo picker",
+      "status": "captured",
+      "evidence": ["EU", "PC"],
+      "reason": "EU already includes the Android picker over the Flutter preparation state; PC is a separate direct original imported after the host stopped. System English is distinct from Italian app locale."
+    },
+    {
+      "id": "S003",
+      "category": "state",
+      "title": "Keyboard, long Italian forms and larger text",
+      "status": "captured",
+      "evidence": ["BG", "EH", "KY", "MO", "GL", "GM", "JP", "JQ", "JR"],
+      "reason": "Actual Gboard, default scale and Android font scale 1.8; no image resizing used to simulate the device."
+    },
+    {
+      "id": "S004",
+      "category": "state",
+      "title": "Light mode and English",
+      "status": "captured",
+      "evidence": ["JS", "JT"],
+      "reason": "Focused real settings and profile-form checks; not a full multiplied locale/theme pass."
+    },
+    {
+      "id": "S005",
+      "category": "state",
+      "title": "Mixed native/People empty state",
+      "status": "captured",
+      "evidence": ["DU", "DZ", "FQ"],
+      "reason": "Real contradictory populated People sections plus native empty-state copy; DU1."
+    },
+    {
+      "id": "S006",
+      "category": "state",
+      "title": "Mixed inbox pagination and same-pair typing",
+      "status": "captured",
+      "evidence": ["R", "BE", "IL", "IM"],
+      "reason": "24 unique native composite keys rendered after automatic pagination; no duplicate kind/chatId or pair-conversation anchor was established."
+    },
+    {
+      "id": "S007",
+      "category": "state",
+      "title": "Presentation OFF preserves identity and exits",
+      "status": "captured",
+      "evidence": ["CI", "CJ", "FP", "FQ", "FR"],
+      "reason": "Presentation selection is independent from persona/realm; own messages retained."
+    },
+    {
+      "id": "S008",
+      "category": "state",
+      "title": "Server experiment OFF",
+      "status": "captured",
+      "evidence": ["KC", "KD", "KE", "KF", "KG", "KH"],
+      "reason": "Cached KC is not fresh authorization evidence. Explicit refresh KF and fresh Iris KG show unavailability; identity-only exit routes remain accessible. Gate restored ON."
+    },
+    {
+      "id": "S009",
+      "category": "state",
+      "title": "Healthy populated own report list after People report",
+      "status": "blocked",
+      "evidence": ["FN", "FO", "KI"],
+      "reason": "Report submission succeeded, but list read fails. Ordinary Iris v4 RPC returns cocreate_post target_summary=null; FO1. No successful populated own-list screenshot claimed."
+    },
+    {
+      "id": "S010",
+      "category": "state",
+      "title": "External live event and event-to-People handoff",
+      "status": "blocked",
+      "evidence": ["HE"],
+      "reason": "No configured real catalogue/provider; no invented event ID or mock imported event."
+    },
+    {
+      "id": "S011",
+      "category": "state",
+      "title": "Populated map pins, clusters and exact-place search",
+      "status": "blocked",
+      "evidence": ["BK"],
+      "reason": "Provider/location configuration absent. No private exact location or alternative backend was fabricated."
+    },
+    {
+      "id": "S012",
+      "category": "state",
+      "title": "Installed real-account duplicate comparison",
+      "status": "blocked",
+      "evidence": [],
+      "reason": "Reference Screenshot_20261023-102754.png unavailable after attachment/filesystem search; A reserved. No installed build/backend parity or live-account repair established."
+    },
+    {
+      "id": "S013",
+      "category": "state",
+      "title": "Normal email/OTP/policy/profile journey",
+      "status": "captured",
+      "evidence": [
+        "KP",
+        "KQ",
+        "KR",
+        "KS",
+        "KT",
+        "KU",
+        "KV",
+        "KW",
+        "KX",
+        "KY",
+        "KZ",
+        "LA"
+      ],
+      "reason": "Actual local Mailpit delivery and successful OTP verification; no credential or valid OTP appears in exported images/metadata."
+    },
+    {
+      "id": "S014",
+      "category": "state",
+      "title": "Rejected/blocked/ended private-contact and Resource variants",
+      "status": "blocked",
+      "evidence": ["LR", "MI", "MU"],
+      "reason": "Withdrawn participation LR and left-Idea read-only MI are genuine. Pending and accepted contacts/agreements are captured. Distinct rejected/closed-contact, blocked-chat and loan completion variants were not constructed."
+    },
+    {
+      "id": "S015",
+      "category": "state",
+      "title": "Coordination after all representative consents",
+      "status": "blocked",
+      "evidence": ["IN", "IO"],
+      "reason": "Pending three-Group proposal captured; not all representative consents were committed, so active coordination/conversion is unreviewed."
+    },
+    {
+      "id": "S016",
+      "category": "state",
+      "title": "Published Idea planning and public conversion result",
+      "status": "captured",
+      "evidence": [
+        "NA",
+        "NB",
+        "NH",
+        "NI",
+        "NJ",
+        "NK",
+        "NL",
+        "NM",
+        "NN",
+        "NO",
+        "NP",
+        "NQ"
+      ],
+      "reason": "Native publication and authoritative conversion reader confirm the public Idea Project. Decision editors and promotion review were inspected; no decision officialization or promotion to Defined Project was committed."
+    },
+    {
+      "id": "S017",
+      "category": "state",
+      "title": "Unread/read and recovery",
+      "status": "captured",
+      "evidence": ["DC", "JZ", "LL", "DN", "IB"],
+      "reason": "Unread badges and settled chat reads observed. Mock recovery and keep-recovery confirmation observed; no claim of exhaustive notification delivery QA."
+    },
+    {
+      "id": "S018",
+      "category": "state",
+      "title": "Licenses and policy/mail external handoffs",
+      "status": "blocked",
+      "evidence": ["KN", "KO", "LD", "LB", "LC"],
+      "reason": "Guidance and draft preview are native. License pages and external browser/email application success were not reviewed; no email sent."
+    }
+  ],
+  "integrationSourceSha": "34649049db675b1b436e6a0ce0aefefaf4a0a4a0"
+}

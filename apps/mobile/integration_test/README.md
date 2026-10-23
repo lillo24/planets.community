@@ -1,5 +1,17 @@
 # Local native integration checks
 
+## UIAUDIT01 complete-screen review
+
+`ui_audit_test.dart` is an explicitly selected local profile-mode audit target.
+It uses the real bootstrap, router, session coordinator and Mock account selector
+against two task-owned disposable realms. A bounded loopback bridge drives route
+continuations and ordinary controls; ADB records original PNGs including Android
+system bars and its physical IME. Realm transitions wait for the new product scope
+before collecting metadata. There is no injected identity or product snapshot.
+See [the capture/report tools](../../../scripts/ui-audit/README.md) for resource
+ownership, private inputs, device qualification, report QA and cleanup. This is
+one-time audit tooling, not an extra recurring CI suite or proof of hosted delivery.
+
 ## Mock realm release fixture
 
 `mock_realm_release_test.dart` uses the complete bootstrap, confidential storage,
