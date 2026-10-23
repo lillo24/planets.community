@@ -16,17 +16,21 @@ This folder owns application startup presentation and navigation, not backend ru
   remain scrollable. Home never replays Welcome's entrance; its shared circular
   planet rotations and logo float continue at the informative website's speeds
   while visible, pausing offscreen/backgrounded and respecting reduced motion.
+  Co-Creation Mode replaces those Home cards with Find your people (`/people`)
+  and disabled Coming soon Activities/Idea intentions. Baseline, Activities Split
+  and the tutorial override retain their native cards. See
+  [PEOPLEHOME01](../../../../docs/development/peoplehome01-home-and-links.md).
 - `startup_failure_app.dart` is the safe fallback when bootstrap cannot launch the application.
 
 ## Navigation contract
 
 `StatefulShellRoute.indexedStack` (go_router 18) keeps three stable branch Navigators:
 
-| Index / destination | Routes |
-| --- | --- |
-| 0 / Profile | `/profile`; nested edit, blocked-users, own reports, and moderation review requests |
-| 1 / Home | `/`; Messages request/chat/group-info, Notifications/preferences, and their protected detail routes |
-| 2 / Browse | `/proposals`, `/tavoli`, and `/resources`; public detail plus protected owner/editor, saved-search, loan-schedule, Project resources/matches, participation, delegate, invite, and management routes |
+| Index / destination | Routes                                                                                                                                                                                               |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 / Profile         | `/profile`; nested edit, blocked-users, own reports, and moderation review requests                                                                                                                  |
+| 1 / Home            | `/`; Messages request/chat/group-info, Notifications/preferences, and their protected detail routes                                                                                                  |
+| 2 / Browse          | `/proposals`, `/tavoli`, and `/resources`; public detail plus protected owner/editor, saved-search, loan-schedule, Project resources/matches, participation, delegate, invite, and management routes |
 
 The Home branch also owns public `/settings`, `/settings/language`, and
 `/settings/navigation`.
