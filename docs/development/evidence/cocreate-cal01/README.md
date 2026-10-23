@@ -79,5 +79,7 @@ changed.
 No physical Android/iOS installation, native screen-reader journey or hosted
 Mock-broker journey is claimed. Existing Mock seed/persona data is unchanged.
 No hosted migration, experiment activation, hosted seed, production deployment
-or app installation is performed by this change. Required pre-merge owner
-migration review and GitHub CI remain separate from these local results.
+or app installation is performed by this change. Required GitHub CI and
+[independent staging eligibility](../../staging-auto03-verified-policy.md)
+remain separate from these local results; owner fingerprint comments are no
+longer an authorization path.
