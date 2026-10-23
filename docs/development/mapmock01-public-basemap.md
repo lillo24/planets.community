@@ -3,7 +3,9 @@
 Source implementation begins at main `667bf57b`. The STAGING-AUTO03 continuation
 now authorizes guarded staging/mock migration catch-up, the narrow mock-basemap
 deployment and a hosted smoke of at most 12 quarter-credit units. Policy PR #306
-merged first at `52e301bb`; product SQL uses that independently validated policy.
+merged first at `52e301bb`; follow-up #311 merged at `44b17504` with the actual
+hosted RLS callback and independently pinned calendar contracts. Product SQL
+uses that independently merged and validated policy.
 Hosted receipts remain separate from source/native qualification. Fixture
 Android pixels do not establish a working hosted Android map. Play upload is
 outside this authorization.
