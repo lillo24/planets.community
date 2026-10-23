@@ -94,3 +94,8 @@ context, supported purpose and an optional public Project ID; private note text
 never enters a URL. Profile/policy setup returns to the intended form without
 sending, accepting or entering optional group onboarding. Contact details live in
 `group_contact/`, and group/Project participation retains its existing routes.
+
+ACTMAP01 adds `/activities/map` within the existing Activities prefix guard. OFF
+still redirects all experiment paths to native Projects. The map and its selected
+external UUID detail preserve the existing Browse destination; native map origins,
+Messages and protected native join/create routing remain unchanged.

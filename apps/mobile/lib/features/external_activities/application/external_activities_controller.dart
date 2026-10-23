@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../settings/application/activities_split_preference_controller.dart';
+import '../../auth/application/auth_session_controller.dart';
 import '../data/external_activity_gateway.dart';
 import '../domain/external_activity.dart';
 
@@ -13,23 +15,47 @@ class ExternalActivitiesState {
     this.loading = false,
     this.failed = false,
     this.moreFailed = false,
+    this.areaTooBroad = false,
   });
   final ExternalActivityFilter filter;
   final ExternalActivityPage? page;
   final bool loading, failed, moreFailed;
+  final bool areaTooBroad;
 }
 
 class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
+  ExternalActivitiesController({this.mapped = false});
+  final bool mapped;
   var _active = false;
   var _generation = 0;
 
   @override
   ExternalActivitiesState build() {
+    if (mapped) {
+      ref.listen(externalActivitiesControllerProvider.select((s) => s.filter), (
+        _,
+        filter,
+      ) {
+        unawaited(this.filter(filter.forMap()));
+      });
+    }
+    ref.listen(authSessionProvider.select((s) => (s.phase, s.identity?.id)), (
+      _,
+      _,
+    ) {
+      _generation++;
+      state = ExternalActivitiesState(filter: state.filter);
+      if (_canRead) unawaited(refresh());
+    });
     ref.onDispose(() {
       _generation++;
       _active = false;
     });
-    return const ExternalActivitiesState();
+    return ExternalActivitiesState(
+      filter: mapped
+          ? ref.read(externalActivitiesControllerProvider).filter.forMap()
+          : const ExternalActivityFilter(),
+    );
   }
 
   bool get _canRead =>
@@ -46,6 +72,7 @@ class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
           page: state.page,
           failed: state.failed,
           moreFailed: state.moreFailed,
+          areaTooBroad: state.areaTooBroad,
         );
       }
     } else if (state.page == null && !state.failed) {
@@ -91,6 +118,11 @@ class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
           ExternalActivityFilter(
             category: filter.category,
             query: filter.query,
+            kind: filter.kind,
+            from: filter.from,
+            to: filter.to,
+            area: filter.area,
+            mappedOnly: filter.mappedOnly,
           ),
         );
         return;
@@ -109,9 +141,18 @@ class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
           asOf: page.asOf,
           items: [if (append) ...old!.items, ...page.items],
           disciplines: page.disciplines,
+          kinds: page.kinds,
+          categories: page.categories,
           nextCursor: page.nextCursor,
           lastSuccessAt: page.lastSuccessAt,
         ),
+      );
+    } on ExternalActivityAreaTooBroad {
+      if (!ref.mounted || generation != _generation || !_canRead) return;
+      state = ExternalActivitiesState(
+        filter: filter,
+        failed: true,
+        areaTooBroad: true,
       );
     } on ExternalActivityCursorExpired {
       if (!ref.mounted || generation != _generation || !_canRead) return;
@@ -139,8 +180,23 @@ final externalActivitiesControllerProvider =
       dependencies: [activitiesSplitPreferenceProvider],
     );
 
+// Map owns a result/cursor lifecycle, while the base controller remains the
+// sole filter authority. It never edits or persists another filter store.
+final externalActivitiesMapControllerProvider =
+    NotifierProvider.autoDispose<
+      ExternalActivitiesController,
+      ExternalActivitiesState
+    >(
+      () => ExternalActivitiesController(mapped: true),
+      dependencies: [
+        activitiesSplitPreferenceProvider,
+        externalActivitiesControllerProvider,
+      ],
+    );
+
 final externalActivityDetailProvider = FutureProvider.autoDispose
     .family<ExternalActivity?, String>((ref, id) {
+      ref.watch(authSessionProvider.select((s) => (s.phase, s.identity?.id)));
       if (!ref.watch(activitiesSplitPreferenceProvider).enabled) return null;
       return ref.read(externalActivityGatewayProvider).get(id);
     }, dependencies: [activitiesSplitPreferenceProvider]);

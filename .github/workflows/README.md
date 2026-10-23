@@ -220,6 +220,14 @@ changes share the Database gate; schema changes also regenerate Web contracts.
 
 # RELEASE01 and STAGING-AUTO03 staged delivery
 
+ACTOPS01 extends the existing opt-in external-activities refresh workflow, with
+main/owner-repository guards, explicit source-set configuration, private bounded
+daily cadence and a seven-minute parent within the existing ten-minute job.
+Default-off variables, target concurrency, read-only token and no PR/fork events
+remain. Apply/maintenance use existing server-only credentials; dry-run does not
+write. No workflow, source or secret has been activated. See the
+[operations runbook](../../docs/development/activities-operations.md).
+
 `staging-release.yml` is separate from Validation and disabled unless
 `STAGING_RELEASE_ENABLED=true`. Protected main-only manual `inspect` verifies
 actual secret/session TLS and independent history before activation. The

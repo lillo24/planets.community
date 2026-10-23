@@ -674,3 +674,32 @@ unchanged. This follow-up is not complete or ready for production.
   Validation and fix ordinary failures. Merge only after valid proof/current-main
   required green checks. Then verify merge/dependency inclusion, complete local
   release preparation and proceed to RESUME02; no new hosted writes or upload.
+
+### RESUME01 completed — verified integration and local preparation
+
+PR [#297](https://github.com/lillo24/planets.community/pull/297) merged through
+protected merge `9945ad0102218f69acbafd543d8112aa8fa90cec`, reviewed source
+`816bd3f22f61268bf514a37d60ae81c2821e9ab5`. Delegated exact owner-account
+approval: [comment 6360816203](https://github.com/lillo24/planets.community/pull/297#issuecomment-6360816203).
+Validation [39924689722](https://github.com/lillo24/planets.community/actions/runs/39924689722),
+attempt 2: Change classification, Mobile, Web, Site and Database all PASS. Its
+populated semantic rehearsal preserves 200 tables across 123→142 migrations,
+checks every raw hash, no-op retry, real Resource Auth/REST and generated types.
+The actual merged tree equals the reviewed tree; RUNALL and final VIS01 heads
+are ancestors. #287 was recognized merged; #292 was closed as fully included.
+
+Local release preparation is complete without producing a signed AAB: required
+local config/original upload key and a freshly verified unused Play version code
+are unavailable. Protected secret names were inspected without retrieving values.
+Normal staging has 123 migrations; Mock has 125 matching canonical receipts and
+17 missing canonical files, with its previous marker retained. These are read-only
+inventories, not hosted migration or full remote-history qualification. Release
+flags remain OFF; the post-merge release workflow skipped. No hosted schema,
+control, fixture write, release dispatch, deployment or store upload ran.
+
+Owned merged FILL01/RUNALL worktrees were archived and merged branches removed.
+Private diagnostics are outside Git at
+`C:/Users/utente/.codex/qa-backups/cocreate-fill01-20261023` and the corresponding
+RUNALL backup. Exact release preparation and migration-gap manifests are there.
+Continue RESUME02 on cumulative #298; deployment/device review does not block
+eligible implementation. Earlier review-wait checkpoints are historical.

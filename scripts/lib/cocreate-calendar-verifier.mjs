@@ -5,6 +5,17 @@ import { signInLocalOtpUser } from "./local-authenticated-user.mjs";
 // Called by the existing community/meeting HTTP verifier, so CAL01 receives
 // the same scoped Database CI gate without a second hosted-runner job.
 export async function verifyCocreateCalendar({ sql, status }) {
+  const mailpit = new URL(process.env.MAILPIT_URL ?? "http://127.0.0.1:54324");
+  assert.ok(
+    mailpit.protocol === "http:" &&
+      ["localhost", "127.0.0.1", "[::1]"].includes(mailpit.hostname) &&
+      !mailpit.username &&
+      !mailpit.password &&
+      !mailpit.search &&
+      !mailpit.hash &&
+      mailpit.pathname === "/",
+    "Calendar verification requires its owned loopback Mailpit URL",
+  );
   const run = randomUUID().slice(0, 8);
   let checks = 0;
   const equal = (a, b, label) => {
@@ -29,7 +40,7 @@ export async function verifyCocreateCalendar({ sql, status }) {
   async function person(label) {
     const p = await signInLocalOtpUser({
       ...status,
-      mailpitUrl: "http://127.0.0.1:54324",
+      mailpitUrl: mailpit.toString().replace(/\/$/, ""),
       email: `calendar-${run}-${label}@planets.invalid`,
       verifierName: "calendar",
     });

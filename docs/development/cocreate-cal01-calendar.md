@@ -119,6 +119,12 @@ back. Its count/hash-only summary is written to
 `build/cocreate-cal01/qualification.json`. The existing community HTTP CI command
 also invokes this bounded rehearsal; no new CI job or trigger is added.
 
+The standalone calendar HTTP verifier accepts `MAILPIT_URL` for an owned local
+stack with a different mailbox port; its default is `http://127.0.0.1:54324`.
+It validates an HTTP loopback origin before fixture writes and never accepts a
+hosted mailbox. This supports isolated integration projects without borrowing a
+peer's backend or changing their ports.
+
 Relevant mobile commands from `apps/mobile`:
 
 ```text

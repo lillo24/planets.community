@@ -3817,6 +3817,10 @@ export type Database = {
         }[]
       }
       get_external_activity: { Args: { p_activity_id: string }; Returns: Json }
+      get_external_activity_v2: {
+        Args: { p_activity_id: string }
+        Returns: Json
+      }
       get_group_authority_invitation_preview: {
         Args: { p_token: string }
         Returns: {
@@ -5028,6 +5032,10 @@ export type Database = {
         Args: { p_chat_id: string; p_expected_profile_id: string }
         Returns: boolean
       }
+      inspect_external_activity_sources: {
+        Args: { p_source_ids: string[] }
+        Returns: Json
+      }
       invite_group_discussion_member: {
         Args: {
           p_client_request_id: string
@@ -5228,6 +5236,34 @@ export type Database = {
           p_discipline?: string
           p_limit?: number
           p_query?: string
+        }
+        Returns: Json
+      }
+      list_external_activities_v2: {
+        Args: {
+          p_category?: string
+          p_cursor?: Json
+          p_discipline?: string
+          p_from?: string
+          p_kind?: string
+          p_limit?: number
+          p_query?: string
+          p_to?: string
+        }
+        Returns: Json
+      }
+      list_external_activities_v3: {
+        Args: {
+          p_area?: Json
+          p_category?: string
+          p_cursor?: Json
+          p_discipline?: string
+          p_from?: string
+          p_kind?: string
+          p_limit?: number
+          p_map_only?: boolean
+          p_query?: string
+          p_to?: string
         }
         Returns: Json
       }
@@ -7320,6 +7356,10 @@ export type Database = {
           title: string
           title_evidence: string
         }[]
+      }
+      maintain_external_activity_imports: {
+        Args: { p_limit?: number; p_source_ids: string[] }
+        Returns: Json
       }
       mark_all_notifications_read: {
         Args: { p_expected_profile_id: string }
