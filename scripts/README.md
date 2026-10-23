@@ -1,5 +1,10 @@
 # Repository scripts
 
+- `ui-audit/` owns the explicitly invoked UIAUDIT01 disposable Mock worlds,
+  native capture bridge, route/state inventory and portrait review generation.
+  Its [README](ui-audit/README.md) records isolation, private inputs, actual
+  Android screenshots, manual visual-review requirements and cleanup.
+
 - `import-external-activities.mjs` owns explicit dry-run/apply CLI entry and
   server-only target configuration. The licensed municipal equipment connector
   works; Agenda and ODH retain their separate recorded source blocks.
