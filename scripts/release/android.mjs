@@ -11,6 +11,14 @@ import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { stagingRelease } from "./staging.mjs";
+import { verifyBackendHandoff } from "./backend-handoff.mjs";
+import { publicSmoke } from "./backend.mjs";
+import {
+  assertBackendReady,
+  migrationDiff,
+  readMigrations,
+  STAGING_REF,
+} from "./migrations.mjs";
 import { releaseConfig } from "./config.mjs";
 import {
   playAccessToken,
@@ -141,7 +149,43 @@ export async function androidRelease(mode, env = process.env) {
     )[0];
   if (currentMain() !== env.GITHUB_SHA)
     throw new ReleaseError("Main advanced; start a new release run");
-  await stagingRelease("verify", env);
+  if (env.SUPABASE_ACCESS_TOKEN) {
+    await stagingRelease("verify", env);
+  } else {
+    const read = (name) =>
+      JSON.parse(readFileSync(`build/release01/${name}.json`, "utf8"));
+    const receipts = {
+      backend: read("backend"),
+      http: read("http-smoke"),
+      deployment: read("deployment"),
+    };
+    await verifyBackendHandoff(receipts, env);
+    assertBackendReady(
+      migrationDiff(
+        readMigrations(root),
+        receipts.backend.history,
+        STAGING_REF,
+      ),
+      receipts.backend.checks,
+    );
+    const fresh = await publicSmoke(env.STAGING_CONFIG_JSON);
+    if (JSON.stringify(fresh) !== JSON.stringify(receipts.http.checks))
+      throw new ReleaseError(
+        "Fresh public HTTP checks differ from protected staging handoff",
+      );
+    writeFileSync(
+      "build/release01/http-smoke.json",
+      JSON.stringify(
+        {
+          source_sha: env.GITHUB_SHA,
+          workflow_run_id: env.GITHUB_RUN_ID,
+          checks: fresh,
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+  }
   let api;
   let code;
   if (env.PLAY_SERVICE_ACCOUNT_JSON) {

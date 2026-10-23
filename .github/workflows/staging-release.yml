@@ -218,6 +218,9 @@ jobs:
         run: echo 'Staging gate failed. Android delivery blocked. Review the sanitized artifact and RELEASE01 runbook.' >> "$GITHUB_STEP_SUMMARY"
 
   android:
+    permissions:
+      contents: read
+      actions: read
     needs: [validate, staging]
     if: >-
       needs.staging.result == 'success' &&
@@ -249,8 +252,13 @@ jobs:
         with:
           name: release-validation-${{ github.run_id }}
           path: build/release01
+      - uses: actions/download-artifact@v5
+        with:
+          name: release-staging-${{ github.run_id }}
+          path: build/release01
       - name: Verify backend, sign and inspect the reviewable AAB
         env:
+          GH_TOKEN: ${{ github.token }}
           MOCK_CONFIG_JSON: ${{ secrets.MOCK_CONFIG_JSON }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           STAGING_CONFIG_JSON: ${{ secrets.STAGING_CONFIG_JSON }}
