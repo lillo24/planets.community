@@ -149,6 +149,10 @@ test("source directory is code owned; blocked rights and unknown source stay fai
     code("source_rights_checkpoint_blocked"),
   );
   assert.throws(
+    () => resolveActivityConnector("odh-trento-sports"),
+    code("source_coverage_checkpoint_blocked"),
+  );
+  assert.throws(
     () => resolveActivityConnector("https://arbitrary.example.org"),
     code("unknown_source"),
   );

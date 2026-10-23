@@ -1,0 +1,113 @@
+{
+  "assessment_started_utc": "2026-10-23T11:13:47Z",
+  "initial_verification_finished_utc": "2026-10-23T11:22:01Z",
+  "scope": {
+    "latitude": 46.0748,
+    "longitude": 11.1217,
+    "radius_m": 10000
+  },
+  "state": "coverage_checkpoint_blocked",
+  "connector_implemented": false,
+  "provider_retries": 0,
+  "other_candidates_checked": 0,
+  "sources": [
+    "https://docs.opendatahub.com/use-data/content-api/reference/",
+    "https://docs.opendatahub.com/use-data/content-api/filtering-and-sorting/",
+    "https://docs.opendatahub.com/licensing/",
+    "https://tourism.api.opendatahub.com/swagger/v1/swagger.json"
+  ],
+  "captures": [
+    {
+      "capture": "009-trento-baseline.json",
+      "http_status": 200,
+      "bytes": 3841,
+      "sha256": "811104e47589bbfaefd10348f8e7ceb262be01559d9d5be770dd2319379f3561",
+      "total_results": 353,
+      "total_pages": 118,
+      "returned": 3,
+      "next_page": true
+    },
+    {
+      "capture": "009-place-tags.json",
+      "http_status": 200,
+      "bytes": 60643,
+      "sha256": "5d900507b6def4d335f8d309ef232dfd8d1418aecb582ceb797625e63a1c265c",
+      "total_results": 201,
+      "total_pages": 1,
+      "returned": 201,
+      "next_page": false
+    },
+    {
+      "capture": "009-trento-facility-tags.json",
+      "http_status": 200,
+      "bytes": 108,
+      "sha256": "623c6a921c19d1c6a790a7627ece21c5626f78b755592446a32ad2bd786e92ad",
+      "total_results": 0,
+      "total_pages": 0,
+      "returned": 0,
+      "next_page": false
+    },
+    {
+      "capture": "009-global-filter-control.json",
+      "http_status": 200,
+      "bytes": 2594,
+      "sha256": "3aa1f7c13010ffbc766e62d01e13241af12dd85bb4e25d38365ec94ad2d65775",
+      "total_results": 105,
+      "total_pages": 105,
+      "returned": 1,
+      "next_page": true
+    },
+    {
+      "capture": "009-trento-non-sta.json",
+      "http_status": 200,
+      "bytes": 2000,
+      "sha256": "45cb2eedf503e305f7e03728bdf3ef35ce4d0d3b21f0da6b69736a505bb98ad7",
+      "total_results": 334,
+      "total_pages": 67,
+      "returned": 5,
+      "next_page": true
+    },
+    {
+      "capture": "009-trento-open-complete.json",
+      "http_status": 200,
+      "bytes": 7736,
+      "sha256": "50cca4e5a37f8f90cccc37e2193c7fe0d2d0f3c3162776cca0dcd404ff89363b",
+      "total_results": 12,
+      "total_pages": 1,
+      "returned": 12,
+      "next_page": false
+    },
+    {
+      "capture": "009-trento-current-events.json",
+      "http_status": 200,
+      "bytes": 108,
+      "sha256": "623c6a921c19d1c6a790a7627ece21c5626f78b755592446a32ad2bd786e92ad",
+      "total_results": 0,
+      "total_pages": 0,
+      "returned": 0,
+      "next_page": false
+    }
+  ],
+  "open_non_sta_categories": {
+    "wine_records": 2,
+    "ev_charging_records": 10
+  },
+  "global_facility_filter_control": {
+    "results": 105,
+    "publication_scope": false
+  },
+  "eligible_local_sports_records_verified": 0,
+  "current_event_window": {
+    "begin": "2026-10-23",
+    "end": "2027-01-21",
+    "results": 0
+  },
+  "excluded_sample_ids": [
+    "it:22022:95699:50:6624",
+    "elementi_cicloviari_v_via001_1519",
+    "3d209e53-b161-48f3-8840-d16f6f12d1de",
+    "echarging_neogy:e509f46e03204f42bb334e20",
+    "9389E476FFF54D7592202567DA9278BC"
+  ],
+  "decision": "No local connector or working second integration is claimed. Continue ACTOPS01/ACTQA01. Future source access/coverage can be reassessed separately."
+}

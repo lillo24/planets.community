@@ -183,3 +183,46 @@ continuations and unchanged native map contracts. A 2,406-row local synthetic
 catalogue selected both GiST indexes (observed 6.236ms radius / 0.093ms bounds,
 not permanent timing assertions) and enforced the full-scope cap. No N+1 detail
 reads or provider search is involved.
+
+## SPORTAPI02: bounded Open Data Hub checkpoint
+
+**Assessment complete; `odh-trento-sports` connector blocked, not implemented.**
+Initial verification ran 2026-10-23 **11:13:47–11:22:01 UTC** (8m14s, within the
+20-minute bound), zero unavailable-endpoint retries, no other provider candidates.
+[Content API reference](https://docs.opendatahub.com/use-data/content-api/reference/),
+[filters](https://docs.opendatahub.com/use-data/content-api/filtering-and-sorting/),
+[record licensing](https://docs.opendatahub.com/licensing/) and actual Swagger V1
+JSON were inspected. No historical endpoint or title-keyword sports inference was
+used. Source-local outcomes and saved-response hashes are in the
+[checkpoint manifest](evidence/activities-sports/odh-source-checkpoint.json).
+
+Observed scope is **46.0748,11.1217 / 10,000 metres**, not broadened to Bolzano:
+
+- Baseline ODHActivityPoi reports 353 rows; the first three are STA transport stops
+  with empty sports tags. They are not sports offerings.
+- Current `/v1/Tag` place-type metadata returns 201 tags. A query using nine
+  observed active facility IDs (fitness, football, indoor/outdoor pool, tennis,
+  climbing hall/garden) returns **0 local rows**. A separately labelled **global
+  control** using four of those same IDs returns **105**, proving the tag filter
+  is accepted; that is not local publication evidence.
+- A non-STA diagnostic reports 334 rows; sampled SIAT cycling/MTB route records
+  have `License=Closed` and `ClosedData=true`. Their record-level evidence must
+  override any broad statement that the API exposes only open records. Routes
+  are also outside this queue's place/course/event model. They are excluded.
+- Explicit open non-STA filtering returns **12 rows in one complete page**:
+  two wine-related records and ten charging points. Source categories identify
+  gastronomy/mobility, not sports; some are inactive/unpublished. No eligible
+  local sport record was verified.
+- Trento Event reports one historical 2021 outing. The actual active/published
+  window **2026-10-23 through 2027-01-21** returns **0**. No current course was
+  identified. Active alone is not evidence of a current session.
+
+Field selection can return literal dotted keys; source `_Meta.LastUpdate` is
+not availability confirmation. A future adapter still needs a useful permitted
+local subset, current publication/schedule/type checks, record-level CC0/CC BY
+policy and verified public-link origins. Closed/proprietary/unknown licences,
+transport/retail/route-only material and media/contacts cannot be silently imported.
+There is no always-empty adapter or working second-source claim. The resolver's
+explicit `source_coverage_checkpoint_blocked` fails before provider/DB IO; the
+separately implemented municipal source and synthetic multi-source qualification
+remain useful. Reassessment is separate future work; 010/011 continue now.

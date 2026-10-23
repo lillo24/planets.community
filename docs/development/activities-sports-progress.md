@@ -25,7 +25,7 @@ runner for this queue was found in current tasks, worktrees or open PRs.
 | 006 SPORTDATA01 | Implemented; real local source verified  | 846a256b; 116 records; no hosted publication                   |
 | 007 ACTGEO01    | Implemented and locally verified         | 145 migrations; full 8415 assertions                           |
 | 008 ACTMAP01    | Implemented and locally verified         | Shared renderer; zero provider attempts                        |
-| 009 SPORTAPI02  | Queued: bounded official verification    | 005 tested; optional source block must not halt queue          |
+| 009 SPORTAPI02  | Assessment complete; connector blocked   | No eligible local coverage verified; proceed to 010            |
 | 010 ACTOPS01    | Queued                                   | 005 tested; keep all schedules/sources OFF                     |
 | 011 ACTQA01     | Queued final cumulative validation/merge | Fresh current-main SQL proof and all required CI before merge  |
 
@@ -252,3 +252,23 @@ and selected evidence committed. No physical device or hosted activation claim.
 See `activities-map.md` for exact commands, semantics and inspection links.
 Next: bounded 009 official second-source verification, then 010 and 011; no
 intermediate merge, source-availability or phone-review wait.
+
+### 009 SPORTAPI02 — bounded assessment complete; connector blocked
+
+Verified current official docs, Swagger and actual 200 JSON responses in
+**8m14s (11:13:47–11:22:01 UTC)**, zero unavailable-endpoint retries. Scope remains
+Trento 10km. Nine observed active facility tags: **0 local**; same-filter positive
+global control **105** (explicitly not local coverage). Complete open non-STA
+subset: **12** winery/charging records, no sports. Other sampled SIAT route data
+is explicitly Closed/ClosedData=true and unsupported as a place/course. Current
+active/published Event window is empty; the unbounded-date sample is a 2021 outing.
+No course or useful permitted local sports subset was verified.
+
+The evidence manifest records counts, query scope, sample record IDs and saved
+response hashes without raw documents/contacts. The recognized ODH source returns
+an explicit coverage-checkpoint failure before provider/DB IO; **no connector or
+working second integration is claimed**. No additional official candidates were
+already identified, and no scraping/account/source hunting was substituted.
+Scoped tooling **22 PASS**; actual CLI dry-run exits **1** with the distinct
+coverage code, not successful empty. No hosted action. Next: 010 bounded refresh,
+private health/maintenance and disabled scheduling, then full 011 qualification.
