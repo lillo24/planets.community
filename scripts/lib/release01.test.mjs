@@ -302,6 +302,17 @@ test("changed deployed Edge bundle or unreviewed source blocks delivery", () => 
     status: "ACTIVE",
   }));
   assert.equal(verifyFunctions(process.cwd(), p, functions), true);
+  // Mock-disabled releases retain the installed normal dependencies. The new
+  // mock-only route must be explicitly deployed/reviewed before its variant.
+  assert.ok(
+    requiredEdgeFunctions(process.cwd(), "closed-test-mock").includes(
+      "mock-basemap",
+    ),
+  );
+  assert.equal(
+    verifyFunctions(process.cwd(), p, functions, "closed-test-mock"),
+    false,
+  );
   assert.equal(
     verifyFunctions(
       process.cwd(),

@@ -22,6 +22,7 @@ import '../../geographic_discovery/presentation/map_view_button.dart';
 import '../../geographic_discovery/presentation/public_map_entry_chooser.dart';
 import '../../geographic_discovery/presentation/public_point_map.dart';
 import '../../locations/presentation/location_attribution.dart';
+import '../../mock_mode/application/mock_mode_coordinator.dart';
 import '../../settings/application/activities_split_preference_controller.dart';
 import '../application/external_activities_controller.dart';
 import '../application/external_map_session.dart';
@@ -125,6 +126,7 @@ class _ExternalMapState extends ConsumerState<ExternalActivitiesMapScreen>
       _tiles = BudgetTileProvider(
         ref.read(budgetBasemapTilesProvider),
         warmTrento:
+            !ref.read(activeMockRealmProvider) &&
             camera.cameraLatitude == 46.0748 &&
             camera.cameraLongitude == 11.1217,
         onReduced: () => _basemapStatus(reduced: true),

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planets_mobile/app/router/app_router.dart';
+import 'package:planets_mobile/devtools/demo/demo_tools.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
 import 'package:planets_mobile/features/auth/domain/auth_models.dart';
 import 'package:planets_mobile/features/geographic_discovery/application/geographic_discovery_controller.dart';
@@ -40,10 +42,12 @@ pumpMap(
   Locale locale = const Locale('en'),
   double scale = 1,
   bool inheritedFilters = false,
+  bool applicationShell = false,
 }) async {
   final geo = geographic ?? FixtureGeographicGateway();
   final container = ProviderContainer(
     overrides: [
+      demoToolsEnabledProvider.overrideWithValue(false),
       geographicDiscoveryGatewayProvider.overrideWithValue(geo),
       mapProviderGatewayProvider.overrideWithValue(
         provider ?? const DisabledMapProviderGateway(),
@@ -78,47 +82,52 @@ pumpMap(
           category: ResourceCategory.toolsDiy,
         );
   }
-  final router = GoRouter(
-    initialLocation: '/',
-    routes: [
-      GoRoute(
-        path: '/',
-        builder: (context, state) => Scaffold(
-          body: ListView(
-            children: [
-              for (final family in MapDiscoveryOrigin.values)
-                MapViewButton(origin: family),
-            ],
-          ),
-        ),
-      ),
-      GoRoute(
-        path: '/discover/map/:origin',
-        builder: (context, state) => MapDiscoveryScreen(
-          key: ValueKey(state.pathParameters['origin']),
-          origin: MapDiscoveryOrigin.values.byName(
-            state.pathParameters['origin']!,
-          ),
-        ),
-      ),
-      for (final path in [
-        '/drafts',
-        '/proposals/:id',
-        '/tavoli/:id',
-        '/resources/:id',
-      ])
-        GoRoute(
-          path: path,
-          builder: (context, state) => Scaffold(
-            appBar: AppBar(),
-            body: Text(
-              'Existing detail ${state.uri.path}',
-              key: const Key('map-test-detail'),
+  final router = applicationShell
+      ? createAppRouter(
+          initialLocation: '/discover/map/${origin.name}',
+          readAuthSession: () => container.read(authSessionProvider),
+        )
+      : GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (context, state) => Scaffold(
+                body: ListView(
+                  children: [
+                    for (final family in MapDiscoveryOrigin.values)
+                      MapViewButton(origin: family),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
-    ],
-  );
+            GoRoute(
+              path: '/discover/map/:origin',
+              builder: (context, state) => MapDiscoveryScreen(
+                key: ValueKey(state.pathParameters['origin']),
+                origin: MapDiscoveryOrigin.values.byName(
+                  state.pathParameters['origin']!,
+                ),
+              ),
+            ),
+            for (final path in [
+              '/drafts',
+              '/proposals/:id',
+              '/tavoli/:id',
+              '/resources/:id',
+            ])
+              GoRoute(
+                path: path,
+                builder: (context, state) => Scaffold(
+                  appBar: AppBar(),
+                  body: Text(
+                    'Existing detail ${state.uri.path}',
+                    key: const Key('map-test-detail'),
+                  ),
+                ),
+              ),
+          ],
+        );
   addTearDown(() async {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
@@ -144,7 +153,9 @@ pumpMap(
     ),
   );
   await tester.pumpAndSettle();
-  await tapMapKey(tester, 'map-open-${origin.name}');
+  if (!applicationShell) {
+    await tapMapKey(tester, 'map-open-${origin.name}');
+  }
   return (
     container: container,
     router: router,
@@ -174,6 +185,19 @@ Future<void> chooseFamily(WidgetTester tester, String label) async {
 }
 
 void main() {
+  testWidgets('application shell activates the map and reads public pins', (
+    tester,
+  ) async {
+    final app = await pumpMap(tester, applicationShell: true);
+    expect(app.router.routerDelegate.state.uri.path, '/discover/map/projects');
+    expect(app.geo.calls, isNotEmpty);
+    expect(
+      app.container.read(geographicDiscoveryProvider('map05:projects')).phase,
+      GeoPhase.ready,
+    );
+    expect(find.byKey(const Key('public-point-map')), findsOneWidget);
+  });
+
   testWidgets(
     'switching families scopes filters and restores each origin reference',
     (tester) async {

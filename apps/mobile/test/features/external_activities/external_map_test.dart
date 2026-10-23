@@ -16,9 +16,14 @@ import 'package:planets_mobile/features/external_activities/domain/external_acti
 import 'package:planets_mobile/features/external_activities/presentation/external_activities_screen.dart';
 import 'package:planets_mobile/features/external_activities/presentation/external_activities_map_screen.dart';
 import 'package:planets_mobile/features/external_activities/presentation/external_activity_detail_screen.dart';
+import 'package:planets_mobile/features/geographic_discovery/application/budget_basemap_tiles.dart';
+import 'package:planets_mobile/features/geographic_discovery/data/budget_basemap_gateway.dart';
 import 'package:planets_mobile/features/geographic_discovery/data/map_provider_gateway.dart';
+import 'package:planets_mobile/features/geographic_discovery/domain/basemap_fallback.dart';
+import 'package:planets_mobile/features/geographic_discovery/domain/basemap_tile.dart';
 import 'package:planets_mobile/features/geographic_discovery/domain/geographic_discovery.dart';
 import 'package:planets_mobile/features/geographic_discovery/presentation/public_point_map.dart';
+import 'package:planets_mobile/features/mock_mode/application/mock_mode_coordinator.dart';
 import 'package:planets_mobile/features/settings/application/activities_split_preference_controller.dart';
 import 'package:planets_mobile/features/settings/data/activities_split_preference_store.dart';
 import 'package:planets_mobile/features/settings/domain/activities_split_preference.dart';
@@ -31,6 +36,27 @@ import '../../support/rendered_evidence.dart';
 
 String itemId(int value) =>
     'a9530000-0000-4000-8000-${value.toString().padLeft(12, '0')}';
+
+class RecordingBudgetGateway implements BudgetBasemapGateway {
+  final calls = <BasemapTileId>[];
+  final images = FixtureMapProviderGateway();
+
+  @override
+  Future<BudgetBasemapFrame> tile(
+    BasemapTileId id, {
+    required bool cacheOnly,
+    required Future<void> cancellation,
+  }) async {
+    calls.add(id);
+    return BudgetBasemapFrame(
+      source: id,
+      bytes: await images.tile(id.z, id.x, id.y, cancellation: cancellation),
+      expiresAt: DateTime.now().toUtc().add(const Duration(seconds: 60)),
+      validFor: const Duration(seconds: 60),
+    );
+  }
+}
+
 ExternalActivity item(
   int index, {
   String kind = 'place',
@@ -82,6 +108,8 @@ pumpExternalMap(
     query: 'court',
   ),
   FakeExternalActivityGateway? gateway,
+  BudgetBasemapGateway? basemap,
+  bool mock = false,
   String language = 'en',
   bool dark = false,
   double scale = 1,
@@ -100,7 +128,7 @@ pumpExternalMap(
     data.detail = item(2);
   }
   final provider = FixtureMapProviderGateway(
-    tilesEnabled: false,
+    tilesEnabled: basemap != null,
     centerEnabled: false,
   );
   final container = ProviderContainer(
@@ -113,6 +141,11 @@ pumpExternalMap(
       ),
       externalActivityGatewayProvider.overrideWithValue(data),
       mapProviderGatewayProvider.overrideWithValue(provider),
+      if (basemap != null) ...[
+        budgetBasemapEnabledProvider.overrideWithValue(true),
+        budgetBasemapGatewayProvider.overrideWithValue(basemap),
+        activeMockRealmProvider.overrideWithValue(mock),
+      ],
     ],
   );
   container.read(authSessionProvider.notifier).markSignedOut();
@@ -202,6 +235,34 @@ void main() {
     await initializeDateFormatting('en');
     await initializeDateFormatting('it');
   });
+
+  for (final mock in [false, true]) {
+    testWidgets('Activities basemap warmup stays normal-only (mock=$mock)', (
+      tester,
+    ) async {
+      final basemap = RecordingBudgetGateway();
+      final app = await pumpExternalMap(tester, basemap: basemap, mock: mock);
+      try {
+        // Keep the public Trento reference while requesting visible z14 tiles.
+        app.container.read(externalMapSessionProvider).camera.zoom = 14;
+        app.router.go('/activities/map');
+        await tester.pumpAndSettle();
+        expect(find.byType(PublicMapCanvas), findsOneWidget);
+        expect(basemap.calls.where((id) => id.z == 14), isNotEmpty);
+        expect(
+          basemap.calls.where((id) => id.z == 12).toSet(),
+          mock ? isEmpty : unorderedEquals(trentoBaselineTiles),
+        );
+        expect(app.provider.tileCalls, isEmpty);
+        expect(app.provider.searches, isEmpty);
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump(const Duration(milliseconds: 400));
+        app.container.read(budgetBasemapTilesProvider).clear();
+      }
+    });
+  }
 
   testWidgets(
     'ACTMAP01 List Sports/Places → shared cluster → external detail → Map → List retains the one filter and camera',

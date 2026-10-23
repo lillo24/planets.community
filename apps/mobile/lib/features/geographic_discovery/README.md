@@ -2,6 +2,12 @@
 
 This feature owns the typed public map-search contract and reusable List/Map UI.
 
+MAPMOCK01 adds `data/mock_public_basemap_gateway.dart`, the sole mock-only public
+imagery transport to the separately authenticated staging tile route. It selects
+through the active realm while all mock product data stays on the mock client.
+Center lookup and baseline warm-up remain unavailable in mock. See the
+[trust, single-budget and activation contract](../../../../../docs/development/mapmock01-public-basemap.md).
+
 CAT01 snapshots the Resource category alongside mode, keyword and locality from
 Browse. `resource_category_slug` is omitted when unset and sent for Resource or
 mixed All searches only; Project/Tavolo searches omit it. The server applies it

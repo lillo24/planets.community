@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/backend/supabase_backend.dart';
+import '../../mock_mode/application/mock_mode_coordinator.dart';
+import 'mock_public_basemap_gateway.dart';
 
 class MapProviderFailure implements Exception {
   const MapProviderFailure(this.status);
@@ -254,6 +256,12 @@ final mapProviderGatewayProvider = Provider<MapProviderGateway>((ref) {
   const tiles = bool.fromEnvironment('LOCATION_MAP_TILES_ENABLED');
   const centers = bool.fromEnvironment('LOCATION_MAP_CENTERS_ENABLED');
   if (!tiles && !centers) return const DisabledMapProviderGateway();
+  if (ref.watch(activeMockRealmProvider)) {
+    final images = ref.watch(mockPublicBasemapGatewayProvider);
+    return images == null
+        ? const DisabledMapProviderGateway()
+        : MockMapProviderGateway(images);
+  }
   return ServerMapProviderGateway(
     ref.watch(supabaseClientProvider),
     tilesEnabled: tiles,
