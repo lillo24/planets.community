@@ -1,5 +1,36 @@
 # RELEASE01 execution status
 
+## STAGING-AUTO02 — temporary development recovery choice
+
+Normal staging can explicitly opt into protected environment variable
+`STAGING_RECOVERY_MODE=development-no-backup`, accepting potential loss of
+current staging data without backup/restore infrastructure. This does not
+authorize unreviewed/destructive SQL, resets, Mock or production operations.
+`verified-backup` retains genuine fresh DB-and-Storage restoration checks;
+missing/unknown mode blocks writes. Switch before staging holds irreplaceable
+data. The [runbook](release01-staging-play.md) owns activation and reviewer steps.
+
+Manual protected `inspect` can verify the actual TLS/session credential before
+enabling deployment. Secret names and local tests do not establish hosted
+readiness. The historical waiver/recovery blockers below are dated snapshots;
+this mode supersedes only their recovery requirement, not SQL review. No app
+version change, AAB build or Play operation is part of STAGING-AUTO02.
+
+Read-only verification on 22 October at main `217ce73e` found 123/126 canonical
+migrations, the same three pending files and unchanged predecessor history.
+Native Supabase GitHub “Deploy to production” was visibly OFF. The protected
+mode was already `development-no-backup`; repository release/auto-publish gates
+were false, readiness unset, and the staging owner reviewer remained required.
+The existing local staging password authenticated through the authoritative
+5432 session route with verified TLS after supplying Supabase's public CA;
+its independent history matched the Management API. The GitHub secret's value
+is unreadable and is not claimed verified by that local credential check.
+The pinned Supabase CLI also passed a read-only `inspect db role-stats` through
+that credential with `verify-full` and the public CA; raw role output was not retained.
+The same reviewed CA is now supplied to both Node and CLI clients. Exact SQL
+owner review, protected-run credential verification and readiness activation
+remain separate prerequisites. No hosted migration write was performed here.
+
 ## STAGING-AUTO01 update — 22 October 2026
 
 Repository safety implementation is ready for exact-head CI; activation is **disabled**.
