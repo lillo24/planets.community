@@ -56,6 +56,12 @@ class _CalendarState extends ConsumerState<_CalendarBody>
   String? cursor;
   bool busy = true, failed = false, unavailable = false;
   int revision = 0;
+  // Non-private coverage intent survives invalidation; rows/cursors do not.
+  int wantedRows = 25;
+  (DateTime, String)? frontier;
+  bool reading = false, refreshQueued = false;
+  bool wasActive = false;
+  double savedOffset = 0;
   Timer? timer;
   final scroll = ScrollController();
 
@@ -63,24 +69,55 @@ class _CalendarState extends ConsumerState<_CalendarBody>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    Future<void>.microtask(load);
     timer = Timer.periodic(const Duration(seconds: 20), (_) {
-      if (mounted &&
-          ModalRoute.of(context)?.isCurrent == true &&
-          TickerMode.valuesOf(context).enabled &&
-          (WidgetsBinding.instance.lifecycleState == null ||
-              WidgetsBinding.instance.lifecycleState ==
-                  AppLifecycleState.resumed)) {
-        load();
-      }
+      if (activeView) load();
     });
   }
 
-  void clear() {
+  // Socket hints invalidate rows; they do not grant or disable canonical HTTP
+  // access. Keep foreground polling usable when metadata delivery is down.
+  bool get activeView =>
+      mounted &&
+      ModalRoute.of(context)?.isCurrent == true &&
+      TickerMode.valuesOf(context).enabled &&
+      (WidgetsBinding.instance.lifecycleState == null ||
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final active = activeView;
+    // Route/TickerMode may become current only after pop's result completes.
+    // Revalidate when that foreground transition actually becomes usable.
+    if (active && !wasActive) Future<void>.microtask(load);
+    wasActive = active;
+  }
+
+  void rememberExtent() {
+    if (meetings.isNotEmpty) {
+      final last = meetings.last;
+      if (frontier == null ||
+          last.startsAt.isAfter(frontier!.$1) ||
+          last.startsAt == frontier!.$1 &&
+              last.id.compareTo(frontier!.$2) > 0) {
+        frontier = (last.startsAt, last.id);
+      }
+      if (meetings.length > wantedRows) wantedRows = meetings.length;
+      if (scroll.hasClients) savedOffset = scroll.offset;
+    }
+  }
+
+  void clear({bool resetExtent = false}) {
+    rememberExtent();
     revision++;
     meetings = [];
     membership = null;
     cursor = null;
+    if (resetExtent) {
+      wantedRows = 25;
+      frontier = null;
+      savedOffset = 0;
+    }
   }
 
   @override
@@ -104,16 +141,34 @@ class _CalendarState extends ConsumerState<_CalendarBody>
     }
   }
 
-  Future<void> load({bool append = false, bool preserveScroll = true}) async {
+  Future<void> load({
+    bool append = false,
+    bool preserveScroll = true,
+    bool recoveringScope = false,
+  }) async {
+    if (!activeView) return;
+    if (reading) {
+      // Timer/detail/hint triggers share one follow-up, never restart each other.
+      refreshQueued = true;
+      return;
+    }
+    reading = true;
+    rememberExtent();
+    if (append) {
+      final target = ((meetings.length + 24) ~/ 25 + 1) * 25;
+      if (target > wantedRows) wantedRows = target;
+    }
     final generation = ++revision;
     final actor = ref.read(authSessionProvider).identity?.id;
     final gateway = ref.read(coCreationRoomsGatewayProvider);
     final window = CoCalendarWindow.month(selected);
-    final before = append ? cursor : null;
-    final previous = append ? meetings : <CoCalendarMeeting>[];
-    final offset = preserveScroll && scroll.hasClients ? scroll.offset : 0.0;
+    var before = append ? cursor : null;
+    var previous = append ? meetings : <CoCalendarMeeting>[];
+    final oldMember = membership;
+    final offset = preserveScroll ? savedOffset : 0.0;
+    bool retryScope = false;
     bool current() =>
-        mounted &&
+        activeView &&
         generation == revision &&
         ref.read(authSessionProvider).identity?.id == actor &&
         identical(ref.read(coCreationRoomsGatewayProvider), gateway);
@@ -136,37 +191,76 @@ class _CalendarState extends ConsumerState<_CalendarBody>
       if (!current()) return;
       if (member == null) {
         setState(() {
-          clear();
+          clear(resetExtent: true);
           busy = false;
           unavailable = true;
         });
         return;
       }
-      final page = await gateway.calendar(
-        actor!,
-        widget.hub,
-        member,
-        window,
-        cursor: before,
-      );
-      if (!current()) return;
-      final ids = previous.map((m) => m.id).toSet();
-      for (final row in page.meetings) {
-        if (!ids.add(row.id) ||
-            (previous.isNotEmpty &&
-                (row.startsAt.isBefore(previous.last.startsAt) ||
-                    (row.startsAt == previous.last.startsAt &&
-                        row.id.compareTo(previous.last.id) <= 0)))) {
-          throw const FormatException('Calendar pagination moved; refresh.');
-        }
+      if (before != null &&
+          (oldMember?.roomId.value != member.roomId.value ||
+              oldMember?.episodeId.value != member.episodeId.value)) {
+        before = null;
+        previous = [];
+        setState(() {
+          meetings = [];
+          membership = null;
+          cursor = null;
+        });
       }
-      if (page.nextCursor != null && page.nextCursor == before) {
-        throw const FormatException('Calendar cursor did not advance.');
+      // At most four 25-row reads per pass. If inserts push the old frontier
+      // farther away, disclose partial coverage and continue via Load more.
+      for (var pageNumber = 0; pageNumber < 4; pageNumber++) {
+        CoCalendarPage page;
+        try {
+          page = await gateway.calendar(
+            actor!,
+            widget.hub,
+            member,
+            window,
+            cursor: before,
+          );
+        } on PostgrestException catch (error) {
+          if (error.code != '22023' || before == null || recoveringScope) {
+            rethrow;
+          }
+          // Membership scope may have changed since the preceding page. Drop
+          // that signed keyset and authorize again from the beginning.
+          if (!current()) return;
+          setState(() => clear());
+          refreshQueued = true;
+          retryScope = true;
+          return;
+        }
+        if (!current()) return;
+        final ids = previous.map((m) => m.id).toSet();
+        for (final row in page.meetings) {
+          if (!ids.add(row.id) ||
+              (previous.isNotEmpty &&
+                  (row.startsAt.isBefore(previous.last.startsAt) ||
+                      (row.startsAt == previous.last.startsAt &&
+                          row.id.compareTo(previous.last.id) <= 0)))) {
+            throw const FormatException('Calendar pagination moved; refresh.');
+          }
+        }
+        if (page.nextCursor != null && page.nextCursor == before) {
+          throw const FormatException('Calendar cursor did not advance.');
+        }
+        previous = [...previous, ...page.meetings];
+        before = page.nextCursor;
+        final last = previous.isEmpty ? null : previous.last;
+        final covered =
+            frontier == null ||
+            last != null &&
+                (last.startsAt.isAfter(frontier!.$1) ||
+                    last.startsAt == frontier!.$1 &&
+                        last.id.compareTo(frontier!.$2) >= 0);
+        if (before == null || previous.length >= wantedRows && covered) break;
       }
       setState(() {
-        meetings = [...previous, ...page.meetings];
+        meetings = previous;
         membership = member;
-        cursor = page.nextCursor;
+        cursor = before;
         busy = false;
       });
       if (!append && offset > 0) {
@@ -185,18 +279,28 @@ class _CalendarState extends ConsumerState<_CalendarBody>
       // the selected month/day and offer a fresh canonical retry.
       if (current()) {
         setState(() {
-          clear();
+          clear(
+            resetExtent: error is PostgrestException && error.code == '42501',
+          );
           busy = false;
           unavailable = error is PostgrestException && error.code == '42501';
           failed = !unavailable;
         });
+      }
+    } finally {
+      reading = false;
+      if (refreshQueued) {
+        refreshQueued = false;
+        if (activeView) {
+          Future<void>.microtask(() => load(recoveringScope: retryScope));
+        }
       }
     }
   }
 
   void moveMonth(int offset) {
     setState(() {
-      clear();
+      clear(resetExtent: true);
       selected = DateTime(selected.year, selected.month + offset);
     });
     load(preserveScroll: false);
@@ -211,7 +315,7 @@ class _CalendarState extends ConsumerState<_CalendarBody>
         failed = !busy;
         unavailable = false;
       });
-      if (busy) Future<void>.microtask(load);
+      if (busy && activeView) Future<void>.microtask(load);
     });
     final l = AppLocalizations.of(context),
         material = MaterialLocalizations.of(context);
@@ -241,7 +345,7 @@ class _CalendarState extends ConsumerState<_CalendarBody>
             TextButton(
               onPressed: () {
                 setState(() {
-                  clear();
+                  clear(resetExtent: true);
                   selected = DateUtils.dateOnly(DateTime.now());
                 });
                 load();
@@ -337,7 +441,6 @@ class _CalendarState extends ConsumerState<_CalendarBody>
           final member = membership;
           if (member == null) return;
           await context.push(m.reviewRoute(widget.hub, member));
-          if (mounted) await load();
         },
         child: Padding(
           padding: const EdgeInsets.all(16),

@@ -28,6 +28,17 @@ episode's history can contribute rows. Occupancy always counts that meeting.
 See [the calendar contract and validation](../../../../../docs/development/cocreate-cal01-calendar.md)
 for cursor scope, partial markers, date windows and delivery state.
 
+CAL01-FIX01 retains loaded pagination intent while clearing protected rows and
+revalidates up to four 25-row pages per pass, with honest partial coverage and
+explicit continuation. Refresh triggers serialize; inactive/hidden hints cannot
+reload or adopt private rows. Date nodes expose a semantic tap action.
+Metadata disconnects invalidate rows without disabling the authorized HTTP fallback.
+`CoRecruitmentReview` and `recruitmentReview` add a separate strict actor-scoped
+read used by all recruitment review entry paths; card availability stays distinct
+from server-derived viewer eligibility. Frozen Join recovery remains independent
+of new admission. Current numbered members retain canonical meeting review after
+blocking or temporary creator unavailability; card-only viewers do not.
+
 - `domain/co_creation_demo.dart` defines bilingual fictional preview values.
 - `data/co_creation_examples.dart` contains deterministic, explicitly fictional
   examples with a separate non-UUID namespace.

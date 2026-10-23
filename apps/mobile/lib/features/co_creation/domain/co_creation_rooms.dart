@@ -333,6 +333,42 @@ class CoRecruitment {
   late final DateTime? startsAt;
 }
 
+/// Versioned actor-scoped review; installed nine/eleven-field cards stay closed.
+class CoRecruitmentReview {
+  CoRecruitmentReview.parse(
+    Object? value,
+    String actor,
+    HubId hub,
+    CoRoomId general,
+    CoEpisodeId episode,
+    String id,
+  ) {
+    final r = coCreationObject(value, {
+      'profile_id',
+      'hub_id',
+      'general_room_id',
+      'episode_id',
+      'recruitment',
+      'can_join',
+    });
+    card = CoRecruitment.parse(r['recruitment']);
+    canJoin = peopleBool(r['can_join']);
+    if (peopleUuid(r['profile_id']) != actor ||
+        HubId.parse(r['hub_id']).value != hub.value ||
+        CoRoomId.parse(r['general_room_id']).value != general.value ||
+        CoEpisodeId.parse(r['episode_id']).value != episode.value ||
+        card.id != id ||
+        card.hub.value != hub.value ||
+        canJoin && !card.available) {
+      throw const FormatException(
+        'Recruitment review scope/eligibility mismatch.',
+      );
+    }
+  }
+  late final CoRecruitment card;
+  late final bool canJoin;
+}
+
 class CoCurrentMeeting {
   CoCurrentMeeting.parse(Object? value) {
     final r = coCreationObject(value, {

@@ -80,6 +80,7 @@ class CoCalendarMonth extends StatelessWidget {
                       height: 52,
                       child: Semantics(
                         button: true,
+                        onTap: () => onSelect(date),
                         selected: chosen,
                         label: [
                           material.formatFullDate(date),

@@ -29,8 +29,12 @@ existing `sequence <= exit_sequence / last_sequence` history frontier. Former
 General history can show permitted cards but does not grant attendance or Join.
 General membership by itself cannot reveal meetings with no permitted card.
 All reads recheck canonical experiment, account, policy, hub/category, room,
-blocking and suppression rules. Archived/suppressed rooms and unavailable or
-blocked creators are omitted, including their contribution to continuation.
+blocking and suppression rules. Archived/suppressed rooms are omitted. A current
+numbered member retains the same current-occurrence review as the canonical
+meeting panel when either party blocks or the creator is temporarily unavailable,
+including after declining attendance. An ended episode or prior RSVP grants no
+exception. Card-only viewers still require an available, unblocked creator;
+excluded rows contribute neither markers nor continuation.
 
 Meetings deduplicate by canonical meeting ID. Within authorized history the
 reader prefers a currently eligible card, then the latest card; an older
@@ -52,7 +56,15 @@ The UI offers explicit Load more. Until continuation ends, it says more dates
 remain, shows markers for loaded authorized rows only, and never declares a
 partially loaded day definitively empty. There is no total inferred from hidden
 rows. New inserts before an existing keyset appear on refresh. Refresh clears
-loaded pages and rereads the first page.
+protected rows/cursors and starts at page one, retaining only the requested row
+extent and chronological frontier as RAM-only pagination intent. It reads up to
+**four 25-row pages (100 rows) per pass**, until that extent/frontier is covered or
+the continuation ends. New earlier rows cannot silently displace the old frontier.
+If the cap is reached, the partial-date notice and **Load more** continue fresh
+coverage; partial days are never declared definitively empty. A stale scoped
+cursor triggers at most one fresh pass (at most eight calendar requests across
+the two passes); a repeated failure clears rows and offers an explicit retry.
+Account/realm replacement and access denial discard the old intent as well.
 
 ## Mobile state and compatibility
 
@@ -68,14 +80,35 @@ ID guard against substituting a newer occurrence. An older frozen operation
 retains its recovery control even if the current meeting changes. The calendar
 does not read or subscribe to transcripts and does not add command semantics.
 
+Recruitment review uses `get_cocreate_recruitment_review_v1`, an exact actor/
+General-room/episode/card-bound envelope containing the unchanged card plus
+fresh server-derived `can_join`. It preserves the installed history frontier and
+separately checks current hub membership, creator availability/blocking, room
+exclusions, persistent-chat capacity, numbered membership limits and dated
+meeting eligibility. Every recruitment entry, including direct links, uses that
+read. Spare meeting seats never imply that the viewer can join. No reader writes
+membership/attendance or acknowledges messages. Atomic Join remains the final
+authority on races; a frozen attempt retains its exact recovery even when fresh
+eligibility becomes false. Installed nine-/eleven-field cards remain unchanged.
+
 Successful return, actor-only signals, resume/reconnect and the existing
 20-second foreground refresh cadence revalidate canonical state. Account,
 gateway/realm, hub, month and policy replacement invalidate in-flight responses.
 Background/disconnected/access-loss states discard protected rows immediately.
+Timer, metadata and return triggers serialize with one coalesced follow-up.
+Initiation and response adoption both require the current foreground route and
+resumed lifecycle. Connected hints while inactive/hidden cannot repopulate rows;
+foreground resume revalidates. Date semantics expose the same tap action as
+pointer input, with full localized date, selection and mixed markers.
+Metadata-socket loss clears and fences existing rows but does not disable the
+authorized HTTP fallback. Foreground polling or an explicit retry starts a fresh
+server-authorized read even while the socket remains disconnected.
 Loading, backend failure, unavailable admission and a truly empty day have
 different presentations. There is no persistent private cache or mock fallback.
 
-The migration only adds the reader and a chronological meeting index. Existing
+The original migration adds the reader and a chronological meeting index. The
+forward `20261023155513_cocreate_calendar_corrections.sql` replaces that reader's
+body in place and adds the separate recruitment-review contract/helper. Existing
 installed reader OIDs, grants and closed nine-/eleven-field DTOs are unchanged.
 Generated public TypeScript database types include the new RPC. Apply the
 additive migration before distributing this client. API failure never falls
@@ -109,10 +142,14 @@ npm run db:types
 ```
 
 The upgrade command requires an owned loopback project and
-`PLANETS_DISPOSABLE_QA=1`. It reconstructs the exact pre-CAL01 schema inside a
-rollback transaction by removing only CAL01's new function and index. It warms
-six installed readers, applies the actual migration source and checks every
-public function's OID/ACL/source/result plus all populated public/private rows.
+`PLANETS_DISPOSABLE_QA=1`. It reconstructs the CAL01-installed predecessor
+`fef1c343501a43712f997aca269a09ca6f245b75` inside a rollback transaction, retaining
+the installed calendar function/index. It warms seven readers and a real signed
+calendar cursor, applies the actual forward correction source and checks all
+other installed public functions' OID/ACL/source/result plus every populated
+public/private table. The calendar's OID, signature/defaults, ACL, stability,
+definer context, fixed path, envelope/row payload and old cursor are preserved.
+Repeated body installation also preserves populated rows and warmed contracts.
 It explains the actual calendar query against 3,000 synthetic historical
 meetings, checks use of the chronological window index, and rolls everything
 back. Its count/hash-only summary is written to
@@ -140,3 +177,6 @@ contract fixtures and actual Flutter rendering, not live-data proof or physical
 device QA. Code merge, hosted migration application, experiment activation,
 Mock data and installed-app state are separate delivery claims. None implies
 another. Places and map discovery remain the prompt's subsequent scoped work.
+
+Correction regressions and current local qualification are recorded separately
+in [CAL01-FIX01 evidence](evidence/cocreate-cal01-fix01/README.md).

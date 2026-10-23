@@ -1,0 +1,25 @@
+{
+  "migration_sha256": "7e8239197c365d4a8a840085a390b80a11260913e7b005ab610162a484fb111a",
+  "installed_predecessor": "fef1c343501a43712f997aca269a09ca6f245b75",
+  "calendar_contract_preserved": true,
+  "installed_cursor_preserved": true,
+  "populated_tables_preserved": 196,
+  "installed_functions_preserved": 555,
+  "warmed_readers_preserved": 7,
+  "legacy_card_fields": 9,
+  "dated_card_fields": 11,
+  "historical_fixture_meetings": 3000,
+  "query_indexes": [
+    "cocreate_meeting_attendance_pkey",
+    "cocreate_meetings_calendar",
+    "cocreate_meetings_room",
+    "cocreate_recruitment_meeting",
+    "cocreate_room_current_episode",
+    "cocreate_room_messages_pkey",
+    "cocreate_rooms_pkey"
+  ],
+  "planning_ms": 0.839,
+  "execution_ms": 1.183,
+  "rollback": true,
+  "hosted_changes": false
+}

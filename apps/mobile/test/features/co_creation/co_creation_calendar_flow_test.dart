@@ -141,19 +141,26 @@ Future<(ProviderContainer, GoRouter)> open(
   bool large = false,
   bool dark = false,
   bool enabled = true,
+  bool waitForLoad = true,
+  List<RouteBase> extraRoutes = const [],
 }) async {
   final result = await f.pump(
     tester,
     fixture,
     path: '/people/hubs/${f.hub}/calendar',
-    extraRoutes: calendarRoutes(),
+    extraRoutes: [...calendarRoutes(), ...extraRoutes],
     coCreation: enabled,
     language: language,
     large: large,
     dark: dark,
   );
   (result.$1.read(authSessionProvider.notifier) as f.Session).change(f.a);
-  await tester.pumpAndSettle();
+  if (waitForLoad) {
+    await tester.pumpAndSettle();
+  } else {
+    // A serialized in-flight read intentionally remains loading until resolved.
+    await tester.pump();
+  }
   return result;
 }
 
@@ -354,9 +361,10 @@ void main() {
     (tester) async {
       final fixture = CalendarFixture()..delayed = Completer<Object?>();
       final pending = fixture.delayed!;
-      await open(tester, fixture);
+      await open(tester, fixture, waitForLoad: false);
       final old = fixture.response(fixture.requests.first);
-      await f.tap(tester, find.byKey(const Key('co-calendar-next')));
+      await tester.tap(find.byKey(const Key('co-calendar-next')));
+      await tester.pump();
       pending.complete(old);
       await tester.pumpAndSettle();
       final l = AppLocalizations.of(
@@ -396,7 +404,7 @@ void main() {
     fixture.delayed = Completer<Object?>();
     final pending = fixture.delayed!;
     fixture.hints.add((connected: true, event: 1));
-    await tester.pumpAndSettle();
+    await tester.pump();
     final old = fixture.response(fixture.requests.last);
     fixture.count = 0;
     app.invalidate(coCreationRoomsGatewayProvider);
