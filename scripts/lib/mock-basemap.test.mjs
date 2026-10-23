@@ -168,10 +168,9 @@ test("cold reserve precedes provider and finish; revalidation fences revoked res
     assert.equal(auth, 2);
     assert.equal(calls[0][0], "reserve_mock_basemap_tile_v1");
     assert.equal(calls[1][0], "finish_mock_basemap_tile_v1");
-    assert.equal(
-      calls[1][1].p_image_base64,
-      revoke ? null : payload.image_base64,
-    );
+    // Retirement withholds the response, but does not misclassify a valid
+    // public acquisition as a provider failure in the shared circuit.
+    assert.equal(calls[1][1].p_image_base64, payload.image_base64);
     assert.equal(h.calls.filter((v) => v === "provider").length, 1);
     assert.equal(JSON.stringify(result).includes("fixture"), false);
   }

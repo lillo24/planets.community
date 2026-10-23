@@ -108,6 +108,13 @@ Leaving the coordinator's committed Mock phase disposes the dedicated
 gateway (its switching-screen `fencing` bit may remain set after commit); route departure,
 background, denial and provider kill clear/revoke renderer scopes through the
 existing stores. Late callbacks cannot revive images or product results.
+An acquisition authorized before session retirement may still populate the
+public cache, but its response is withheld. A valid provider PNG is not counted
+as a provider failure merely because its initiating mock session retired.
+The ordinary fixed `map-provider` POST is classified as a read by the realm
+transport: cancellation drains normally and cannot create a pending product-edit
+confirmation on the next mode switch. Its origin and mode fences still apply;
+unknown Edge POSTs retain uncertain-write handling.
 
 Closed testing retains `ENABLE_CLOSED_TEST_MOCK=true`, demos off, and the existing
 tile, center, detail, 60-second cache, editor and budget defines. Ordinary and

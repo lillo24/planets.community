@@ -289,6 +289,90 @@ export async function verifyMockBasemap({
       "cache_miss",
       "MAPMOCK expired Trento cannot masquerade as fallback",
     );
+    // Revoke real mock entitlement while the controlled provider is in flight.
+    // The completed public acquisition stays accounted and reusable, but must
+    // neither reach the retired persona nor poison the shared failure circuit.
+    await db`update private.location_provider_config set daily_units_limit=8000,failure_streak=4,blocked_until=null`;
+    await db`delete from private.location_provider_usage`;
+    const userResponse = await fetch(mock.apiUrl + "/auth/v1/user", {
+      headers: {
+        apikey: mock.publishableKey,
+        Authorization: "Bearer " + token,
+      },
+    });
+    assert.equal(userResponse.status, 200);
+    const user = await userResponse.json();
+    const retiring = basemapFixture({
+      normal,
+      mock,
+      afterProvider: () =>
+        sql`update mock_control.personas set available=false where user_id=${user.id}::uuid`,
+    });
+    const retiredTile = { ...tile, z: 18, x: 4000, y: 4000 };
+    try {
+      const retired = await (
+        await retiring.mockHandler(
+          new Request("http://localhost/functions/v1/mock-basemap", {
+            method: "POST",
+            headers: { Authorization: "Bearer " + token },
+            body: JSON.stringify(retiredTile),
+          }),
+        )
+      ).json();
+      equal(
+        retired.status,
+        "unauthorized",
+        "MAPMOCK retirement withholds late pixels",
+      );
+      equal(
+        retired.image_base64,
+        undefined,
+        "MAPMOCK revoked response contains no image",
+      );
+      equal(
+        await units(),
+        1,
+        "MAPMOCK completed retired acquisition remains charged once",
+      );
+      const [circuit] =
+        await db`select failure_streak,blocked_until from private.location_provider_config`;
+      equal(
+        circuit.failure_streak,
+        0,
+        "MAPMOCK successful PNG is not an Auth-induced provider failure",
+      );
+      equal(
+        circuit.blocked_until,
+        null,
+        "MAPMOCK retirement cannot trip the shared provider circuit",
+      );
+      const reused = await (
+        await retiring.normalHandler(
+          new Request("http://localhost/functions/v1/map-provider", {
+            method: "POST",
+            headers: {
+              Authorization: "Bearer " + normalSentinel.session.access_token,
+            },
+            body: JSON.stringify({
+              ...retiredTile,
+              expected_profile_id: normalSentinel.id,
+            }),
+          }),
+        )
+      ).json();
+      equal(
+        reused.cached,
+        true,
+        "MAPMOCK completed public pixels remain reusable by normal Auth",
+      );
+      equal(
+        retiring.counts.provider,
+        1,
+        "MAPMOCK retired acquisition reuse has no duplicate provider IO",
+      );
+    } finally {
+      await sql`update mock_control.personas set available=true where user_id=${user.id}::uuid`;
+    }
     await db`update private.mock_basemap_config set enabled=false`;
     equal(
       (await json()).status,

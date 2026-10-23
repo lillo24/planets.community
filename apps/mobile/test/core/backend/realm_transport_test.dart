@@ -99,4 +99,31 @@ void main() {
       isNot(mockSessionKey(b, 'rootB', 'request')),
     );
   });
+  test('cancelled public map reads drain without inventing uncertain product edits', () async {
+    for (final endpoint in ['map-provider', 'other-product-function']) {
+      final transport = RealmTransport(
+        origin: Uri.parse('http://127.0.0.1:55321'),
+        inner: MockClient((_) async => throw http.ClientException('cancelled')),
+      );
+      addTearDown(transport.close);
+      await expectLater(
+        transport.post(
+          Uri.parse('http://127.0.0.1:55321/functions/v1/$endpoint'),
+        ),
+        throwsA(isA<http.ClientException>()),
+      );
+      await transport.whenDrained;
+      expect(
+        transport.uncertainOperations,
+        endpoint == 'map-provider' ? isEmpty : {'/functions/v1'},
+      );
+      transport.productBlocked = true;
+      await expectLater(
+        transport.post(
+          Uri.parse('http://127.0.0.1:55321/functions/v1/$endpoint'),
+        ),
+        throwsA(isA<http.ClientException>()),
+      );
+    }
+  });
 }

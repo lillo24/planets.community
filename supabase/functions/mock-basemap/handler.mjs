@@ -85,10 +85,12 @@ export function createMockBasemapHandler({
           const valid =
             current?.actor_scope === identity.actor_scope &&
             current?.client_scope === identity.client_scope;
-          const finished = await rpc("finish_mock_basemap_tile_v1", {
-            ...args,
-            ...(valid ? {} : { p_image_base64: null }),
-          });
+          // Finish the already-authorized public acquisition truthfully even
+          // after retirement. Discarding a valid PNG would incorrectly trip
+          // the shared provider failure circuit on a client Auth transition.
+          // The shared cache contains no private data; never return it here
+          // when the initiating session has lost its entitlement.
+          const finished = await rpc("finish_mock_basemap_tile_v1", args);
           return valid ? finished : { status: "unauthorized" };
         },
       });

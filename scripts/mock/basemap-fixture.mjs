@@ -9,7 +9,7 @@ import {
 import { createMapProviderHandler } from "../../supabase/functions/map-provider/handler.mjs";
 import { mapTileFixture } from "../lib/map-provider-fixture.mjs";
 
-export function basemapFixture({ normal, mock }) {
+export function basemapFixture({ normal, mock, afterProvider }) {
   const counts = { provider: 0, mock: 0, normal: 0, auth: 0, rpc: 0 };
   const fetcher = async (url, init) => {
     const value = new URL(url);
@@ -20,6 +20,7 @@ export function basemapFixture({ normal, mock }) {
       );
       assert.equal(init.redirect, "error");
       counts.provider++;
+      await afterProvider?.();
       return new Response(mapTileFixture(), {
         headers: { "content-type": "image/png" },
       });

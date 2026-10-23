@@ -380,13 +380,23 @@ void main() {
         final coordinator = old.read(mockModeCoordinatorProvider)!;
         final previousRevision = coordinator.scopeRevision;
         await tap(find.byKey(Key('mock-login-$key')));
-        await wait(
-          () =>
-              coordinator.phase == MockModePhase.mock &&
-              coordinator.active?.personaKey == key &&
-              coordinator.scopeRevision > previousRevision,
-          'committed realm generation',
-        );
+        try {
+          await wait(
+            () =>
+                coordinator.phase == MockModePhase.mock &&
+                coordinator.active?.personaKey == key &&
+                coordinator.scopeRevision > previousRevision,
+            'committed realm generation',
+          );
+        } catch (_) {
+          errors.add(
+            'persona $key phase ${coordinator.phase.name} '
+            'failure ${coordinator.failure?.name ?? 'none'} '
+            'uncertain ${normalBackendRuntime.transport.uncertainOperations.join(' ')}',
+          );
+          await capture('persona-failure-$key-$stage');
+          rethrow;
+        }
         await wait(
           () =>
               find.byType(PlanetsApp).evaluate().isNotEmpty &&
