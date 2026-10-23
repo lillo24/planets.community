@@ -72,8 +72,7 @@ opaque tokens of at most six pending mock acquisitions, with 30-second leases;
 completion releases a slot and expired/non-pending tokens are pruned on the
 next reservation. A full IO pool returns pending before any credit charge.
 
-New public broker
-clients are discoverable and cannot be treated as trusted people; even client
+New public broker clients are discoverable and cannot be treated as trusted people; even client
 churn cannot bypass persona or aggregate subcaps. No new key/account, crawl,
 scheduled fill, provider fallback or public OSM tile endpoint is introduced.
 

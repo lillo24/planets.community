@@ -14,6 +14,8 @@ The two reservation/finish RPCs share normal staging's canonical global ledger,
 public cache, TTL, circuit and licenses. Mock-only caps cannot increase that
 ceiling. Provider bytes are bounded to 256 KiB/256px with no redirects/retries.
 Cache responses are no-store and contain only v2 public-source metadata/pixels.
+Auth user replies are limited to 16 KiB, scope proofs to 1 KiB and image RPC
+replies to 400,000 bytes, with two-second Auth/REST deadlines.
 
 Defaults are disabled. See `.env.example` and the
 [activation, rollback and evidence runbook](../../../docs/development/mapmock01-public-basemap.md).

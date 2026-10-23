@@ -279,6 +279,20 @@ void main() {
         final rgba = await painted.toByteData(
           format: ui.ImageByteFormat.rawRgba,
         );
+        // The existing radius overlay tints pixels at closer retained zooms.
+        // Recognize that blend too, without resetting the user's camera.
+        final tint = Color.alphaBlend(
+          Theme.of(find.byType(PublicPointMap).evaluate().single)
+              .colorScheme
+              .primary
+              .withValues(alpha: 0.08),
+          const Color(0xffd2d2d2),
+        ).toARGB32();
+        final pixels = rgba!.buffer.asUint8List();
+        bool matches(int offset, int color) =>
+            (pixels[offset] - ((color >> 16) & 255)).abs() <= 1 &&
+            (pixels[offset + 1] - ((color >> 8) & 255)).abs() <= 1 &&
+            (pixels[offset + 2] - (color & 255)).abs() <= 1;
         var fixturePixels = 0;
         for (
           var y = region.top.ceil().clamp(0, painted.height).toInt();
@@ -291,9 +305,7 @@ void main() {
             x++
           ) {
             final offset = (y * painted.width + x) * 4;
-            if (rgba!.getUint8(offset) == 210 &&
-                rgba.getUint8(offset + 1) == 210 &&
-                rgba.getUint8(offset + 2) == 210) {
+            if (matches(offset, 0xffd2d2d2) || matches(offset, tint)) {
               fixturePixels++;
             }
           }
