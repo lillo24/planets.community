@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'dart:ui' show SemanticsAction, Tristate;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -30,106 +33,163 @@ void main() {
   setUpAll(() => RenderedEvidence.loadFonts(force: true));
   for (final language in ['en', 'it']) {
     for (final dark in [false, true]) {
-      testWidgets(
-        'Home 320dp 2x $language dark=$dark keeps three native pillars usable',
-        (tester) async {
-          tester.view.physicalSize = const Size(320, 480);
-          tester.view.devicePixelRatio = 1;
-          addTearDown(tester.view.resetPhysicalSize);
-          addTearDown(tester.view.resetDevicePixelRatio);
-          final router = GoRouter(
-            routes: [
-              GoRoute(path: '/', builder: (_, _) => const FoundationScreen()),
-              for (final path in ['/people', '/proposals', '/resources'])
-                GoRoute(
-                  path: path,
-                  builder: (_, _) => Scaffold(body: Text(path)),
-                ),
-            ],
-          );
-          addTearDown(router.dispose);
-          await tester.pumpWidget(
-            ProviderScope(
-              overrides: [
-                initialCoCreationPreferenceProvider.overrideWithValue(
-                  const CoCreationPreferenceState(mode: CoCreationMode.on),
-                ),
-                initialActivitiesSplitPreferenceProvider.overrideWithValue(
-                  const ActivitiesSplitPreferenceState(
-                    mode: ActivitiesSplitMode.on,
+      for (final scale in [1.0, 2.0]) {
+        testWidgets(
+          'Co-Creation Home 320dp ${scale}x $language dark=$dark has three intentions',
+          (tester) async {
+            tester.view.physicalSize = Size(320, scale == 1 ? 740 : 480);
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.resetPhysicalSize);
+            addTearDown(tester.view.resetDevicePixelRatio);
+            final router = GoRouter(
+              routes: [
+                GoRoute(path: '/', builder: (_, _) => const FoundationScreen()),
+                for (final path in ['/people', '/proposals', '/resources'])
+                  GoRoute(
+                    path: path,
+                    builder: (_, _) => Scaffold(body: Text(path)),
                   ),
-                ),
-                authSessionProvider.overrideWith(Session.new),
               ],
-              child: RenderedEvidence.wrap(
-                MaterialApp.router(
-                  routerConfig: router,
-                  theme: dark ? AppTheme.dark : AppTheme.light,
-                  locale: Locale(language),
-                  localizationsDelegates:
-                      AppLocalizations.localizationsDelegates,
-                  supportedLocales: AppLocalizations.supportedLocales,
-                  builder: (context, child) => MediaQuery(
-                    data: MediaQuery.of(context).copyWith(
-                      textScaler: TextScaler.linear(2),
-                      disableAnimations: true,
+            );
+            addTearDown(router.dispose);
+            await tester.pumpWidget(
+              ProviderScope(
+                overrides: [
+                  initialCoCreationPreferenceProvider.overrideWithValue(
+                    const CoCreationPreferenceState(mode: CoCreationMode.on),
+                  ),
+                  initialActivitiesSplitPreferenceProvider.overrideWithValue(
+                    const ActivitiesSplitPreferenceState(
+                      mode: ActivitiesSplitMode.on,
                     ),
-                    child: child!,
+                  ),
+                  authSessionProvider.overrideWith(Session.new),
+                ],
+                child: RenderedEvidence.wrap(
+                  MaterialApp.router(
+                    routerConfig: router,
+                    theme: dark ? AppTheme.dark : AppTheme.light,
+                    locale: Locale(language),
+                    localizationsDelegates:
+                        AppLocalizations.localizationsDelegates,
+                    supportedLocales: AppLocalizations.supportedLocales,
+                    builder: (context, child) => MediaQuery(
+                      data: MediaQuery.of(context).copyWith(
+                        textScaler: TextScaler.linear(scale),
+                        disableAnimations: true,
+                      ),
+                      child: child!,
+                    ),
                   ),
                 ),
               ),
-            ),
-          );
-          await tester.pumpAndSettle();
-          final crazyIdeas = find.byKey(const Key('crazy-ideas-button'));
-          await tester.ensureVisible(crazyIdeas);
-          await tester.pumpAndSettle();
-          expect(
-            tester
-                .widget<InkWell>(
-                  find.descendant(
-                    of: crazyIdeas,
-                    matching: find.byType(InkWell),
-                  ),
-                )
-                .onTap,
-            isNull,
-          );
-          await tester.tap(crazyIdeas);
-          await tester.pumpAndSettle();
-          expect(router.routeInformationProvider.value.uri.path, '/');
-          await RenderedEvidence.capture(
-            tester,
-            'crazy-ideas-home-$language-$dark-2x',
-          );
-          for (final entry in {
-            'browse-people-button': '/people',
-            'browse-proposals-button': '/proposals',
-            'browse-resources-button': '/resources',
-          }.entries) {
-            final card = find.byKey(Key(entry.key));
-            await tester.ensureVisible(card);
+            );
             await tester.pumpAndSettle();
-            expect(tester.takeException(), isNull);
-            if (entry.key == 'browse-people-button') {
+            expect(find.byType(Card), findsNWidgets(3));
+            expect(
+              find.text(
+                language == 'it' ? 'Trova le tue persone' : 'Find your people',
+              ),
+              findsOneWidget,
+            );
+            expect(
+              find.text(
+                language == 'it' ? 'Trova attività' : 'Find activities',
+              ),
+              findsOneWidget,
+            );
+            expect(
+              find.text(
+                language == 'it' ? "Proponi un'idea" : 'Propose an idea',
+              ),
+              findsOneWidget,
+            );
+            expect(find.byKey(const Key('crazy-ideas-button')), findsNothing);
+            expect(
+              find.byKey(const Key('browse-proposals-button')),
+              findsNothing,
+            );
+            expect(
+              find.byKey(const Key('browse-resources-button')),
+              findsNothing,
+            );
+            final semantics = tester.ensureSemantics();
+            for (final key in [
+              'find-activities-coming-soon',
+              'propose-idea-coming-soon',
+            ]) {
+              final placeholder = find.byKey(Key(key));
+              await tester.ensureVisible(placeholder);
+              await tester.pumpAndSettle();
+              final node = tester.getSemantics(placeholder);
+              expect(node.flagsCollection.isButton, isTrue);
+              expect(node.flagsCollection.isEnabled, Tristate.isFalse);
+              expect(
+                node.getSemanticsData().hasAction(SemanticsAction.tap),
+                isFalse,
+              );
+              expect(
+                find.descendant(
+                  of: placeholder,
+                  matching: find.textContaining(
+                    language == 'it' ? 'In arrivo' : 'Coming soon',
+                  ),
+                ),
+                findsOneWidget,
+              );
+              expect(
+                tester
+                    .widget<InkWell>(
+                      find.descendant(
+                        of: placeholder,
+                        matching: find.byType(InkWell),
+                      ),
+                    )
+                    .onTap,
+                isNull,
+              );
+              final visible = tester
+                  .getRect(placeholder)
+                  .intersect(
+                    tester.getRect(find.byType(SingleChildScrollView)),
+                  );
+              await tester.tapAt(visible.center);
+              await tester.pumpAndSettle();
+              expect(router.routeInformationProvider.value.uri.path, '/');
               await RenderedEvidence.capture(
                 tester,
-                'cocreate-home-$language-$dark-2x',
+                'peoplehome01-$key-$language-$dark-${scale}x',
               );
             }
-            await tester.tap(card);
-            await tester.pumpAndSettle();
-            expect(router.routeInformationProvider.value.uri.path, entry.value);
-            router.go('/');
-            await tester.pumpAndSettle();
-          }
-          expect(
-            find.byKey(const Key('browse-activities-button')),
-            findsNothing,
-          );
-          expect(tester.takeException(), isNull);
-        },
-      );
+            for (final entry in {'browse-people-button': '/people'}.entries) {
+              final card = find.byKey(Key(entry.key));
+              await tester.ensureVisible(card);
+              await tester.pumpAndSettle();
+              expect(tester.takeException(), isNull);
+              if (entry.key == 'browse-people-button') {
+                await RenderedEvidence.capture(
+                  tester,
+                  'peoplehome01-home-$language-$dark-${scale}x',
+                );
+              }
+              await tester.tap(card);
+              await tester.pumpAndSettle();
+              expect(
+                router.routeInformationProvider.value.uri.path,
+                entry.value,
+              );
+              router.go('/');
+              await tester.pumpAndSettle();
+            }
+            expect(
+              find.byKey(const Key('browse-activities-button')),
+              findsNothing,
+            );
+            expect(tester.takeException(), isNull);
+            semantics.dispose();
+          },
+        );
+      }
     }
   }
   for (final language in ['en', 'it']) {

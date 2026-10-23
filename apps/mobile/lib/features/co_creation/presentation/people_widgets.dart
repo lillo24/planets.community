@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -304,12 +305,17 @@ class PeopleCommand extends ConsumerStatefulWidget {
     required this.label,
     required this.onSuccess,
     this.gateway,
+    this.beforeSend,
     super.key,
   });
   final String slot, rpc, label;
   final Map<String, dynamic> intent;
   final Future<void> Function(Map<String, Object?>) onSuccess;
   final CoCreationCommandGateway Function(WidgetRef)? gateway;
+
+  /// Optional local review for a new intent, before allocating its command ID.
+  /// Frozen delivery/completion retries bypass it and recover the original intent.
+  final Future<bool> Function()? beforeSend;
   @override
   ConsumerState<PeopleCommand> createState() => _PeopleCommandState();
 }
@@ -331,6 +337,24 @@ class _PeopleCommandState extends ConsumerState<PeopleCommand> {
               prior.rpc != widget.rpc ||
               prior.intent['p_operation'] != widget.intent['p_operation'])) {
         throw StateError('Resolve the original co-creation operation first.');
+      }
+      if (prior?.pending != true && widget.beforeSend != null) {
+        final reviewed = widget;
+        final intent = jsonEncode(reviewed.intent);
+        if (!await reviewed.beforeSend!()) return;
+        // Review can outlive a draft, route, account or another mounted control.
+        // Never allocate a different intent using a stale confirmation.
+        if (!mounted ||
+            ref.read(authSessionProvider).identity?.id != actor ||
+            widget.slot != reviewed.slot ||
+            widget.rpc != reviewed.rpc ||
+            jsonEncode(widget.intent) != intent ||
+            !identical(
+              ref.read(peopleAttemptsProvider)[reviewed.slot],
+              prior,
+            )) {
+          return;
+        }
       }
       final attempt = prior?.pending == true
           ? prior!

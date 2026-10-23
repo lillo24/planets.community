@@ -178,14 +178,14 @@ void main() {
   setUpAll(() => RenderedEvidence.loadFonts(force: true));
 
   testWidgets(
-    'actual app router preserves live filters on replay and gates OFF mid-view',
+    'actual Home opens first People intro, preserves replay filters and gates OFF mid-view',
     (tester) async {
       final auth = FakeAuthGateway();
       addTearDown(auth.close);
       var enabled = true;
       final store = MemoryIntroStore();
       final router = createAppRouter(
-        initialLocation: '/people',
+        initialLocation: '/',
         readCoCreation: () => enabled,
         readPolicyAccepted: () => true,
       );
@@ -230,6 +230,11 @@ void main() {
         ),
       );
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.ensureVisible(find.byKey(const Key('browse-people-button')));
+      await tester.tap(find.byKey(const Key('browse-people-button')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
       expect(find.byType(PeopleInterestsIntro), findsOneWidget);
       await tester.tap(find.byKey(const Key('people-intro-explore')));
       await tester.pumpAndSettle();
