@@ -81,8 +81,61 @@ const catalog = () => ({
   constraints: [],
   indexes: [],
   views: [],
+  event_triggers: [],
 });
 const candidate = { classification: "private-additive-candidate" };
+test("global DDL callbacks are part of the predecessor and cannot change through an additive candidate", () => {
+  const before = catalog();
+  const event = {
+    id: "ensure_rls",
+    owner: "postgres",
+    event: "ddl_command_end",
+    enabled: "O",
+    tags: ["CREATE TABLE"],
+    function: "public.rls_auto_enable()",
+  };
+  before.event_triggers = [event];
+  assert.doesNotThrow(() =>
+    assertPredecessorCatalog(predecessorCatalog(before), before),
+  );
+  for (const mutate of [
+    (c) =>
+      c.event_triggers.push({
+        ...event,
+        id: "hidden_callback",
+        function: "private.hidden()",
+      }),
+    (c) => (c.event_triggers[0].enabled = "D"),
+    (c) => (c.event_triggers[0].function = "private.changed()"),
+    (c) => (c.event_triggers[0].tags = ["ALTER TABLE"]),
+    (c) => (c.event_triggers[0].owner = "authenticated"),
+    (c) => (c.event_triggers = []),
+  ]) {
+    const changed = structuredClone(before);
+    mutate(changed);
+    assert.throws(() =>
+      assertPredecessorCatalog(predecessorCatalog(before), changed),
+    );
+    assert.throws(
+      () => assertBoundedCatalog(before, changed, candidate),
+      /global DDL/,
+    );
+  }
+  const incomplete = predecessorCatalog(before);
+  delete incomplete.event_triggers;
+  assert.throws(
+    () => assertPredecessorCatalog(incomplete, before),
+    /Incomplete/,
+  );
+  const omittedBefore = catalog(),
+    newSection = catalog();
+  delete omittedBefore.event_triggers;
+  newSection.event_triggers = [event];
+  assert.equal(
+    catalogEffects(omittedBefore, newSection)[0].section,
+    "event_triggers",
+  );
+});
 test("single native migration owner is verified from the real default branch metadata", () => {
   const base = {
     id: "synthetic",
@@ -169,6 +222,7 @@ const scenario = () => {
       policy_negative_probes: true,
       single_writer_probe: true,
       cli_startup_bounds: true,
+      hosted_runtime_callback: true,
       migration_safety: witnesses,
     },
   };
@@ -501,6 +555,7 @@ for (const [name, mutate] of [
     "policy_negative_probes",
     "single_writer_probe",
     "cli_startup_bounds",
+    "hosted_runtime_callback",
   ].map((key) => [key, (s) => (s.evidence[key] = false)]),
 ])
   test("receipt fails closed: " + name, () => {

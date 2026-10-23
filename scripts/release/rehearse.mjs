@@ -166,6 +166,33 @@ try {
   if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname))
     throw new ReleaseError("Rehearsal database must be loopback");
   sql = postgres(status.databaseUrl, { max: 1, onnotice: () => {} });
+  // Normal staging's already documented non-canonical RLS callback is part of
+  // its actual predecessor. Reproduce the immutable pre-change bytes only on
+  // this owned loopback stack; never suppress its live catalog fingerprint.
+  const hostedRuntime = readFileSync(
+    resolve(
+      trusted,
+      "docs/development/evidence/staging01/hosted-rls-event-trigger.sql",
+    ),
+    "utf8",
+  );
+  await sql.unsafe(hostedRuntime);
+  const callbackRollback = new Error("rollback-only hosted RLS probe");
+  try {
+    await sql.begin(async (tx) => {
+      await tx.unsafe("create table public.auto03_rls_probe(id uuid)");
+      assert.equal(
+        (
+          await tx`select relrowsecurity from pg_class where oid='public.auto03_rls_probe'::regclass`
+        )[0].relrowsecurity,
+        true,
+        "The actual hosted callback must enable RLS on a new public table",
+      );
+      throw callbackRollback;
+    });
+  } catch (error) {
+    if (error !== callbackRollback) throw error;
+  }
   const predecessor = summarizeHistory(await sql.unsafe(historyQuery));
   assert.deepEqual(
     predecessor.map((r) => r.version),
@@ -388,6 +415,7 @@ try {
   sql = null;
   command(cli, ["db", "reset", "--local", "--yes"]);
   sql = postgres(status.databaseUrl, { max: 1, onnotice: () => {} });
+  await sql.unsafe(hostedRuntime);
   assert.deepEqual(
     catalogEffects(
       upgradedCatalog,
@@ -480,6 +508,7 @@ try {
     policy_negative_probes: true,
     single_writer_probe: true,
     cli_startup_bounds: true,
+    hosted_runtime_callback: true,
   };
   writeFileSync(
     "build/release01/rehearsal.json",

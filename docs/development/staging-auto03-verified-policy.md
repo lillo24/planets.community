@@ -72,6 +72,15 @@ Provider-owned Auth/Storage internals and extension objects are excluded from
 this application comparison; the explicitly used pgcrypto API stays in scope
 with its provider implementation and privileged execution checks.
 
+Normal staging also retains the `ensure_rls` / `public.rls_auto_enable()` helper
+already inspected in STAGING01. The rehearsal installs its exact archived
+pre-change definition/grants on the disposable predecessor and after the clean
+fixture reset. It remains outside canonical product migrations. Its live
+function fingerprint is compared, together with every global DDL event trigger's
+owner, callback, event, enabled state and tags. Unexpected or altered callbacks
+hold deployment; an actual hidden DDL-trigger mutation must fail the independent
+negative controls. No hosted callback is replaced or ignored by this mechanism.
+
 The unchanged baseline pgTAP fixtures require clean synthetic data (fixed Auth
 emails and singleton/count assumptions). Their phase follows all populated
 upgrade and Storage proofs: only the owned loopback stack is reset, its entire

@@ -616,6 +616,7 @@ export const effectCatalogQuery = `select jsonb_build_object(
   from pg_proc p join pg_namespace n on n.oid=p.pronamespace where (n.nspname in ('public','private','auth','storage') or (n.nspname='extensions' and p.proname in ('digest','gen_random_uuid'))) and p.prokind in ('f','p')) q),
  'policies',(select coalesce(jsonb_agg(jsonb_build_object('id',n.nspname||'.'||c.relname||'.'||p.polname,'definition',pg_get_expr(p.polqual,p.polrelid),'check',pg_get_expr(p.polwithcheck,p.polrelid),'command',p.polcmd,'permissive',p.polpermissive,'roles',(select array_agg(coalesce(r.rolname,'PUBLIC') order by r.rolname) from unnest(p.polroles) a left join pg_roles r on r.oid=a)) order by n.nspname,c.relname,p.polname),'[]') from pg_policy p join pg_class c on c.oid=p.polrelid join pg_namespace n on n.oid=c.relnamespace),
  'triggers',(select coalesce(jsonb_agg(jsonb_build_object('id',n.nspname||'.'||c.relname||'.'||t.tgname,'definition',pg_get_triggerdef(t.oid),'enabled',t.tgenabled) order by n.nspname,c.relname,t.tgname),'[]') from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace where not t.tgisinternal),
+ 'event_triggers',(select coalesce(jsonb_agg(jsonb_build_object('id',e.evtname,'owner',pg_get_userbyid(e.evtowner),'event',e.evtevent,'enabled',e.evtenabled,'tags',e.evttags,'function',n.nspname||'.'||p.proname||'('||pg_get_function_identity_arguments(p.oid)||')') order by e.evtname),'[]') from pg_event_trigger e join pg_proc p on p.oid=e.evtfoid join pg_namespace n on n.oid=p.pronamespace),
  'constraints',(select coalesce(jsonb_agg(jsonb_build_object('id',n.nspname||'.'||c.relname||'.'||t.conname,'definition',pg_get_constraintdef(t.oid)) order by n.nspname,c.relname,t.conname),'[]') from pg_constraint t join pg_class c on c.oid=t.conrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','private','auth','storage')),
  'indexes',(select coalesce(jsonb_agg(jsonb_build_object('id',schemaname||'.'||indexname,'table',schemaname||'.'||tablename,'definition',indexdef) order by schemaname,indexname),'[]') from pg_indexes where schemaname in ('public','private','auth','storage')),
  'views',(select coalesce(jsonb_agg(jsonb_build_object('id',n.nspname||'.'||c.relname,'definition',pg_get_viewdef(c.oid,true),'acl',coalesce(c.relacl::text,''),'extension_owned',exists(select 1 from pg_depend e where e.classid='pg_class'::regclass and e.objid=c.oid and e.deptype='e')) order by n.nspname,c.relname),'[]') from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind in ('v','m') and n.nspname in ('public','private','auth','storage'))
@@ -633,6 +634,7 @@ export function predecessorCatalog(catalog) {
       section,
       objects
         .filter((v) => {
+          if (section === "event_triggers") return true;
           if (section === "tables") return tables.has(v.id);
           if (section === "functions")
             return (
@@ -666,7 +668,13 @@ export function predecessorCatalog(catalog) {
   );
 }
 export function assertPredecessorCatalog(expected, actual) {
-  const drift = catalogEffects(expected, predecessorCatalog(actual));
+  const scoped = predecessorCatalog(actual);
+  if (
+    JSON.stringify(Object.keys(expected).sort()) !==
+    JSON.stringify(Object.keys(scoped).sort())
+  )
+    throw new ReleaseError("Incomplete live predecessor catalog sections");
+  const drift = catalogEffects(expected, scoped);
   if (drift.length)
     throw new ReleaseError(
       "Unverified live predecessor catalog drift: " +
@@ -683,9 +691,11 @@ const normalized = (value) => {
 };
 export function catalogEffects(before, after) {
   const changes = [];
-  for (const section of Object.keys(before).sort()) {
-    const prior = new Map(before[section].map((v) => [v.id, v]));
-    const next = new Map(after[section].map((v) => [v.id, v]));
+  for (const section of [
+    ...new Set([...Object.keys(before), ...Object.keys(after)]),
+  ].sort()) {
+    const prior = new Map((before[section] ?? []).map((v) => [v.id, v]));
+    const next = new Map((after[section] ?? []).map((v) => [v.id, v]));
     for (const id of [...new Set([...prior.keys(), ...next.keys()])].sort()) {
       const a = prior.get(id),
         b = next.get(id);
@@ -706,6 +716,8 @@ export function catalogEffects(before, after) {
 }
 export function assertBoundedCatalog(before, after, candidate) {
   const changes = catalogEffects(before, after);
+  if (changes.some((c) => c.section === "event_triggers"))
+    throw new ReleaseError("Unverified global DDL event-trigger change");
   const sameContext = (a, b) =>
     [
       "owner",
@@ -872,6 +884,7 @@ export function authorizeVerifiedPending(diff, local, evidence, source, tree) {
     !evidence.policy_negative_probes ||
     !evidence.single_writer_probe ||
     !evidence.cli_startup_bounds ||
+    !evidence.hosted_runtime_callback ||
     !Array.isArray(evidence.migration_safety)
   )
     throw new ReleaseError(
