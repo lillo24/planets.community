@@ -30,6 +30,7 @@ import '../domain/geographic_discovery.dart';
 import '../domain/map_discovery.dart';
 import 'map_view_button.dart';
 import 'public_point_map.dart';
+import 'public_map_entry_chooser.dart';
 import 'budget_tile_provider.dart';
 
 class MapDiscoveryScreen extends ConsumerStatefulWidget {
@@ -419,51 +420,22 @@ class _MapDiscoveryScreenState extends ConsumerState<MapDiscoveryScreen>
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (context) => SafeArea(
-        child: SizedBox(
-          height:
-              (MediaQuery.sizeOf(context).height -
-                  MediaQuery.viewInsetsOf(context).bottom) *
-              0.65,
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  key: const Key('map-cluster-choices'),
-                  itemCount: cluster.items.length + 1,
-                  itemBuilder: (context, index) {
-                    // The heading scrolls too: large text plus a keyboard must
-                    // leave space for choices while attribution stays visible.
-                    if (index == 0) {
-                      return Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(
-                          l10n.mapClusterLoaded(cluster.items.length),
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      );
-                    }
-                    final item = cluster.items[index - 1];
-                    return ListTile(
-                      key: Key('map-cluster-item-${item.identity}'),
-                      title: Text(item.title),
-                      subtitle: Text(
-                        '${_kind(item, l10n)} · ${item.locationLabel}',
-                      ),
-                      leading: Icon(
-                        item.isApproximate
-                            ? Icons.radio_button_unchecked
-                            : Icons.place,
-                      ),
-                      onTap: () => Navigator.of(context).pop(item),
-                    );
-                  },
-                ),
-              ),
-              const LocationAttribution(),
-            ],
-          ),
-        ),
+      builder: (context) => PublicMapEntryChooser(
+        count: cluster.items.length,
+        heading: l10n.mapClusterLoaded(cluster.items.length),
+        footer: const LocationAttribution(),
+        itemBuilder: (context, index) {
+          final item = cluster.items[index];
+          return ListTile(
+            key: Key('map-cluster-item-${item.identity}'),
+            title: Text(item.title),
+            subtitle: Text('${_kind(item, l10n)} · ${item.locationLabel}'),
+            leading: Icon(
+              item.isApproximate ? Icons.radio_button_unchecked : Icons.place,
+            ),
+            onTap: () => Navigator.of(context).pop(item),
+          );
+        },
       ),
     );
     if (mounted &&

@@ -5,6 +5,27 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/time/event_time.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../domain/external_activity.dart';
+import 'external_activity_filters.dart';
+
+/// Repeat only the source's known term and rules. Never calculate a next lesson
+/// on the device; cancellations/exceptions are canonical backend decisions.
+String externalCourseLabel(
+  ExternalCourseSchedule? schedule,
+  String locale,
+  AppLocalizations l,
+) {
+  if (schedule == null) return l.activitiesScheduleUnknown;
+  final lines = <String>[
+    if (schedule.seasonStart != null && schedule.seasonEnd != null)
+      '${DateFormat.yMMMd(locale).format(schedule.seasonStart!)} – '
+          '${DateFormat.yMMMd(locale).format(schedule.seasonEnd!)}',
+    if (schedule.weekly case final weekly?)
+      '${weekly.days.map((day) => DateFormat.E(locale).format(DateTime.utc(2024, 1, day))).join(', ')} '
+          '${weekly.startTime}${weekly.endTime == null ? '' : '–${weekly.endTime}'} · ${schedule.timezone}',
+    if (schedule.text != null) schedule.text!,
+  ];
+  return lines.isEmpty ? l.activitiesScheduleUnknown : lines.join('\n');
+}
 
 String externalOccurrenceLabel(
   ExternalOccurrence occurrence,
@@ -43,6 +64,7 @@ String? externalHealthMessage(
     l.activitiesExternalNeverSynchronized,
   ExternalCatalogueHealth.stale => l.activitiesExternalStale,
   ExternalCatalogueHealth.unavailable => l.activitiesExternalUnavailable,
+  ExternalCatalogueHealth.partial => l.activitiesExternalPartial,
   _ => null,
 };
 
@@ -60,6 +82,13 @@ class ExternalActivityCard extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final occurrence = item.nextOccurrence;
+    final discipline = item.discipline == null
+        ? null
+        : externalDisciplineLabel(item.discipline!, l);
+    final location = [
+      if (item.venue != null && !item.title.contains(item.venue!)) item.venue,
+      item.city,
+    ].nonNulls.join(' · ');
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -69,21 +98,42 @@ class ExternalActivityCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(
+                externalKindLabel(item.kind, l),
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
               Text(item.title, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: AppSpacing.small),
-              Text(
-                occurrence == null
-                    ? l.activitiesExternalScheduleUnknown
-                    : externalOccurrenceLabel(occurrence, locale, l),
-              ),
-              if (item.venue != null || item.city != null)
-                Text([item.venue, item.city].nonNulls.join(' · ')),
+              if (item.kind != ExternalActivityKind.place)
+                Text(
+                  occurrence == null
+                      ? externalCourseLabel(item.schedule, locale, l)
+                      : externalOccurrenceLabel(occurrence, locale, l),
+                ),
+              if (item.kind == ExternalActivityKind.course &&
+                  occurrence != null)
+                Text(externalCourseLabel(item.schedule, locale, l)),
+              if (item.kind == ExternalActivityKind.course &&
+                  occurrence == null)
+                Text(l.activitiesNextSessionUnknown),
+              if (discipline != null &&
+                  !item.title.toLowerCase().contains(discipline.toLowerCase()))
+                Text(discipline),
+              if (item.cost != null)
+                Text(item.cost!, maxLines: 2, overflow: TextOverflow.ellipsis),
+              // Full entrance/access conditions belong in the readable detail.
+              if (location.isNotEmpty) Text(location),
               const SizedBox(height: AppSpacing.small),
               Text(
                 l.activitiesSourceLabel(item.sourceName),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
-              if (item.stale) Text(l.activitiesExternalStaleRecord),
+              if (item.stale)
+                Text(
+                  item.kind == ExternalActivityKind.place
+                      ? l.activitiesPlaceStale
+                      : l.activitiesExternalStaleRecord,
+                ),
             ],
           ),
         ),

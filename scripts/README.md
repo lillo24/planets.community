@@ -1,12 +1,19 @@
 # Repository scripts
 
 - `import-external-activities.mjs` owns explicit dry-run/apply CLI entry and
-  server-only target configuration. Its municipal connector remains blocked.
+  server-only target configuration. The licensed municipal equipment connector
+  works; Agenda and ODH retain their separate recorded source blocks.
+- `operate-external-activities.mjs` owns the explicit bounded source-set modes,
+  private cadence, inspection and maintenance entry point; see the
+  [operations runbook](../docs/development/activities-operations.md).
 - `lib/external-activities/` owns bounded transport, strict canonical records and
   atomic import orchestration. `verify-local-external-activities.mjs` uses only
   a guarded disposable local catalogue and synthetic fixtures to exercise real
-  service/anonymous HTTP, leases, paging, failure and freshness. See the
-  [ACTAPI01 runbook](../docs/development/actapi01-infrastructure.md).
+  service/anonymous V1/V2 HTTP, leases, paging, failure and freshness. Its
+  `lib/external-activities-upgrade-verifier.mjs` helper also proves a populated
+  upgrade with warmed importer plans in a rolled-back transaction. See the
+  [ACTAPI01 runbook](../docs/development/actapi01-infrastructure.md) and
+  [event/course/place contract](../docs/development/actcat02-catalogue-contract.md).
 
 - `run-contact-native-ci.sh` owns the explicitly opted-in ephemeral Linux Android
   runtime for both D/M review journeys, with serial builds and complete drivers.

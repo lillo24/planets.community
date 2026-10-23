@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "qualification": "Local eligible implementation and integration verified. PR298 is the authoritative current-head CI/protected-merge record. Hosted application/sources/jobs remain withheld.",
+  "base_sha": "3f1ae160b60e2133e2e5d71a7bd401d53c2cbce2",
+  "upgrade": {
+    "from": 142,
+    "to": 146,
+    "preserved_tables": 232,
+    "preserved_original_rows": 271,
+    "per_file_preservation": [
+      {
+        "version": "20261022231354",
+        "sha256": "d94302b99efa93dec14cd849ad7f0cc4b84120017162103644ff1f694eec4a65",
+        "preserved": true
+      },
+      {
+        "version": "20261023093757",
+        "sha256": "f48e5d392709356727bdfb17803088a16a0215d499a81d9feecc7860fe9e2ea4",
+        "preserved": true
+      },
+      {
+        "version": "20261023101305",
+        "sha256": "7884e2367f8572654c96a02697de9c04f761fcf500f47c0f1759270824d147e8",
+        "preserved": true
+      },
+      {
+        "version": "20261023113057",
+        "sha256": "e7f4fa5e094bf6dfbc06e52fc1ad7c12baf037918396615686f192a029a603ae",
+        "preserved": true
+      }
+    ],
+    "legacy_importer_oid_grants_and_identity_preserved": true,
+    "no_op_retry": true,
+    "execution_hash_basis": "Original task-owned main-upgrade execution used the local checkout bytes recorded per file. Two new files had CRLF; normalized text exactly matches the canonical Git LF bytes, recorded separately. No published Git migration was changed."
+  },
+  "sql_review": [
+    {
+      "version": "20261022231354",
+      "sha256": "d94302b99efa93dec14cd849ad7f0cc4b84120017162103644ff1f694eec4a65",
+      "predecessor_inventory_sha256": "51e55db0d695b84949db6ef37f5b900b4c9551c2c5a5f12934be4a881fe0bff3",
+      "file": "20261022231354_external_activity_catalogue_kinds.sql"
+    },
+    {
+      "version": "20261023093757",
+      "sha256": "0fec4437bf512a14c6218c3f7e7bc3b810c5414dcc44d8d2c2db72010b742fd6",
+      "predecessor_inventory_sha256": "7e2d7d76b8aae2c6787918ac3ef31a04d4c08499bb19231df5aa92827aa6a838",
+      "file": "20261023093757_external_activity_multi_source.sql"
+    },
+    {
+      "version": "20261023101305",
+      "sha256": "115555740a898d5a2d32ff9ebe35d188c22a3e8b11e8d8105687ad56253412e4",
+      "predecessor_inventory_sha256": "39341b7d3a007bee8afeefead764832420265e37bbe3920b17350d13697a3cfa",
+      "file": "20261023101305_external_activity_geography.sql"
+    },
+    {
+      "version": "20261023113057",
+      "sha256": "e7f4fa5e094bf6dfbc06e52fc1ad7c12baf037918396615686f192a029a603ae",
+      "predecessor_inventory_sha256": "207db6ad5cd928b0966ae048ca973eb2b501d2d758a842ac31ffa4a07909be94",
+      "file": "20261023113057_external_activity_operations.sql"
+    }
+  ],
+  "municipal": {
+    "observed_at": "2026-10-23T12:24:21.447Z",
+    "source_id": "trento-open-sports-facilities",
+    "parser_version": "trento-free-facilities-csv-v1",
+    "decoded_utf8_sha256": "f7a2820e56ce27a12156a64c7223604734997c1e2b27db8bb224af34e86a7e4b",
+    "summary": {
+      "equipment_records": 116,
+      "named_places": 60,
+      "dataset_links": 37,
+      "missing_geometry": 0,
+      "unknown_types": 0
+    },
+    "accepted": 116,
+    "rejected": 0,
+    "repeat_changed": 0,
+    "pages": 4,
+    "map_verification": {
+      "list": 116,
+      "mapped": 116,
+      "filtered": 5,
+      "disabled_read_denied": true
+    },
+    "provider_fetches": 1,
+    "statement": "One actual official CSV fetch; complete local canonical import and repeat of that exact fetched snapshot. Fixtures cleaned. No hosted writes."
+  },
+  "checks": {
+    "tooling": 210,
+    "mobile": 4314,
+    "mobile_skips": 2,
+    "web": 405,
+    "web_skips": 2,
+    "site": 60,
+    "rendered_scoped": 125,
+    "rendered_pngs": 120,
+    "mobile_analysis": "no issues",
+    "changed_prettier": "pass",
+    "sql_lint": "pass",
+    "security_advisors": "pass",
+    "generated_types_drift": "pass",
+    "synthetic_service_anonymous_http": "pass",
+    "clean_local_migrations": 146,
+    "pgTAP_files": 175,
+    "pgTAP_assertions": 8452,
+    "malformed_complete_export": "Both CLI paths fail before success; real incomplete receipt, partial public health and unchanged prior success/data verified",
+    "tooling_after_latest_main": 268
+  },
+  "android": {
+    "command": "flutter build apk --debug --target-platform android-arm64 --dart-define=ENABLE_DEMO_TOOLS=false",
+    "result": "pass",
+    "apk_sha256": "33c544945ff421d721f08825532c4bc22cff69cebd3d5cc0930be8dc965f1032",
+    "physical_device": "48091FDAS0041A absent; attached emulator not used",
+    "ios": "not run",
+    "release_signing": "not attempted"
+  },
+  "limitations": [
+    "Agenda Trento rights checkpoint remains blocked",
+    "ODH local sports/course coverage checkpoint blocked; no connector",
+    "No verified live course/event source in this queue",
+    "Windows Podman db reset failed twice; task-owned fresh starts succeeded, including all146 migrations and full8452 assertions, without health bypass",
+    "Six unchanged-main Prettier baseline warnings remain; changed paths and full Dart formatting pass"
+  ],
+  "sql_checkout_newlines": [
+    {
+      "version": "20261023093757",
+      "local_execution_sha256": "f48e5d392709356727bdfb17803088a16a0215d499a81d9feecc7860fe9e2ea4",
+      "canonical_git_sha256": "0fec4437bf512a14c6218c3f7e7bc3b810c5414dcc44d8d2c2db72010b742fd6",
+      "difference": "CRLF versus LF only"
+    },
+    {
+      "version": "20261023101305",
+      "local_execution_sha256": "7884e2367f8572654c96a02697de9c04f761fcf500f47c0f1759270824d147e8",
+      "canonical_git_sha256": "115555740a898d5a2d32ff9ebe35d188c22a3e8b11e8d8105687ad56253412e4",
+      "difference": "CRLF versus LF only"
+    }
+  ],
+  "sql_review_inventory_basis": "Exact canonical Git blobs; complete actual PR base inventory, then sorted additions, matching the unmodified CI gate. An earlier timestamp addition does not use only a chronological prefix.",
+  "integration_base_sha": "34649049db675b1b436e6a0ce0aefefaf4a0a4a0",
+  "current_source_gate": {
+    "policy": "independently merged PR310 on STAGING-AUTO03",
+    "status": "source-only candidate; actual CI proof required",
+    "version": "20261023093757",
+    "hosted_status": "review-required-for-hosted; explicit independent writer refusal",
+    "legacy_owner_comment": "Technical audit only; no current hosted authorization",
+    "policy_unchanged_in_feature_pr": true,
+    "next": "Verify PR298 exact-head populated/security receipt and all five required checks, then protected merge; no hosted application."
+  },
+  "sql_review_basis": "Historical exact-head 274b5233/base3f1ae160 proof. These unchanged canonical SQL hashes remain useful; its predecessor digests and owner comment are not current standing-policy authorization.",
+  "latest_main_integration": {
+    "base_sha": "d9f559951b79be568004b7507b16f4b4b216db48",
+    "calendar_merge": "26ad03fc",
+    "local_migrations": 147,
+    "calendar_pgtap_assertions": 50,
+    "generated_types_drift": "pass",
+    "navigation_calendar_widgets": 88,
+    "calendar_real_auth_http_assertions": 65,
+    "mobile_analysis": "no issues",
+    "mailbox": "Initial default54324 refused; loopback-only MAILPIT_URL support added and successful isolated54924 rerun.",
+    "code_base_sha": "34649049db675b1b436e6a0ce0aefefaf4a0a4a0",
+    "policy_main_merge": "73110100",
+    "full_pgtap_files": 176,
+    "full_pgtap_assertions": 8503,
+    "tooling_passed": 287,
+    "sql_lint": "pass",
+    "security_advisors": "pass",
+    "calendar_populated_upgrade": {
+      "tables": 196,
+      "functions": 555,
+      "warmed_readers": 6,
+      "historical_fixtures": 3000,
+      "query_ms": 1.605,
+      "rollback_only": true
+    },
+    "android_arm64_debug": {
+      "sha256": "bd42ac3376dc7f9b1aa9a1af2dcb0d4513a93949a978331e666e4e8e1f05e3f6",
+      "demo_tools": false,
+      "compile_only": true,
+      "device_or_release_claim": false
+    }
+  },
+  "policy_prerequisite": {
+    "pr": 310,
+    "head": "2a5599026728b4d2854cf0efd4b2a82d37fb4106",
+    "status": "merged; all five required checks passed",
+    "scope": "source-only exact ACTSRC02 index retirement; explicit hosted refusal; no generic DROP exception",
+    "tooling_passed": 258,
+    "focused_passed": 72,
+    "real_postgres_controls": {
+      "verified": true,
+      "rollback_only": true,
+      "wrong_predecessors": 3,
+      "unsafe_effects": 3,
+      "source_identity_and_leases": true,
+      "original_rows_and_catalog_preserved": true
+    },
+    "merge_sha": "34649049db675b1b436e6a0ce0aefefaf4a0a4a0",
+    "run_id": 39967502645,
+    "safety_artifact": 12508515489,
+    "safety_zip_sha256": "7bd2ff912bbbd0c19543e976c36df908e4cc385a0c46ceb10f2538acfd08a82b",
+    "ci_preserved_tables": 200,
+    "ci_preserved_rows": 1394,
+    "ci_predecessor_migrations": 123,
+    "ci_final_migrations": 143
+  },
+  "current_upgrade": {
+    "schema_base_sha": "d9f559951b79be568004b7507b16f4b4b216db48",
+    "code_base_sha": "34649049db675b1b436e6a0ce0aefefaf4a0a4a0",
+    "from": 143,
+    "to": 147,
+    "preserved_tables": 232,
+    "preserved_original_rows": 234,
+    "per_file_preservation": [
+      {
+        "version": "20261022231354",
+        "sha256": "d94302b99efa93dec14cd849ad7f0cc4b84120017162103644ff1f694eec4a65",
+        "preserved": true
+      },
+      {
+        "version": "20261023093757",
+        "sha256": "0fec4437bf512a14c6218c3f7e7bc3b810c5414dcc44d8d2c2db72010b742fd6",
+        "preserved": true
+      },
+      {
+        "version": "20261023101305",
+        "sha256": "115555740a898d5a2d32ff9ebe35d188c22a3e8b11e8d8105687ad56253412e4",
+        "preserved": true
+      },
+      {
+        "version": "20261023113057",
+        "sha256": "e7f4fa5e094bf6dfbc06e52fc1ad7c12baf037918396615686f192a029a603ae",
+        "preserved": true
+      }
+    ],
+    "legacy_importer_oid_grants_and_identity_preserved": true,
+    "no_op_retry": true,
+    "canonical_receipt_parity": 147
+  }
+}

@@ -53,6 +53,49 @@ function transport(fetchImpl, limits = {}, rest = {}) {
 const code = (value) => (error) =>
   error instanceof ActivityImportError && error.code === value;
 
+test("all rejected source-kind drift fails both CLI modes before a healthy empty write", async () => {
+  for (const apply of [false, true]) {
+    const receipts = [];
+    await assert.rejects(
+      () =>
+        runActivityImport({
+          apply,
+          connector: {
+            sourceId: "synthetic",
+            origins: [origin],
+            officialOrigin: origin,
+            apiPathPrefix: "/api/",
+            kinds: ["place"],
+            collect: async () => ({
+              complete: true,
+              entries: [{ record: fixture() }],
+            }),
+          },
+          store: {
+            begin: async () => ({
+              run_id: "synthetic",
+              started_at: new Date().toISOString(),
+            }),
+            finish: async (id, input) => {
+              receipts.push(input);
+              return { state: input.state };
+            },
+          },
+        }),
+      code("source_record_drift"),
+    );
+    assert.equal(receipts.length, apply ? 1 : 0);
+    if (apply)
+      assert.deepEqual(receipts[0], {
+        state: "incomplete",
+        records: [],
+        fetched: 1,
+        rejected: 1,
+        errorCode: "invalid_payload",
+      });
+  }
+});
+
 test("official connector and CLI remain blocked, never successful empty imports", () => {
   assert.throws(
     () => officialActivityConnector("agenda-trento"),

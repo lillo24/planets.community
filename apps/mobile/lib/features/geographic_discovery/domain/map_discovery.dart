@@ -1,20 +1,18 @@
 import 'dart:math' as math;
 
 import 'geographic_discovery.dart';
+import 'public_map_camera.dart';
+import 'public_map_clustering.dart';
 
 enum MapDiscoveryOrigin { projects, tavoli, resources }
 
 enum MapDiscoveryFamily { all, projects, tavoli, resources }
 
 /// Session-local view preferences. No location is persisted to disk or a listing.
-class MapDiscoveryPreferences {
+class MapDiscoveryPreferences extends PublicMapCamera {
   MapDiscoveryPreferences(MapDiscoveryOrigin origin)
     : family = MapDiscoveryFamily.values.byName(origin.name);
   MapDiscoveryFamily family;
-  double latitude = 46.0748, longitude = 11.1217, radiusKm = 5;
-  String centerLabel = 'Trento';
-  double cameraLatitude = 46.0748, cameraLongitude = 11.1217, zoom = 12;
-  GeoBounds? searchedBounds;
 }
 
 class PublicPointCluster {
@@ -27,19 +25,13 @@ class PublicPointCluster {
 /// O(N log N) stable grid grouping; page additions never average/jitter pins.
 /// Geometry comes exclusively from MAP04's public points, including at high zoom.
 List<PublicPointCluster> clusterPublicPoints(List<GeoItem> items, double zoom) {
-  final scale = 256 * math.pow(2, zoom.clamp(7, 18).floor());
-  final groups = <(int, int), List<GeoItem>>{};
-  final seen = <String>{};
-  final ordered = [...items]..sort((a, b) => a.identity.compareTo(b.identity));
-  for (final item in ordered) {
-    if (!seen.add(item.identity)) continue;
-    final lat = item.latitude.clamp(-85.05112878, 85.05112878);
-    final sine = math.sin(lat * math.pi / 180);
-    final x = (item.longitude + 180) / 360 * scale;
-    final y = (0.5 - math.log((1 + sine) / (1 - sine)) / (4 * math.pi)) * scale;
-    (groups[((x / 64).floor(), (y / 64).floor())] ??= []).add(item);
-  }
-  return groups.values.map(PublicPointCluster.new).toList(growable: false);
+  return clusterPublicCoordinates(
+    items,
+    zoom,
+    identity: (item) => item.identity,
+    latitude: (item) => item.latitude,
+    longitude: (item) => item.longitude,
+  ).map(PublicPointCluster.new).toList(growable: false);
 }
 
 /// Conservative enclosing-rectangle estimate; the database remains authoritative.

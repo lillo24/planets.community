@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,6 +32,9 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations_en.dart';
 
 import '../../support/rendered_evidence.dart';
+
+import 'package:planets_mobile/features/geographic_discovery/domain/geographic_discovery.dart';
+
 import '../../support/fake_external_activities.dart';
 import '../../support/fake_activity_interest.dart';
 import '../../support/fake_auth.dart';
@@ -42,6 +46,318 @@ void main() {
     await initializeDateFormatting('en');
     await initializeDateFormatting('it');
   });
+  // Explicit local acceptance reads an actual sanitized anonymous DTO saved by
+  // verify-local-trento-facilities. CI stays deterministic and uses no provider.
+  const municipalEvidence = String.fromEnvironment(
+    'ACTIVITIES_MUNICIPAL_EVIDENCE',
+  );
+  if (municipalEvidence.isNotEmpty) {
+    for (final language in ['en', 'it']) {
+      for (final dark in [false, true]) {
+        testWidgets('SPORTDATA01 real municipal $language dark=$dark', (
+          tester,
+        ) async {
+          final evidence = jsonDecode(
+            File(municipalEvidence).readAsStringSync(),
+          ) as Map<String, dynamic>;
+          final page = ExternalActivityPage.parse(evidence['page']);
+          final detail = ExternalActivity.parse(evidence['detail']);
+          tester.view.physicalSize = Size(language == 'it' ? 320 : 360, 900);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final gateway = FakeExternalActivityGateway()
+            ..page = page
+            ..detail = detail;
+          final router = await _pump(
+            tester,
+            gateway,
+            language: language,
+            scale: 2,
+            dark: dark,
+          );
+          await tester.scrollUntilVisible(
+            find.byKey(ValueKey('external-${page.items.first.id}')),
+            250,
+            scrollable: find.byType(Scrollable).hitTestable().first,
+          );
+          await tester.pumpAndSettle();
+          await RenderedEvidence.capture(
+            tester,
+            'sportdata01-real-$language-${dark ? 'dark' : 'light'}-list',
+          );
+          router.go('/activities/external/${detail.id}');
+          await tester.pumpAndSettle();
+          await RenderedEvidence.capture(
+            tester,
+            'sportdata01-real-$language-${dark ? 'dark' : 'light'}-detail',
+          );
+          expect(find.text(detail.title), findsOneWidget);
+          expect(detail.kind, ExternalActivityKind.place);
+          expect(detail.cost, isNull);
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  }
+
+  for (final language in ['en', 'it']) {
+    for (final dark in [false, true]) {
+      for (final sample in [
+        'weekly',
+        'unknown',
+        'cancelled',
+        'place',
+        'dataset',
+      ]) {
+        testWidgets('SPORTUI01 $sample $language 2x dark=$dark', (
+          tester,
+        ) async {
+          final width = language == 'it' ? 320.0 : 360.0;
+          tester.view.physicalSize = Size(width, 900);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final payload = externalActivityPayload()..['category'] = 'sports';
+          if (sample == 'weekly' || sample == 'unknown') {
+            payload['kind'] = 'course';
+            payload['occurrences'] = [];
+            payload['next_at'] = sample == 'unknown'
+                ? null
+                : '2026-10-25T09:00:00Z';
+            payload['next_occurrence'] = sample == 'unknown'
+                ? null
+                : {
+                    'kind': 'timed',
+                    'start': '2026-10-25T10:00:00+01:00',
+                    'end': null,
+                    'timezone': 'Europe/Rome',
+                  };
+            payload['schedule'] = {
+              'season_start': '2026-10-01',
+              'season_end': '2026-11-30',
+              'timezone': 'Europe/Rome',
+              if (sample == 'weekly')
+                'weekly': {
+                  'days': [1, 3],
+                  'start_time': '10:00',
+                  'end_time': '11:00',
+                },
+            };
+          } else if (sample == 'cancelled') {
+            payload['status'] = 'cancelled';
+          } else {
+            payload['kind'] = 'place';
+            payload['description'] = null;
+            payload['occurrences'] = [];
+            payload['next_at'] = null;
+            payload['link_scope'] = sample == 'dataset' ? 'dataset' : 'item';
+            payload['access'] =
+                'Access stated by the source; opening times unknown';
+          }
+          payload['title'] = switch (sample) {
+            'weekly' => 'Synthetic weekly fitness',
+            'unknown' => 'Synthetic course with unconfirmed sessions',
+            'cancelled' => 'Synthetic cancelled running event',
+            _ => 'Synthetic public basketball court',
+          };
+          payload['source_categories'] = [
+            sample == 'place' || sample == 'dataset'
+                ? 'Basketball court'
+                : 'Fitness',
+          ];
+          final item = ExternalActivity.parse(payload);
+          final gateway = FakeExternalActivityGateway()..detail = item;
+          final router = await _pump(
+            tester,
+            gateway,
+            language: language,
+            scale: 2,
+            dark: dark,
+          );
+          router.go('/activities/external/${item.id}');
+          await tester.pumpAndSettle();
+          await RenderedEvidence.capture(
+            tester,
+            'sportui01-$sample-$language-${dark ? 'dark' : 'light'}-top',
+          );
+          final link = find.byKey(const Key('external-activity-official-link'));
+          await tester.scrollUntilVisible(
+            link,
+            250,
+            scrollable: find.byType(Scrollable).hitTestable().first,
+          );
+          await tester.pumpAndSettle();
+          expect(
+            find.descendant(
+              of: link,
+              matching: find.text(
+                sample == 'dataset'
+                    ? (language == 'it'
+                          ? 'Vedi dataset della fonte'
+                          : 'View source dataset')
+                    : (language == 'it'
+                          ? 'Vedi informazioni ufficiali'
+                          : 'Official information'),
+              ),
+            ),
+            findsOneWidget,
+          );
+          await RenderedEvidence.capture(
+            tester,
+            'sportui01-$sample-$language-${dark ? 'dark' : 'light'}-source',
+          );
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  }
+
+  for (final language in ['en', 'it']) {
+    for (final width in [320.0, 360.0]) {
+      for (final dark in [false, true]) {
+        testWidgets('ACTUI02 rendered $language $width 2x dark=$dark', (
+          tester,
+        ) async {
+          tester.view.physicalSize = Size(width, 900);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final payload = externalActivityPayload();
+          final gateway = FakeExternalActivityGateway()
+            ..page = externalPageFixture(
+              items: [ExternalActivity.parse(payload)],
+              health: dark
+                  ? ExternalCatalogueHealth.stale
+                  : ExternalCatalogueHealth.healthy,
+            );
+          await _pump(
+            tester,
+            gateway,
+            language: language,
+            scale: 2,
+            dark: dark,
+          );
+          await RenderedEvidence.capture(
+            tester,
+            'actui02-$language-${width.toInt()}-2x-${dark ? 'dark' : 'light'}',
+          );
+          await tester.scrollUntilVisible(
+            find.byKey(const ValueKey('external-$externalActivityFixtureId')),
+            250,
+            scrollable: find.byType(Scrollable).hitTestable().first,
+          );
+          await tester.pumpAndSettle();
+          await RenderedEvidence.capture(
+            tester,
+            'actui02-results-$language-${width.toInt()}-2x-${dark ? 'dark' : 'light'}',
+          );
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  }
+
+  testWidgets(
+    'ACTUI02 kind transitions, search and reset use full server filters',
+    (tester) async {
+      final gateway = FakeExternalActivityGateway();
+      await _pump(tester, gateway);
+      await tester.tap(find.byKey(const Key('activities-category-sports')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('activities-kind-choice')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('activities-kind-course')));
+      await tester.pumpAndSettle();
+      expect(gateway.calls.last.category, 'sports');
+      expect(gateway.calls.last.kind, ExternalActivityKind.course);
+      final search = find.byKey(const Key('activities-external-search'));
+      await tester.ensureVisible(search);
+      await tester.enterText(search, 'swimming');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(gateway.calls.last.query, 'swimming');
+      expect(gateway.calls.last.kind, ExternalActivityKind.course);
+      await tester.ensureVisible(
+        find.byKey(const Key('activities-reset-filters')),
+      );
+      await tester.tap(find.byKey(const Key('activities-reset-filters')));
+      await tester.pumpAndSettle();
+      expect(gateway.calls.last.category, 'sports');
+      expect(gateway.calls.last.kind, isNull);
+      expect(gateway.calls.last.query, isEmpty);
+      expect(tester.widget<TextField>(search).controller!.text, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'ACTUI02 Culture clears incompatible sports place without changing native scope',
+    (tester) async {
+      final gateway = FakeExternalActivityGateway();
+      await _pump(tester, gateway);
+      await tester.tap(find.byKey(const Key('activities-category-sports')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('activities-kind-choice')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('activities-kind-place')));
+      await tester.pumpAndSettle();
+      expect(gateway.calls.last.kind, ExternalActivityKind.place);
+      expect(find.byKey(const Key('activities-native-tavoli')), findsNothing);
+      await tester.tap(find.byKey(const Key('activities-category-culture')));
+      await tester.pumpAndSettle();
+      expect(gateway.calls.last.kind, isNull);
+      await tester.tap(find.byKey(const Key('activities-kind-choice')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('activities-kind-place')), findsNothing);
+      await tester.tapAt(const Offset(1, 1));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const Key('activities-native-tavoli')),
+      );
+      await tester.tap(find.byKey(const Key('activities-native-tavoli')));
+      await tester.pumpAndSettle();
+      expect(find.text('Native Tavoli destination'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'course detail renders its canonical derived lesson without inventing prose or an unknown-schedule warning',
+    (tester) async {
+      final payload = externalActivityPayload()
+        ..['kind'] = 'course'
+        ..['description'] = null
+        ..['occurrences'] = []
+        ..['next_at'] = '2026-10-25T09:00:00Z'
+        ..['next_occurrence'] = {
+          'kind': 'timed',
+          'start': '2026-10-25T10:00:00+01:00',
+          'end': null,
+          'timezone': 'Europe/Rome',
+        }
+        ..['schedule'] = {
+          'season_start': '2026-10-01',
+          'season_end': '2026-11-30',
+          'timezone': 'Europe/Rome',
+        };
+      final router = await _pump(
+        tester,
+        FakeExternalActivityGateway()..detail = ExternalActivity.parse(payload),
+      );
+      router.go('/activities/external/$externalActivityFixtureId');
+      await tester.pumpAndSettle();
+      expect(find.textContaining('10:00'), findsOneWidget);
+      expect(
+        find.text(AppLocalizationsEn().activitiesExternalScheduleUnknown),
+        findsNothing,
+      );
+      expect(
+        find.text(AppLocalizationsEn().activitiesScheduleUnknown),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets(
     'ACTMET01 imported card gesture once; filters, deep links and return do not emit',
@@ -201,6 +517,7 @@ void main() {
         250,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.pumpAndSettle();
       await tester.tap(card);
       await tester.pumpAndSettle();
       expect(sink.events, isEmpty);
@@ -226,7 +543,10 @@ void main() {
 
   test('RPC gateway forwards complete filters, handles source disable and preserves real failures', () async {
     var responseCode = 200;
+    var expectedMappedOnly = false;
+    Map<String, dynamic>? expectedArea;
     Object? response = {
+      'scope': 'external_activities',
       'state': 'unconfigured',
       'as_of': '2026-10-22T12:00:00Z',
       'items': [],
@@ -238,11 +558,17 @@ void main() {
       'https://planets.example.org',
       'test-key',
       httpClient: MockClient((request) async {
-        expect(request.url.path, '/rest/v1/rpc/list_external_activities');
+        expect(request.url.path, '/rest/v1/rpc/list_external_activities_v3');
         final params = jsonDecode(request.body) as Map<String, dynamic>;
         expect(params['p_category'], 'culture');
         expect(params['p_query'], 'source text');
         expect(params['p_limit'], 20);
+        expect(params['p_kind'], 'course');
+        expect(params['p_from'], '2026-10-20');
+        expect(params['p_to'], '2026-10-25');
+        expect(params['p_discipline'], 'yoga');
+        expect(params['p_map_only'], expectedMappedOnly);
+        expect(params['p_area'], expectedArea);
         return http.Response(
           jsonEncode(response),
           responseCode,
@@ -256,6 +582,10 @@ void main() {
     const filter = ExternalActivityFilter(
       category: 'culture',
       query: 'source text',
+      kind: ExternalActivityKind.course,
+      from: '2026-10-20',
+      to: '2026-10-25',
+      discipline: 'yoga',
     );
     final page = await gateway.list(
       filter,
@@ -263,6 +593,11 @@ void main() {
     );
     expect(page.health, ExternalCatalogueHealth.unconfigured);
     expect(page.items, isEmpty);
+    expectedMappedOnly = true;
+    expectedArea = const GeoRadius(46, 11, 5000).toJson();
+    await gateway.list(filter.withArea(const GeoRadius(46, 11, 5000)).forMap());
+    expectedMappedOnly = false;
+    expectedArea = null;
     responseCode = 400;
     response = {
       'code': '22023',
@@ -274,7 +609,11 @@ void main() {
     );
     await expectLater(gateway.list(filter), throwsA(isA<PostgrestException>()));
     responseCode = 200;
-    response = {'state': 'healthy', 'items': null};
+    response = {
+      'scope': 'external_activities',
+      'state': 'healthy',
+      'items': null,
+    };
     await expectLater(gateway.list(filter), throwsFormatException);
   });
 
@@ -324,6 +663,9 @@ void main() {
         category: 'sports',
         query: 'source text',
         discipline: 'rowing',
+        kind: ExternalActivityKind.event,
+        from: '2026-10-23',
+        to: '2026-10-26',
       ),
     );
     gateway.page = externalPageFixture(
@@ -333,6 +675,9 @@ void main() {
     await controller.refresh();
     expect(gateway.calls.last.discipline, isNull);
     expect(gateway.calls.last.query, 'source text');
+    expect(gateway.calls.last.kind, ExternalActivityKind.event);
+    expect(gateway.calls.last.from, '2026-10-23');
+    expect(gateway.calls.last.to, '2026-10-26');
     expect(
       container.read(externalActivitiesControllerProvider).filter.category,
       'sports',
@@ -467,6 +812,67 @@ void main() {
     await controller.loadMore();
     expect(gateway.calls, hasLength(count));
   });
+  test('ACTGEO01 account A to B to A discards stale public responses and inactive reads', () async {
+    final pendingA = Completer<ExternalActivityPage>();
+    final pendingB = Completer<ExternalActivityPage>();
+    final gateway = FakeExternalActivityGateway()
+      ..onList = (_, _) => pendingA.future;
+    final container = ProviderContainer(
+      overrides: [
+        initialActivitiesSplitPreferenceProvider.overrideWithValue(
+          const ActivitiesSplitPreferenceState(mode: ActivitiesSplitMode.on),
+        ),
+        externalActivityGatewayProvider.overrideWithValue(gateway),
+      ],
+    );
+    addTearDown(container.dispose);
+    container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'A'));
+    final subscription = container.listen(
+      externalActivitiesControllerProvider,
+      (_, _) {},
+    );
+    addTearDown(subscription.close);
+    final controller = container.read(
+      externalActivitiesControllerProvider.notifier,
+    )..setActive(true);
+    gateway.onList = (_, _) => pendingB.future;
+    container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'B'));
+    await Future<void>.delayed(Duration.zero);
+    pendingA.complete(
+      externalPageFixture(
+        items: [ExternalActivity.parse(externalActivityPayload())],
+        health: ExternalCatalogueHealth.healthy,
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(container.read(externalActivitiesControllerProvider).page, isNull);
+    pendingB.complete(
+      externalPageFixture(health: ExternalCatalogueHealth.empty),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      container.read(externalActivitiesControllerProvider).page!.items,
+      isEmpty,
+    );
+    gateway.onList = (_, _) async =>
+        externalPageFixture(health: ExternalCatalogueHealth.empty);
+    container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'A'));
+    await Future<void>.delayed(Duration.zero);
+    expect(gateway.calls, hasLength(3));
+    controller.setActive(false);
+    container
+        .read(authSessionProvider.notifier)
+        .markProfileReady(const AuthIdentity(id: 'B'));
+    await Future<void>.delayed(Duration.zero);
+    expect(gateway.calls, hasLength(3));
+  });
+
   test('refresh failure retains public rows with an explicit error; invalidated cursor restarts reads', () async {
     final gateway = FakeExternalActivityGateway()
       ..page = externalPageFixture(
@@ -528,6 +934,13 @@ void main() {
         ..detail = item;
       final launcher = FakePublicExternalLinkLauncher();
       final router = await _pump(tester, gateway, launcher: launcher);
+      // Discovery controls precede results; exercise the actual scroll surface.
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('external-$externalActivityFixtureId')),
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      await tester.pumpAndSettle();
       expect(
         find.text('Synthetic cultural exhibition about sport'),
         findsOneWidget,
@@ -536,6 +949,11 @@ void main() {
       expect(find.text('Last observed more than 72 hours ago'), findsOneWidget);
       expect(find.byType(DropdownButtonFormField<String>), findsNothing);
       await RenderedEvidence.capture(tester, 'actapi01-synthetic-list');
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('activities-external-search')),
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
       await tester.enterText(
         find.byKey(const Key('activities-external-search')),
         'sport',
@@ -608,12 +1026,26 @@ void main() {
           ..page = externalPageFixture(health: health);
         final router = await _pump(tester, gateway);
         expect(find.byType(ExternalActivityCard), findsNothing);
+        if (health == ExternalCatalogueHealth.empty) {
+          await tester.scrollUntilVisible(
+            find.byKey(const Key('external-activities-empty')),
+            200,
+            scrollable: find.byType(Scrollable).hitTestable().first,
+          );
+          await tester.pumpAndSettle();
+        }
         expect(
           find.byKey(const Key('external-activities-empty')),
           health == ExternalCatalogueHealth.empty
               ? findsOneWidget
               : findsNothing,
         );
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('activities-preview-examples')),
+          200,
+          scrollable: find.byType(Scrollable).hitTestable().first,
+        );
+        await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('activities-preview-examples')));
         await tester.pumpAndSettle();
         expect(router.state.uri.path, '/activities/examples');
@@ -632,6 +1064,12 @@ void main() {
       final gateway = FakeExternalActivityGateway()
         ..error = StateError('read failed');
       await _pump(tester, gateway);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('external-activities-read-error')),
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      await tester.pumpAndSettle();
       expect(
         find.byKey(const Key('external-activities-read-error')),
         findsOneWidget,
@@ -708,6 +1146,7 @@ Future<GoRouter> _pump(
   MemoryActivityInterestSink? interestSink,
   FakeProjectInviteSharing? sharing,
   bool mock = false,
+  bool dark = false,
 }) async {
   final auth = FakeAuthGateway();
   addTearDown(auth.close);
@@ -771,7 +1210,7 @@ Future<GoRouter> _pump(
       child: RenderedEvidence.wrap(
         MaterialApp.router(
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
+          theme: dark ? AppTheme.dark : AppTheme.light,
           locale: Locale(language),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
