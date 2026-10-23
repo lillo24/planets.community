@@ -146,50 +146,67 @@ class FoundationScreen extends ConsumerWidget {
                               if (coCreation) ...[
                                 _HomePillarCard(
                                   key: const Key('browse-people-button'),
+                                  stackIcon:
+                                      textScale >= 1.5 &&
+                                      constraints.maxWidth < 400,
                                   icon: Icons.people_outline,
-                                  title: l10n.coCreationTitle,
-                                  message: l10n.coCreationHomeMessage,
+                                  title: l10n.coHomePeopleTitle,
+                                  message: l10n.coHomePeopleMessage,
                                   onTap: () => context.go('/people'),
                                 ),
                                 const SizedBox(height: AppSpacing.small),
                                 _HomePillarCard(
-                                  key: const Key('crazy-ideas-button'),
-                                  icon: Icons.lightbulb_outline,
-                                  title: l10n.crazyIdeasTitle,
-                                  message: l10n.crazyIdeasComingLater,
+                                  key: const Key('find-activities-coming-soon'),
+                                  stackIcon:
+                                      textScale >= 1.5 &&
+                                      constraints.maxWidth < 400,
+                                  icon: Icons.directions_run,
+                                  title: l10n.coHomeActivitiesTitle,
+                                  message: l10n.coHomeActivitiesSoon,
                                   onTap: null,
                                 ),
                                 const SizedBox(height: AppSpacing.small),
-                              ],
-                              _HomePillarCard(
-                                key: const Key('browse-proposals-button'),
-                                icon: Icons.explore_outlined,
-                                title: (split || coCreation)
-                                    ? l10n.browseProposalsChoice
-                                    : l10n.homeProjectsTitle,
-                                message: (split || coCreation)
-                                    ? l10n.activitiesProjectsMessage
-                                    : l10n.homeProjectsMessage,
-                                onTap: () => context.go('/proposals'),
-                              ),
-                              const SizedBox(height: AppSpacing.small),
-                              if (split) ...[
                                 _HomePillarCard(
-                                  key: const Key('browse-activities-button'),
-                                  icon: Icons.directions_run,
-                                  title: l10n.activitiesTitle,
-                                  message: l10n.activitiesHomeMessage,
-                                  onTap: () => context.go('/activities'),
+                                  key: const Key('propose-idea-coming-soon'),
+                                  stackIcon:
+                                      textScale >= 1.5 &&
+                                      constraints.maxWidth < 400,
+                                  icon: Icons.lightbulb_outline,
+                                  title: l10n.coHomeIdeaTitle,
+                                  message: l10n.coHomeIdeaSoon,
+                                  onTap: null,
+                                ),
+                              ] else ...[
+                                _HomePillarCard(
+                                  key: const Key('browse-proposals-button'),
+                                  icon: Icons.explore_outlined,
+                                  title: split
+                                      ? l10n.browseProposalsChoice
+                                      : l10n.homeProjectsTitle,
+                                  message: split
+                                      ? l10n.activitiesProjectsMessage
+                                      : l10n.homeProjectsMessage,
+                                  onTap: () => context.go('/proposals'),
                                 ),
                                 const SizedBox(height: AppSpacing.small),
+                                if (split) ...[
+                                  _HomePillarCard(
+                                    key: const Key('browse-activities-button'),
+                                    icon: Icons.directions_run,
+                                    title: l10n.activitiesTitle,
+                                    message: l10n.activitiesHomeMessage,
+                                    onTap: () => context.go('/activities'),
+                                  ),
+                                  const SizedBox(height: AppSpacing.small),
+                                ],
+                                _HomePillarCard(
+                                  key: const Key('browse-resources-button'),
+                                  icon: Icons.inventory_2_outlined,
+                                  title: l10n.resourceTitle,
+                                  message: l10n.homeResourcesMessage,
+                                  onTap: () => context.go('/resources'),
+                                ),
                               ],
-                              _HomePillarCard(
-                                key: const Key('browse-resources-button'),
-                                icon: Icons.inventory_2_outlined,
-                                title: l10n.resourceTitle,
-                                message: l10n.homeResourcesMessage,
-                                onTap: () => context.go('/resources'),
-                              ),
                             ],
                           ),
                         ],
@@ -212,6 +229,7 @@ class _HomePillarCard extends StatelessWidget {
     required this.title,
     required this.message,
     required this.onTap,
+    this.stackIcon = false,
     super.key,
   });
 
@@ -219,37 +237,63 @@ class _HomePillarCard extends StatelessWidget {
   final String title;
   final String message;
   final VoidCallback? onTap;
+  final bool stackIcon;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    enabled: onTap != null,
-    child: Card(
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.medium),
-          child: Row(
-            children: [
-              Icon(icon, size: 32),
-              const SizedBox(width: AppSpacing.medium),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: AppSpacing.xSmall),
-                    Text(message),
-                  ],
-                ),
-              ),
-              if (onTap != null) const Icon(Icons.chevron_right),
-            ],
+  Widget build(BuildContext context) {
+    final iconWidget = Icon(
+      icon,
+      size: 32,
+      color: onTap == null
+          ? Theme.of(context).colorScheme.onSurfaceVariant
+          : null,
+    );
+    final copy = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: AppSpacing.xSmall),
+        Text(message),
+      ],
+    );
+    return Semantics(
+      button: true,
+      enabled: onTap != null,
+      child: Card(
+        color: onTap == null
+            ? Theme.of(context).colorScheme.surfaceContainerLowest
+            : Theme.of(context).colorScheme.surfaceContainerLow,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.medium),
+            child: stackIcon
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          iconWidget,
+                          const Spacer(),
+                          if (onTap != null) const Icon(Icons.chevron_right),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.small),
+                      copy,
+                    ],
+                  )
+                : Row(
+                    children: [
+                      iconWidget,
+                      const SizedBox(width: AppSpacing.medium),
+                      Expanded(child: copy),
+                      if (onTap != null) const Icon(Icons.chevron_right),
+                    ],
+                  ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
