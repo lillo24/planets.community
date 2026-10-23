@@ -53,7 +53,15 @@ class SupabaseExternalActivityGateway implements ExternalActivityGateway {
       }
       rethrow;
     }
+    if (activityObject(result)['scope'] != 'external_activities') {
+      throw const FormatException('Invalid external catalogue scope.');
+    }
     final page = ExternalActivityPage.parse(result);
+    if (filter.mappedOnly && page.items.any((item) => item.geometry == null)) {
+      throw const FormatException(
+        'Mapped catalogue returned an unlocated item.',
+      );
+    }
     if (cursor != null &&
         page.health != ExternalCatalogueHealth.unconfigured &&
         page.asOf != DateTime.parse(cursor['as_of'] as String).toUtc()) {

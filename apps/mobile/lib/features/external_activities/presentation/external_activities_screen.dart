@@ -14,6 +14,7 @@ import '../../activity_interest/domain/activity_interest_event.dart';
 import '../application/external_activities_controller.dart';
 import '../domain/external_activity.dart';
 import 'external_activity_widgets.dart';
+import '../../geographic_discovery/presentation/map_view_button.dart';
 import 'external_activity_filters.dart';
 
 class ExternalActivitiesScreen extends ConsumerStatefulWidget {
@@ -100,6 +101,19 @@ class _ExternalActivitiesScreenState
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(externalActivitiesControllerProvider.select((s) => s.filter), (
+      _,
+      filter,
+    ) {
+      _debounce?.cancel();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_search.text.trim() != filter.query) _search.text = filter.query;
+        // An explicit Map area changes the same query; returning from detail
+        // without a filter change leaves the retained List offset untouched.
+        if (_scroll.hasClients) _scroll.jumpTo(0);
+      });
+    });
     final enabled = ref.watch(activitiesSplitPreferenceProvider).enabled;
     final state = ref.watch(externalActivitiesControllerProvider);
     final active =
@@ -139,6 +153,22 @@ class _ExternalActivitiesScreenState
                 children: [
                   const BrowseActivitySwitcher(
                     selected: BrowseActivityType.activities,
+                  ),
+                  const SizedBox(height: AppSpacing.small),
+                  MapViewButton.external(
+                    prepare: () {
+                      _debounce?.cancel();
+                      if (_search.text.trim() !=
+                          ref
+                              .read(externalActivitiesControllerProvider)
+                              .filter
+                              .query) {
+                        ref
+                            .read(externalActivitiesControllerProvider.notifier)
+                            .setActive(false);
+                        _searchChanged();
+                      }
+                    },
                   ),
                   const SizedBox(height: AppSpacing.medium),
                   ExternalActivityFilters(

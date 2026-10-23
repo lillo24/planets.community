@@ -2744,5 +2744,22 @@
   "activitiesDatasetLink": "Vedi dataset della fonte",
   "activitiesExternalPartial": "Alcune fonti non sono aggiornate. I risultati disponibili delle altre fonti restano visibili.",
   "activitiesSportChess": "Scacchi",
-  "activitiesSportOther": "Altri sport"
+  "activitiesSportOther": "Altri sport",
+  "activitiesMapTitle": "Mappa attività",
+  "activitiesMapEditFilters": "Modifica filtri nella lista",
+  "activitiesMapMissingPoints": "Alcuni risultati non hanno una posizione pubblicata. Rimuovi il filtro area nella lista per vederli.",
+  "activitiesMapAllLocations": "Tutte le posizioni del catalogo · Vista iniziale: Trento.",
+  "activitiesMapSelectedArea": "Area selezionata sulla mappa",
+  "activitiesMapSearchArea": "Cerca in questa area",
+  "activitiesMapUseCentre": "Usa il centro della vista",
+  "activitiesMapClearArea": "Rimuovi filtro area",
+  "activitiesMapInvalidArea": "Restringi l’area o aggiungi filtri, poi riprova la ricerca.",
+  "activitiesMapEmpty": "Nessun risultato sulla mappa. Prova la lista o cambia area.",
+  "activitiesMapApproximate": "Località approssimativa indicata dalla fonte",
+  "activitiesMapVenue": "Posizione del luogo pubblicata dalla fonte",
+  "activitiesMapLoaded": "{count, plural, =0{Nessun risultato caricato sulla mappa} =1{1 risultato caricato sulla mappa} other{{count} risultati caricati sulla mappa}}",
+  "activitiesMapReference": "Riferimento selezionato: {coordinates} · {kilometers} km",
+  "activitiesMapDistance": "Circa {km} km dal riferimento selezionato.",
+  "activitiesMapRefresh": "Aggiorna risultati",
+  "activitiesShow": "Mostra"
 }

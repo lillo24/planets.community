@@ -31,6 +31,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/widgets/page_app_bar.dart';
 import '../../features/activities_sandbox/presentation/activities_screen.dart';
 import '../../features/external_activities/presentation/external_activities_screen.dart';
+import '../../features/external_activities/presentation/external_activities_map_screen.dart';
 import '../../features/external_activities/presentation/external_activity_detail_screen.dart';
 import '../../features/activities_sandbox/presentation/activity_example_detail_screen.dart';
 import '../../features/settings/application/activities_split_preference_controller.dart';
@@ -1632,6 +1633,11 @@ RoutingConfig _routingConfig(
                   child: const ExternalActivitiesScreen(),
                 ),
                 routes: [
+                  GoRoute(
+                    path: 'map',
+                    builder: (context, state) =>
+                        const ExternalActivitiesMapScreen(),
+                  ),
                   GoRoute(
                     path: 'examples',
                     builder: (context, state) => const ActivitiesScreen(),

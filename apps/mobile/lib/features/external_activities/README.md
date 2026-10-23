@@ -67,3 +67,11 @@ explicit mapped-only scope and canonical namespaced/precision-safe distances.
 Existing detail remains V2. Old clients retain V1/V2 readers. Controllers fence
 account transitions, inactive state and stale continuations. This client requires
 the V3 migration before live use; no production provider/source gate changes.
+
+ACTMAP01: `application/external_map_session.dart` owns RAM-only camera/selection.
+`presentation/external_activities_map_screen.dart` composes the shared public map,
+clustering, loaded-entry chooser and existing scoped basemap caches. The second
+result controller listens to the base filter authority; it owns no second filter
+store. See `docs/development/activities-map.md` for routes, lifecycle, attribution,
+no-provider behavior and reproducible qualification. The kind choice is a compact
+native dropdown so 2x text does not duplicate the category chip hierarchy.

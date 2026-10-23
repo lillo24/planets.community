@@ -32,6 +32,9 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations_en.dart';
 
 import '../../support/rendered_evidence.dart';
+
+import 'package:planets_mobile/features/geographic_discovery/domain/geographic_discovery.dart';
+
 import '../../support/fake_external_activities.dart';
 import '../../support/fake_activity_interest.dart';
 import '../../support/fake_auth.dart';
@@ -262,6 +265,8 @@ void main() {
       await _pump(tester, gateway);
       await tester.tap(find.byKey(const Key('activities-category-sports')));
       await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('activities-kind-choice')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('activities-kind-course')));
       await tester.pumpAndSettle();
       expect(gateway.calls.last.category, 'sports');
@@ -292,6 +297,8 @@ void main() {
       await _pump(tester, gateway);
       await tester.tap(find.byKey(const Key('activities-category-sports')));
       await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('activities-kind-choice')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('activities-kind-place')));
       await tester.pumpAndSettle();
       expect(gateway.calls.last.kind, ExternalActivityKind.place);
@@ -299,7 +306,11 @@ void main() {
       await tester.tap(find.byKey(const Key('activities-category-culture')));
       await tester.pumpAndSettle();
       expect(gateway.calls.last.kind, isNull);
+      await tester.tap(find.byKey(const Key('activities-kind-choice')));
+      await tester.pumpAndSettle();
       expect(find.byKey(const Key('activities-kind-place')), findsNothing);
+      await tester.tapAt(const Offset(1, 1));
+      await tester.pumpAndSettle();
       await tester.ensureVisible(
         find.byKey(const Key('activities-native-tavoli')),
       );
@@ -532,7 +543,10 @@ void main() {
 
   test('RPC gateway forwards complete filters, handles source disable and preserves real failures', () async {
     var responseCode = 200;
+    var expectedMappedOnly = false;
+    Map<String, dynamic>? expectedArea;
     Object? response = {
+      'scope': 'external_activities',
       'state': 'unconfigured',
       'as_of': '2026-10-22T12:00:00Z',
       'items': [],
@@ -549,6 +563,12 @@ void main() {
         expect(params['p_category'], 'culture');
         expect(params['p_query'], 'source text');
         expect(params['p_limit'], 20);
+        expect(params['p_kind'], 'course');
+        expect(params['p_from'], '2026-10-20');
+        expect(params['p_to'], '2026-10-25');
+        expect(params['p_discipline'], 'yoga');
+        expect(params['p_map_only'], expectedMappedOnly);
+        expect(params['p_area'], expectedArea);
         return http.Response(
           jsonEncode(response),
           responseCode,
@@ -562,6 +582,10 @@ void main() {
     const filter = ExternalActivityFilter(
       category: 'culture',
       query: 'source text',
+      kind: ExternalActivityKind.course,
+      from: '2026-10-20',
+      to: '2026-10-25',
+      discipline: 'yoga',
     );
     final page = await gateway.list(
       filter,
@@ -569,6 +593,11 @@ void main() {
     );
     expect(page.health, ExternalCatalogueHealth.unconfigured);
     expect(page.items, isEmpty);
+    expectedMappedOnly = true;
+    expectedArea = const GeoRadius(46, 11, 5000).toJson();
+    await gateway.list(filter.withArea(const GeoRadius(46, 11, 5000)).forMap());
+    expectedMappedOnly = false;
+    expectedArea = null;
     responseCode = 400;
     response = {
       'code': '22023',
@@ -580,7 +609,11 @@ void main() {
     );
     await expectLater(gateway.list(filter), throwsA(isA<PostgrestException>()));
     responseCode = 200;
-    response = {'state': 'healthy', 'items': null};
+    response = {
+      'scope': 'external_activities',
+      'state': 'healthy',
+      'items': null,
+    };
     await expectLater(gateway.list(filter), throwsFormatException);
   });
 
@@ -901,6 +934,13 @@ void main() {
         ..detail = item;
       final launcher = FakePublicExternalLinkLauncher();
       final router = await _pump(tester, gateway, launcher: launcher);
+      // Discovery controls precede results; exercise the actual scroll surface.
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('external-$externalActivityFixtureId')),
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      await tester.pumpAndSettle();
       expect(
         find.text('Synthetic cultural exhibition about sport'),
         findsOneWidget,
@@ -986,6 +1026,14 @@ void main() {
           ..page = externalPageFixture(health: health);
         final router = await _pump(tester, gateway);
         expect(find.byType(ExternalActivityCard), findsNothing);
+        if (health == ExternalCatalogueHealth.empty) {
+          await tester.scrollUntilVisible(
+            find.byKey(const Key('external-activities-empty')),
+            200,
+            scrollable: find.byType(Scrollable).hitTestable().first,
+          );
+          await tester.pumpAndSettle();
+        }
         expect(
           find.byKey(const Key('external-activities-empty')),
           health == ExternalCatalogueHealth.empty
@@ -1016,6 +1064,12 @@ void main() {
       final gateway = FakeExternalActivityGateway()
         ..error = StateError('read failed');
       await _pump(tester, gateway);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('external-activities-read-error')),
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      await tester.pumpAndSettle();
       expect(
         find.byKey(const Key('external-activities-read-error')),
         findsOneWidget,

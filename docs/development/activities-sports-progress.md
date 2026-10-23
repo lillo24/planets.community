@@ -24,7 +24,7 @@ runner for this queue was found in current tasks, worktrees or open PRs.
 | 005 ACTSRC02    | Implemented and locally verified         | 71d5bf63; 144-migration replay                                 |
 | 006 SPORTDATA01 | Implemented; real local source verified  | 846a256b; 116 records; no hosted publication                   |
 | 007 ACTGEO01    | Implemented and locally verified         | 145 migrations; full 8415 assertions                           |
-| 008 ACTMAP01    | Next: shared renderer and working route  | No intermediate merge wait                                     |
+| 008 ACTMAP01    | Implemented and locally verified         | Shared renderer; zero provider attempts                        |
 | 009 SPORTAPI02  | Queued: bounded official verification    | 005 tested; optional source block must not halt queue          |
 | 010 ACTOPS01    | Queued                                   | 005 tested; keep all schedules/sources OFF                     |
 | 011 ACTQA01     | Queued final cumulative validation/merge | Fresh current-main SQL proof and all required CI before merge  |
@@ -211,3 +211,44 @@ types regenerated. Scoped mobile/ACTMET01 **96 PASS**, analysis PASS, including
 A→B→A pending-response cancellation and strict area/namespace/distance tests.
 Next: 008 working List/Map route using a modest shared-renderer extraction,
 retaining the one external filter authority and all native cache/provider rules.
+
+### Resumable checkpoint — 008 in progress
+
+007 committed as `809942b2`; generated type drift and web typecheck PASS. Existing
+cumulative branch/worktree/PR #298 retained. 008 working code is uncommitted:
+shared public camera/grid/canvas and loaded-entry chooser extraction, separate
+external map result lifecycle sharing the one filter authority, gated map route,
+List/Map selector and localization. Inspect `.actcat02-qa/008-analyze.log`, then
+finish widget/router/native-cache regressions and narrow rendered inspection
+before committing 008. Do not mark the new map qualified yet. Private operational
+checkpoint: `.actcat02-qa/resume02-checkpoint.json`; local disposable project
+`planets-resume02-qa`, API 54921 / DB 54922, 145 migrations, no enabled source.
+Source environment helper `.actcat02-qa/use-backend.ps1` contains no credentials.
+Continue 009 → 010 → 011 and the final authorized protected merge; no hosted work.
+
+### 008 ACTMAP01 — implemented and locally qualified
+
+Working List/Map, source-public typed markers, stable loaded clusters/chooser,
+explicit area/reference search, shared filters, retained camera/selection and
+external UUID details now compose the existing public renderer/cache/budget
+boundary. No native GeoKind/default-All change or second tile cache. All provider
+flags remain OFF; counted tile/search/resolve gateway attempts **0**. Source
+unconfigured/empty/error/partial/stale and locality precision remain distinct.
+
+The first map journeys found that lazy scrolling could dispose the canvas and
+hide the selected-card target. Fixed by keeping one shared canvas mounted in the
+native-style scrolling control column; the same unchanged journeys pass. Tests
+also use valid lifecycle transitions and real scrolling to feedback/results.
+The kind selector is now a compact native dropdown after inspection showed
+redundant stacked chips at 2x text. All kind/date/query semantics are retained.
+
+Final external/ACTMET01 suites **120 PASS**, plus the arbitrary valid 3.5km radius
+regression **1 PASS**. Native map/cache/router/Settings component of the scoped
+regression also passed (276 tests); its three external viewport assumptions were
+fixed and included in the fresh 120-pass run. Final scoped analysis: **no issues**.
+Twenty difficult-state/narrow visual cases plus four functional map journeys
+cover EN/IT, light/dark, 320/360dp and 2x text; actual rendered captures inspected
+and selected evidence committed. No physical device or hosted activation claim.
+See `activities-map.md` for exact commands, semantics and inspection links.
+Next: bounded 009 official second-source verification, then 010 and 011; no
+intermediate merge, source-availability or phone-review wait.

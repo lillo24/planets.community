@@ -56,33 +56,52 @@ class ExternalActivityFilters extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.small),
-        Wrap(
-          spacing: AppSpacing.small,
-          runSpacing: AppSpacing.xSmall,
-          children: [
-            for (final kind in [null, ...ExternalActivityKind.values])
-              if (kind != ExternalActivityKind.place ||
-                  filter.category != 'culture')
-                ChoiceChip(
-                  key: Key('activities-kind-${kind?.name ?? 'all'}'),
-                  selected: filter.kind == kind,
-                  label: Text(externalKindLabel(kind, l)),
-                  onSelected: (_) => onChanged(
-                    ExternalActivityFilter(
-                      category: filter.category,
-                      area: filter.area,
-                      query: filter.query,
-                      discipline: filter.discipline,
-                      kind: kind,
-                      from: kind == ExternalActivityKind.place
-                          ? null
-                          : filter.from,
-                      to: kind == ExternalActivityKind.place ? null : filter.to,
+        KeyedSubtree(
+          key: ValueKey('external-kind-${filter.kind}'),
+          child: DropdownButtonFormField<ExternalActivityKind>(
+            key: const Key('activities-kind-choice'),
+            initialValue: filter.kind,
+            hint: Text(l.activitiesAll),
+            isExpanded: true,
+            itemHeight: null,
+            decoration: InputDecoration(labelText: l.activitiesShow),
+            items: [
+              for (final kind in [null, ...ExternalActivityKind.values])
+                if (kind != ExternalActivityKind.place ||
+                    filter.category != 'culture')
+                  DropdownMenuItem(
+                    value: kind,
+                    child: Text(
+                      externalKindLabel(kind, l),
+                      key: Key('activities-kind-${kind?.name ?? 'all'}'),
                     ),
                   ),
-                ),
-          ],
+            ],
+            onChanged: (kind) => onChanged(
+              ExternalActivityFilter(
+                category: filter.category,
+                area: filter.area,
+                query: filter.query,
+                discipline: filter.discipline,
+                kind: kind,
+                from: kind == ExternalActivityKind.place ? null : filter.from,
+                to: kind == ExternalActivityKind.place ? null : filter.to,
+              ),
+            ),
+          ),
         ),
+        if (filter.area != null)
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(l.activitiesMapSelectedArea),
+              TextButton(
+                key: const Key('activities-clear-area'),
+                onPressed: () => onChanged(filter.withArea(null)),
+                child: Text(l.activitiesMapClearArea),
+              ),
+            ],
+          ),
         ExpansionTile(
           key: const Key('activities-refine'),
           tilePadding: EdgeInsets.zero,
@@ -182,7 +201,8 @@ class ExternalActivityFilters extends StatelessWidget {
         if (filter.query.isNotEmpty ||
             filter.kind != null ||
             filter.discipline != null ||
-            filter.from != null)
+            filter.from != null ||
+            filter.area != null)
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(

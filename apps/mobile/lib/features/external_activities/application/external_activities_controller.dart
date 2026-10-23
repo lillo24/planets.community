@@ -24,11 +24,21 @@ class ExternalActivitiesState {
 }
 
 class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
+  ExternalActivitiesController({this.mapped = false});
+  final bool mapped;
   var _active = false;
   var _generation = 0;
 
   @override
   ExternalActivitiesState build() {
+    if (mapped) {
+      ref.listen(externalActivitiesControllerProvider.select((s) => s.filter), (
+        _,
+        filter,
+      ) {
+        unawaited(this.filter(filter.forMap()));
+      });
+    }
     ref.listen(authSessionProvider.select((s) => (s.phase, s.identity?.id)), (
       _,
       _,
@@ -41,7 +51,11 @@ class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
       _generation++;
       _active = false;
     });
-    return const ExternalActivitiesState();
+    return ExternalActivitiesState(
+      filter: mapped
+          ? ref.read(externalActivitiesControllerProvider).filter.forMap()
+          : const ExternalActivityFilter(),
+    );
   }
 
   bool get _canRead =>
@@ -58,6 +72,7 @@ class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
           page: state.page,
           failed: state.failed,
           moreFailed: state.moreFailed,
+          areaTooBroad: state.areaTooBroad,
         );
       }
     } else if (state.page == null && !state.failed) {
@@ -163,6 +178,20 @@ final externalActivitiesControllerProvider =
     >(
       ExternalActivitiesController.new,
       dependencies: [activitiesSplitPreferenceProvider],
+    );
+
+// Map owns a result/cursor lifecycle, while the base controller remains the
+// sole filter authority. It never edits or persists another filter store.
+final externalActivitiesMapControllerProvider =
+    NotifierProvider.autoDispose<
+      ExternalActivitiesController,
+      ExternalActivitiesState
+    >(
+      () => ExternalActivitiesController(mapped: true),
+      dependencies: [
+        activitiesSplitPreferenceProvider,
+        externalActivitiesControllerProvider,
+      ],
     );
 
 final externalActivityDetailProvider = FutureProvider.autoDispose

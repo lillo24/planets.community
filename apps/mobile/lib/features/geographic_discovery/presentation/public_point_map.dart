@@ -10,6 +10,7 @@ import '../application/shared_basemap_tiles.dart';
 import '../data/map_provider_gateway.dart';
 import '../domain/geographic_discovery.dart';
 import '../domain/map_discovery.dart';
+import '../domain/public_map_camera.dart';
 
 /// Tile IO has no public URL template/key and is detached when the route is inactive.
 class GatewayTileProvider extends TileProvider {
@@ -107,6 +108,71 @@ class PublicPointMap extends StatelessWidget {
   final String Function(GeoItem) markerLabel;
   final String Function(int) clusterLabel;
   @override
+  Widget build(BuildContext context) => PublicMapCanvas(
+    controller: controller,
+    preferences: preferences,
+    tileProvider: tileProvider,
+    onCamera: onCamera,
+    onTileError: onTileError,
+    markers: [
+      for (final cluster in clusters)
+        PublicMapMarker(
+          identity: cluster.identity,
+          latitude: cluster.anchor.latitude,
+          longitude: cluster.anchor.longitude,
+          count: cluster.items.length,
+          label: cluster.items.length > 1
+              ? clusterLabel(cluster.items.length)
+              : markerLabel(cluster.anchor),
+          icon: cluster.anchor.isApproximate
+              ? Icons.radio_button_unchecked
+              : Icons.place,
+          onTap: () => onCluster(cluster),
+        ),
+    ],
+  );
+}
+
+/// Typed feature owners supply public marker metadata/actions. Rendering, camera,
+/// tiles, gesture policy and accessibility stay shared with the native map.
+class PublicMapMarker {
+  const PublicMapMarker({
+    required this.identity,
+    required this.latitude,
+    required this.longitude,
+    required this.count,
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.approximate = false,
+  });
+  final String identity, label;
+  final double latitude, longitude;
+  final int count;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool approximate;
+}
+
+class PublicMapCanvas extends StatelessWidget {
+  const PublicMapCanvas({
+    required this.controller,
+    required this.preferences,
+    required this.markers,
+    required this.tileProvider,
+    required this.onCamera,
+    required this.onTileError,
+    this.showRadius = true,
+    super.key,
+  });
+  final MapController controller;
+  final PublicMapCamera preferences;
+  final List<PublicMapMarker> markers;
+  final TileProvider? tileProvider;
+  final void Function(GeoBounds, double, double, double, bool) onCamera;
+  final VoidCallback onTileError;
+  final bool showRadius;
+  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return FlutterMap(
@@ -156,7 +222,7 @@ class PublicPointMap extends StatelessWidget {
             ),
             errorTileCallback: (_, _, _) => onTileError(),
           ),
-        if (preferences.searchedBounds == null)
+        if (showRadius && preferences.searchedBounds == null)
           CircleLayer(
             circles: [
               CircleMarker(
@@ -182,39 +248,39 @@ class PublicPointMap extends StatelessWidget {
                 ),
               ),
             ),
-            for (final cluster in clusters)
+            for (final marker in markers)
               Marker(
-                key: ValueKey(cluster.identity),
-                point: LatLng(
-                  cluster.anchor.latitude,
-                  cluster.anchor.longitude,
-                ),
+                key: ValueKey(marker.identity),
+                point: LatLng(marker.latitude, marker.longitude),
                 width: 56,
                 height: 56,
                 child: Semantics(
                   button: true,
-                  label: cluster.items.length > 1
-                      ? clusterLabel(cluster.items.length)
-                      : markerLabel(cluster.anchor),
+                  label: marker.label,
                   child: Tooltip(
-                    message: cluster.items.length > 1
-                        ? clusterLabel(cluster.items.length)
-                        : markerLabel(cluster.anchor),
+                    message: marker.label,
                     child: FilledButton(
-                      key: Key('map-pin-${cluster.identity}'),
+                      key: Key('map-pin-${marker.identity}'),
                       style: FilledButton.styleFrom(
                         padding: EdgeInsets.zero,
                         shape: const CircleBorder(),
                       ),
-                      onPressed: () => onCluster(cluster),
+                      onPressed: marker.onTap,
                       child: ExcludeSemantics(
-                        child: cluster.items.length > 1
-                            ? FittedBox(child: Text('${cluster.items.length}'))
-                            : Icon(
-                                cluster.anchor.isApproximate
-                                    ? Icons.radio_button_unchecked
-                                    : Icons.place,
-                              ),
+                        child: marker.count > 1
+                            ? FittedBox(child: Text('${marker.count}'))
+                            : marker.approximate
+                            ? Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.radio_button_unchecked,
+                                    size: 38,
+                                  ),
+                                  Icon(marker.icon, size: 22),
+                                ],
+                              )
+                            : Icon(marker.icon),
                       ),
                     ),
                   ),

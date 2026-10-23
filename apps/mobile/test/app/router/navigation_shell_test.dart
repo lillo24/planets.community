@@ -287,7 +287,11 @@ void main() {
     );
   }
 
-  for (final path in ['/activities', '/activities/examples/example-climbing']) {
+  for (final path in [
+    '/activities',
+    '/activities/examples/example-climbing',
+    '/activities/map',
+  ]) {
     testWidgets('ACTSPLIT01 OFF safely gates $path and refreshes same router', (
       tester,
     ) async {
