@@ -544,11 +544,20 @@ unchanged. This follow-up is not complete or ready for production.
   extra renders and recovery manifests remain untracked in `.local` only.
 - **Precise remaining gate/next action:** see draft
   [PR #297](https://github.com/lillo24/planets.community/pull/297) for the final
-  source SHA, CI run and exact migration-review artifact. The repository owner
-  must review its complete SQL inventory (including pending RUNALL migrations),
-  post `STAGING-AUTO01-REVIEW` plus that artifact's exact `review-required.json`,
-  and rerun the existing gate. No approval is posted/forged or alternate workflow
-  used to bypass it. Final-head GitHub CI is not claimed passed before that gate.
+  source SHA, CI run and exact migration-review artifact. CI on `c7febc08`
+  ([39879321006](https://github.com/lillo24/planets.community/actions/runs/39879321006))
+  explicitly rejects the dependent base: **"Review must belong to a
+  same-repository main PR"** (`scripts/release/reviews.mjs:124–128`). Area jobs
+  were skipped. An owner comment alone cannot resolve this base condition.
+  Keep the required RUNALL base/draft and do not bypass or weaken the policy.
+  At a later separately authorized integration checkpoint, finish RUNALL's owner
+  review/dependency integration, update this branch and retarget the same PR to
+  approved main, generate a fresh exact-head inventory/request, then obtain the
+  ordinary owner migration review and rerun the existing gate. Current artifact
+  source SHAs cannot approve a later changed head. No approval is posted/forged,
+  premature retargeting or alternate workflow used. Final-head GitHub CI is not
+  claimed passed; the PR body links its final run without a self-referential
+  documentation/SHA loop.
   Keep this dependent PR draft/unmerged; no production/hosted migration,
   deployment, store submission or external push delivery was performed.
 - Physical Android/voice/accessibility, founder visual review and iOS remain

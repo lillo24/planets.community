@@ -163,11 +163,18 @@ there is no fallback to a dateless admission or Demo data.
   readers/notices), `387a8852` (mobile), `f5a25f25` (latest main), `81dd40f9`
   (phone renders) and `9bfa662e` (installed-reader compatibility).
 - The precise final-head CI state and migration-review artifact are linked from
-  draft PR #297. The next owner action is to inspect the SQL diff and complete
-  migration inventory, including unreviewed inherited RUNALL migrations, and use
-  the artifact's exact `review-required.json` with the existing
-  `STAGING-AUTO01-REVIEW` control, then rerun that gate. This task never posts or
-  fabricates owner approval. Full final-head GitHub CI is not claimed passed.
+  draft PR #297. Validation on `c7febc08` demonstrated the policy constraint:
+  **"Review must belong to a same-repository main PR"**. The intended dependent
+  base is `codex/cocreate-runall`, so even an owner comment cannot satisfy this
+  gate yet. Database/Mobile/Web/Site CI jobs were skipped; local evidence above
+  does not imply final-head GitHub CI passed. Keep the dependent base and draft.
+- At a separately authorized integration checkpoint, finish RUNALL's required
+  review/dependency integration, update this branch against the approved main
+  and retarget the same PR to main. Then generate a fresh inventory/request for
+  that head, review its SQL and use the exact `STAGING-AUTO01-REVIEW` control.
+  This task never retargets prematurely, posts/fabricates approval or changes the
+  main-only policy to make CI green. Current artifacts document the review
+  inventory; their source SHA must not be reused for a later changed head.
 - Separate owner work remains for VIS01/combined visual review, physical Android,
   iOS and production experimental-policy approval. Hosted mock adoption requires
   separately approved schema/control/seed updates. External push provider and
@@ -297,8 +304,8 @@ The capture invocation actually used the absolute worktree output path with the
 same directory. Mock unit command from root:
 `node --test scripts/mock/*.test.mjs supabase/functions/mock-personas/*.test.mjs`.
 Web/root commands and their qualified results are recorded above. Final GitHub
-CI remains dependent on the existing exact-head owner migration review; no
-owner approval is posted or fabricated by this task.
+CI is blocked by the existing main-PR-only migration-review policy while this
+PR has its required dependent base; no owner approval is posted or fabricated.
 
 The other Web commands run from root were:
 
