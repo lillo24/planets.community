@@ -70,14 +70,14 @@ export async function publicSmoke(configJson, fetcher = fetch) {
   }
   return checks; // Never retain returned public rows or provider error details.
 }
-export function verifyFunctions(root, policy, functions) {
+export function verifyFunctions(root, policy, functions, variant = "staging") {
   if (
     !policy.approved_functions?.length ||
     !Object.keys(policy.approved_function_source_sha256 ?? {}).length
   )
     return false;
   if (
-    requiredEdgeFunctions(root).some(
+    requiredEdgeFunctions(root, variant).some(
       (name) => !policy.approved_functions.some((f) => f.slug === name),
     )
   )
@@ -99,7 +99,7 @@ export function verifyFunctions(root, policy, functions) {
     policy.approved_function_source_sha256,
   )) {
     if (
-      !/^(?:map-provider|location-search|location-preview)\/[a-z-]+\.(?:mjs|ts)$/.test(
+      !/^(?:map-provider|mock-basemap|location-search|location-preview)\/[a-z-]+\.(?:mjs|ts)$/.test(
         path,
       ) ||
       sha256(readFileSync(`${root}/supabase/functions/${path}`)) !== hash

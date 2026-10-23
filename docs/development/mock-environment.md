@@ -152,3 +152,12 @@ retained normal account restoration, real interactions, production gating and
 rendered EN/IT light/dark 320dp/2x behavior. Historical enrollment-based passes
 do not qualify the corrected access model. Report source/code, hosted public-mock
 readiness and signed release artifacts separately. No Play upload is authorized.
+
+## MAPMOCK01 public cartography
+
+The mock product client and all domain records stay on the dedicated project.
+The only separately deployed cross-realm exception is public tile imagery,
+verified against actual mock Auth and metered by the existing staging ledger.
+The new SQL/Edge mock switches default off. Synthetic seed reference points and
+fixture Android pixels do not prove hosted provider readiness. See the
+[activation/rollback and validation contract](mapmock01-public-basemap.md).

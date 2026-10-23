@@ -68,6 +68,10 @@ final class AppConfig {
     // constant selected by AOT in every ABI; runtime checks the same config gate.
     // ignore: avoid_print
     print(compiledMockMarker);
+    // Retained AOT evidence of effective map defines, independently inspected
+    // in every AAB ABI; an input build manifest alone cannot prove compilation.
+    // ignore: avoid_print
+    print(compiledMapMarker);
     return config;
   }
 
@@ -78,6 +82,15 @@ final class AppConfig {
   static const compiledMockMarker = compiledMockCapability
       ? 'PLANETS_COMPILED_MOCK_V1=true'
       : 'PLANETS_COMPILED_MOCK_V1=false';
+  // Bit order: tiles, centers, detail tiles, 60s RAM TTL, editor, v2 budget.
+  static const compiledMapMarker =
+      'PLANETS_COMPILED_MAP_V1='
+      '${bool.fromEnvironment('LOCATION_MAP_TILES_ENABLED') ? 1 : 0}'
+      '${bool.fromEnvironment('LOCATION_MAP_CENTERS_ENABLED') ? 1 : 0}'
+      '${bool.fromEnvironment('LOCATION_DETAIL_TILES_ENABLED') ? 1 : 0}'
+      '${int.fromEnvironment('LOCATION_MAP_CACHE_SECONDS') == 60 ? 1 : 0}'
+      '${bool.fromEnvironment('LOCATION_EDITOR_SEARCH_ENABLED') ? 1 : 0}'
+      '${bool.fromEnvironment('LOCATION_BASEMAP_BUDGET_ENABLED') ? 1 : 0}';
 
   factory AppConfig.fromValues({
     required String appEnvironment,

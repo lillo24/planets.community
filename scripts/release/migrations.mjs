@@ -177,7 +177,7 @@ export function requiredRpcs(root) {
   return [...names].sort();
 }
 
-export function requiredEdgeFunctions(root) {
+export function requiredEdgeFunctions(root, variant = "staging") {
   const names = new Set([
     "map-provider",
     "location-search",
@@ -190,11 +190,19 @@ export function requiredEdgeFunctions(root) {
     root,
     "apps/mobile/lib/core/config/mock_environment_config.dart",
   );
+  const mockImages = join(
+    root,
+    "apps/mobile/lib/features/geographic_discovery/data/mock_public_basemap_gateway.dart",
+  );
   function walk(dir) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const path = join(dir, entry.name);
       if (entry.isDirectory()) walk(path);
-      else if (entry.name.endsWith(".dart") && path !== isolatedMockConfig) {
+      else if (
+        entry.name.endsWith(".dart") &&
+        path !== isolatedMockConfig &&
+        (path !== mockImages || variant === "closed-test-mock")
+      ) {
         const source = readFileSync(path, "utf8");
         for (const match of source.matchAll(
           /(?:functions\/v1\/|\.functions\.invoke\(\s*['"])([a-z][a-z0-9-]+)/g,

@@ -12,6 +12,11 @@ local demo seeder and never removes its loopback guard.
   Its private `verifyOnly` boolean skips control/seed mutations after a schema-only
   upgrade. Auth sessions remain real; failures export bounded codes/status only.
 - `world.mjs` owns non-destructive ordinary-persona fixture operations.
+- `public-geography.mjs` adds once-receipted fictional public references under
+  the verified mock marker; it preserves existing points and edited localities.
+- `basemap-fixture.mjs` replaces only provider PNGs for real two-realm Auth/SQL
+  qualification; `verify-basemap.mjs` proves shared cache, subcaps, global races,
+  revocation and kills without hosted/provider access.
 - `verify.mjs` reads canonical fixtures without repairing them.
 - `target.test.mjs` exercises target-confusion and credential rejection.
 - `qualify-local.mjs` owns two new disposable stacks, unique signing/API keys,

@@ -23,6 +23,13 @@ import 'package:planets_mobile/features/project_chat/application/project_chat_co
 import 'package:planets_mobile/features/settings/application/language_preference_controller.dart';
 import 'package:planets_mobile/features/settings/domain/language_preference.dart';
 import 'package:planets_mobile/l10n/generated/app_localizations.dart';
+import 'package:planets_mobile/features/geographic_discovery/application/budget_basemap_tiles.dart';
+import 'package:planets_mobile/features/geographic_discovery/application/geographic_discovery_controller.dart';
+import 'package:planets_mobile/features/geographic_discovery/data/map_provider_gateway.dart';
+import 'package:planets_mobile/features/geographic_discovery/data/budget_basemap_gateway.dart';
+import 'package:planets_mobile/features/geographic_discovery/domain/basemap_tile.dart';
+import 'package:planets_mobile/features/geographic_discovery/presentation/budget_tile_provider.dart';
+import 'package:planets_mobile/features/geographic_discovery/presentation/public_point_map.dart';
 
 // Explicit integration target only. No synthetic session/token/Auth gateway is
 // compiled: ordinary OTP and the reviewed broker install real Auth sessions.
@@ -229,6 +236,90 @@ void main() {
         }, 'ready ordinary identity');
       }
 
+      Future<void> mapJourney(String name, {bool mock = true}) async {
+        operation = 'public-basemap-$name';
+        expect(scope().read(mapProviderGatewayProvider).centerEnabled, !mock);
+        await navigate('/discover/map/projects');
+        await wait(
+          () =>
+              find.byType(PublicPointMap).evaluate().isNotEmpty &&
+              scope().read(budgetBasemapTilesProvider).count > 0,
+          'map fixture pixels loaded',
+        );
+        final canvas = tester.widget<PublicPointMap>(
+          find.byType(PublicPointMap),
+        );
+        expect(canvas.tileProvider, isA<BudgetTileProvider>());
+        final images = canvas.tileProvider! as BudgetTileProvider;
+        if (mock) {
+          await wait(
+            () => scope()
+                .read(geographicDiscoveryProvider('map05:projects'))
+                .items
+                .isNotEmpty,
+            'mock geographic pins',
+          );
+          expect(
+            scope()
+                .read(geographicDiscoveryProvider('map05:projects'))
+                .items
+                .any((item) => item.title.contains('NORMAL ONLY')),
+            isFalse,
+          );
+        }
+        await tester.ensureVisible(find.byKey(const Key('public-point-map')));
+        await tester.pump(const Duration(seconds: 1));
+        final region = tester.getRect(
+          find.byKey(const Key('public-point-map')),
+        );
+        final boundary = tester.renderObject<RenderRepaintBoundary>(
+          find.byKey(const Key('native-mock-capture')),
+        );
+        final painted = await boundary.toImage(pixelRatio: 1);
+        final rgba = await painted.toByteData(
+          format: ui.ImageByteFormat.rawRgba,
+        );
+        var fixturePixels = 0;
+        for (
+          var y = region.top.ceil().clamp(0, painted.height).toInt();
+          y < region.bottom.floor().clamp(0, painted.height);
+          y++
+        ) {
+          for (
+            var x = region.left.ceil().clamp(0, painted.width).toInt();
+            x < region.right.floor().clamp(0, painted.width);
+            x++
+          ) {
+            final offset = (y * painted.width + x) * 4;
+            if (rgba!.getUint8(offset) == 210 &&
+                rgba.getUint8(offset + 1) == 210 &&
+                  rgba.getUint8(offset + 2) == 210) {
+              fixturePixels++;
+              }
+          }
+        }
+        painted.dispose();
+        expect(
+          fixturePixels,
+          greaterThan(200),
+          reason:
+              'Controlled provider PNG pixels must actually paint in the map',
+        );
+        await capture('map-fixture-$name-$stage');
+        await tester.drag(
+          find.byKey(const Key('public-point-map')),
+          const Offset(-40, 20),
+        );
+        await tester.pump(const Duration(milliseconds: 600));
+        await tap(find.byKey(const Key('map-zoom-in')));
+        await navigate('/');
+        await expectLater(
+          images.scope.tile(const BasemapTileId(12, 2174, 1456)),
+          throwsA(isA<BudgetBasemapFailure>()),
+        );
+        steps.add('map-fixture-$name-pins-pan-zoom-route-fence');
+      }
+
       Future<void> profile(String name, {String tag = ""}) async {
         await navigate('/profile');
         await wait(
@@ -404,6 +495,14 @@ void main() {
         tester.platformDispatcher.platformBrightnessTestValue =
             Brightness.light;
         await asPerson('giulia', giulia);
+        await mapJourney('giulia-en');
+        await scope()
+            .read(languagePreferenceProvider.notifier)
+            .select(LanguagePreference.italian);
+        await mapJourney('giulia-it');
+        await scope()
+            .read(languagePreferenceProvider.notifier)
+            .select(LanguagePreference.english);
         expect(normalId, giulia, reason: 'Deliberate equal normal/mock UUID');
         for (final language in [
           LanguagePreference.english,
@@ -466,6 +565,7 @@ void main() {
         await capture('giulia-message-committed');
         await picker();
         await asPerson('marco', marco);
+        await mapJourney('marco-en');
         await profile('Marco');
         await navigate(
           '/tavoli/${const String.fromEnvironment('MOCK_QA_TAVOLO')}',
@@ -584,6 +684,7 @@ void main() {
         );
         await normalLogin();
         steps.add('normal-otp-real-auth');
+        await mapJourney('normal-en', mock: false);
         await profile('NORMAL ONLY SENTINEL', tag: 'before-mock');
         await navigate('/settings');
         await reveal(setting);
@@ -600,6 +701,7 @@ void main() {
         await tap(find.descendant(of: setting, matching: find.text('No')));
         await ready(normalId);
         expect(scope().read(activeMockRealmProvider), isFalse);
+        await mapJourney('normal-after-mock', mock: false);
         await profile('NORMAL ONLY SENTINEL', tag: 'after-mock');
         steps.add('return-normal-preserves-retained-account');
         await navigate('/settings');

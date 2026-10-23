@@ -1,4 +1,5 @@
 import { writeStaging } from "./writer.mjs";
+import { releaseVariant } from "./config.mjs";
 import { ReleaseError, reportFailure } from "./errors.mjs";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -103,7 +104,7 @@ export async function stagingRelease(mode, env = process.env) {
   checks.map_safe =
     checks.map_safe &&
     Boolean(provider) &&
-    verifyFunctions(root, policy, functions);
+    verifyFunctions(root, policy, functions, releaseVariant(env));
   save("backend", {
     source_sha: env.GITHUB_SHA ?? null,
     verified_at: new Date().toISOString(),

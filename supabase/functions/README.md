@@ -22,3 +22,8 @@ two existing adapters, accepts no arbitrary URL or client actor claims, and
 ships disabled. Its README maps the pure handler, upstream bounds and Deno
 bindings; [MAP05](../../docs/development/map05-interactive-discovery.md) owns
 activation, guest restrictions, transient caching and shutdown.
+MAPMOCK01 adds the separately deployed `mock-basemap/` image-only boundary on
+normal staging. It alone authenticates the fixed mock issuer inside its handler;
+ordinary `map-provider` JWT verification is unchanged. All new switches default
+off, with one global ledger and narrower mock subcaps. See its folder README and
+[hosted activation runbook](../../docs/development/mapmock01-public-basemap.md).
