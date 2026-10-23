@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "name": "PLANETS — Find People / Find Activities",
+  "archived_on": "2026-10-23",
+  "current_version": 6,
+  "current_video_version": 6,
+  "videos_require_explicit_user_request": true,
+  "versions": [
+    {
+      "version": 1,
+      "path": "versions/v1/index.html",
+      "source_filename": "PLANETS_Interactive_Presentation.html",
+      "bytes": 56868,
+      "sha256": "c5a2482ecaf8d3078f47b520c2fc86f674df6392296348f6d6dc35ae40f0c0b2"
+    },
+    {
+      "version": 2,
+      "path": "versions/v2/index.html",
+      "source_filename": "PLANETS_Interactive_Presentation_V2.html",
+      "bytes": 76573,
+      "sha256": "82b93d556d76ca4b5c255ebf8859e722758bf03d35ff285df74c66208a2498e4"
+    },
+    {
+      "version": 3,
+      "path": "versions/v3/index.html",
+      "source_filename": "PLANETS_Interactive_Presentation_V3.html",
+      "bytes": 86633,
+      "sha256": "99d4e84ab70e873d35a95b2d4f8ebdcf424a7e9046183af0e2fa57ee54ba8d44"
+    },
+    {
+      "version": 4,
+      "path": "versions/v4/index.html",
+      "source_filename": "PLANETS_Interactive_Presentation_V4.html",
+      "bytes": 84382,
+      "sha256": "95b2a0d9f2fbcaefb9356ae2fc30476a65375ac304ab90b9624bdc66f5809062"
+    },
+    {
+      "version": 5,
+      "path": "versions/v5/index.html",
+      "source_filename": "PLANETS_Interactive_Presentation_V5.html",
+      "bytes": 89648,
+      "sha256": "750ad3180fe616bf09bc3667f39d317553c86008c920936fefcaf680efe1af6c"
+    },
+    {
+      "version": 6,
+      "path": "versions/v6/index.html",
+      "source_filename": "PLANETS_Interactive_Presentation_V6.html",
+      "bytes": 95728,
+      "sha256": "7e5e6cf9534e65bc2a897d94d8570c5271fd72a39bf846c47237caf5bf06b141"
+    }
+  ],
+  "videos": [
+    {
+      "version": 1,
+      "path": "videos/v1-preview.mp4",
+      "source_filename": "PLANETS_Interactive_Presentation_Preview.mp4",
+      "bytes": 2104424,
+      "sha256": "71b2c06f978483f005db5280c61a9a797786ba900223284a5cb013c5fd33b702"
+    },
+    {
+      "version": 6,
+      "path": "videos/v6-preview.mp4",
+      "source_filename": "PLANETS_Interactive_Presentation_V6_Preview.mp4",
+      "bytes": 3169098,
+      "sha256": "5f9e2386a6925199d0bd50345961b72b48dcccb4f8edfefa3559e7e76d3c7057"
+    }
+  ],
+  "editable_source": {
+    "version": 6,
+    "path": "source/v6/",
+    "source_archive": "PLANETS_Interactive_Presentation_V6_Source.zip"
+  },
+  "additional_files": [
+    {
+      "path": "source/v6/app.js",
+      "bytes": 20950,
+      "sha256": "4c2956823d073faecef34c39057531e2d048d04658cfecf209239e00deed8364"
+    },
+    {
+      "path": "source/v6/index.html",
+      "bytes": 15562,
+      "sha256": "f630dd09d241e64c11c5d190680e488f9910ca6c6a954e56238243a5b40bca26"
+    },
+    {
+      "path": "source/v6/styles.css",
+      "bytes": 59256,
+      "sha256": "7d2f9824b233698ac04301ddc59133d5f219b6784d5871cc5148ae75418b6b00"
+    }
+  ]
+}
