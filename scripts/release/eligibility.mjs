@@ -242,7 +242,11 @@ export const effectCatalogQuery = `select jsonb_build_object(
   select jsonb_build_object('id',n.nspname||'.'||p.proname||'('||pg_get_function_identity_arguments(p.oid)||')','oid',p.oid,'owner',pg_get_userbyid(p.proowner),
    'returns',pg_get_function_result(p.oid),'arguments',pg_get_function_arguments(p.oid),'input_names',coalesce(p.proargnames[1:p.pronargs],array[]::text[]),'definer',p.prosecdef,'config',p.proconfig,
    'volatility',p.provolatile,'parallel',p.proparallel,'strict',p.proisstrict,'leakproof',p.proleakproof,
-   'body',md5(pg_get_functiondef(p.oid)),'source_body',md5(p.prosrc),'acl',coalesce(p.proacl::text,''),
+   'body',md5(pg_get_functiondef(p.oid)),'source_body',md5(p.prosrc),
+   'acl',(select coalesce(jsonb_agg(item order by item::text),'[]') from (
+     select jsonb_build_object('grantee',case when grantee=0 then 'PUBLIC' else pg_get_userbyid(grantee) end,
+       'grantor',pg_get_userbyid(grantor),'privilege',privilege_type,'grantable',is_grantable) item
+     from aclexplode(coalesce(p.proacl,acldefault('f',p.proowner)))) a),
    'access',(select jsonb_object_agg(r.rolname,has_function_privilege(r.oid,p.oid,'execute')) from pg_roles r where r.rolname in ('anon','authenticated','service_role'))) x
   from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','private','auth','storage') and p.prokind in ('f','p')) q),
  'policies',(select coalesce(jsonb_agg(jsonb_build_object('id',n.nspname||'.'||c.relname||'.'||p.polname,'definition',pg_get_expr(p.polqual,p.polrelid),'check',pg_get_expr(p.polwithcheck,p.polrelid),'command',p.polcmd,'permissive',p.polpermissive,'roles',(select array_agg(coalesce(r.rolname,'PUBLIC') order by r.rolname) from unnest(p.polroles) a left join pg_roles r on r.oid=a)) order by n.nspname,c.relname,p.polname),'[]') from pg_policy p join pg_class c on c.oid=p.polrelid join pg_namespace n on n.oid=c.relnamespace),
