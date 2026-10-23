@@ -4,6 +4,8 @@
 
 Run the current PLANETS Android app, visit every distinct mobile page and significant dialog/sheet, capture it, **open and visually inspect every screenshot**, and deliver a finished review that Leonardo can read comfortably on his phone.
 
+**Capture accounts are not interchangeable.** Use the **existing seeded PLANETS Mock personas and their real fictional community data as the primary exploration accounts**, switching between them to observe differing roles, permissions, content, and conversations. Do not perform the whole audit from one arbitrary synthetic profile. Guest/normal account checks only supplement this persona-led review.
+
 The review must identify visible defects, confusing behavior, unnecessary/debug-oriented copy, and worthwhile UI improvements. Each proposal needs a permanent ID such as **A1, A2, B1**, so Leonardo can reply `A1 yes, A2 no, B1 yes`.
 
 Complete the capture, inspection, comments, and final files in this task. A capture script, a route list, a contact sheet, or instructions for Leonardo to assemble the report are not the requested result.
@@ -50,7 +52,7 @@ The host drivers already address excessive memory use from serializing screensho
 3. Verify actual Android display size, logical density, font scale, safe areas, and navigation mode. Pixel 9 Pro physical panel specifications are 1280 x 2856; those pixels and physical PPI are **not** sufficient to infer Android's logical layout size. Do not simulate the device by resizing screenshots or using a browser viewport. If a substitute device/image is necessary, identify it accurately and explain the resulting coverage limit.
 4. Main pass: **Italian, dark mode, default text/display scaling**, matching the reference's language and theme. Keep the soft keyboard enabled for input checks. Add focused light-mode, English, and increased-text checks on screens where they can reveal a different problem; avoid a blind multiplication of every state by every setting.
 5. Prefer a release-like native build with normal product widgets, no debug banner, and normal production feature configuration. A native integration build is acceptable when required by the capture harness, but identify it and verify any suspected developer-only text against a normal build before calling it a shipped defect. Audit closed-test-only screens separately.
-6. Use a **new disposable local canonical backend** with synthetic identities for mutation journeys, following existing setup/seed scripts. Verify target ownership, project ID, ports, and Mailpit configuration before a reset. Do not reset a retained demo, staging, production, or the shared hosted mock world. The hosted fictional world is shared and mutable, not a disposable per-person sandbox.
+6. **Primary capture dataset: the repository's existing Mock world and fixed personas.** Prefer a **task-owned, isolated local Mock realm** seeded with the repository's current `scripts/mock/world.mjs` and `scripts/mock/people-world.mjs` (using the supported operator/fixture flow and an actual mock-persona session broker). Reuse their existing canonical fictional projects, chats, resources, group memberships, interests and meetings. A separate **task-owned normal realm** may be needed for genuine guest/normal-account journeys, but is not a substitute for the Mock-persona audit. Verify project ownership, distinct realms, ports, keys, Mailpit and permissions before setup/reset. Do **not** reset or write to staging, production, another worktree's fixtures, the founder's installation, or the existing shared hosted Mock world. Hosted Mock is shared and mutable: if safely accessible, read-only inspection is optional; it is not a disposable QA sandbox. If local Mock setup is unavailable, report which personas/scenarios could not be genuinely captured rather than replacing them silently with arbitrary accounts.
 7. Use a fresh run directory. Record source SHA, dirty patch if any, app version/build, build mode/flags, backend type and migration provenance, device/OS/settings, timestamp/timezone, and capture method. Separate latest-source observations from the supplied installed-app evidence.
 
 If local native execution is blocked, resolve ordinary tool/setup issues autonomously where permitted. Complete the inventory and other possible work, then report the exact blocker and partial status. Do not present browser renders, widget goldens, old captures, or source-only judgments as a completed Pixel audit.
@@ -83,6 +85,31 @@ Cover these implemented families, rechecking actual availability rather than inv
 Also audit the newly integrated **Find People / Co-Creation** family: intro/replay; browse/filter/detail; create/edit/My posts; interests and author responses; accepted-contact chat and close/withdraw; Communities categories/proposals/support/Your interests; hub join/General; numbered groups and People/settings/leave; timed meetings/RSVP/recruitment; source-to-native-Project and external-event handoffs; Messages/notification integration and gate-OFF recovery.
 
 Treat the local **Co-Creation presentation setting**, the **server experiment gate**, and the **Mock backend realm** as separate axes. Co-Creation and Activities Split are now mutually exclusive presentation selections; switching them does not silently switch the account. Cover the distinct UIs with legitimate task-owned local fixtures, enabling the local server gate only through the documented fixture setup. Turning the presentation OFF preserves existing Messages and own-exit routes. Clearly label `/people/demo` previews as fictional presentation-only screens. The source merge does not prove hosted migration/activation or installed-app delivery; do not activate a shared server to obtain screenshots.
+
+### Required Mock persona coverage
+
+The canonical source of personas is `scripts/mock/world.mjs`; inspect the latest definitions rather than assuming the historical snapshots are current. At the time of planning, the seeded identities and scenario intentions were:
+
+| Mock presentation | Persona | Representative scenario to inspect |
+| --- | --- | --- |
+| Activities | **Giulia** | Groups and Projects from an organizer's perspective |
+| Activities | **Marco** | Repairs, Scambio/Dona, delegated organizing |
+| Activities | **Sara** | Creative activities, personal conversations, Ideas |
+| Activities | **Dario** | Participation/invitations without a profile photo |
+| Activities | **Elena** | Discovery, first join and newcomer states |
+| Find People | **Luca** | Organizing Valorant meetings, recruitment through General |
+| Find People | **Maya** | Meeting attendee, persistent chat, board-game organization |
+| Find People | **Nora** | Running/travel/creative interests and pending support |
+| Find People | **Teo** | Meeting attendance/leave while retaining the group chat |
+| Find People | **Iris** | Newcomer browsing, deliberately joining General and meetings |
+
+**Use all ten fixed personas when available.** For each, enter through the *real Mock account selector* and verify the active persona and appropriate Activities/Find People presentation; switching the presentation does not switch identity automatically. Use the actual persisted fixture relationships and authorization rules, not edited names, hardcoded profile labels, mocked role badges, a hand-written one-off persona catalogue, or injected snapshots passed off as normal navigation. A fixture can drift in a shared world; record the actual observed permissions rather than assume the scenario title grants access.
+
+Navigate screens under the account whose role makes that UI meaningful; include both sides of important interactions where relevant, e.g., organizer vs requester, different participants in the same chat, attendee vs creator, and newcomer vs established member. **Do not capture every identical screen ten times**: repeat screenshots when account changes reveal different content, controls, access, status, layout or issue. Conversely, never satisfy persona coverage with ten Home screenshots while all meaningful screens are reviewed under Giulia alone.
+
+Keep a **persona-by-screen coverage matrix** (in `coverage.md`) showing which account and dataset supplied each capture, what meaningful state it exercised, and any blocked scenario. Each screenshot's metadata must record the Mock dataset, persona key/display name, relevant role, account transition method, local/hosted realm, and audited app/source revision. Guest and genuine normal-account captures are additional, clearly labeled coverage. Capture the same route from multiple personas if the roles legitimately change its appearance or interaction.
+
+If the official persona login/broker or original fixture data cannot be provisioned in an isolated environment, investigate the supported local qualification/capture workflow first. Do not pretend a fake-gateway widget render is a genuine Mock-account screenshot. Clearly mark unavailable personas and continue independent review. Mutations needed to demonstrate a workflow must occur **only inside the task-owned disposable local world**, not in the retained shared hosted Mock dataset.
 
 Do not expand this into a full independent web/admin/iOS audit. Include external browser/native screens only where needed to understand a mobile flow, and label the boundary.
 
@@ -153,6 +180,17 @@ Separate **observed evidence**, **interpretation**, and **proposed change**. Lab
 
 Do not invent a problem for every screen. Say **"No issue observed in this captured state"** where appropriate. Keep necessary consent, permissions, safety, and error explanations; do not classify every explanatory sentence as debug clutter. Check conditional provider attribution before proposing its removal.
 
+### 4.1 Deduplicate findings across accounts, screenshots and pages
+
+**One underlying problem or proposed change gets one canonical finding ID and one vote, even if it appears in several screenshots of the same screen or on different pages.** The PDF is a complete *screenshot inventory*, not a repeat of the same comments every time a shared issue appears.
+
+- When a new capture reproduces an existing issue (e.g., A1 also affects B, C and D), attach B/C/D as **additional evidence for A1** and show only a short linked note such as `Also affected: A1`; do **not** create B1/C1/D1 copies or repeat A1's explanatory paragraph on each page.
+- If screenshot B is the same page under another Mock account and reveals **one genuinely new issue**, create **B1** only for the new issue; list `A1 also applies` once as a cross-reference. The original A1 proposal and its yes/no decision stay unchanged.
+- Deduplicate at the **root cause / decision level**, not by vague topic. Two independent overflow defects needing different code changes can have different IDs; two manifestations addressed by the same concrete copy/layout fix should share an ID. Record the reason if two visually similar findings are intentionally separate.
+- Maintain a **single canonical finding record** containing ID, recommendation, decision status and all linked screenshot IDs/states/personas. Generate the PDF, screenshot notes, `decisions.md` and summary priorities from that same record so they cannot disagree.
+- Screenshots **without new issues still appear**, with a short `No new issue` or `Also affected: A1` notation as appropriate. Every screen should be inspectable, but the user should vote on each change **once**.
+- Never renumber an existing ID because a later screenshot revealed more evidence; add references and genuinely new findings without invalidating previously given answers.
+
 ## 5. Deliver a review designed for a phone
 
 ### Required output 1: PLANETS_UIAUDIT01_Review.pdf
@@ -166,7 +204,7 @@ Use a **portrait, screen-first PDF** as the primary review. No account, local se
 - For detail that would be too small, add a linked detail page with an enlarged crop and the same issue ID. Keep its full-screen context available.
 - Avoid dense pages; split findings into continuation/detail pages without renumbering them.
 - Default commentary to concise English, retaining Italian UI quotations and proposed Italian copy.
-- Include every reviewed capture, including screens with no issues; separate summary priorities from the complete evidence.
+- Include every reviewed capture, including screens with no issues; separate summary priorities from the complete evidence. On repeated account views, display a brief cross-reference to an existing canonical issue, **not duplicate issue commentary or another vote**.
 - Keep environment/build details and diagnostic logs in the appendix, not in the main decision cards.
 
 Each finding must contain:
@@ -174,9 +212,9 @@ Each finding must contain:
 2. **What is visible / why it matters**, normally one or two sentences.
 3. **One specific proposed change** that a yes/no answer can approve.
 4. Type, impact, confidence, and **Decision: pending**.
-5. Linked related evidence if the same issue appears elsewhere.
+5. All related screenshot IDs, accounts and states showing the **same** issue; these are supporting evidence, not separate proposals.
 
-Use A1, A2, B1, etc. **The letter identifies a screenshot, the number identifies one proposal.** Preserve IDs when prioritizing, splitting pages, recapturing, or creating later before/after views. Cross-reference a repeated issue instead of creating several votes for the same change. Never interpret missing answers as approval.
+Use A1, A2, B1, etc. **The letter identifies the screenshot where a proposed change was first recorded, and the number identifies one unique proposal.** Preserve IDs when prioritizing, splitting pages, recapturing, or creating later before/after views. Later screenshots referencing that proposal keep its original ID and add no new vote. If the later screenshot reveals another change, issue a new finding under that screenshot's letter only for the new change. Never interpret missing answers as approval.
 
 For A1, distinguish the visible repeated-person problem from the diagnosed cause. If the cause is unconfirmed, keep that explicit. If the narrow authorized bug fix was made, label it **fixed under the quick-fix request** with before/after evidence rather than pretending it awaits the general UI vote.
 
@@ -208,7 +246,7 @@ Before calling the task complete:
 - Reconcile the route/state inventory with actual captures. Confirm IDs, image hashes, source/run provenance, and no stale files from earlier runs.
 - Confirm every delivered image has been opened and visually assessed.
 - Generate the PDF, render all pages, and inspect them for clipping, image distortion, marker alignment, missing glyphs and readable comments. Check representative dense pages at phone-sized fit-to-width. Add crops/pages instead of shrinking text.
-- Confirm the PDF and archive open, all image references resolve, the index works, and every issue has one unambiguous proposal.
+- Confirm the PDF and archive open, all image references resolve, the index works, and every **unique** issue has exactly one unambiguous proposed change and one vote. Check for duplicate recommendations across screenshots, accounts and routes. Verify the persona-by-screen coverage matrix and each screenshot's persona/dataset provenance.
 - Run change-scoped validation for tooling or the narrow fix, including meaningful regression tests if behavior changed. Follow required CI gates; do not add costly recurring suites for a one-time audit.
 - Keep captured/fixed/blocked/inferred findings distinct. A partial audit must be labeled partial with exact remaining coverage, not reported as "all pages reviewed".
 - Preserve only task-owned evidence/resources needed for reproducibility; clean up disposable credentials, processes, stacks and worktrees according to repository policy.
