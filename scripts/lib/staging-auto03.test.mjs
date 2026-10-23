@@ -13,6 +13,8 @@ import {
   UnsafeCatalogError,
   predecessorCatalog,
   assertPredecessorCatalog,
+  migrationCandidate,
+  CALENDAR_MIGRATION,
 } from "../release/eligibility.mjs";
 import { STAGING_REF, verifiedDeploymentSet } from "../release/migrations.mjs";
 import { inventoryDigest } from "../release/safety.mjs";
@@ -81,8 +83,81 @@ const catalog = () => ({
   constraints: [],
   indexes: [],
   views: [],
+  event_triggers: [],
 });
 const candidate = { classification: "private-additive-candidate" };
+test("only the exact independently merged CAL01 source can use its installed reader contract", () => {
+  const sql = readFileSync("supabase/migrations/" + CALENDAR_MIGRATION, "utf8");
+  const m = { file: CALENDAR_MIGRATION, sql, sha256: sha256(sql) };
+  assert.equal(
+    migrationCandidate(m).classification,
+    "established-contract-candidate",
+  );
+  const changed = sql.replace("to authenticated;", "to anon;");
+  assert.notEqual(changed, sql);
+  assert.equal(
+    migrationCandidate({ ...m, sql: changed, sha256: sha256(changed) })
+      .classification,
+    "review-required-for-hosted",
+  );
+  assert.notEqual(
+    migrationCandidate({ ...m, file: "20261023113720_other_calendar.sql" })
+      .classification,
+    "established-contract-candidate",
+  );
+});
+test("global DDL callbacks are part of the predecessor and cannot change through an additive candidate", () => {
+  const before = catalog();
+  const event = {
+    id: "ensure_rls",
+    owner: "postgres",
+    event: "ddl_command_end",
+    enabled: "O",
+    tags: ["CREATE TABLE"],
+    function: "public.rls_auto_enable()",
+  };
+  before.event_triggers = [event];
+  assert.doesNotThrow(() =>
+    assertPredecessorCatalog(predecessorCatalog(before), before),
+  );
+  for (const mutate of [
+    (c) =>
+      c.event_triggers.push({
+        ...event,
+        id: "hidden_callback",
+        function: "private.hidden()",
+      }),
+    (c) => (c.event_triggers[0].enabled = "D"),
+    (c) => (c.event_triggers[0].function = "private.changed()"),
+    (c) => (c.event_triggers[0].tags = ["ALTER TABLE"]),
+    (c) => (c.event_triggers[0].owner = "authenticated"),
+    (c) => (c.event_triggers = []),
+  ]) {
+    const changed = structuredClone(before);
+    mutate(changed);
+    assert.throws(() =>
+      assertPredecessorCatalog(predecessorCatalog(before), changed),
+    );
+    assert.throws(
+      () => assertBoundedCatalog(before, changed, candidate),
+      /global DDL/,
+    );
+  }
+  const incomplete = predecessorCatalog(before);
+  delete incomplete.event_triggers;
+  assert.throws(
+    () => assertPredecessorCatalog(incomplete, before),
+    /Incomplete/,
+  );
+  const omittedBefore = catalog(),
+    newSection = catalog();
+  delete omittedBefore.event_triggers;
+  newSection.event_triggers = [event];
+  assert.equal(
+    catalogEffects(omittedBefore, newSection)[0].section,
+    "event_triggers",
+  );
+});
 test("single native migration owner is verified from the real default branch metadata", () => {
   const base = {
     id: "synthetic",
@@ -169,6 +244,8 @@ const scenario = () => {
       policy_negative_probes: true,
       single_writer_probe: true,
       cli_startup_bounds: true,
+      hosted_runtime_callback: true,
+      calendar_security_contracts: true,
       migration_safety: witnesses,
     },
   };
@@ -501,6 +578,8 @@ for (const [name, mutate] of [
     "policy_negative_probes",
     "single_writer_probe",
     "cli_startup_bounds",
+    "hosted_runtime_callback",
+    "calendar_security_contracts",
   ].map((key) => [key, (s) => (s.evidence[key] = false)]),
 ])
   test("receipt fails closed: " + name, () => {

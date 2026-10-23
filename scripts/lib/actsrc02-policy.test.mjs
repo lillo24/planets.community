@@ -205,6 +205,8 @@ test("a promoted source-only witness cannot authorize any hosted pending write",
     policy_negative_probes: true,
     single_writer_probe: true,
     cli_startup_bounds: true,
+    hosted_runtime_callback: true,
+    calendar_security_contracts: true,
     migration_safety: [
       {
         version: migration.version,

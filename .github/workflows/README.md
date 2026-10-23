@@ -238,6 +238,9 @@ exact-source Validation, then verifies the whole pending chain before any apply.
 The five existing required checks remain. Classification/rehearsal use the PR's
 trusted pre-change policy for product SQL; a policy-only PR must pass unchanged
 base tests first. Privileged product SQL and policy changes require separate PRs.
+The trusted-base step also runs that base's V2/handoff/source-index guard suites when present;
+candidate tests cannot replace them, and legacy bases without those files remain
+supported.
 No owner fingerprint comments are required. Confirmed unsafe changes block source;
 unproven hosted compatibility produces a concrete hold. Changed shared workflows
 select all existing areas. Unrelated PRs avoid expensive rehearsal; full manual
