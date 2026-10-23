@@ -1,5 +1,12 @@
 # COCREATE-COMM01/FILL01 — communities, meetings and mock data
 
+Current integration: the founder selected [DEPLOY01](cocreate-deploy01.md) on
+2026-10-23. It authorizes reviewing the complete tested ancestry in one
+main-targeted PR #297, after reconciliation and refreshed qualification. Its
+owner-review/green-CI conditions supersede this feature task's dependent-base
+handoff below. The recorded feature checkpoints remain historical; DEPLOY02
+remains deferred until the reviewed integration merges.
+
 Status: implemented and locally qualified, 2026-10-23; exact-head GitHub owner
 review and production activation remain separate. New isolated branch
 `codex/cocreate-fill01` builds on RUNALL `a0e810d0` and preserves VIS01

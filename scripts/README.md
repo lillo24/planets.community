@@ -211,6 +211,10 @@ programme verifier and scoped co-creation pgTAP against the populated upgrade.
 For COMM01/FILL01, the explicit `PLANETS_COCREATE_UPGRADE_BASE` value
 `a0e810d0678cfd17b0124eb103e68974e932474b` selects the reviewed RUNALL base
 (137 immutable migrations). It additionally warms a General, numbered chat,
-membership, human message and legacy card before upgrading. The only other
-accepted base is the original default; arbitrary refs are refused. The same
-non-default-project and loopback opt-ins remain mandatory.
+membership, human message and legacy card before upgrading. DEPLOY01 additionally
+accepts exact main `667bf57b51912f8c1d92b54828bb1e4d801a7303` (126 immutable
+migrations), selected through the same environment variable, to qualify the
+complete 15-migration cumulative integration against its actual main predecessor.
+The original default remains supported; arbitrary refs are refused. The same
+non-default-project and loopback opt-ins remain mandatory. This local qualification
+is not the separate staging semantic rehearsal or repository-owner SQL approval.

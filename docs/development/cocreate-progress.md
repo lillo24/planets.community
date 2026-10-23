@@ -1,9 +1,12 @@
 # COCREATE-RUNALL progress
 
-Current follow-up: [COMM01/FILL01 contract and final local qualification](cocreate-fill01.md),
-on separate unmerged `codex/cocreate-fill01`, integrating RUNALL and VIS01 under
-the user's latest request. All eligible follow-up implementation/local checks
-are complete; draft PR #297 records the final-head CI/owner-review gate.
+Current task: [DEPLOY01 integration and review](cocreate-deploy01.md), on the
+existing isolated `codex/cocreate-fill01` branch and draft PR #297. The user has
+authorized one cumulative main-targeted review of RUNALL, VIS01 and COMM01/FILL01.
+Main `667bf57b` is reconciled; refreshed qualification is in progress. Exact-head
+owner SQL review and green required CI remain prerequisites to merge. DEPLOY02
+is deferred until the reviewed integration merges; no hosted operation is authorized
+by DEPLOY01. [COMM01/FILL01](cocreate-fill01.md) records historical qualification.
 The RUNALL ledger below records its original scope.
 
 Authority: [RUNALL pack](../../history-implementations/PLANETS_COCREATE_RUNALL_autonomous_implementation.md).
@@ -566,3 +569,41 @@ unchanged. This follow-up is not complete or ready for production.
   hosted mock adoption and provider setup remain separately controlled. Exact
   commands, assumptions, compatibility/access matrix and evidence are in
   [cocreate-fill01.md](cocreate-fill01.md). No further eligible code stage remains.
+
+### DEPLOY01 — authorized cumulative integration, 2026-10-23
+
+- The founder now explicitly selected DEPLOY01, with DEPLOY02 only after the
+  reviewed integration merges. [Its execution contract](cocreate-deploy01.md)
+  supersedes the dependent-base-only handoff above for this checkpoint. Reuse
+  the same isolated branch/worktree and #297; do not duplicate #287/#292 ancestry.
+- Safely fetched main `667bf57b`, preserving primary `.vis01/`, all `.local/`
+  diagnostics and other agents' worktrees. Clean merge `50e66c37` adds only the
+  latest MAPMOCK01 planning document. ACTMET01 code/tests and the release safety,
+  owner-review, writer, reconciliation and staging workflow match main exactly.
+- Static inventory verifies **126 unchanged main migrations + 15 additive,
+  unique owner-review-required migrations = 141**. The owned-local upgrade
+  verifier now also accepts that exact main SHA/inventory, retaining all reset
+  guards, original/RUNALL bases and preservation assertions.
+- Refreshed qualification: Mobile **4,181 PASS / two existing skips**, clean
+  analysis, **947 formatted / zero changes**; Android debug APK PASS **131.4s**;
+  Web **405 PASS / two existing skips**, lint/typecheck/build/invitation check
+  PASS; tooling **181 PASS**; Site **60 PASS** plus lint/typecheck/build/dry run.
+  Actual two-realm Mock **382 PASS / ten personas / zero normal calls**, worker
+  concurrency/rollback, populated controls/repeat seed; unit **14 PASS**.
+- Populated main upgrade **185 PASS / 168 original table snapshots / three
+  native function OID/ACL/result contracts**. RUNALL upgrade **216 PASS / 187
+  snapshots / six contracts**, including existing General/numbered episodes,
+  chat, legacy card and original capacity. Post-upgrade real OTP/socket
+  programme **139 PASS**; gates restored OFF. Full `check:db` now running.
+  A **new** named disposable
+  `planets-cocreate-deploy01-qa` protects old backups, with a hash-journaled
+  two-line config overlay. The first actual-main CLI reset failed before
+  population; diagnostic retry passed unchanged SQL. The failed log and both
+  passing manifests remain retained, and diagnostics now include both redacted
+  output channels rather than hiding stdout errors behind stderr progress.
+- **Precise next action:** complete full `check:db`; restore gate OFF, stop
+  only the new project with backup,
+  restore original config bytes. Inspect/commit, retarget the same draft #297 to
+  main before final push, obtain a fresh exact-head owner-review artifact and
+  wait for actual owner SQL proof/current-head green CI. Do not post owner proof,
+  weaken controls, merge duplicate ancestry or begin DEPLOY02. No hosted action.

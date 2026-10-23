@@ -19,10 +19,13 @@ import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 // Materialize separately: never rename/remove the working migration directory.
 const originalBase = "675bc5929c79332d1f4dcaf3446780c3020ef214";
 const runallBase = "a0e810d0678cfd17b0124eb103e68974e932474b";
+// DEPLOY01's actual main predecessor, including ACTAPI01 and merged ACTMET01.
+// Pin its complete inventory; arbitrary refs must never authorize a local reset.
+const integrationBase = "667bf57b51912f8c1d92b54828bb1e4d801a7303";
 const base = process.env.PLANETS_COCREATE_UPGRADE_BASE ?? originalBase;
 assert.ok(
-  [originalBase, runallBase].includes(base),
-  "Only the reviewed original or selected RUNALL base is supported",
+  [originalBase, runallBase, integrationBase].includes(base),
+  "Only the reviewed original, RUNALL or DEPLOY01 main base is supported",
 );
 const followup = base === runallBase;
 const root = await realpath(process.cwd());
@@ -69,7 +72,9 @@ function run(binary, args, cwd = root) {
   assert.equal(
     r.status,
     0,
-    `${binary === cli ? "Local migration operation" : binary} failed: ${redact(r.stderr || r.stdout || String(r.error)).slice(-1800)}`,
+    `${binary === cli ? "Local migration operation" : binary} failed: ${redact(
+      [r.stderr, r.stdout, r.error?.message].filter(Boolean).join("\n"),
+    ).slice(-1800)}`,
   );
   return r.stdout;
 }
@@ -87,7 +92,7 @@ const files = run("git", [
   .trim()
   .split(/\r?\n/);
 assert.ok(
-  files.length === (followup ? 137 : 123) &&
+  files.length === (followup ? 137 : base === integrationBase ? 126 : 123) &&
     files.every((f) => /^supabase\/migrations\/\d{14}_[\w-]+\.sql$/.test(f)),
   "Exact base inventory required",
 );
