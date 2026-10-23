@@ -3,8 +3,9 @@
 Current task: [DEPLOY01 integration and review](cocreate-deploy01.md), on the
 existing isolated `codex/cocreate-fill01` branch and draft PR #297. The user has
 authorized one cumulative main-targeted review of RUNALL, VIS01 and COMM01/FILL01.
-Main `667bf57b` is reconciled; refreshed qualification is in progress. Exact-head
-owner SQL review and green required CI remain prerequisites to merge. DEPLOY02
+Main `667bf57b` is reconciled; eligible implementation and local qualification
+are complete, and the same draft #297 now targets main. Exact-head owner SQL
+review and green required CI remain prerequisites to merge. DEPLOY02
 is deferred until the reviewed integration merges; no hosted operation is authorized
 by DEPLOY01. [COMM01/FILL01](cocreate-fill01.md) records historical qualification.
 The RUNALL ledger below records its original scope.
@@ -626,10 +627,20 @@ unchanged. This follow-up is not complete or ready for production.
   additions against main; original 15 hashes/predecessor digests unchanged.
 - Activation OFF verified, only the new project stopped with backup, exact
   original config restored. The VM was already running at DEPLOY01 start and
-  remains running. Final two-realm Mock replay is in progress at the new schema.
+  remains running. Final two-realm Mock **382 PASS / ten personas / zero normal
+  calls**, real notification concurrency/rollback and populated controls/repeat
+  seed; both new stacks cleaned up, zero owned containers running. Final schema:
+  `0f4a8d1a9c2d0f74260540b485283cafa9744ec816b6466fdbbbf3022897c858`.
   A fresh `adb devices -l` still finds no attached phone; no device QA is claimed.
-- **Precise next action:** finish final Mock, inspect/commit, retarget the same
-  draft #297 to
-  main before final push, obtain a fresh exact-head owner-review artifact and
-  wait for actual owner SQL proof/current-head green CI. Do not post owner proof,
-  weaken controls, merge duplicate ancestry or begin DEPLOY02. No hosted action.
+- **Eligible DEPLOY01 work complete:** bounded refresh and populated installed
+  contract qualification committed in `22c27be0`. Same draft #297 retargeted to
+  main before final push. Its body records the final source/CI/artifact links;
+  all 16 additions need fresh exact-head owner review, not the prior four/eleven
+  migration proofs. Final required GitHub jobs are not claimed passed.
+- **Exact blocker / next action:** actual numeric repository owner reviews SQL
+  and evidence, posts `STAGING-AUTO01-REVIEW` plus the current artifact's exact
+  `review-required.json`, then rerun the existing Validation gate. Complete its
+  isolated populated semantic rehearsal and all required area jobs on the final
+  head before readiness/merge. Do not post owner proof, weaken controls, merge
+  duplicate ancestry or begin DEPLOY02. #287/#292 remain preserved/open until
+  cumulative reviewed integration succeeds. No hosted action or deployment.

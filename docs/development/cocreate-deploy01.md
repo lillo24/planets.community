@@ -1,8 +1,8 @@
 # COCREATE-DEPLOY01 — cumulative integration and owner review
 
-Status: source reconciliation, full 141-migration database baseline and client/Mock
-qualification complete; forward hardening database qualification passed, final
-two-realm Mock qualification in progress, 2026-10-23.
+Status: eligible integration/hardening and all local qualification complete,
+2026-10-23. The same draft #297 now targets main. Actual exact-head owner SQL
+review and required GitHub CI remain merge prerequisites; DEPLOY02 is deferred.
 
 The user selected DEPLOY01 before DEPLOY02. Its full handoff prompt,
 `PLANETS_COCREATE_DEPLOY01_integrate_fill01_into_main.md`, was read from the
@@ -182,9 +182,18 @@ affected set was rerun; a second complete `check:db` at 142 is not claimed:
   original 15 review hashes/predecessor digests remain unchanged. RUNALL/VIS01
   ancestry and release-control byte identity were rechecked. Fresh fetch still
   selects main `667bf57b` and the same two dependency heads.
-- Pending final Mock replay uses the new schema digest. The fresh full client
-  checks above remain applicable: no mobile/web/site runtime or test source
-  changed during hardening, only the mobile feature navigation README.
+- Final actual two-realm Mock: **382 PASS / ten personas / zero normal-realm
+  product calls**, including real notification concurrency/rollback and populated
+  control/repeat seed. Both newly created stacks cleaned up, zero running owned
+  containers verified. Final schema digest:
+  `0f4a8d1a9c2d0f74260540b485283cafa9744ec816b6466fdbbbf3022897c858`.
+- The fresh full client checks above remain applicable: no mobile/web/site
+  runtime or test source changed during hardening, only the mobile feature
+  navigation README. The existing 24 EN/IT 320dp light/dark 1x/2x inspected
+  contract-fixture renders in `evidence/cocreate-fill01` cover the unchanged UI.
+  They are not device screenshots or founder visual approval. A fresh
+  `adb devices -l` still finds zero attached devices; physical Android/iOS and
+  owner visual/accessibility review remain unrun.
 
 Reproduce serially on the explicit owned disposable target documented above:
 
@@ -211,6 +220,26 @@ npm run cocreate:programme:verify:local
 node scripts/mock/qualify-local.mjs
 ```
 
+Client commands used for the refreshed evidence above:
+
+```powershell
+npm run mobile:l10n
+npm run format:check:mobile
+# In apps/mobile:
+flutter analyze --no-pub
+flutter test --no-pub --concurrency=2 --reporter expanded
+flutter build apk --debug --no-pub
+# Back at repository root:
+npm run test:tooling
+npm run test --workspace @planets/web -- --pool=forks
+npm run lint --workspace @planets/web
+npm run typecheck --workspace @planets/web
+npm run build --workspace @planets/web
+npm run invitation:check --workspace @planets/web
+npm run check:site
+node --test scripts/mock/*.test.mjs supabase/functions/mock-personas/*.test.mjs
+```
+
 Final populated manifests are retained privately under
 `.local/cocreate-upgrade-cb1bbab4-04fb-46cd-bcad-e3f3590d4473` (main),
 `.local/cocreate-upgrade-f0a3b262-4048-4850-8a34-1221b3b6cc01` (RUNALL) and
@@ -224,12 +253,35 @@ was already running at task start and must retain that initial state. Existing
 RUNALL/FILL01 backups were not reused or reset. Its new project's initial gate
 OFF and loopback API were checked before qualification. The two-line project/API
 overlay and byte-for-byte restoration backup are journaled privately; never stage
-`supabase/config.toml`. Stop only this new project with backup after qualification,
-restore the original config hash, and preserve other agents' services/worktrees.
+`supabase/config.toml`. Restoration is complete: activation OFF verified before
+stopping only the new project **with backup**, exact original config SHA-256
+`2e67b7a5cda9ffc671c31b4461c1c8b896cc75c3bf727f6e406ee573eefbd8f6`
+restored and no tracked config diff. The VM retains its initial running state;
+other worktrees, backups and services are preserved.
 
 The separate staging semantic rehearsal deliberately requires its isolated Linux
 Actions workspace and actual owner proof. Do not fake that environment to run it
 on Windows; local upgrade witnesses supplement its eventual required CI result.
+
+## Precise review handoff
+
+All eligible code/local work is complete and committed on the existing branch.
+The same draft [PR #297](https://github.com/lillo24/planets.community/pull/297)
+was retargeted to **main before final push**, so the new synchronization run can
+validate the cumulative main delta. Its body links the final source head, CI run
+and exact **16-migration** review artifact without a self-referential docs/SHA
+loop. Previous dependent-base CI failures/artifacts remain historical; no final
+GitHub check is represented as passed without an actual result.
+
+Next action is the actual repository owner's SQL/evidence review and exact
+artifact issue comment described above. Then rerun the existing failed
+Validation gate and complete its populated Linux semantic rehearsal plus every
+required area. Only after actual proof, green current-head required CI, current
+main and owner readiness may this reviewed integration merge. Keep #287/#292
+open/preserved until then; inspect their final heads before classifying them as
+fully included. No owner comment is posted by the agent, no gate is changed and
+no alternate workflow substitutes for missing review. This external approval is
+the remaining DEPLOY01 blocker; DEPLOY02 has not started.
 
 ## Deferred deployment
 
