@@ -1,5 +1,13 @@
 # Validation workflow
 
+CAL01 extends the existing community/meeting HTTP step with actor-bound calendar
+reads, a genuine last-seat race and a bounded rollback-only populated rehearsal
+over 3,000 historical meetings. It preserves installed function/reader contracts
+and checks the query's date index. The step already supplies the required
+`PLANETS_DISPOSABLE_QA=1`; no workflow trigger, job, area classification or hosted
+credential is added. This coverage runs with the existing Database area because
+the new reader aggregates protected meeting/history authority.
+
 `external-activities.yml` is a separate daily 04:20 UTC/dispatch Node runner,
 skipped unless `ACTIVITIES_IMPORT_ENABLED=true`. No PR/fork trigger receives
 its server-only credentials. Target-scoped concurrency and a ten-minute cap

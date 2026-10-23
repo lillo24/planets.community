@@ -14,6 +14,20 @@ See the [behavior, retry and proposed 09C policy contract](../../../../../docs/d
 This feature owns Trova persone independently of native Projects, Tavoli,
 registered Groups and imported events.
 
+CAL01 adds a Calendar / Calendario button beside a community's numbered groups.
+`domain/co_creation_calendar.dart` owns its strict minimal read DTOs, local civil
+month boundaries and review routes; `data/co_creation_calendar_gateway.dart`
+adds one versioned, bounded RPC per page to the existing room gateway.
+`presentation/co_creation_calendar_screen.dart` owns month/day selection, agenda,
+explicit pagination and lifecycle/identity/realm fencing;
+`co_creation_calendar_month.dart` renders accessible day selection and distinct
+available/full markers. Attendance review reuses `CoMeetingPanel` and its frozen
+command recovery without reading a transcript or acknowledging messages.
+Only exact admitted numbered access or cards inside the selected General
+episode's history can contribute rows. Occupancy always counts that meeting.
+See [the calendar contract and validation](../../../../../docs/development/cocreate-cal01-calendar.md)
+for cursor scope, partial markers, date windows and delivery state.
+
 - `domain/co_creation_demo.dart` defines bilingual fictional preview values.
 - `data/co_creation_examples.dart` contains deterministic, explicitly fictional
   examples with a separate non-UUID namespace.
