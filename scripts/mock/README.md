@@ -8,7 +8,8 @@ activation, explicit General/group admission, timed 4/7 and full meeting cards,
 persistent chat messages and pending proposals through the canonical RPCs.
 `verify.mjs` checks those exact fixtures without repairing tester edits.
 Settings presentation selection filters Home Help's offered login profiles;
-Mock remains an independent realm. This task does not apply hosted changes.
+Mock remains an independent realm. Hosted changes use the separate guarded
+operator and require their own executed receipts.
 
 This package owns explicitly invoked mock-only operations. It never imports the
 local demo seeder and never removes its loopback guard.

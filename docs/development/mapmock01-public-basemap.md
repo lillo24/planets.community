@@ -170,8 +170,9 @@ Read-only inspection on 23 October 2026 confirmed staging map-provider v5 with
 JWT verification on; no mock map function existed. Staging provider master,
 tiles, centers and cache license were enabled, daily limit **8,000 units**,
 actor limit 8,000, actor minute 30, global minute 120, short cache 60 seconds;
-Trento baseline enabled/licensed for 604,800 seconds. No current-day global
-usage row was returned. This is an observed configuration snapshot, not a
+Trento baseline enabled/licensed for 604,800 seconds. The read-only global ledger
+check at 15:38 UTC on 23 October recorded zero current-day quarter-credit units.
+This is an observed configuration snapshot, not a
 provider-account invoice or evidence of a hosted tile request. No real provider
 charge was incurred or measured by this task.
 
@@ -195,7 +196,7 @@ The continuation authorizes the following steps for the two fixed projects:
    server-only Geoapify key and normal runtime service key. Start with
    `LOCATION_MOCK_BASEMAP_ENABLED=false`; preserve normal function JWT settings.
    Confirm a mock bearer fails on ordinary product RPCs and normal map-provider.
-5. Approve conservative mock caps, then explicitly enable the SQL mock switch
+5. Configure conservative mock caps, then explicitly enable the SQL mock switch
    and `LOCATION_MOCK_BASEMAP_ENABLED` with normal master/tile/license gates
    intact. A deliberately tiny genuine mock-session tile request must produce
    a real Geoapify 256px PNG and a matching reservation in the **staging** global
