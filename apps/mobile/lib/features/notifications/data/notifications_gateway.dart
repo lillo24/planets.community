@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/backend/supabase_backend.dart';
 import '../../participation/domain/participation_models.dart';
 import '../domain/notification_models.dart';
+import '../domain/co_filling_notification.dart';
+import '../../co_creation/application/people_signals.dart';
 
 abstract interface class NotificationsGateway {
   Future<NotificationsPage> listNotifications({
@@ -46,7 +48,7 @@ class SupabaseNotificationsGateway implements NotificationsGateway {
     NotificationCursor? cursor,
   }) async {
     final response = await _client.rpc<List<dynamic>>(
-      'list_own_notifications_with_contacts',
+      'list_own_notifications_with_cocreate',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_limit': limit + 1,
@@ -64,7 +66,7 @@ class SupabaseNotificationsGateway implements NotificationsGateway {
   @override
   Future<int> getUnreadCount({required String expectedProfileId}) async {
     final response = await _client.rpc<int>(
-      'get_own_unread_notification_count_with_contacts',
+      'get_own_unread_notification_count_with_cocreate',
       params: {'p_expected_profile_id': expectedProfileId},
     );
     if (response < 0) {
@@ -79,7 +81,7 @@ class SupabaseNotificationsGateway implements NotificationsGateway {
     required String notificationId,
   }) async {
     final response = await _client.rpc<String>(
-      'mark_contact_or_legacy_notification_read',
+      'mark_notification_with_cocreate_read',
       params: {
         'p_expected_profile_id': expectedProfileId,
         'p_notification_id': notificationId,
@@ -91,7 +93,7 @@ class SupabaseNotificationsGateway implements NotificationsGateway {
   @override
   Future<int> markAllRead({required String expectedProfileId}) async {
     final response = await _client.rpc<int>(
-      'mark_all_notifications_with_contacts_read',
+      'mark_all_notifications_with_cocreate_read',
       params: {'p_expected_profile_id': expectedProfileId},
     );
     if (response < 0) {
@@ -150,6 +152,9 @@ class NotificationsPayloadParser {
     );
     final projectKind = _optionalProjectKind(row['project_kind']);
     final notification = AppNotification(
+      coFilling: kind == NotificationKind.cocreateFilling
+          ? CoFillingNotification.parse(row)
+          : null,
       notificationId: _requiredUuid(row['notification_id'], 'notification ID'),
       contactTargetId: _optionalUuid(
         row['contact_target_id'],
@@ -311,6 +316,37 @@ class NotificationsPayloadParser {
     AppNotification item,
     Map<String, dynamic> row,
   ) {
+    if (item.kind == NotificationKind.cocreateFilling ||
+        item.destinationKind == NotificationDestinationKind.cocreateFilling ||
+        row.keys.any((k) => k.startsWith('cocreate_'))) {
+      if (item.kind != NotificationKind.cocreateFilling ||
+          item.destinationKind != NotificationDestinationKind.cocreateFilling ||
+          item.category != NotificationCategory.participation ||
+          item.coFilling == null ||
+          _hasAny(row, const [
+            'contact_target_id',
+            'project_id',
+            'project_kind',
+            'project_title',
+            'request_id',
+            'chat_id',
+            'message_id',
+            'actor_profile_id',
+            'actor_display_name',
+            'resource_listing_id',
+            'resource_listing_title',
+            'resource_request_id',
+            'resource_chat_id',
+            'resource_chat_message_id',
+            'resource_agreement_id',
+            'resource_agreement_event_id',
+            'resource_exchange_event_kind',
+            'resource_exchange_leg_kind',
+          ])) {
+        throw const FormatException('Invalid filling notification context.');
+      }
+      return;
+    }
     final contactDestination = switch (item.destinationKind) {
       NotificationDestinationKind.groupContactRequest ||
       NotificationDestinationKind.groupCoordinationProposal ||
@@ -527,6 +563,10 @@ class NotificationsPayloadParser {
         );
       case NotificationKind.unknown:
         return;
+      case NotificationKind.cocreateFilling:
+        throw const FormatException(
+          'Filling notification context was invalid.',
+        );
     }
   }
 
@@ -646,4 +686,14 @@ class NotificationsPayloadParser {
 
 final notificationsGatewayProvider = Provider<NotificationsGateway>((ref) {
   return SupabaseNotificationsGateway(ref.watch(supabaseClientProvider));
+});
+
+/// The real backend shares the existing actor-only stream with Messages. Other
+/// gateway adapters can override this provider with their own invalidation.
+final notificationCoChangesProvider = Provider<int?>((ref) {
+  if (ref.watch(notificationsGatewayProvider)
+      is! SupabaseNotificationsGateway) {
+    return null;
+  }
+  return ref.watch(peopleSignalsProvider).asData?.value.event;
 });

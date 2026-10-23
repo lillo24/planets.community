@@ -126,6 +126,29 @@ export function deploymentSet(diff, policy, approvalDigest, reconciliation) {
   return diff.pending;
 }
 
+// V2 does not broaden the old bootstrap waiver or two-file reconciliation.
+// Every pending member (including an older hole) must have its own independent
+// exact-byte/predecessor witness before the writer receives any file.
+export function verifiedDeploymentSet(diff, policy, decisions) {
+  if (
+    policy.project_ref !== STAGING_REF ||
+    policy.migration_owner !== "github-actions" ||
+    policy.staging_safety_version !== 2 ||
+    diff.drift.length ||
+    decisions.length !== diff.pending.length ||
+    diff.pending.some(
+      (m, i) =>
+        m.version !== decisions[i]?.version ||
+        m.sha256 !== decisions[i].sha256 ||
+        decisions[i].authorization !== "standing-verified-policy",
+    )
+  )
+    throw new ReleaseError(
+      "Whole pending chain lacks verified staging authorization",
+    );
+  return diff.pending;
+}
+
 export function assertBackendReady(diff, checks) {
   if (
     diff.pending.length ||

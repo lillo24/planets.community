@@ -25,3 +25,12 @@ readiness limits. `presentation/mock_accounts_screen.dart` is the shared initial
 and Help selector, with localized exploration scenarios, current-account state,
 catalog invalidation and no credential copying. The CI-only native release
 target qualifies this same coordinator and actual backend clients.
+
+COMM01/FILL01 adds a bounded `dataset` field to broker persona metadata. Missing
+legacy values mean Activities. The Help/Home account picker offers Activities
+or Find people personas according to the saved presentation; changing a
+presentation never silently switches the logged-in identity. The existing
+explicit account-selection/departure/session-fencing flow still owns login.
+The guarded mock operator's separate `people-world.mjs` seeds the requested
+community/meeting scenarios through canonical commands; ordinary live reads
+never substitute those fixtures on empty/error/gate denial.

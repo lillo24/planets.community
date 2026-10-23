@@ -41,7 +41,7 @@ class SupabaseMessageUnreadGateway implements MessageUnreadGateway {
   Future<MessageUnreadSummary> summary(String profileId) async =>
       MessageUnreadSummary.parse(
         await client.rpc<Object?>(
-          'get_own_message_unread_summary_with_contacts_and_discussions',
+          'get_own_message_unread_summary_with_cocreate',
           params: {'p_expected_profile_id': profileId},
         ),
       );
@@ -52,7 +52,16 @@ class SupabaseMessageUnreadGateway implements MessageUnreadGateway {
     String chatId,
     String boundary,
   ) async {
-    if (kind == 'group_discussion') {
+    if (kind == 'cocreate_contact') {
+      await client.rpc<void>(
+        'acknowledge_cocreate_contact',
+        params: {
+          'p_expected_profile_id': profileId,
+          'p_contact_id': chatId,
+          'p_read_token': boundary,
+        },
+      );
+    } else if (kind == 'group_discussion') {
       await client.rpc<void>(
         'acknowledge_group_discussion_read_v2',
         params: {

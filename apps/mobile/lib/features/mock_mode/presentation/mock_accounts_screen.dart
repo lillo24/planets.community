@@ -8,6 +8,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../application/mock_mode_coordinator.dart';
 import '../application/realm_departure.dart';
 import '../domain/mock_models.dart';
+import '../../settings/application/co_creation_preference_controller.dart';
 
 /// One fixed-persona selector serves first entry and Help. Scenario suggestions
 /// never assert current powers after shared-world changes.
@@ -96,6 +97,11 @@ class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen>
   }
 
   String _scenario(AppLocalizations l10n, String key) => switch (key) {
+    'luca' => l10n.mockScenarioLuca,
+    'maya' => l10n.mockScenarioMaya,
+    'nora' => l10n.mockScenarioNora,
+    'teo' => l10n.mockScenarioTeo,
+    'iris' => l10n.mockScenarioIris,
     'giulia' => l10n.mockScenarioGiulia,
     'marco' => l10n.mockScenarioMarco,
     'sara' => l10n.mockScenarioSara,
@@ -108,6 +114,12 @@ class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final coordinator = ref.watch(mockModeCoordinatorProvider);
+    final dataset = ref.watch(coCreationPreferenceProvider).enabled
+        ? 'people'
+        : 'activities';
+    final people = _people
+        ?.where((p) => p.dataset == dataset)
+        .toList(growable: false);
     Widget screen() => Scaffold(
       appBar: pageAppBar(context, title: Text(l10n.mockAccountsTitle)),
       body: SafeArea(
@@ -126,11 +138,11 @@ class _MockAccountsScreenState extends ConsumerState<MockAccountsScreen>
               ),
               TextButton(onPressed: _load, child: Text(l10n.retryAction)),
             ],
-            if (_people?.isEmpty == true) ...[
+            if (people?.isEmpty == true) ...[
               Text(l10n.mockAccountsEmpty),
               TextButton(onPressed: _load, child: Text(l10n.retryAction)),
             ],
-            for (final person in _people ?? <MockPersona>[])
+            for (final person in people ?? <MockPersona>[])
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),

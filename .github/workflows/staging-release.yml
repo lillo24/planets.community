@@ -30,7 +30,7 @@ permissions:
   contents: read
 
 env:
-  RELEASE_VARIANT: ${{ inputs.release_variant || 'closed-test-mock' }}
+  RELEASE_VARIANT: ${{ inputs.release_variant || 'staging' }}
 
 # One staging/Play writer. Do not cancel a migration or an accepted upload.
 concurrency:
@@ -38,8 +38,44 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  observe:
+    name: Observe verified live staging predecessor
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (vars.STAGING_RELEASE_ENABLED == 'true' ||
+       (github.event_name == 'workflow_dispatch' && inputs.operation == 'inspect'))
+    environment: planets-staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24.20.0
+          cache: npm
+      - run: npm ci
+      - name: Read-only identity, strict TLS session and independent history
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
+          STAGING_CONFIG_JSON: ${{ secrets.STAGING_CONFIG_JSON }}
+        run: node scripts/release/staging.mjs inspect
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-observed-${{ github.run_id }}
+          path: |
+            build/release01/observed-history.json
+            build/release01/preflight.json
+            build/release01/connection.json
+          retention-days: 30
+
   rehearse:
     name: Populated staging predecessor rehearsal
+    needs: observe
     permissions:
       contents: read
       pull-requests: read
@@ -59,10 +95,15 @@ jobs:
           node-version: 24.20.0
           cache: npm
       - run: npm ci
+      - uses: actions/download-artifact@v5
+        with:
+          name: release-observed-${{ github.run_id }}
+          path: build/release01
       - name: Rehearse exact non-contiguous staging history and no-op retry
         env:
           PLANETS_DISPOSABLE_QA: "1"
           GH_TOKEN: ${{ github.token }}
+          RELEASE_OBSERVED_HISTORY_FILE: build/release01/observed-history.json
         run: node scripts/release/rehearse.mjs
       - if: failure()
         uses: actions/upload-artifact@v6
@@ -114,12 +155,11 @@ jobs:
       actions: read
       pull-requests: read
       issues: read
-    needs: [validate, rehearse]
+    needs: [validate, rehearse, observe]
     if: >-
-      always() && github.ref == 'refs/heads/main' &&
-      vars.STAGING_RELEASE_ENABLED == 'true' &&
-      ((needs.validate.result == 'success' && needs.rehearse.result == 'success') ||
-        (github.event_name == 'workflow_dispatch' && inputs.operation == 'inspect'))
+      github.ref == 'refs/heads/main' && vars.STAGING_RELEASE_ENABLED == 'true' &&
+      needs.observe.result == 'success' &&
+      needs.validate.result == 'success' && needs.rehearse.result == 'success'
     environment: planets-staging
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -143,6 +183,7 @@ jobs:
           OPERATION: ${{ inputs.operation || 'deploy' }}
           GH_TOKEN: ${{ github.token }}
           STAGING_AUTOMATION_READY: ${{ vars.STAGING_AUTOMATION_READY }}
+          STAGING_RECOVERY_MODE: ${{ vars.STAGING_RECOVERY_MODE }}
           STAGING_RECOVERY_POLICY_JSON: ${{ vars.STAGING_RECOVERY_POLICY_JSON }}
           RELEASE_REHEARSED_SHA: ${{ needs.rehearse.result == 'success' && github.sha || '' }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -150,6 +191,8 @@ jobs:
           STAGING_CONFIG_JSON: ${{ secrets.STAGING_CONFIG_JSON }}
           BOOTSTRAP_MANIFEST_SHA256: ${{ vars.BOOTSTRAP_MANIFEST_SHA256 }}
           STAGING_DEPLOYMENT_OWNER: ${{ vars.STAGING_DEPLOYMENT_OWNER }}
+          STAGING_RECONCILED_FAILURE_RUN_ID: ${{ vars.STAGING_RECONCILED_FAILURE_RUN_ID }}
+          STAGING_RECONCILED_PREDECESSOR_SHA256: ${{ vars.STAGING_RECONCILED_PREDECESSOR_SHA256 }}
           RELEASE_VALIDATED_SHA: ${{ needs.validate.result == 'success' && github.sha || '' }}
         run: |
           if [ "$OPERATION" = inspect ]; then
@@ -167,6 +210,8 @@ jobs:
             build/release01/backend.json
             build/release01/http-smoke.json
             build/release01/safety.json
+            build/release01/connection.json
+            build/release01/deployment.json
           retention-days: 30
       - name: Failure status
         if: failure()

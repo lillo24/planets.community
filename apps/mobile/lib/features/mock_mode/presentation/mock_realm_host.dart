@@ -25,6 +25,9 @@ import '../../settings/data/navigation_preference_store.dart';
 import '../../settings/domain/activities_split_preference.dart';
 import '../../settings/domain/language_preference.dart';
 import '../../settings/domain/navigation_preference.dart';
+import '../../settings/application/co_creation_preference_controller.dart';
+import '../../settings/data/co_creation_preference_store.dart';
+import '../../settings/domain/co_creation_preference.dart';
 import '../application/mock_mode_coordinator.dart';
 import '../data/mock_mode_store.dart';
 import '../data/mock_session_access.dart';
@@ -37,6 +40,7 @@ class MockRealmHost extends StatefulWidget {
     required this.navigation,
     required this.activitiesSplit,
     required this.startup,
+    this.coCreation = const CoCreationPreferenceState(),
     super.key,
   });
   final AppConfig config;
@@ -44,6 +48,7 @@ class MockRealmHost extends StatefulWidget {
   final NavigationPreferenceState navigation;
   final ActivitiesSplitPreferenceState activitiesSplit;
   final StartupPreference startup;
+  final CoCreationPreferenceState coCreation;
   @override
   State<MockRealmHost> createState() => _MockRealmHostState();
 }
@@ -61,6 +66,7 @@ class _MockRealmHostState extends State<MockRealmHost>
   late LanguagePreference _language = widget.language;
   late NavigationPreferenceState _navigation = widget.navigation;
   late ActivitiesSplitPreferenceState _split = widget.activitiesSplit;
+  late CoCreationPreferenceState _coCreation = widget.coCreation;
   late StartupPreference _startup = widget.startup;
   final _store = PreferencesMockModeStore(
     legacyCredentials: normalBackendRuntime.credentials,
@@ -143,6 +149,9 @@ class _MockRealmHostState extends State<MockRealmHost>
         _split = await restoreActivitiesSplitPreference(
           SharedPreferencesActivitiesSplitPreferenceStore(),
         );
+        _coCreation = await restoreCoCreationPreference(
+          SharedPreferencesCoCreationPreferenceStore(),
+        );
         _startup = await restoreStartupPreference(
           SharedPreferencesStartupStore(),
         );
@@ -188,6 +197,7 @@ class _MockRealmHostState extends State<MockRealmHost>
         initialLanguagePreferenceProvider.overrideWithValue(_language),
         initialNavigationPreferenceProvider.overrideWithValue(_navigation),
         initialActivitiesSplitPreferenceProvider.overrideWithValue(_split),
+        initialCoCreationPreferenceProvider.overrideWithValue(_coCreation),
         initialStartupPreferenceProvider.overrideWithValue(_startup),
         initialStartupEnteredProvider.overrideWithValue(
           coordinator?.normalHomeRequested == true,

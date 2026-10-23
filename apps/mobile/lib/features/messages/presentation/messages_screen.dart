@@ -1,3 +1,5 @@
+import '../../co_creation/presentation/co_creation_room_items.dart';
+import '../../co_creation/presentation/people_message_items.dart';
 import '../../member_contact/presentation/member_contact_widgets.dart';
 import '../../member_contact/presentation/member_contact_routes.dart';
 
@@ -230,16 +232,21 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                         constraints: BoxConstraints(
                           minHeight: constraints.maxHeight,
                         ),
-                        child: EmptyState(
-                          title: scope == MessageChatScope.private
-                              ? l10n.messageChatsPrivateEmptyTitle
-                              : l10n.projectChatsEmptyTitle,
-                          message: scope == MessageChatScope.private
-                              ? l10n.messageChatsPrivateEmptyMessage
-                              : l10n.projectChatsEmptyMessage,
-                          icon: scope == MessageChatScope.private
-                              ? Icons.lock_outline
-                              : Icons.groups_outlined,
+                        child: Column(
+                          children: [
+                            const PeopleContactItems(),
+                            EmptyState(
+                              title: scope == MessageChatScope.private
+                                  ? l10n.messageChatsPrivateEmptyTitle
+                                  : l10n.projectChatsEmptyTitle,
+                              message: scope == MessageChatScope.private
+                                  ? l10n.messageChatsPrivateEmptyMessage
+                                  : l10n.projectChatsEmptyMessage,
+                              icon: scope == MessageChatScope.private
+                                  ? Icons.lock_outline
+                                  : Icons.groups_outlined,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -271,6 +278,7 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                         if (state.failure != null) 'error',
                         for (final item in items) item.compositeId,
                         if (state.hasMore) 'more',
+                        'co-creation',
                       ],
                       rowValues: [
                         if (scope == MessageChatScope.groups)
@@ -298,9 +306,20 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                           ),
                         if (state.hasMore)
                           (state.phase, state.failure, showFallback),
+                        (widget.expectedProfileId, scope),
                       ],
                       padding: const EdgeInsets.all(AppSpacing.medium),
                       itemBuilder: (context, index) {
+                        if (index ==
+                            items.length +
+                                (scope == MessageChatScope.groups ? 1 : 0) +
+                                (state.hasConnectionIssue ? 1 : 0) +
+                                (state.failure != null ? 1 : 0) +
+                                (state.hasMore ? 1 : 0)) {
+                          return scope == MessageChatScope.private
+                              ? const PeopleContactItems()
+                              : const CoCreationRoomItems();
+                        }
                         if (scope == MessageChatScope.groups) {
                           if (index == 0) return folders!;
                           index--;
@@ -645,6 +664,7 @@ class _RequestsTab extends ConsumerWidget {
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: Column(
                 children: [
+                  const PeopleRequestItems(),
                   const DiscussionRequests(),
                   EmptyState(
                     title: l10n.messagesEmptyTitle,
@@ -686,7 +706,11 @@ class _RequestsTab extends ConsumerWidget {
           ],
           padding: const EdgeInsets.all(AppSpacing.medium),
           itemBuilder: (context, index) {
-            if (index == 0) return const DiscussionRequests();
+            if (index == 0) {
+              return const Column(
+                children: [PeopleRequestItems(), DiscussionRequests()],
+              );
+            }
             index--;
             if (state.failure != null && index == 0) {
               return Padding(

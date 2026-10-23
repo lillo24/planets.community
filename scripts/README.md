@@ -151,9 +151,79 @@ unread checks. It serially resets only the explicitly disposable selected local
 stack. Its temporary migration-set journal and recovery steps are documented in
 [combined qualification](../docs/development/contact-discussion-integration.md).
 
-
 - `lib/profile-avatar-variant-verifier.mjs` extends the existing profile-photo
   viewer gate with real local Auth/Storage checks for IMG01 immutable variants,
   legacy RPC shapes, contextual authorization, Block, removal and byte ceilings.
   It uses the viewer verifier's synthetic actors and restores their original
   photo after its fixture checks. It does not use hosted accounts or service keys.
+
+Experimental co-creation: npm run cocreate:seed:local seeds only the owned
+synthetic catalogue without changing activation. npm run cocreate:hubs:verify:local
+uses real local OTP sessions for admission/history/read/report/moderation and
+concurrent send/exit tests; it requires activation OFF and restores OFF in finally.
+See docs/development/cocreate-hubs.md for the owned engine, bounds and safety
+checks. No hosted provider or production command is involved.
+
+`verify-local-cocreate-numbered.mjs` exercises stable numbering, last-seat/capacity
+races, isolated episodes, moderation and hub-exit/erasure convergence.
+`verify-local-cocreate-recruitment.mjs` exercises structured General posting,
+one active card, canonical card admission races, lifecycle/replay and human-unread
+compatibility. Both require the same owned disposable target and restore OFF.
+
+`verify-local-cocreate-links.mjs` exercises accepted-contact source review,
+explicit hub/group admission, concurrent source versioning and ordinary native
+personal draft creation/recovery without copied content or membership. It uses
+the same owned-target guard and restores activation OFF.
+
+`verify-local-cocreate-events.mjs` tests ACTAPI01's service/public pipeline with
+a synthetic licensed local fixture, exact unpublished handoff retries and current
+cancellation/source withdrawal. It keeps the non-default API guard, cleans only
+its exact source, and restores co-creation OFF.
+
+`cocreate:programme:verify:local` runs one continuous real local OTP journey
+through post/contact consent, source review, hub/numbered admission, human unread,
+structured recruitment/last-seat race, removal/rejoin, exact staff evidence,
+retained socket/HTTP exit boundaries, native personal draft and account erasure.
+It restores activation OFF even on failure. It does not simulate a phone UI.
+The pinned local Realtime server may acknowledge a subscription before its idle
+tenant broadcast handler reconnects. Bounded actor-only transport probes precede
+the real send; its positive assertion matches the independently queued delivery
+UUID for that one product write. Probes cannot satisfy that assertion. The exit
+negative check also verifies the retained socket stays subscribed and responsive
+for its independent actor context. No Realtime quota/authentication is relaxed.
+
+`cocreate:communities:verify:local` tests three-account community activation,
+normalized duplicates, private ready-to-join state, no automatic enrollment,
+atomic meeting/chat admission and last-place races, timed in-app notifications,
+mute/exit revocation, persistent-chat RSVP and next-meeting reuse with real OTP.
+It uses the same owned-target guard and restores the gate OFF.
+
+`cocreate:upgrade:verify:local` resets ONLY an explicitly named disposable local
+project (`PLANETS_DISPOSABLE_QA=1`, `PLANETS_UPGRADE_QA_PROJECT` equal to its
+non-default config project). It materializes the exact pre-A00 Git inventory
+675bc592 in `.local/cocreate-upgrade-<UUID>` with only project/API-port overlays,
+populates native Project/Tavolo/registered Group/Resource drafts via authenticated
+contracts, snapshots every original public/private table and critical native
+OID/ACL/result shapes, then applies the current combined inventory including
+backdated main migrations. Manifests remain for recovery; working migrations
+are never moved. Run serially with all other database mutators, then run the
+programme verifier and scoped co-creation pgTAP against the populated upgrade.
+For COMM01/FILL01, the explicit `PLANETS_COCREATE_UPGRADE_BASE` value
+`a0e810d0678cfd17b0124eb103e68974e932474b` selects the reviewed RUNALL base
+(137 immutable migrations). It additionally warms a General, numbered chat,
+membership, human message and legacy card before upgrading. DEPLOY01 additionally
+accepts exact main `667bf57b51912f8c1d92b54828bb1e4d801a7303` (126 immutable
+migrations), selected through the same environment variable, to qualify the
+complete cumulative integration against its actual main predecessor (16 additive
+migrations after DEPLOY01's bounded activation refresh hardening).
+The original default remains supported; arbitrary refs are refused. The same
+non-default-project and loopback opt-ins remain mandatory. This local qualification
+is not the separate staging semantic rehearsal or repository-owner SQL approval.
+
+The published FILL01 head `35312dc1f2954f50e70a02968eff5a1d748f437f` is the
+fourth explicit base (141 immutable migrations). The same command/environment
+also qualifies installed community commands before forward hardening: three real
+OTP accounts preserve a two-supporter pending proposal and immutable command
+receipt, nine native/community OID/ACL/result contracts, legacy chat/history and
+all original table columns/rows. Exact retry remains pending; only a new third
+interest activates after upgrade, with private invitations and no chat admission.

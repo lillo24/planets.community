@@ -74,6 +74,7 @@ export type ModerationCounterstatementEvidence = Readonly<{
 }>;
 
 export type ModerationCaseDetail = Readonly<{
+  coProposal?: import("./cocreate-proposal-models").CoProposalReview | null;
   groupContact?:
     import("./group-contact-moderation-models").GroupContactEvidence | null;
 

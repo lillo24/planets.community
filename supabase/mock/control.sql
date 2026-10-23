@@ -25,6 +25,8 @@ create table if not exists mock_control.personas (
   scenario text not null check(length(scenario) between 1 and 240),
   available boolean not null default true
 );
+alter table mock_control.personas add column if not exists dataset text not null default 'activities'
+ check(dataset in('activities','people'));
 
 -- One-time migration from the retired human-enrollment implementation. This
 -- affects mock controls/recorded mock sessions only, never canonical content.
@@ -135,7 +137,7 @@ begin
   perform mock_control.take_rate(client,'catalog');
   select coalesce(jsonb_agg(jsonb_build_object(
     'key',p.persona_key,'user_id',p.user_id,'email',p.email,
-    'name',p.display_name,'scenario',p.scenario) order by p.persona_key),'[]'::jsonb) into people
+    'name',p.display_name,'scenario',p.scenario,'dataset',p.dataset) order by p.persona_key),'[]'::jsonb) into people
     from (select * from mock_control.personas where available order by persona_key limit 12) p
     join auth.users u on u.id=p.user_id and u.email=p.email and u.deleted_at is null
       and u.role='authenticated' and u.is_super_admin is not true

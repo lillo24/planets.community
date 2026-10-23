@@ -2734,6 +2734,23 @@ export type Database = {
         Args: { p_expected_owner_profile_id: string; p_request_id: string }
         Returns: string
       }
+      acknowledge_cocreate_contact: {
+        Args: {
+          p_contact_id: string
+          p_expected_profile_id: string
+          p_read_token: string
+        }
+        Returns: undefined
+      }
+      acknowledge_cocreate_room: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_read_token: string
+          p_room_id: string
+        }
+        Returns: undefined
+      }
       acknowledge_group_contact_read: {
         Args: {
           p_boundary: string
@@ -2890,6 +2907,10 @@ export type Database = {
         Args: { p_object_path: string }
         Returns: boolean
       }
+      can_receive_cocreate_signal: {
+        Args: { p_topic: string }
+        Returns: boolean
+      }
       can_receive_group_contact_signal: {
         Args: { p_topic: string }
         Returns: boolean
@@ -3034,6 +3055,25 @@ export type Database = {
           p_item: string
         }
         Returns: number
+      }
+      create_cocreate_post_from_event: {
+        Args: {
+          p_activity_id: string
+          p_command_id: string
+          p_content: Json
+          p_expected_profile_id: string
+        }
+        Returns: Json
+      }
+      create_cocreate_project_draft: {
+        Args: {
+          p_command_id: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_room_id: string
+        }
+        Returns: Json
       }
       create_editor_proposal_draft: {
         Args: {
@@ -3653,6 +3693,109 @@ export type Database = {
         Args: { p_expected_profile_id: string; p_item: string; p_kind: string }
         Returns: Json
       }
+      get_cocreate_availability: { Args: never; Returns: Json }
+      get_cocreate_community_proposal: {
+        Args: { p_proposal_id: string }
+        Returns: Json
+      }
+      get_cocreate_contact_group: {
+        Args: { p_contact_id: string; p_expected_profile_id: string }
+        Returns: Json
+      }
+      get_cocreate_contact_page: {
+        Args: {
+          p_before_sequence?: number
+          p_contact_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      get_cocreate_current_meeting: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      get_cocreate_event_context: {
+        Args: { p_activity_id: string }
+        Returns: Json
+      }
+      get_cocreate_general_context: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      get_cocreate_hub: { Args: { p_hub_id: string }; Returns: Json }
+      get_cocreate_numbered_context: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      get_cocreate_numbered_group: {
+        Args: { p_room_id: string }
+        Returns: Json
+      }
+      get_cocreate_post: { Args: { p_post_id: string }; Returns: Json }
+      get_cocreate_post_event: { Args: { p_post_id: string }; Returns: Json }
+      get_cocreate_recruitment: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_general_room_id: string
+          p_recruitment_id: string
+        }
+        Returns: Json
+      }
+      get_cocreate_recruitment_v2: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_general_room_id: string
+          p_recruitment_id: string
+        }
+        Returns: Json
+      }
+      get_cocreate_room_page: {
+        Args: {
+          p_before_sequence?: number
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      get_cocreate_room_page_v2: {
+        Args: {
+          p_before_sequence?: number
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      get_cocreate_room_page_v3: {
+        Args: {
+          p_before_sequence?: number
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
       get_current_group_participant_invitation: {
         Args: { p_expected_profile_id: string; p_group_id: string }
         Returns: {
@@ -3776,6 +3919,18 @@ export type Database = {
         }
         Returns: Json
       }
+      get_moderation_case_cocreate: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: Json
+      }
+      get_moderation_case_cocreate_proposal: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: Json
+      }
+      get_moderation_case_cocreate_room: {
+        Args: { p_case_id: string; p_expected_staff_profile_id: string }
+        Returns: Json
+      }
       get_moderation_case_corroboration: {
         Args: { p_case_id: string; p_expected_staff_profile_id: string }
         Returns: {
@@ -3863,6 +4018,34 @@ export type Database = {
           blocked_display_name: string
           blocked_profile_id: string
         }[]
+      }
+      get_own_cocreate_hub_membership: {
+        Args: { p_expected_profile_id: string; p_hub_id: string }
+        Returns: Json
+      }
+      get_own_cocreate_numbered_membership: {
+        Args: { p_expected_profile_id: string; p_room_id: string }
+        Returns: Json
+      }
+      get_own_cocreate_post_link: {
+        Args: { p_expected_profile_id: string; p_post_id: string }
+        Returns: Json
+      }
+      get_own_cocreate_recruitment: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      get_own_cocreate_recruitment_v2: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_room_id: string
+        }
+        Returns: Json
       }
       get_own_group: {
         Args: { p_expected_profile_id: string; p_group_id: string }
@@ -4004,6 +4187,10 @@ export type Database = {
         Returns: Json
       }
       get_own_message_unread_summary_v3: {
+        Args: { p_expected_profile_id: string }
+        Returns: Json
+      }
+      get_own_message_unread_summary_with_cocreate: {
         Args: { p_expected_profile_id: string }
         Returns: Json
       }
@@ -4469,6 +4656,10 @@ export type Database = {
         Args: { p_expected_profile_id: string }
         Returns: number
       }
+      get_own_unread_notification_count_with_cocreate: {
+        Args: { p_expected_profile_id: string }
+        Returns: number
+      }
       get_own_unread_notification_count_with_contacts: {
         Args: { p_expected_profile_id: string }
         Returns: number
@@ -4847,6 +5038,16 @@ export type Database = {
         Args: { p_batch: string; p_places: Json }
         Returns: Json
       }
+      join_cocreate_recruitment: {
+        Args: {
+          p_command_id: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_recruitment_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
       join_group_discussion: {
         Args: {
           p_client_request_id: string
@@ -4904,6 +5105,81 @@ export type Database = {
         }
         Returns: string
       }
+      list_cocreate_categories: { Args: never; Returns: Json }
+      list_cocreate_communities: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_category_id: string
+          p_limit?: number
+          p_locality?: string
+          p_search?: string
+        }
+        Returns: Json
+      }
+      list_cocreate_group_projects: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      list_cocreate_hubs: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_limit?: number
+          p_locality?: string
+          p_search?: string
+          p_topic_id?: string
+        }
+        Returns: Json
+      }
+      list_cocreate_numbered_groups: {
+        Args: {
+          p_after_number?: number
+          p_hub_id: string
+          p_limit?: number
+          p_open_seats_only?: boolean
+        }
+        Returns: Json
+      }
+      list_cocreate_numbered_removed: {
+        Args: {
+          p_after_profile_id?: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      list_cocreate_posts: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_limit?: number
+          p_locality?: string
+          p_search?: string
+          p_topic_id?: string
+        }
+        Returns: Json
+      }
+      list_cocreate_room_people: {
+        Args: {
+          p_after_profile_id?: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      list_cocreate_topics: { Args: never; Returns: Json }
       list_current_group_people: {
         Args: {
           p_after_profile_id?: string
@@ -5293,6 +5569,125 @@ export type Database = {
           blocked_profile_id: string
         }[]
       }
+      list_own_cocreate_community_interests: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_contact_exits: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_contacts: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_contacts_v2: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_hub_exits: {
+        Args: {
+          p_before_id?: string
+          p_before_joined_at?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_interest_exits: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_interests: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_post_id?: string
+        }
+        Returns: Json
+      }
+      list_own_cocreate_interests_v2: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_post_id?: string
+        }
+        Returns: Json
+      }
+      list_own_cocreate_manageable_groups: {
+        Args: {
+          p_before_id?: string
+          p_before_joined_at?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_numbered_exits: {
+        Args: {
+          p_before_id?: string
+          p_before_joined_at?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_posts: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_rooms: {
+        Args: {
+          p_before_id?: string
+          p_before_joined_at?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      list_own_cocreate_rooms_v2: {
+        Args: {
+          p_before_id?: string
+          p_before_joined_at?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_own_delegated_projects: {
         Args: { p_expected_profile_id: string }
         Returns: {
@@ -5608,6 +6003,15 @@ export type Database = {
           resource_listing_title: string
           resource_request_id: string
         }[]
+      }
+      list_own_notifications_with_cocreate: {
+        Args: {
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
       }
       list_own_notifications_with_contacts: {
         Args: {
@@ -6918,6 +7322,10 @@ export type Database = {
         Args: { p_expected_profile_id: string }
         Returns: number
       }
+      mark_all_notifications_with_cocreate_read: {
+        Args: { p_expected_profile_id: string }
+        Returns: number
+      }
       mark_all_notifications_with_contacts_read: {
         Args: { p_expected_profile_id: string }
         Returns: number
@@ -6933,6 +7341,154 @@ export type Database = {
       mark_notification_read: {
         Args: { p_expected_profile_id: string; p_notification_id: string }
         Returns: string
+      }
+      mark_notification_with_cocreate_read: {
+        Args: { p_expected_profile_id: string; p_notification_id: string }
+        Returns: string
+      }
+      moderate_cocreate_community_proposal: {
+        Args: {
+          p_case_id: string
+          p_command_id: string
+          p_expected_staff_profile_id: string
+          p_expected_version: number
+          p_operation: string
+        }
+        Returns: Json
+      }
+      moderate_cocreate_hub: {
+        Args: {
+          p_case_id: string
+          p_command_id: string
+          p_expected_staff_profile_id: string
+          p_expected_version: number
+          p_operation: string
+        }
+        Returns: Json
+      }
+      moderate_cocreate_numbered_group: {
+        Args: {
+          p_case_id: string
+          p_command_id: string
+          p_expected_staff_profile_id: string
+          p_expected_version: number
+          p_operation: string
+        }
+        Returns: Json
+      }
+      moderate_cocreate_post: {
+        Args: {
+          p_case_id: string
+          p_command_id: string
+          p_expected_staff_profile_id: string
+          p_expected_version: number
+          p_suppressed: boolean
+        }
+        Returns: Json
+      }
+      mutate_cocreate_community_interest: {
+        Args: {
+          p_command_id: string
+          p_expected_profile_id: string
+          p_operation: string
+          p_proposal_id: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_contact: {
+        Args: {
+          p_body?: string
+          p_command_id: string
+          p_contact_id: string
+          p_expected_profile_id: string
+          p_operation: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_hub: {
+        Args: {
+          p_command_id: string
+          p_episode_id?: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_muted?: boolean
+          p_operation: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_interest: {
+        Args: {
+          p_command_id: string
+          p_expected_profile_id: string
+          p_interest_id?: string
+          p_note?: string
+          p_operation: string
+          p_post_id: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_meeting: {
+        Args: {
+          p_command_id: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_meeting_id: string
+          p_operation: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_numbered_group: {
+        Args: {
+          p_capacity?: number
+          p_command_id: string
+          p_episode_id?: string
+          p_expected_profile_id: string
+          p_expected_version?: number
+          p_hub_id: string
+          p_muted?: boolean
+          p_operation: string
+          p_room_id?: string
+          p_target_profile_id?: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_post: {
+        Args: {
+          p_command_id: string
+          p_content?: Json
+          p_expected_profile_id: string
+          p_expected_version?: number
+          p_operation: string
+          p_post_id?: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_post_group: {
+        Args: {
+          p_command_id: string
+          p_episode_id?: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_hub_id?: string
+          p_operation: string
+          p_post_id: string
+          p_room_id?: string
+        }
+        Returns: Json
+      }
+      mutate_cocreate_recruitment: {
+        Args: {
+          p_command_id: string
+          p_episode_id?: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_operation: string
+          p_recruitment_id?: string
+          p_room_id: string
+        }
+        Returns: Json
       }
       mutate_project_organization_v1: {
         Args: {
@@ -7036,6 +7592,17 @@ export type Database = {
       promote_proposal_idea: {
         Args: { p_expected_profile_id: string; p_proposal_id: string }
         Returns: string
+      }
+      propose_cocreate_community: {
+        Args: {
+          p_category_id: string
+          p_command_id: string
+          p_expected_profile_id: string
+          p_explanation?: string
+          p_locality: string
+          p_name: string
+        }
+        Returns: Json
       }
       propose_resource_exchange_terms: {
         Args: {
@@ -7551,8 +8118,30 @@ export type Database = {
         }
         Returns: string
       }
+      schedule_cocreate_meeting: {
+        Args: {
+          p_capacity: number
+          p_command_id: string
+          p_episode_id?: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_room_id?: string
+          p_starts_at: string
+        }
+        Returns: Json
+      }
       search_public_geography_v1: {
         Args: { p_cursor?: Json; p_limit?: number; p_query: Json }
+        Returns: Json
+      }
+      send_cocreate_room_message: {
+        Args: {
+          p_body: string
+          p_command_id: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_room_id: string
+        }
         Returns: Json
       }
       send_group_contact_message: {
@@ -7851,6 +8440,37 @@ export type Database = {
       step_down_project_authority: {
         Args: { p_delegate_id: string; p_expected_profile_id: string }
         Returns: string
+      }
+      submit_cocreate_report: {
+        Args: {
+          p_category: string
+          p_client_submission_id: string
+          p_expected_reporter_profile_id: string
+          p_explanation: string
+          p_target_id: string
+          p_target_kind: string
+        }
+        Returns: {
+          case_id: string
+          created_at: string
+          report_id: string
+          state: string
+        }[]
+      }
+      submit_cocreate_room_report: {
+        Args: {
+          p_category: string
+          p_client_submission_id: string
+          p_expected_reporter_profile_id: string
+          p_explanation: string
+          p_target_id: string
+        }
+        Returns: {
+          case_id: string
+          created_at: string
+          report_id: string
+          state: string
+        }[]
       }
       submit_group_contact_request: {
         Args: {

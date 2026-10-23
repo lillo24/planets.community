@@ -3,6 +3,44 @@ import 'package:planets_mobile/features/moderation/data/moderation_gateway.dart'
 import 'package:planets_mobile/features/moderation/domain/moderation_models.dart';
 
 void main() {
+  test('co-creation room report keeps exact message evidence with no foreign context', () {
+    const target = ModerationReportTarget(
+      kind: ModerationTargetKind.cocreateRoomMessage,
+      id: 'cc020000-0000-4000-8000-000000000001',
+      label: 'General',
+    );
+    const contract = ModerationRpcContract();
+    final args = contract.submitParams(
+      expectedProfileId: 'actor',
+      clientSubmissionId: 'submission',
+      category: ModerationCategory.spam,
+      explanation: '  Synthetic report text  ',
+      target: target,
+    );
+    expect(args, {
+      'p_expected_reporter_profile_id': 'actor',
+      'p_client_submission_id': 'submission',
+      'p_category': 'spam',
+      'p_explanation': 'Synthetic report text',
+      'p_target_id': target.id,
+    });
+    expect(
+      () => contract.submitParams(
+        expectedProfileId: 'actor',
+        clientSubmissionId: 'submission',
+        category: ModerationCategory.spam,
+        explanation: 'Synthetic report text',
+        target: ModerationReportTarget(
+          kind: target.kind,
+          id: target.id,
+          label: target.label,
+          contextKind: ModerationContextKind.project,
+          contextId: 'foreign',
+        ),
+      ),
+      throwsFormatException,
+    );
+  });
   test('template target and own receipt remain narrow', () {
     const parser = ModerationPayloadParser();
     final report = parser.ownReport({

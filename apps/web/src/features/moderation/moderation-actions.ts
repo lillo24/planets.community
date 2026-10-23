@@ -7,7 +7,19 @@ import {
   removeModerationTemplate,
   addModerationNote,
   transitionModerationCase,
+  moderateCoProposal,
 } from "./moderation-operations";
+
+export async function moderateCoProposalAction(
+  input: import("./cocreate-proposal-models").CoProposalModerationInput,
+) {
+  const result = await moderateCoProposal(input);
+  if (result.status === "accepted" || result.status === "stale") {
+    revalidatePath("/admin");
+    revalidatePath(`/admin/cases/${input.caseId}`);
+  }
+  return result;
+}
 
 export async function setGroupSuppressionAction(
   input: import("./group-moderation-models").GroupSuppressionInput,
