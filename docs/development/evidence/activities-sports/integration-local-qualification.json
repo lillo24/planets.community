@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "qualification": "Local code/data qualification complete; final exact-head protected CI and merge tracked in PR298. No hosted activation or deployment.",
+  "qualification": "Product/local qualification complete; latest-main trusted policy blocks source merge. PR298 remains the cumulative integration. No hosted activation or deployment.",
   "base_sha": "3f1ae160b60e2133e2e5d71a7bd401d53c2cbce2",
   "upgrade": {
     "from": 142,
@@ -102,7 +102,8 @@
     "clean_local_migrations": 146,
     "pgTAP_files": 175,
     "pgTAP_assertions": 8452,
-    "malformed_complete_export": "Both CLI paths fail before success; real incomplete receipt, partial public health and unchanged prior success/data verified"
+    "malformed_complete_export": "Both CLI paths fail before success; real incomplete receipt, partial public health and unchanged prior success/data verified",
+    "tooling_after_latest_main": 268
   },
   "android": {
     "command": "flutter build apk --debug --target-platform android-arm64 --dart-define=ENABLE_DEMO_TOOLS=false",
@@ -133,5 +134,15 @@
       "difference": "CRLF versus LF only"
     }
   ],
-  "sql_review_inventory_basis": "Exact canonical Git blobs; complete actual PR base inventory, then sorted additions, matching the unmodified CI gate. An earlier timestamp addition does not use only a chronological prefix."
+  "sql_review_inventory_basis": "Exact canonical Git blobs; complete actual PR base inventory, then sorted additions, matching the unmodified CI gate. An earlier timestamp addition does not use only a chronological prefix.",
+  "integration_base_sha": "52e301bb665748065e23171d2a4d6ffc92bdefe1",
+  "current_source_gate": {
+    "policy": "STAGING-AUTO03 from independently merged PR306",
+    "status": "blocked-unsafe",
+    "version": "20261023093757",
+    "reason": "Destructive or role/system DDL: top-level DROP INDEX",
+    "legacy_owner_comment": "Historical technical audit only; no current authorization path",
+    "policy_unchanged_in_feature_pr": true,
+    "next": "Separate independently validated policy contract for reviewed single-source index removal; no history rewrite or guard bypass"
+  }
 }

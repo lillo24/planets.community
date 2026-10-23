@@ -10,26 +10,40 @@ per-step-merge and personal-posting waits below are historical and superseded.
 RESUME01 is merged at 9945ad01 with all required CI green; local release
 preparation is recorded. This cumulative branch now includes that merged code.
 
+Latest-main checkpoint: merged STAGING-AUTO03 #306 at `52e301bb` is included
+through `e886c946`. It replaces owner fingerprint authorization with trusted-base
+source/security eligibility. The final source gate blocks 005's published
+`DROP INDEX private.external_activity_one_enabled_source` as **blocked-unsafe**.
+The exact statement/hash, other hosted-only holds and required separate policy
+contract are in [the blocker record](activities-sports-policy-blocker.md). No
+validator, approval control or published SQL is weakened/rewritten. Current
+policy/dependency files match main; both new CLIs use direct Node commands.
+Fresh integrated tooling is **268 PASS**. All product Dart/SQL files retain the
+already qualified bytes; the shared importer failure/partial-health fix passes
+real service/anonymous HTTP. The earlier 274b5233 proof/CI is historical, not
+current authorization. Finish publishing the current checkpoint and inspect its
+actual CI result; keep #298 draft if this trusted source gate rejects it.
+
 Pack: `ACTSPORTS-2026-10-23`. Initial 002 runner: Codex thread
 `01a165d0-5cc8-7ba0-8ce1-c5b76de7b120`. Entry point found on `origin/main` at
 `d735bb88decbc845ee27d1f5812941a233b61b3f`; every numbered prompt was present and
 READY. The file-watching heartbeat was deleted after detection. No competing
 runner for this queue was found in current tasks, worktrees or open PRs.
 
-| Step            | Status                                           | Evidence / next action                                         |
-| --------------- | ------------------------------------------------ | -------------------------------------------------------------- |
-| 002 ACTCAT02    | Implemented and locally verified                 | Existing 4790cf59; navigation repair ed9127b9; cumulative #298 |
-| 003 ACTUI02     | Implemented and locally verified                 | 7940d8c9                                                       |
-| 004 SPORTUI01   | Implemented and locally verified                 | 38d302b4                                                       |
-| 005 ACTSRC02    | Implemented and locally verified                 | 71d5bf63; 144-migration replay                                 |
-| 006 SPORTDATA01 | Implemented; real local source verified          | 846a256b; 116 records; no hosted publication                   |
-| 007 ACTGEO01    | Implemented and locally verified                 | 145 migrations; full 8415 assertions                           |
-| 008 ACTMAP01    | Implemented and locally verified                 | Shared renderer; zero provider attempts                        |
-| 009 SPORTAPI02  | Assessment complete; connector blocked           | No eligible local coverage verified; proceed to 010            |
-| 010 ACTOPS01    | Implemented and locally verified                 | 146-migration upgrade; 37 SQL assertions; real operator HTTP   |
-| 011 ACTQA01     | Locally qualified; final protected CI/merge next | 146 clean migrations; 8,452 SQL / 4,314 mobile; #298           |
+| Step            | Status                                                | Evidence / next action                                         |
+| --------------- | ----------------------------------------------------- | -------------------------------------------------------------- |
+| 002 ACTCAT02    | Implemented and locally verified                      | Existing 4790cf59; navigation repair ed9127b9; cumulative #298 |
+| 003 ACTUI02     | Implemented and locally verified                      | 7940d8c9                                                       |
+| 004 SPORTUI01   | Implemented and locally verified                      | 38d302b4                                                       |
+| 005 ACTSRC02    | Implemented and locally verified                      | 71d5bf63; 144-migration replay                                 |
+| 006 SPORTDATA01 | Implemented; real local source verified               | 846a256b; 116 records; no hosted publication                   |
+| 007 ACTGEO01    | Implemented and locally verified                      | 145 migrations; full 8415 assertions                           |
+| 008 ACTMAP01    | Implemented and locally verified                      | Shared renderer; zero provider attempts                        |
+| 009 SPORTAPI02  | Assessment complete; connector blocked                | No eligible local coverage verified; proceed to 010            |
+| 010 ACTOPS01    | Implemented and locally verified                      | 146-migration upgrade; 37 SQL assertions; real operator HTTP   |
+| 011 ACTQA01     | Locally qualified; current source policy blocks merge | 005 DROP INDEX; exact blocker linked above                     |
 
-## 011 final pre-merge qualification checkpoint
+## 011 historical qualification checkpoint before STAGING-AUTO03
 
 Current main `3f1ae160` is included through merge `412008ad`, preserving the merged
 PEOPLEHOME Home/General-link work. The one cumulative main-targeted
@@ -111,7 +125,7 @@ The broad root formatter reports six **unchanged-main** baseline files:
 under `docs/development/`. Their diff against main is empty. All changed
 Prettier paths and full Dart formatting pass; unrelated files were preserved.
 
-Immediate next action: commit this fully qualified local checkpoint, push the
+Historical next action at 274b5233 (superseded by the latest-main checkpoint above): commit this fully qualified local checkpoint, push the
 reviewed final head, compare the fresh CI review artifact with all four
 actual SQL hashes/predecessors, post the authorized exact proof through verified
 owner ID **80243470**, and rerun required Validation. Inspect the populated CI

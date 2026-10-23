@@ -93,6 +93,13 @@ expiry continues to hide unobserved rows without destroying them.
 
 ## Activation order — prepared, not executed on hosted systems
 
+Current main includes STAGING-AUTO03. Its trusted source gate presently blocks
+005's one-source index removal; see the [exact blocker](activities-sports-policy-blocker.md).
+Old owner fingerprint comments are historical review, not a current override.
+Resolve that separate policy contract and all hosted eligibility holds before
+attempting rollout. This feature PR leaves validator/workflow/dependency policy
+unchanged; direct Node commands above require no new npm aliases.
+
 1. Merge reviewed code with protected Validation. Confirm all four forward
    catalogue/source/geography/operations migrations after current main are
    applied through the authorized migration process. Do not use a live client
