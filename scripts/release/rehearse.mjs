@@ -16,6 +16,7 @@ import {
 import {
   POLICY_VERSION,
   TRUSTED_PRODUCT_BASE,
+  TRUSTED_CALENDAR_BASE,
   effectCatalogQuery,
   catalogEffects,
   migrationCandidate,
@@ -104,6 +105,20 @@ command("git", [
   TRUSTED_PRODUCT_BASE,
 ]);
 command("tar", ["-xf", "build/release01/trusted-product.tar", "-C", trusted]);
+const trustedCalendar = resolve("build/release01/trusted-calendar");
+mkdirSync(trustedCalendar, { recursive: true });
+command("git", [
+  "archive",
+  "--format=tar",
+  "--output=build/release01/trusted-calendar.tar",
+  TRUSTED_CALENDAR_BASE,
+]);
+command("tar", [
+  "-xf",
+  "build/release01/trusted-calendar.tar",
+  "-C",
+  trustedCalendar,
+]);
 if (process.env.RELEASE_OBSERVED_HISTORY_FILE) {
   const observed = JSON.parse(
     readFileSync(process.env.RELEASE_OBSERVED_HISTORY_FILE, "utf8"),
@@ -169,6 +184,33 @@ try {
   if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname))
     throw new ReleaseError("Rehearsal database must be loopback");
   sql = postgres(status.databaseUrl, { max: 1, onnotice: () => {} });
+  // Normal staging's already documented non-canonical RLS callback is part of
+  // its actual predecessor. Reproduce the immutable pre-change bytes only on
+  // this owned loopback stack; never suppress its live catalog fingerprint.
+  const hostedRuntime = readFileSync(
+    resolve(
+      trusted,
+      "docs/development/evidence/staging01/hosted-rls-event-trigger.sql",
+    ),
+    "utf8",
+  );
+  await sql.unsafe(hostedRuntime);
+  const callbackRollback = new Error("rollback-only hosted RLS probe");
+  try {
+    await sql.begin(async (tx) => {
+      await tx.unsafe("create table public.auto03_rls_probe(id uuid)");
+      assert.equal(
+        (
+          await tx`select relrowsecurity from pg_class where oid='public.auto03_rls_probe'::regclass`
+        )[0].relrowsecurity,
+        true,
+        "The actual hosted callback must enable RLS on a new public table",
+      );
+      throw callbackRollback;
+    });
+  } catch (error) {
+    if (error !== callbackRollback) throw error;
+  }
   const predecessor = summarizeHistory(await sql.unsafe(historyQuery));
   assert.deepEqual(
     predecessor.map((r) => r.version),
@@ -404,6 +446,7 @@ try {
   sql = null;
   command(cli, ["db", "reset", "--local", "--yes"]);
   sql = postgres(status.databaseUrl, { max: 1, onnotice: () => {} });
+  await sql.unsafe(hostedRuntime);
   assert.deepEqual(
     catalogEffects(
       upgradedCatalog,
@@ -413,6 +456,45 @@ try {
     "Clean security fixture catalog differs from actual populated upgrade",
   );
   command(cli, ["test", "db", resolve(trusted, "supabase/tests")]);
+  command(cli, [
+    "test",
+    "db",
+    resolve(trustedCalendar, "supabase/tests/162_cocreate_calendar.test.sql"),
+  ]);
+  command("node", [
+    resolve(
+      trustedCalendar,
+      "scripts/verify-local-cocreate-calendar-upgrade.mjs",
+    ),
+  ]);
+  command("node", [
+    resolve(trustedCalendar, "scripts/verify-local-cocreate-calendar.mjs"),
+  ]);
+  // Exercise a real wrong-actor body at the same signature/OID. A copied source
+  // hash is insufficient if this independent Auth/privacy contract cannot fail.
+  const calendarDefinition = (
+    await sql`select pg_get_functiondef('public.get_cocreate_calendar_v1(uuid,uuid,uuid,uuid,timestamptz,timestamptz,integer,text)'::regprocedure) definition`
+  )[0].definition;
+  const wrongActorCalendar = calendarDefinition.replace(
+    "private.require_cocreate_actor(p_expected_profile_id)",
+    "auth.uid()",
+  );
+  assert.notEqual(wrongActorCalendar, calendarDefinition);
+  try {
+    await sql.unsafe(wrongActorCalendar);
+    const rejected = spawnSync(
+      "node",
+      [resolve(trustedCalendar, "scripts/verify-local-cocreate-calendar.mjs")],
+      { encoding: "utf8", timeout: 120000, maxBuffer: 1024 * 1024 },
+    );
+    assert.ok(
+      rejected.status !== 0 &&
+        /get_cocreate_calendar_v1 must deny/.test(rejected.stderr ?? ""),
+      "Calendar wrong-actor mutation must fail the independent genuine Auth contract",
+    );
+  } finally {
+    await sql.unsafe(calendarDefinition);
+  }
   const effective = (await sql.unsafe(effectCatalogQuery))[0].catalog;
   const addedFunctions = effective.functions.filter((f) =>
     witnesses.some((w) =>
@@ -477,6 +559,7 @@ try {
     source_tree: command("git", ["rev-parse", "HEAD^{tree}"]).trim(),
     policy_module_sha256: policyModuleHash(),
     trusted_product_base: TRUSTED_PRODUCT_BASE,
+    trusted_calendar_base: TRUSTED_CALENDAR_BASE,
     workflow_run_id: process.env.GITHUB_RUN_ID,
     inventory_sha256: inventoryDigest(local),
     predecessor_catalog: predecessorCatalogProof,
@@ -501,6 +584,8 @@ try {
     source_index_retirement_controls: true,
     single_writer_probe: true,
     cli_startup_bounds: true,
+    hosted_runtime_callback: true,
+    calendar_security_contracts: true,
   };
   writeFileSync(
     "build/release01/rehearsal.json",

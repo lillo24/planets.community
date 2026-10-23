@@ -580,6 +580,8 @@ export async function mapPolicyNegativeControls(status, fixtureSql) {
       "grant select on private.mock_basemap_config to anon",
       "alter function " + fn + " reset search_path",
       "create function private.auto03_hidden_trigger() returns trigger language plpgsql as $$begin return new;end$$;create trigger auto03_hidden before update on private.mock_basemap_config for each row execute function private.auto03_hidden_trigger()",
+      "create function private.auto03_hidden_ddl() returns event_trigger language plpgsql as $$begin end$$;create event trigger auto03_hidden_ddl on ddl_command_end execute function private.auto03_hidden_ddl()",
+      "alter event trigger ensure_rls disable",
     ]) {
       try {
         await sql.begin(async (tx) => {

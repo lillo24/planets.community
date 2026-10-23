@@ -41,6 +41,16 @@ old rows and independent tests must still pass. Any unproven existing contract
 change is held with its exact object/version. New contracts must first land in a
 separate policy PR.
 
+CAL01 merged at `d9f559951b79be568004b7507b16f4b4b216db48` during the
+MAPMOCK integration. Only its exact `20261023113719` reader/index source is an
+additional established candidate. The original product baseline stays fixed.
+The independent replay loads CAL01's already merged pgTAP, genuine Auth/privacy
+and populated rollback/warmed-reader tests from that immutable commit. Replacing
+the reader's expected-actor validation with `auth.uid()` at the same signature
+must fail the actual HTTP denial contract. Its `extensions.hmac` dependency is
+also fingerprinted. `calendar_security_contracts` is required in deployment
+receipts; neither the pin nor a source merge alone authorizes hosted application.
+
 ACTSRC02 has a separately installed **source-only** index-retirement contract.
 Only version `20261023093757`, filename
 `20261023093757_external_activity_multi_source.sql`, SHA-256
@@ -96,6 +106,15 @@ apply, the writer compares that catalog with staging and holds out-of-band edits
 Provider-owned Auth/Storage internals and extension objects are excluded from
 this application comparison; the explicitly used pgcrypto API stays in scope
 with its provider implementation and privileged execution checks.
+
+Normal staging also retains the `ensure_rls` / `public.rls_auto_enable()` helper
+already inspected in STAGING01. The rehearsal installs its exact archived
+pre-change definition/grants on the disposable predecessor and after the clean
+fixture reset. It remains outside canonical product migrations. Its live
+function fingerprint is compared, together with every global DDL event trigger's
+owner, callback, event, enabled state and tags. Unexpected or altered callbacks
+hold deployment; an actual hidden DDL-trigger mutation must fail the independent
+negative controls. No hosted callback is replaced or ignored by this mechanism.
 
 The unchanged baseline pgTAP fixtures require clean synthetic data (fixed Auth
 emails and singleton/count assumptions). Their phase follows all populated
