@@ -48,6 +48,9 @@ export async function previousWriterState(api, env, load = loadArtifact) {
           throw new ReleaseError(
             "Previous staging receipt does not match its protected source/run",
           );
+        // A rejected preflight made no changes and cannot reconcile an older
+        // partial apply. Keep looking for the last actual writer outcome.
+        if (state.status === "failed-before-write") continue;
         return state;
       }
       const jobs = await api(

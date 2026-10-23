@@ -616,6 +616,83 @@ test("expired artifacts retain only actual protected writer success; never infer
     "unknown-write-outcome",
   );
 });
+
+test("a later rejected preflight does not reconcile an older partial apply", async () => {
+  const runs = [
+    { id: 11, event: "push", head_sha: source },
+    { id: 10, event: "push", head_sha: source },
+  ];
+  const states = {
+    11: {
+      workflow_run_id: 11,
+      source_sha: source,
+      status: "failed-before-write",
+    },
+    10: { workflow_run_id: 10, source_sha: source, status: "failed-partial" },
+  };
+  const api = async (path) => {
+    if (path.includes("/artifacts")) {
+      const id = path.includes("/11/") ? 11 : 10;
+      return { artifacts: [{ name: `release-staging-${id}`, expired: false }] };
+    }
+    return { workflow_runs: runs };
+  };
+  assert.equal(
+    (
+      await previousWriterState(
+        api,
+        { GITHUB_RUN_ID: "12" },
+        async (id) => states[id],
+      )
+    ).workflow_run_id,
+    10,
+  );
+});
+test("a no-pending protected deployment cannot erase an unreconciled write", async () => {
+  const receipts = [];
+  const historyApi = async (path) => {
+    if (path.includes("/actions/workflows/"))
+      return { workflow_runs: [{ id: 10, event: "push", head_sha: source }] };
+    if (path.includes("/artifacts")) return { artifacts: [] };
+    if (path.includes("/jobs"))
+      return {
+        jobs: [
+          {
+            name: "staging",
+            steps: [
+              {
+                name: "Preflight, classified migration apply, backend verification",
+                status: "completed",
+                conclusion: "failure",
+              },
+            ],
+          },
+        ],
+      };
+    if (path.includes("/contents/"))
+      return {
+        encoding: "base64",
+        content: Buffer.from('{"staging_safety_version":2}').toString("base64"),
+      };
+    assert.fail("Unexpected API path");
+  };
+  await assert.rejects(
+    () =>
+      writeStaging({
+        diff: { pending: [], predecessor_sha256: "current" },
+        remote: [],
+        env: {
+          GITHUB_ACTIONS: "true",
+          GITHUB_RUN_ID: "11",
+          GITHUB_SHA: source,
+        },
+        historyApi,
+        save: (name, value) => receipts.push({ name, value }),
+      }),
+    /Unreconciled/,
+  );
+  assert.ok(receipts.every((r) => r.value.status === "failed-before-write"));
+});
 test("a fabricated earlier receipt with another source cannot clear a partial hold", async () => {
   const api = async (path) =>
     path.includes("/artifacts")

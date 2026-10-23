@@ -87,6 +87,8 @@ Unrelated read-only runs cannot push that state outside a fixed lookback: histor
 is paginated with a fail-closed audit bound. Expired ZIPs cannot manufacture
 success; only a genuinely successful protected writer job at the matching source
 can preserve an independently completed reconciliation without its old artifact.
+Rejected preflights never clear an older hold, and a protected no-pending run
+must also check prior writer state before it can record successful verification.
 Only then may protected `STAGING_RECONCILED_FAILURE_RUN_ID` and
 `STAGING_RECONCILED_PREDECESSOR_SHA256` identify that exact run/live inventory;
 they are incident recovery settings, not recurring SQL approval comments.

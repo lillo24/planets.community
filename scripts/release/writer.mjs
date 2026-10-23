@@ -84,6 +84,7 @@ export async function writeStaging({
   policy,
   env,
   api,
+  historyApi,
   save,
   urlValidator,
 }) {
@@ -96,7 +97,17 @@ export async function writeStaging({
     completed: [],
     attempt_started: false,
   });
-  if (!diff.pending.length) return { remote, diff }; // verified backend no-op follows in staging.mjs
+  if (!diff.pending.length) {
+    // Even an all-applied observation must not clear a prior unverified apply.
+    // Ordinary local read-only use has no protected workflow history to mutate.
+    if (env?.GITHUB_ACTIONS === "true")
+      assertReconciledWriter(
+        await previousWriterState(historyApi ?? githubClient(env), env),
+        diff.predecessor_sha256,
+        env,
+      );
+    return { remote, diff }; // verified backend no-op follows in staging.mjs
+  }
   assertStagingRecoveryMode(env, diff.project_ref);
   if (policy.staging_safety_version !== 2)
     throw new ReleaseError("Missing staging safety policy");
@@ -134,7 +145,7 @@ export async function writeStaging({
     tree,
   );
   const pending = verifiedDeploymentSet(diff, policy, decisions);
-  const proofApi = githubClient(env);
+  const proofApi = historyApi ?? githubClient(env);
   assertReconciledWriter(
     await previousWriterState(proofApi, env),
     diff.predecessor_sha256,
