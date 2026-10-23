@@ -601,8 +601,15 @@ unchanged. This follow-up is not complete or ready for production.
   population; diagnostic retry passed unchanged SQL. The failed log and both
   passing manifests remain retained, and diagnostics now include both redacted
   output channels rather than hiding stdout errors behind stderr progress.
-- **Precise next action:** complete full `check:db`; restore gate OFF, stop
-  only the new project with backup,
+- **Audit finding / eligible follow-up:** a withdrawn proposer can accumulate a
+  large supporter roster; reactivation's refresh-signal loop is unbounded.
+  Private drafts prepare a 36-account canonical regression and a forward limit
+  of 25 optional recipient invalidations plus the actor response. Every durable
+  Ready-to-join invitation remains available through the existing 20-second
+  foreground refresh/entry; no product enrollment or provider change is needed.
+- **Precise next action:** finish frozen full `check:db` first, demonstrate the
+  regression and apply/qualify the bounded refresh migration without rewriting
+  the original 15. Then restore gate OFF, stop only the new project with backup,
   restore original config bytes. Inspect/commit, retarget the same draft #297 to
   main before final push, obtain a fresh exact-head owner-review artifact and
   wait for actual owner SQL proof/current-head green CI. Do not post owner proof,

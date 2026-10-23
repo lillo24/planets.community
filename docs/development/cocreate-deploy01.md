@@ -130,6 +130,19 @@ CI/owner review remains separate. Safe witnesses are retained privately in
 (main) and `.local/cocreate-upgrade-d671d82f-2f91-4724-970f-6804eb5885d9/manifest.json`
 (RUNALL). No backup or private CLI status is a public artifact.
 
+The integration audit also identified one eligible hardening task: while a
+proposer has withdrawn interest, a pending proposal can accumulate many other
+supporters. Reactivation currently loops over every supporter to emit Realtime
+refresh metadata. Durable invitation state is already present for everyone and
+the existing visible Your interests list refreshes every 20 seconds. After the
+running 141-migration baseline finishes, demonstrate the fanout regression with
+36 canonical interested actors, then add a forward migration limiting activation
+invalidations to 25 recipients plus the command actor. Keep all original SQL
+bytes, all invitations and three-person activation unchanged. Qualify the
+populated function OID/ACL/data boundary, fresh replay/Auth/Mock and type drift
+before final review; do not change the migration inventory underneath an active
+database qualification.
+
 The upgrade script now also allow-lists the exact actual main SHA above and its
 126-file inventory. It retains its original and RUNALL bases and all explicit
 non-default disposable-project/loopback guards. No migrations or test assertions
