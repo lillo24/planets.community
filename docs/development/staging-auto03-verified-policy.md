@@ -41,6 +41,31 @@ old rows and independent tests must still pass. Any unproven existing contract
 change is held with its exact object/version. New contracts must first land in a
 separate policy PR.
 
+ACTSRC02 has a separately installed **source-only** index-retirement contract.
+Only version `20261023093757`, filename
+`20261023093757_external_activity_multi_source.sql`, SHA-256
+`0fec4437bf512a14c6218c3f7e7bc3b810c5414dcc44d8d2c2db72010b742fd6`
+select it. The pin alone is insufficient: the actual predecessor must have the
+exact unique btree `(enabled) WHERE enabled` index on
+`private.external_activity_sources`; only that index may disappear. All other
+indexes/constraints, source identity keys, original rows/columns, table owners,
+RLS and denied raw client/service grants remain checked. Other `DROP` statements
+remain source-blocking. This intentionally permits multiple independently
+licensed sources as required by ACTSRC02, while retaining source/upstream identity
+and per-source lease fences.
+
+The contract never confers hosted eligibility. Its witness remains
+`review-required-for-hosted`, and the writer authorization independently rejects
+these exact pending SQL bytes even if a witness incorrectly says automatic.
+Unproven importer/projection/geographic effects still need their own hosted
+contracts. No policy flag, provider, source, scheduler or hosted database is
+changed. The independent rollback-only PostgreSQL controls verify the real
+predecessor, three wrong definitions, unrelated index loss, grant widening and
+disabled RLS, then prove distinct source identities and leases and compare all
+original fixture rows/catalog after rollback. Policy tests use the immutable
+untrusted #298 candidate `a6edec44cd3af17cd0b6bb339d74327ceceda488` only as input,
+not as canonical history or rollout authorization.
+
 Validation loads its classifier and SQL rehearsal from the PR's pre-change base.
 A policy-only PR exercises its candidate engine after unchanged base tests.
 Canonical migrations cannot be added in the same PR as release policy, workflow,

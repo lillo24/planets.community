@@ -12,6 +12,25 @@ import { STAGING_REF } from "./migrations.mjs";
 export const TRUSTED_PRODUCT_BASE = "ec4c57060331b96577d512794b8c5bd78ac16d2b";
 export const POLICY_VERSION = 2;
 export class UnsafeCatalogError extends ReleaseError {}
+// ACTSRC02 intentionally retires the MVP's one-enabled-source restriction.
+// This pin selects a SOURCE-ONLY contract, never hosted authorization. Actual
+// predecessor/catalog/row proofs below remain mandatory; all other DROP stays
+// blocked. Changing these published SQL bytes needs another policy review.
+export const SOURCE_INDEX_RETIREMENT = Object.freeze({
+  version: "20261023093757",
+  file: "20261023093757_external_activity_multi_source.sql",
+  sha256: "0fec4437bf512a14c6218c3f7e7bc3b810c5414dcc44d8d2c2db72010b742fd6",
+  classification: "external-source-index-retirement-candidate",
+  id: "private.external_activity_one_enabled_source",
+  table: "private.external_activity_sources",
+  definition:
+    "CREATE UNIQUE INDEX external_activity_one_enabled_source ON private.external_activity_sources USING btree (enabled) WHERE enabled",
+});
+export const sourceIndexRetirementMigration = (m) =>
+  m.version === SOURCE_INDEX_RETIREMENT.version &&
+  m.file === SOURCE_INDEX_RETIREMENT.file &&
+  m.sha256 === SOURCE_INDEX_RETIREMENT.sha256 &&
+  sha256(m.sql) === SOURCE_INDEX_RETIREMENT.sha256;
 export const policyModuleHash = () =>
   sha256(readFileSync(fileURLToPath(import.meta.url)));
 export const policyPath = (path) =>
@@ -556,6 +575,12 @@ export function inspectAdditive(sql) {
   };
 }
 export function migrationCandidate(migration, root = process.cwd()) {
+  if (sourceIndexRetirementMigration(migration))
+    return {
+      classification: SOURCE_INDEX_RETIREMENT.classification,
+      reason:
+        "Source-only ACTSRC02 index contract requires actual predecessor/catalog/row proof; hosted application is withheld",
+    };
   try {
     const old = execFileSync(
       "git",
@@ -704,7 +729,84 @@ export function catalogEffects(before, after) {
   }
   return changes;
 }
+export function assertSourceIndexRetirementCatalog(before, after) {
+  const retired = before.indexes.find(
+    (v) => v.id === SOURCE_INDEX_RETIREMENT.id,
+  );
+  if (
+    !retired ||
+    retired.table !== SOURCE_INDEX_RETIREMENT.table ||
+    retired.definition !== SOURCE_INDEX_RETIREMENT.definition ||
+    after.indexes.some((v) => v.id === SOURCE_INDEX_RETIREMENT.id)
+  )
+    throw new UnsafeCatalogError(
+      "ACTSRC02 requires the exact retired predecessor index",
+    );
+  for (const [id, definition] of [
+    [
+      "private.external_activity_sources.external_activity_sources_pkey",
+      "PRIMARY KEY (source_id)",
+    ],
+    [
+      "private.external_activities.external_activities_source_id_upstream_id_key",
+      "UNIQUE (source_id, upstream_id)",
+    ],
+  ])
+    if (
+      !before.constraints.some(
+        (v) => v.id === id && v.definition === definition,
+      )
+    )
+      throw new UnsafeCatalogError(
+        `ACTSRC02 predecessor identity contract missing: ${id}`,
+      );
+  // Do not permit removal/redefinition of primary, source/upstream identity or
+  // any unrelated index/constraint alongside this one deliberate retirement.
+  for (const section of ["indexes", "constraints"])
+    for (const prior of before[section]) {
+      if (section === "indexes" && prior.id === retired.id) continue;
+      if (
+        JSON.stringify(after[section].find((v) => v.id === prior.id)) !==
+        JSON.stringify(prior)
+      )
+        throw new UnsafeCatalogError(
+          `ACTSRC02 changed retained ${section}: ${prior.id}`,
+        );
+    }
+  for (const id of [
+    SOURCE_INDEX_RETIREMENT.table,
+    "private.external_activities",
+    "private.external_activity_runs",
+    "private.external_activity_occurrences",
+  ]) {
+    const a = before.tables.find((v) => v.id === id),
+      b = after.tables.find((v) => v.id === id);
+    if (
+      !a ||
+      !b ||
+      !a.rls ||
+      !b.rls ||
+      a.forced !== b.forced ||
+      !["postgres", "supabase_admin"].includes(a.owner) ||
+      a.owner !== b.owner ||
+      [a, b].some(
+        (t) =>
+          t.columns.some((c) => Boolean(c.acl)) ||
+          ["anon", "authenticated", "service_role"].some(
+            (role) =>
+              !t.access[role] || Object.values(t.access[role]).some(Boolean),
+          ),
+      )
+    )
+      throw new UnsafeCatalogError(`ACTSRC02 private authority changed: ${id}`);
+  }
+  return retired.id;
+}
 export function assertBoundedCatalog(before, after, candidate) {
+  const retired =
+    candidate.classification === SOURCE_INDEX_RETIREMENT.classification
+      ? assertSourceIndexRetirementCatalog(before, after)
+      : null;
   const changes = catalogEffects(before, after);
   const sameContext = (a, b) =>
     [
@@ -731,6 +833,7 @@ export function assertBoundedCatalog(before, after, candidate) {
   ]) {
     for (const a of before[section]) {
       const b = after[section].find((v) => v.id === a.id);
+      if (!b && section === "indexes" && a.id === retired) continue;
       if (!b)
         throw new UnsafeCatalogError(
           `Existing ${section} contract removed: ${a.id}`,
@@ -883,6 +986,12 @@ export function authorizeVerifiedPending(diff, local, evidence, source, tree) {
   const decisions = [];
   for (const pending of diff.pending) {
     const m = local.find((v) => v.version === pending.version);
+    // The independently reviewed index contract permits source admission only.
+    // Even an incorrectly promoted/forged receipt cannot enable hosted apply.
+    if (m && sourceIndexRetirementMigration(m))
+      throw new ReleaseError(
+        `Migration ${pending.version} is source-only; hosted application requires a separate contract`,
+      );
     const w = evidence.migration_safety.find(
       (v) => v.version === pending.version,
     );
