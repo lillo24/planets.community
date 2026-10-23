@@ -3,6 +3,10 @@
 Current trusted base: `52e301bb665748065e23171d2a4d6ffc92bdefe1`, merged
 [STAGING-AUTO03 #306](https://github.com/lillo24/planets.community/pull/306).
 Feature integration remains on [#298](https://github.com/lillo24/planets.community/pull/298).
+Current main additionally includes calendar #309 at `d9f55995`; its merge into
+the feature branch does not change this policy. The separately validated
+prerequisite is [#310](https://github.com/lillo24/planets.community/pull/310),
+head `2a559902`. It is pending independent required CI, not yet installed.
 
 The new executable source gate classifies
 `20261023093757_external_activity_multi_source.sql` as **blocked-unsafe**:
@@ -41,6 +45,17 @@ authorization/identity/concurrency checks and negative controls for unrelated
 index/privilege changes. Hosted eligibility for the other functions/effects must
 remain held until their own contracts qualify. No broad DROP exception or
 head-comment bypass is appropriate.
+
+#310 implements that prerequisite as a **source-only** contract. Its exact SQL
+pin must also pass real predecessor/index/retained identity and raw-role/RLS
+proofs; a wrong predecessor or unrelated index/constraint loss remains fatal.
+Its PostgreSQL controls pass three wrong definitions and three unsafe mutation
+denials, retain distinct source/upstream identities and leases, and compare
+original catalog/rows after rollback. Local focused tests: 72 PASS; all tooling:
+258 PASS. The hosted authorizer independently rejects the exact pending migration
+even if a witness is incorrectly promoted. It changes no canonical SQL, hosted
+configuration or writer protection. It must pass the existing five required
+checks and merge separately before #298 can use its trusted contract.
 
 Reproduce the source decision without hosted access:
 

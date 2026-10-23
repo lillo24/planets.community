@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "qualification": "Product/local qualification complete; latest-main trusted policy blocks source merge. PR298 remains the cumulative integration. No hosted activation or deployment.",
+  "qualification": "Product/local qualification complete; separate source-only policy prerequisite PR310 CI pending before current-head PR298 validation/merge. No hosted activation or deployment.",
   "base_sha": "3f1ae160b60e2133e2e5d71a7bd401d53c2cbce2",
   "upgrade": {
     "from": 142,
@@ -144,5 +144,33 @@
     "legacy_owner_comment": "Historical technical audit only; no current authorization path",
     "policy_unchanged_in_feature_pr": true,
     "next": "Separate independently validated policy contract for reviewed single-source index removal; no history rewrite or guard bypass"
+  },
+  "sql_review_basis": "Historical exact-head 274b5233/base3f1ae160 proof. These unchanged canonical SQL hashes remain useful; its predecessor digests and owner comment are not current standing-policy authorization.",
+  "latest_main_integration": {
+    "base_sha": "d9f559951b79be568004b7507b16f4b4b216db48",
+    "calendar_merge": "26ad03fc",
+    "local_migrations": 147,
+    "calendar_pgtap_assertions": 50,
+    "generated_types_drift": "pass",
+    "navigation_calendar_widgets": 88,
+    "calendar_real_auth_http_assertions": 65,
+    "mobile_analysis": "no issues",
+    "mailbox": "Initial default54324 refused; loopback-only MAILPIT_URL support added and successful isolated54924 rerun."
+  },
+  "policy_prerequisite": {
+    "pr": 310,
+    "head": "2a5599026728b4d2854cf0efd4b2a82d37fb4106",
+    "status": "independent required CI pending",
+    "scope": "source-only exact ACTSRC02 index retirement; explicit hosted refusal; no generic DROP exception",
+    "tooling_passed": 258,
+    "focused_passed": 72,
+    "real_postgres_controls": {
+      "verified": true,
+      "rollback_only": true,
+      "wrong_predecessors": 3,
+      "unsafe_effects": 3,
+      "source_identity_and_leases": true,
+      "original_rows_and_catalog_preserved": true
+    }
   }
 }
