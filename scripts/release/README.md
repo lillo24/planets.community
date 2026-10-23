@@ -76,6 +76,12 @@ diagnostics stay out of public Actions output.
   code, creates temporary signing/config files without overwriting owner inputs,
   calls the existing Dart map builder and verifies/persists the AAB. Its `finally` removes only files it
   created. Runner termination is additionally covered by ephemeral runner teardown.
+- `backend-handoff.mjs` permits a signing job without a Supabase management
+  credential to consume this same run's protected staging receipts. It requires
+  current source/project/variant/policy, a fresh 15-minute receipt, canonical
+  history and actual successful staging-job metadata from GitHub. Android repeats
+  public HTTP checks; it never copies staging credentials into the signing
+  environment. A supplied but failing management credential still fails directly.
 - `publish.mjs` runs in a separate publication environment after the artifact is
   reviewable. It checks the persisted receipt/hash/source, rechecks hosted readiness
   and submits only that AAB; it needs no signing key. First owner approval occurs

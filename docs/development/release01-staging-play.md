@@ -92,14 +92,18 @@ admin bypass. Recheck live settings before activation; code merge changes none.
    credentials below are needed solely for later manual app delivery.
    Provision secrets through those environment settings or owner-run
    `gh secret set NAME --env ENV` with protected stdin; never paste values into
-   chat/history/issues. All three use `SUPABASE_ACCESS_TOKEN` (legitimate scoped
-   management access) and `STAGING_CONFIG_JSON`. Staging additionally needs
+   chat/history/issues. Staging/publication use `SUPABASE_ACCESS_TOKEN` (legitimate
+   scoped management access). All three use `STAGING_CONFIG_JSON`. Android may
+   instead consume the same run's successful protected staging handoff; do not
+   copy the staging management credential into the signing environment.
+   Staging additionally needs
    `STAGING_DB_URL` (original direct/session-pooler route on port 5432, verified TLS;
    transaction-pooler port 6543 is rejected because the advisory lock is session-scoped).
    Android retains `ANDROID_UPLOAD_KEYSTORE_BASE64`,
    `ANDROID_UPLOAD_STORE_PASSWORD`, `ANDROID_UPLOAD_KEY_PASSWORD`,
    `ANDROID_UPLOAD_KEY_ALIAS`; build/publication retain
-   `PLAY_SERVICE_ACCOUNT_JSON`. Use the original upload certificate. Existing
+   `PLAY_SERVICE_ACCOUNT_JSON` when Publisher access is used; a build can use the
+   fresh manual Console code described below. Use the original upload certificate. Existing
    `STAGING_CONFIG_JSON` string-key schema, client-safe publishable key,
    `ENABLE_DEMO_TOOLS="false"`, empty `SENTRY_DSN` and optional public Google
    client ID remain; no service-role/provider/database keys in that JSON.
@@ -246,6 +250,14 @@ whole-set authorization, recovery, lock, dry-run/apply and backend verification.
 `build` additionally persists a verified upload-signed AAB; `publish` additionally
 waits in `planets-play-closed` for approval of that persisted AAB and submits only
 that artifact. Manual routes keep original signing/track/readiness checks.
+
+Without a signing-environment Supabase management token, Android verifies this
+same workflow run's downloaded backend/deployment/HTTP receipts against the
+actual successful protected staging job via the read-only Actions API. Source,
+project, variant, policy hash, canonical history and a 15-minute freshness bound
+must match. It repeats the public HTTP checks before signing. Missing/stale or
+failed proof blocks the build; a supplied but invalid management token fails
+directly. Publication keeps its independent backend check and owner controls.
 
 Ordinary eligible main pushes select **deploy only**. Android/Play jobs explicitly
 require manual dispatch even if the legacy auto-publish variable is true. Plan/
