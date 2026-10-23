@@ -1,23 +1,33 @@
 # Activities & Sports implementation progress
 
-Pack: `ACTSPORTS-2026-10-23`. Runner: Codex thread
+Current continuation: the founder explicitly adopted
+[RESUME02](../../history-implementations/PLANETS_RESUME02_finish_activities_sports_queue.md).
+Use this existing cumulative branch/worktree and PR #298 for 002–011; tested
+predecessors may be built on before intermediate merges. Delegated exact-head
+SQL review/posting through the existing verified owner account is authorized.
+Keep all identity/hash/preservation/semantic/CI controls intact. The older
+per-step-merge and personal-posting waits below are historical and superseded.
+RESUME01 integration/local preparation finishes first; the independent 002
+navigation reproduction/repair is qualified while its final Database CI runs.
+
+Pack: `ACTSPORTS-2026-10-23`. Initial 002 runner: Codex thread
 `01a165d0-5cc8-7ba0-8ce1-c5b76de7b120`. Entry point found on `origin/main` at
 `d735bb88decbc845ee27d1f5812941a233b61b3f`; every numbered prompt was present and
 READY. The file-watching heartbeat was deleted after detection. No competing
 runner for this queue was found in current tasks, worktrees or open PRs.
 
-| Step            | Status                                                 | Dependency base / PR / merge                                                                                                                                                         |
-| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 002 ACTCAT02    | Validated locally; exact owner review required         | Base `d735bb88decbc845ee27d1f5812941a233b61b3f`; branch `codex/actcat02-catalogue-kinds`; [#298](https://github.com/lillo24/planets.community/pull/298); unmerged; merge SHA pending |
-| 003 ACTUI02     | Waiting for merged 002                                 | Not started                                                                                                                                                                          |
-| 004 SPORTUI01   | Waiting for merged 002, 003                            | Not started                                                                                                                                                                          |
-| 005 ACTSRC02    | Waiting for merged 002                                 | Not started                                                                                                                                                                          |
-| 006 SPORTDATA01 | Waiting for merged 002, 005 and source re-verification | Not started; no current live counts asserted                                                                                                                                         |
-| 007 ACTGEO01    | Waiting for merged 002, 005                            | Not started; does not depend on live 006 data                                                                                                                                        |
-| 008 ACTMAP01    | Waiting for merged 003, 004, 007                       | Not started                                                                                                                                                                          |
-| 009 SPORTAPI02  | Waiting for merged 002, 005 and source verification    | Not started; sports/course coverage unverified                                                                                                                                       |
-| 010 ACTOPS01    | Waiting for merged 005                                 | Not started                                                                                                                                                                          |
-| 011 ACTQA01     | Waiting for merged implemented portions                | Not started                                                                                                                                                                          |
+| Step            | Status                                                  | Dependency base / PR / merge                                                                                                                                                          |
+| --------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 002 ACTCAT02    | Navigation regression repaired and locally verified     | Existing `4790cf59`; main `33f0309b` reconciled in `79b57979`; same cumulative [#298](https://github.com/lillo24/planets.community/pull/298), final consolidated review/merge pending |
+| 003 ACTUI02     | Next after RESUME01 and merged-main reconciliation      | Not started; tested 002 is the dependency, no intermediate merge wait                                                                                                                 |
+| 004 SPORTUI01   | Queued after tested 003                                 | Not started                                                                                                                                                                           |
+| 005 ACTSRC02    | Ready on tested 002                                     | Not started                                                                                                                                                                           |
+| 006 SPORTDATA01 | Queued after 005 and source re-verification             | Not started; no current live counts asserted                                                                                                                                          |
+| 007 ACTGEO01    | Queued after tested 005                                 | Not started; independent of live 006                                                                                                                                                  |
+| 008 ACTMAP01    | Queued after tested 003, 004, 007                       | Not started                                                                                                                                                                           |
+| 009 SPORTAPI02  | Queued after tested 005 and bounded source verification | Not started; sports/course coverage unverified                                                                                                                                        |
+| 010 ACTOPS01    | Queued after tested 005                                 | Not started                                                                                                                                                                           |
+| 011 ACTQA01     | Queued after all ready implementations                  | Not started                                                                                                                                                                           |
 
 ## 002 implementation and evidence
 
@@ -46,7 +56,7 @@ and removed by the verifier/transaction rollback. Hosted migrations/data:
 **unchanged by this task**. Refresh scheduler: **not enabled**. Native phone QA:
 **deferred**, no physical-device claim. No production deployment occurred.
 
-## Resume checkpoint
+## Historical 002 checkpoint before RESUME02
 
 Worktree:
 `C:\Users\utente\.codex\worktrees\actcat02-catalogue-kinds\planets.community`.
@@ -64,3 +74,35 @@ update from latest main if needed (which invalidates the head-specific review),
 merge when green, record the merge SHA, stop the task-owned disposable stack,
 archive the task worktree and remove its merged branch. Fetch latest main and
 immediately start `003_ACTUI02_activities_hub.md` on a new isolated worktree.
+
+## RESUME02 checkpoint — 23 October 2026
+
+The existing worktree was clean with no unpushed commits. Its prior runner's
+latest turn is completed and not loaded; no active competing queue runner was
+found. The founder now explicitly requests resuming this same queue. Preserve
+PEOPLEHOME and MAPMOCK work and include Find People only after its main merge.
+
+Reproduced the three CI failures on the actual pinned Flutter configuration:
+`flutter gen-l10n`, then `flutter test --no-pub
+test/app/router/navigation_shell_test.dart --plain-name ACTSPLIT01 --reporter
+expanded`: **8 PASS / 3 FAIL** at the old `External calendars · Trento` assertions.
+ACTCAT02's accepted event/course/place contract intentionally generalized the
+localized heading to **External activities · Trento**. The widget renders that
+current localized value, so the two assertions (one parameterized over two
+destinations) were obsolete. Only those expectations and their rationale comment
+changed; native navigation, error/example separation and other assertions remain.
+
+After repair, the **complete navigation suite: 64 PASS**. Both rendered public
+layout journeys also PASS; 14 opt-in test-surface captures are retained privately
+under `.actcat02-qa/resume02-navigation`. The actual Activities heading and honest
+unconfigured state were inspected. These are rendered widgets at the default
+test surface, not phone QA or the later 320/360 dp acceptance matrix. Formatting
+of the changed Dart test passes with zero changes. No SQL or runtime code changed
+in this repair, and no repeat database replay is claimed.
+
+Next: finish the separately requested RESUME01 merge/local-release preparation,
+fetch its merged main into this same cumulative branch, resolve shared source/
+generated-type areas, then implement 003 → 004 → 005 → 006 → 007 → 008 → 009 →
+010 → 011. Commit/tests/progress per stage, no intermediate merge waits. Obtain
+fresh consolidated exact-content approval and required final CI before the one
+queue merge. No hosted source/import/scheduler activation or store upload.

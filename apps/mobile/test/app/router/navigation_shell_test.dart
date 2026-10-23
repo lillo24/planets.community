@@ -183,7 +183,8 @@ void main() {
         await _tap(tester, 'browse-activities-button');
         expect(_path(app), '/activities');
         expect(find.byKey(const Key('nav-browse')), findsOneWidget);
-        expect(find.text('External calendars · Trento'), findsOneWidget);
+        // ACTCAT02 includes courses and undated places, beyond calendars.
+        expect(find.text('External activities · Trento'), findsOneWidget);
         await RenderedEvidence.capture(tester, 'activities-all-$destination');
         await _tap(tester, 'activities-preview-examples');
         await _tap(tester, 'activities-category-sports');
@@ -391,7 +392,7 @@ void main() {
     );
     app.read(appRouterProvider).go('/activities');
     await tester.pumpAndSettle();
-    expect(find.text('External calendars · Trento'), findsOneWidget);
+    expect(find.text('External activities · Trento'), findsOneWidget);
     await _tap(tester, 'activities-native-tavoli');
     expect(find.byType(ErrorState), findsOneWidget);
     expect(find.byType(ActivityExampleCard), findsNothing);
