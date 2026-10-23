@@ -7,6 +7,9 @@ import {
   effectCatalogQuery,
   assertBoundedCatalog,
   catalogEffects,
+  SOURCE_INDEX_RETIREMENT,
+  assertSourceIndexRetirementCatalog,
+  UnsafeCatalogError,
 } from "./eligibility.mjs";
 
 const loopback = (value) =>
@@ -25,6 +28,169 @@ const tableNames = [
   "map_baseline_tiles",
   "mock_basemap_claims",
 ];
+
+// Independent rollback-only PostgreSQL proof. It runs on the policy PR before
+// ACTSRC02 exists, and on product rehearsals after it exists. A missing MVP index
+// is reconstructed only INSIDE this transaction; no migration/history is edited.
+export async function sourceIndexRetirementControls(databaseUrl) {
+  loopback(databaseUrl);
+  assert.equal(process.env.PLANETS_DISPOSABLE_QA, "1");
+  const sql = postgres(databaseUrl, { max: 1, onnotice: () => {} });
+  const rollback = new Error("rollback-only ACTSRC02 index contract");
+  const snapshot = async (tx) =>
+    (await tx.unsafe(effectCatalogQuery))[0].catalog;
+  const rows = async (tx) =>
+    (
+      await tx.unsafe(`select jsonb_build_object(
+    'sources',(select coalesce(jsonb_agg(to_jsonb(t) order by source_id),'[]') from private.external_activity_sources t),
+    'items',(select coalesce(jsonb_agg(to_jsonb(t) order by activity_id),'[]') from private.external_activities t),
+    'runs',(select coalesce(jsonb_agg(to_jsonb(t) order by run_id),'[]') from private.external_activity_runs t),
+    'occurrences',(select coalesce(jsonb_agg(to_jsonb(t) order by activity_id,ordinal),'[]') from private.external_activity_occurrences t)
+  ) as rows`)
+    )[0].rows;
+  try {
+    const originalCatalog = await snapshot(sql),
+      originalRows = await rows(sql);
+    try {
+      await sql.begin(async (tx) => {
+        await tx.unsafe(
+          "set local lock_timeout='5s'; set local statement_timeout='30s'",
+        );
+        // Fixture configuration changes are rolled back, including configuration
+        // version triggers. Existing data is compared again after rollback.
+        await tx.unsafe(
+          "update private.external_activity_sources set enabled=false",
+        );
+        if (
+          !(await snapshot(tx)).indexes.some(
+            (v) => v.id === SOURCE_INDEX_RETIREMENT.id,
+          )
+        )
+          await tx.unsafe(SOURCE_INDEX_RETIREMENT.definition);
+        const candidate = {
+          classification: SOURCE_INDEX_RETIREMENT.classification,
+        };
+        const source = (
+          name,
+        ) => `insert into private.external_activity_sources(source_id,display_name,official_origin,enabled,rights_confirmed,attribution,license_url)
+          values ('staging-index-${name}','Fictional source ${name}','https://example.invalid',true,true,'Synthetic contract','https://example.invalid/license')`;
+        await tx.unsafe(source("a"));
+        await tx.unsafe(`do $$begin
+          ${source("b")};
+          raise exception 'MVP one-enabled-source index did not constrain a second source';
+          exception when unique_violation then null;
+        end$$`);
+        const before = await snapshot(tx),
+          beforeRows = await rows(tx);
+        // Wrong predecessors with the same name must not pass the contract.
+        for (const replacement of [
+          "create unique index external_activity_one_enabled_source on private.external_activity_sources(source_id) where enabled",
+          "create unique index external_activity_one_enabled_source on private.external_activity_sources(enabled) where enabled and false",
+          "create index external_activity_one_enabled_source on private.external_activity_runs(state)",
+        ]) {
+          await tx.unsafe("savepoint source_index_probe");
+          await tx.unsafe(
+            "drop index private.external_activity_one_enabled_source",
+          );
+          await tx.unsafe(replacement);
+          const wrong = await snapshot(tx);
+          await tx.unsafe(
+            "drop index private.external_activity_one_enabled_source",
+          );
+          const removedWrong = await snapshot(tx);
+          assert.throws(
+            () => assertSourceIndexRetirementCatalog(wrong, removedWrong),
+            UnsafeCatalogError,
+          );
+          await tx.unsafe(
+            "rollback to savepoint source_index_probe; release savepoint source_index_probe",
+          );
+        }
+        await tx.unsafe(
+          "drop index private.external_activity_one_enabled_source",
+        );
+        let after = await snapshot(tx);
+        assert.equal(
+          assertSourceIndexRetirementCatalog(before, after),
+          SOURCE_INDEX_RETIREMENT.id,
+        );
+        assert.equal(assertBoundedCatalog(before, after, candidate).length, 1);
+        assert.deepEqual(
+          await rows(tx),
+          beforeRows,
+          "Index retirement changed existing rows",
+        );
+        // Real catalog mutations, rather than only constructed JSON, must fail.
+        for (const mutation of [
+          "drop index private.external_activities_source_observed",
+          "grant select on private.external_activity_sources to anon",
+          "alter table private.external_activity_sources disable row level security",
+        ]) {
+          await tx.unsafe("savepoint source_index_probe");
+          await tx.unsafe(mutation);
+          after = await snapshot(tx);
+          assert.throws(
+            () => assertBoundedCatalog(before, after, candidate),
+            UnsafeCatalogError,
+          );
+          await tx.unsafe(
+            "rollback to savepoint source_index_probe; release savepoint source_index_probe",
+          );
+        }
+        await tx.unsafe(source("b"));
+        // Retiring exclusivity permits independently licensed sources, while
+        // source and item identity keys and per-source leases remain enforced.
+        await tx.unsafe(`do $$begin
+          ${source("b")}; raise exception 'Source identity key lost';
+          exception when unique_violation then null;
+        end$$`);
+        await tx.unsafe(`insert into private.external_activities(source_id,upstream_id,content,content_hash,last_observed_at)
+          values('staging-index-a','shared-id','{}','fixture',clock_timestamp()),
+                ('staging-index-b','shared-id','{}','fixture',clock_timestamp())`);
+        await tx.unsafe(`do $$begin
+          insert into private.external_activities(source_id,upstream_id,content,content_hash,last_observed_at)
+          values('staging-index-a','shared-id','{}','fixture',clock_timestamp());
+          raise exception 'Source/upstream identity key lost';
+          exception when unique_violation then null;
+        end$$`);
+        const first = (
+          await tx`select public.begin_external_activity_import('staging-index-a') result`
+        )[0].result;
+        const second = (
+          await tx`select public.begin_external_activity_import('staging-index-b') result`
+        )[0].result;
+        assert.notEqual(first.run_id, second.run_id);
+        await tx.unsafe(`do $$begin
+          perform public.begin_external_activity_import('staging-index-a');
+          raise exception 'Busy source lease did not fence a second import';
+          exception when lock_not_available then null;
+        end$$`);
+        throw rollback;
+      });
+    } catch (error) {
+      if (error !== rollback) throw error;
+    }
+    assert.deepEqual(
+      await rows(sql),
+      originalRows,
+      "Index probes leaked fixture rows",
+    );
+    assert.deepEqual(
+      await snapshot(sql),
+      originalCatalog,
+      "Index probes leaked catalog changes",
+    );
+    return {
+      verified: true,
+      rollback_only: true,
+      wrong_predecessors: 3,
+      unsafe_effects: 3,
+      source_identity_and_leases: true,
+    };
+  } finally {
+    await sql.end({ timeout: 5 });
+  }
+}
 export async function seedStorageWitness(status, sql) {
   loopback(status.apiUrl);
   const options = {

@@ -35,9 +35,14 @@ diagnostics stay out of public Actions output.
 - `eligibility.mjs` owns standing policy V2: bounded additive classification,
   policy/SQL PR separation, independent catalog effects and whole-set receipts.
   Unknown privileged bodies remain held until an independent contract is installed.
+  The exact ACTSRC02 single-enabled-source index retirement has a source-only
+  catalog contract; it cannot authorize hosted application, even with a promoted
+  witness. Generic destructive-DDL rejection remains in place.
 - `contracts.mjs` exercises real Auth/Storage preservation, service-only denials,
   MAPMOCK ledger/quota/concurrency behavior, unsafe mutation controls and two
   real writer sessions on explicitly disposable loopback services.
+  Its rollback-only ACTSRC02 controls exercise the real index definition, retained
+  identities/leases and unsafe mutations without changing canonical history.
 - `reviews.mjs` enforces source safety without owner fingerprints. Validation
   loads it from the trusted pre-change base. Its old comment readers remain
   available for auditing legacy releases, never for current authorization.
@@ -98,5 +103,5 @@ diagnostics stay out of public Actions output.
   creates tracks, modifies testers/countries or submits production releases.
 
 Run `npm run test:tooling`. The focused suite is
-`node --test scripts/lib/release01.test.mjs scripts/lib/staging-auto01.test.mjs scripts/lib/staging-auto03.test.mjs`; it uses fictional files/mock HTTP,
+`node --test scripts/lib/release01.test.mjs scripts/lib/staging-auto01.test.mjs scripts/lib/staging-auto03.test.mjs scripts/lib/actsrc02-policy.test.mjs`; it uses fictional files/mock HTTP,
 never a real Play account. See the [operator runbook](../../docs/development/release01-staging-play.md).

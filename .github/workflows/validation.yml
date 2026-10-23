@@ -67,7 +67,7 @@ jobs:
         run: |
           # Base files run from their own archive; candidate tests cannot replace them.
           tests=(build/trusted-release/scripts/lib/staging-auto01.test.mjs build/trusted-release/scripts/lib/release01.test.mjs)
-          for name in staging-auto03 backend-handoff; do
+          for name in staging-auto03 backend-handoff actsrc02-policy; do
             file="build/trusted-release/scripts/lib/$name.test.mjs"
             if [[ -f "$file" ]]; then tests+=("$file"); fi
           done
