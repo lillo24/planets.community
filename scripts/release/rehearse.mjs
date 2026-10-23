@@ -332,7 +332,10 @@ try {
   // stack, then prove its entire effective catalog equals the upgraded catalog
   // before running unchanged trusted fixtures. No assertion/test is skipped.
   const upgradedCatalog = (await sql.unsafe(effectCatalogQuery))[0].catalog;
+  await sql.end({ timeout: 5 });
+  sql = null;
   command(cli, ["db", "reset", "--local", "--yes"]);
+  sql = postgres(status.databaseUrl, { max: 1, onnotice: () => {} });
   assert.deepEqual(
     catalogEffects(
       upgradedCatalog,

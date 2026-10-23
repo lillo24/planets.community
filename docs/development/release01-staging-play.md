@@ -10,8 +10,8 @@ records the blockers; merging release plumbing does not resolve them.
 
 ## Explicit Android build variants
 
-The workflow selects `release_variant=closed-test-mock` by default, including
-future explicitly enabled push builds. Its Android environment must contain
+Manual dispatch selects `release_variant=closed-test-mock` by default. Main
+pushes use `staging` and never build Android. The Android environment must contain
 `MOCK_CONFIG_JSON`: only `MOCK_SUPABASE_URL`, `MOCK_SUPABASE_PUBLISHABLE_KEY`,
 `MOCK_PERSONA_BROKER_URL`, and `MOCK_FIXTURE_GENERATION`, all strings. The fixed
 mock project is `pnolarmzxmmjtguligfc`, broker `/functions/v1/mock-personas`, and
@@ -103,9 +103,10 @@ admin bypass. Recheck live settings before activation; code merge changes none.
    `STAGING_CONFIG_JSON` string-key schema, client-safe publishable key,
    `ENABLE_DEMO_TOOLS="false"`, empty `SENTRY_DSN` and optional public Google
    client ID remain; no service-role/provider/database keys in that JSON.
-6. Review the bounded historical catch-up below in a **new enabling PR**. Do not
-   reuse the old `BOOTSTRAP_MANIFEST_SHA256` or task-specific waiver as blanket
-   approval. This code PR leaves reconciliation disabled and grants no review.
+6. Recompute and qualify the **whole** observed pending chain under V2. The old
+   two-file catch-up and `BOOTSTRAP_MANIFEST_SHA256` are historical audit data,
+   not current authorization. Every required predecessor needs an independent
+   populated/catalog/security receipt before any intentional write.
 7. Dispatch read-only `inspect` on current main while release/readiness remain
    disabled. It uses the actual secret for certificate/hostname-validated TLS,
    port 5432, a stable backend session, and history agreement with the Management
@@ -124,7 +125,7 @@ admin bypass. Recheck live settings before activation; code merge changes none.
    Inspect remains protected by the same environment and main-only restrictions.
    For `verified-backup` only, configure real `STAGING_RECOVERY_POLICY_JSON` and
    fresh restoration evidence. Leave it unset for `development-no-backup`.
-   After prerequisites and exact SQL review pass, set protected staging
+   After prerequisites and independent whole-chain proof pass, set protected staging
    `STAGING_AUTOMATION_READY=true`, then repository `STAGING_RELEASE_ENABLED=true`
    last, and dispatch staging-only `deploy` from current main.
    Subsequent eligible main pushes need no environment reviewer prompt.
@@ -212,7 +213,7 @@ Missing/changed/stale evidence stops before SQL in verified-backup mode. Recover
 scoped separately; this workflow never downloads real backups or decryption keys.
 Any recovery code/policy change needs owner review and a new pinned hash.
 
-### Bounded initial catch-up
+### Historical initial catch-up snapshot
 
 The original 26-file hashes, boundary `20261021155653`, approval and execution
 receipt remain unchanged. Fresh [read-only history observation](evidence/release01/staging-auto01-predecessor.json)
@@ -225,20 +226,17 @@ zero drift and these three pending files:
 | `20261021193500` notification claim | `9c812abdf8c423d9e395b3c47cc8b958f73186cba62c106792c029cc043a6c14` | Review: privileged worker/claim semantics                     |
 | `20261022084023` ACTAPI catalogue   | `3d777c5a3a2863c8f56bb9145be14ea94ebf38fcf2f454b196d325bbb6601bd6` | Separate review: new schema/RPC/security semantics            |
 
-`reconciliation.json` is **disabled** and binds only the original two-file pair
-to that exact observed remote predecessor. A new enabling PR changes only its
-`enabled` field after re-observation/rehearsal. The owner review request includes
-all three independently hash/predecessor-bound approvals; the third gets no
-historical rights. Review evidence can be verified from that enabling PR for
-all observed pending files. Additional/new files retain independent review or
-routine semantic requirements. Changed history means refresh the bounded plan,
-not expanding `--include-all` globally. No timestamp/history rewrites.
+This dated 126-file snapshot does not describe the current backlog or authorize
+it. `reconciliation.json` remains disabled historical audit data. V2 observes
+and qualifies the entire current dependency chain, including every historical
+hole. Changed history means fresh observed-predecessor rehearsal and proof,
+without timestamp/history rewrites or a blanket `--include-all`.
 
 The CLI directory contains already-applied files plus exactly one authorized
 pending file per invocation. `--include-all` is used only for an approved
 historical file. The whole mixed set must pass all guards first. After parity,
-no pending pair means this reconciliation is unnecessary; future routine
-migrations use their exact-source populated/catalog proof without new approval.
+the old pair is irrelevant; future eligible migrations use their exact-source
+populated/catalog/security proof without new owner comments.
 
 ## Routine operation and release approval
 
@@ -260,8 +258,9 @@ witnesses from the same release run. A zero-pending deploy performs current
 history/backend/HTTP verification and is a no-op, without requesting new review
 or recovery. Drift still blocks readiness.
 
-The disposable rehearsal reconstructs the observed 123-file non-contiguous
-predecessor, seeds fictional Auth/Profile/Proposal data, checks original rows and
+The disposable rehearsal reconstructs the observed non-contiguous predecessor
+(the committed metadata-only baseline in PRs), populates fictional Auth/Profile/
+Proposal and real Storage data, checks original rows and
 columns **after each file**, real Resource Auth/REST, no-op retry and generated
 types. A rollback-only live pg_catalog fixture tests the routine positive path.
 It accepts only a fresh credential-free Linux Actions stack; never use hosted
@@ -271,7 +270,7 @@ The CLI receives no seed/role/Vault options. A session advisory lock and compari
 with independently identified management history protect application; applied
 canonical versions/names/SQL fingerprints are verified afterward. SHA-256 of
 original files and stored statement arrays is retained separately, with their
-predecessor digest bound into bootstrap approval. Both database clients enforce
+predecessor digest bound into the standing-policy receipt. Both database clients enforce
 verified TLS; trust errors must be resolved using legitimate provider certificates,
 never by disabling certificate checks. SQL fingerprints
 ignore exterior comments/whitespace and empty terminators; literals, quoted

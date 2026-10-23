@@ -236,7 +236,7 @@ export const effectCatalogQuery = `select jsonb_build_object(
   select jsonb_build_object('id',n.nspname||'.'||c.relname,'kind',c.relkind,'owner',pg_get_userbyid(c.relowner),
    'rls',c.relrowsecurity,'forced',c.relforcerowsecurity,
    'access',(select jsonb_object_agg(r.rolname,(select jsonb_object_agg(privilege,has_table_privilege(r.oid,c.oid,privilege)) from unnest(array['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER']) privilege)) from pg_roles r where r.rolname in ('anon','authenticated','service_role')),
-   'columns',(select coalesce(jsonb_agg(jsonb_build_object('name',a.attname,'type',format_type(a.atttypid,a.atttypmod),'not_null',a.attnotnull,'default',pg_get_expr(d.adbin,d.adrelid),'identity',a.attidentity,'generated',a.attgenerated) order by a.attnum),'[]') from pg_attribute a left join pg_attrdef d on d.adrelid=a.attrelid and d.adnum=a.attnum where a.attrelid=c.oid and a.attnum>0 and not a.attisdropped)) x
+   'columns',(select coalesce(jsonb_agg(jsonb_build_object('name',a.attname,'type',format_type(a.atttypid,a.atttypmod),'not_null',a.attnotnull,'default',pg_get_expr(d.adbin,d.adrelid),'identity',a.attidentity,'generated',a.attgenerated,'acl',coalesce(a.attacl::text,'')) order by a.attnum),'[]') from pg_attribute a left join pg_attrdef d on d.adrelid=a.attrelid and d.adnum=a.attnum where a.attrelid=c.oid and a.attnum>0 and not a.attisdropped)) x
   from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','private','auth','storage') and c.relkind in ('r','p')) q),
  'functions',(select coalesce(jsonb_agg(x order by x->>'id'),'[]') from (
   select jsonb_build_object('id',n.nspname||'.'||p.proname||'('||pg_get_function_identity_arguments(p.oid)||')','oid',p.oid,'owner',pg_get_userbyid(p.proowner),
@@ -359,6 +359,7 @@ export function assertBoundedCatalog(before, after, candidate) {
     if (
       candidate.classification !== "established-contract-candidate" &&
       (!table.id.startsWith("private.") ||
+        table.columns.some((c) => Boolean(c.acl)) ||
         Object.values(table.access).some((privileges) =>
           Object.values(privileges).some(Boolean),
         ))

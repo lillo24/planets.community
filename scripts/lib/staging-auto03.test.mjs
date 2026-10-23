@@ -235,6 +235,11 @@ test("catalog proof permits an isolated denied private table", () => {
     after = structuredClone(before);
   after.tables.push({ ...table(), id: "private.isolated" });
   assert.equal(assertBoundedCatalog(before, after, candidate).length, 1);
+  after.tables[1].columns[0].acl = "{anon=r/postgres}";
+  assert.throws(
+    () => assertBoundedCatalog(before, after, candidate),
+    /direct client privileges/,
+  );
 });
 for (const [label, mutate] of [
   ["RLS disabled", (c) => (c.tables[0].rls = false)],
