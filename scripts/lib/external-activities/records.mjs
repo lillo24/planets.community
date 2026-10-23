@@ -7,6 +7,7 @@ const fields = [
   "geometry",
   "level",
   "access",
+  "link_scope",
   "upstream_id",
   "title",
   "description",
@@ -127,9 +128,18 @@ export function normalizeActivity(input, officialOrigin) {
   )
     invalid();
   const url = publicActivityUrl(input.canonical_url);
+  const origins = Array.isArray(officialOrigin)
+    ? officialOrigin
+    : [officialOrigin];
   if (
-    url.origin !== officialOrigin ||
-    !input.canonical_url.startsWith(officialOrigin + "/")
+    origins.length < 1 ||
+    origins.length > 5 ||
+    !origins.some(
+      (origin) =>
+        url.origin === origin && input.canonical_url.startsWith(origin + "/"),
+    ) ||
+    (input.link_scope != null &&
+      !["item", "dataset"].includes(input.link_scope))
   )
     invalid();
   if (
@@ -154,7 +164,7 @@ export function normalizeActivity(input, officialOrigin) {
     (kind === "place" && input.occurrences.length !== 0)
   )
     invalid();
-  const geometry = normalizeGeometry(input.geometry, officialOrigin);
+  const geometry = normalizeGeometry(input.geometry, origins);
   if (geometry) publicActivityUrl(geometry.provenance_url);
   const occurrences = [
     ...new Map(
@@ -168,6 +178,7 @@ export function normalizeActivity(input, officialOrigin) {
     .map(([, value]) => value);
   return {
     kind,
+    ...(input.link_scope == null ? {} : { link_scope: input.link_scope }),
     schedule: normalizeSchedule(input.schedule, text),
     geometry,
     level: text(input.level, 2000),

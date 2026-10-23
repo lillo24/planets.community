@@ -41,6 +41,18 @@ void main() {
     await initializeDateFormatting('it');
   });
   test(
+    'ACTSRC02 partial health retains real items and typed dataset links',
+    () {
+      final payload = page(listing('place')..['link_scope'] = 'dataset')
+        ..['state'] = 'partial';
+      final result = ExternalActivityPage.parse(payload);
+      expect(result.health, ExternalCatalogueHealth.partial);
+      expect(result.items.single.linkScope, ExternalActivityLinkScope.dataset);
+      payload['items'] = [listing('place')..['link_scope'] = 'booking'];
+      expect(() => ExternalActivityPage.parse(payload), throwsFormatException);
+    },
+  );
+  test(
     'undated places and current no-session courses retain unknown values',
     () {
       for (final kind in ['place', 'course']) {

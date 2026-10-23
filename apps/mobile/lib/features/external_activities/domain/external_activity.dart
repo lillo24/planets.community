@@ -8,6 +8,7 @@ enum ExternalCatalogueHealth {
   empty,
   stale,
   unavailable,
+  partial,
 }
 
 enum ExternalActivityKind { event, course, place }
@@ -439,6 +440,7 @@ class ExternalActivityPage {
       'empty' => ExternalCatalogueHealth.empty,
       'stale' => ExternalCatalogueHealth.stale,
       'unavailable' => ExternalCatalogueHealth.unavailable,
+      'partial' => ExternalCatalogueHealth.partial,
       _ => throw const FormatException('Invalid external catalogue state.'),
     };
     if (row['items'] is! List || (row['items'] as List).length > 30) {

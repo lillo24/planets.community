@@ -57,3 +57,7 @@ missing scope keeps the compatible item action. The canonical source extension
 in ACTSRC02 supplies this field; the UI never guesses from a URL or opens a
 booking/join flow. D03 remains event-only. Unknown controlled discipline slugs
 remain visible while known server facets use EN/IT labels.
+
+ACTSRC02 V2 partial health retains readable healthy-source results and shows a
+sanitized warning. It does not turn failure into an empty or fictional catalogue.
+The V1 event API remains compatible; public source configuration stays private.

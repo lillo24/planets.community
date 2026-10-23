@@ -4,6 +4,7 @@ import {
   createActivityTransport,
 } from "./transport.mjs";
 import { normalizeActivity } from "./records.mjs";
+import { resolveActivityConnector } from "./connectors.mjs";
 
 const rejectionCodes = new Set([
   "invalid_record",
@@ -21,13 +22,7 @@ const storedCodes = new Set([
 ]);
 
 export function officialActivityConnector(sourceId) {
-  // No municipal parser or live publication is authorized yet. Do not replace
-  // this with fixtures or treat the block as an empty successful calendar.
-  throw new ActivityImportError(
-    sourceId === "agenda-trento"
-      ? "source_rights_checkpoint_blocked"
-      : "unknown_source",
-  );
+  return resolveActivityConnector(sourceId);
 }
 
 export function activityImportArguments(args) {
@@ -119,7 +114,12 @@ export async function runActivityImport({
       if (!rejection) {
         let record;
         try {
-          record = normalizeActivity(entry?.record, connector.officialOrigin);
+          record = normalizeActivity(
+            entry?.record,
+            connector.publicLinkOrigins ?? connector.officialOrigin,
+          );
+          if (connector.kinds && !connector.kinds.includes(record.kind))
+            throw new ActivityImportError("invalid_record");
         } catch (error) {
           if (error?.code !== "invalid_record") throw error;
           rejection = "invalid_record";

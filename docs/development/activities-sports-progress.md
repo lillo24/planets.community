@@ -7,8 +7,8 @@ predecessors may be built on before intermediate merges. Delegated exact-head
 SQL review/posting through the existing verified owner account is authorized.
 Keep all identity/hash/preservation/semantic/CI controls intact. The older
 per-step-merge and personal-posting waits below are historical and superseded.
-RESUME01 integration/local preparation finishes first; the independent 002
-navigation reproduction/repair is qualified while its final Database CI runs.
+RESUME01 is merged at 9945ad01 with all required CI green; local release
+preparation is recorded. This cumulative branch now includes that merged code.
 
 Pack: `ACTSPORTS-2026-10-23`. Initial 002 runner: Codex thread
 `01a165d0-5cc8-7ba0-8ce1-c5b76de7b120`. Entry point found on `origin/main` at
@@ -19,9 +19,9 @@ runner for this queue was found in current tasks, worktrees or open PRs.
 | Step            | Status                                                  | Dependency base / PR / merge                                                                                                                                                          |
 | --------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 002 ACTCAT02    | Navigation regression repaired and locally verified     | Existing `4790cf59`; main `33f0309b` reconciled in `79b57979`; same cumulative [#298](https://github.com/lillo24/planets.community/pull/298), final consolidated review/merge pending |
-| 003 ACTUI02     | Next after RESUME01 and merged-main reconciliation      | Not started; tested 002 is the dependency, no intermediate merge wait                                                                                                                 |
-| 004 SPORTUI01   | Queued after tested 003                                 | Not started                                                                                                                                                                           |
-| 005 ACTSRC02    | Ready on tested 002                                     | Not started                                                                                                                                                                           |
+| 003 ACTUI02     | Implemented, locally qualified                          | Not started; tested 002 is the dependency, no intermediate merge wait                                                                                                                 |
+| 004 SPORTUI01   | Implemented, locally qualified                          | Not started                                                                                                                                                                           |
+| 005 ACTSRC02    | Implemented, locally qualified                          | Not started                                                                                                                                                                           |
 | 006 SPORTDATA01 | Queued after 005 and source re-verification             | Not started; no current live counts asserted                                                                                                                                          |
 | 007 ACTGEO01    | Queued after tested 005                                 | Not started; independent of live 006                                                                                                                                                  |
 | 008 ACTMAP01    | Queued after tested 003, 004, 007                       | Not started                                                                                                                                                                           |
@@ -142,3 +142,23 @@ and 2x text; top/provenance captures inspected, with no clipping or layout error
 Existing link failure, account replacement, unavailable detail and denied metrics
 regressions remain. The final canonical link-scope reader is wired in 005, then
 final integrated acceptance in 011. Next: additive multi-source schema/imports.
+
+### 005 ACTSRC02 — implemented and locally qualified
+
+Forward migration `20261023093757` removes only the one-enabled-source index,
+preserves source/record identities, and adds owner-only bounded public-link
+origins/capabilities plus configuration version fencing. Existing atomic import
+transaction/OIDs/grants remain. V2 exposes partial health with sanitized counts;
+V1 traverses all eligible non-null-prose events with its original payload/health
+vocabulary. The code-owned resolver, independent API/public-link policies and
+explicit-MIME UTF-8 CSV transport retain the original network budgets.
+
+Fresh **144-migration** replay and 143→144 local application PASS. Scoped pgTAP:
+**3 files / 167 assertions PASS**. Real anonymous/service HTTP: A/A exclusion,
+A/B overlap, colliding upstream IDs, paging/facets, repeat/update/lost reply,
+failed-source preservation, partial health and mid-run disable all PASS. Existing
+populated ACTCAT02 upgrade witness also PASS. Scoped tooling **27 PASS**; mobile
+external suite **67 PASS**, analysis PASS. Lint caught an unused V1 metadata
+variable; removed it, then clean replay, lint and security advisors PASS with no
+issues. Established `db:types:check` PASS. No hosted migration/config/import.
+Next: official municipal adapter and real local qualification (006), then 007.

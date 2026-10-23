@@ -35,7 +35,9 @@ export function normalizeGeometry(value, officialOrigin) {
     Math.abs(value.longitude) > 180 ||
     !["venue", "locality"].includes(value.precision) ||
     typeof value.provenance_url !== "string" ||
-    !value.provenance_url.startsWith(officialOrigin + "/")
+    !(Array.isArray(officialOrigin) ? officialOrigin : [officialOrigin]).some(
+      (origin) => value.provenance_url.startsWith(origin + "/"),
+    )
   )
     invalid();
   return {

@@ -64,6 +64,7 @@ String? externalHealthMessage(
     l.activitiesExternalNeverSynchronized,
   ExternalCatalogueHealth.stale => l.activitiesExternalStale,
   ExternalCatalogueHealth.unavailable => l.activitiesExternalUnavailable,
+  ExternalCatalogueHealth.partial => l.activitiesExternalPartial,
   _ => null,
 };
 

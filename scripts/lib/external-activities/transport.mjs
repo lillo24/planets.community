@@ -76,7 +76,7 @@ export function createActivityTransport({
     }
     return url;
   }
-  async function read(input, { kind, etag, lastModified } = {}) {
+  async function read(input, { kind, etag, lastModified, textTypes } = {}) {
     if (!["pages", "related"].includes(kind)) {
       throw new ActivityImportError("invalid_request_kind");
     }
@@ -88,7 +88,19 @@ export function createActivityTransport({
     }
     if (++counts[kind] > limits[kind])
       throw new ActivityImportError("limit_exceeded");
-    const headers = { accept: "application/json" };
+    if (
+      textTypes != null &&
+      (!Array.isArray(textTypes) ||
+        !textTypes.length ||
+        textTypes.length > 3 ||
+        textTypes.some(
+          (type) =>
+            !["text/csv", "application/csv", "text/plain"].includes(type),
+        ))
+    ) {
+      throw new ActivityImportError("invalid_transport_configuration");
+    }
+    const headers = { accept: textTypes?.join(", ") ?? "application/json" };
     for (const [key, value] of [
       ["if-none-match", etag],
       ["if-modified-since", lastModified],
@@ -175,10 +187,21 @@ export function createActivityTransport({
         await response.body?.cancel();
         throw new ActivityImportError("upstream_error");
       }
+      const mime = (response.headers.get("content-type") ?? "")
+        .split(";")[0]
+        .trim()
+        .toLowerCase();
+      const charset = /(?:^|;)\s*charset\s*=\s*"?([^;"\s]+)/i.exec(
+        response.headers.get("content-type") ?? "",
+      )?.[1];
+      if (textTypes && charset && !/^utf-?8$/i.test(charset)) {
+        await response.body?.cancel();
+        throw new ActivityImportError("invalid_payload");
+      }
       if (
-        !/^application\/(?:[\w.-]+\+)?json(?:;|$)/i.test(
-          response.headers.get("content-type") ?? "",
-        )
+        textTypes
+          ? !textTypes.includes(mime)
+          : !/^application\/(?:[\w.-]+\+)?json$/i.test(mime)
       ) {
         await response.body?.cancel();
         throw new ActivityImportError("invalid_payload");
@@ -221,11 +244,10 @@ export function createActivityTransport({
       }
       let value;
       try {
-        value = JSON.parse(
-          new TextDecoder("utf-8", { fatal: true }).decode(
-            Buffer.concat(chunks),
-          ),
+        const text = new TextDecoder("utf-8", { fatal: true }).decode(
+          Buffer.concat(chunks),
         );
+        value = textTypes ? text : JSON.parse(text);
       } catch {
         throw new ActivityImportError("invalid_payload");
       }
@@ -240,6 +262,14 @@ export function createActivityTransport({
   return {
     page: (url, options = {}) => read(url, { ...options, kind: "pages" }),
     related: (url, options = {}) => read(url, { ...options, kind: "related" }),
+    // Only code-owned connectors select this MIME policy and exact export URL.
+    // It shares all redirect, streamed/decompressed byte and request budgets.
+    text: (url, { contentTypes, ...options } = {}) =>
+      read(url, {
+        ...options,
+        kind: "pages",
+        textTypes: contentTypes ?? ["text/csv"],
+      }),
     counts,
   };
 }
