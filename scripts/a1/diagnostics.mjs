@@ -29,6 +29,15 @@ let tail = await readFile(path.join(directory, `${phase}.log`), "utf8").catch(
     throw error;
   },
 );
+const captureTail = await readFile(
+  path.join(directory, "capture-server.log"),
+  "utf8",
+).catch((error) => {
+  if (error.code === "ENOENT") return "";
+  throw error;
+});
+if (captureTail)
+  tail = tail.slice(-8000) + "\nCapture process:\n" + captureTail.slice(-2000);
 for (const secret of [...secrets].sort((a, b) => b.length - a.length))
   tail = tail.replaceAll(secret, "[private]");
 tail = tail

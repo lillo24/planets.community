@@ -18,6 +18,7 @@ phase=setup
 world=''
 before=''
 emulator_started=false
+capture_pid=''
 finish(){
   local code=$?
   trap - EXIT
@@ -25,6 +26,7 @@ finish(){
   if [[ -z "$world" && -f "$A1_WORLD_POINTER" ]]; then world="$(cat "$A1_WORLD_POINTER")"; fi
   if [[ "$code" != 0 ]]; then node "$root/scripts/a1/diagnostics.mjs" "$private" "$world" "$phase" "$A1_EVIDENCE"; fi
   printf '{"exit_code":%s,"phase":"%s","hosted_operations":false}\n' "$code" "$phase" >"$A1_EVIDENCE/outcome.json"
+  if [[ "$capture_pid" =~ ^[0-9]+$ ]]; then kill "$capture_pid";wait "$capture_pid";fi
   if [[ "$emulator_started" == true ]]; then adb -s emulator-5554 emu kill >"$private/stop-emulator.log" 2>&1; fi
   if [[ -f "$A1_WORLD_POINTER" ]]; then
     world="$(cat "$A1_WORLD_POINTER")"
@@ -80,6 +82,10 @@ adb -s emulator-5554 shell settings put secure show_ime_with_hard_keyboard 1
 adb -s emulator-5554 shell cmd uimode night yes
 adb -s emulator-5554 reverse tcp:61321 tcp:61321
 adb -s emulator-5554 reverse tcp:61324 tcp:61324
+adb -s emulator-5554 reverse tcp:61325 tcp:61325
+node scripts/a1/capture-server.mjs "$A1_EVIDENCE" >"$private/capture-server.log" 2>&1 &
+capture_pid=$!
+run capture-ready bash -c 'for ((n=0;n<30;n++));do if curl --fail --silent http://127.0.0.1:61325/health;then exit 0;fi;sleep 1;done;exit 1'
 for lane in before after;do
   export A1_LANE="$lane"
   if adb -s emulator-5554 shell pm path community.planets.app | grep '^package:' >/dev/null; then

@@ -115,9 +115,16 @@ void main() {
 
     Future<void> capture(String name) async {
       await tester.pump(const Duration(milliseconds: 500));
-      // The locked native binding accepts only the checkpoint name. The host
-      // records fictional provenance and actual display metadata separately.
-      await binding.takeScreenshot(name);
+      // Synchronous host capture includes real IME/system bars and applies the
+      // next display setting before continuing. No PNG enters the Dart heap.
+      final request = await http.postUrl(
+        Uri.parse('http://127.0.0.1:61325/capture/$name'),
+      );
+      final response = await request.close().timeout(
+        const Duration(seconds: 60),
+      );
+      expect(response.statusCode, 200, reason: 'Owned native checkpoint $name');
+      await response.drain<void>();
       expect(tester.takeException(), isNull);
     }
 
@@ -129,7 +136,6 @@ void main() {
       isTrue,
     );
     await route('/messages');
-    await binding.convertFlutterSurfaceToImage();
     if (before) {
       await until(
         () => find.text('Marco').evaluate().length >= 2,

@@ -43,7 +43,11 @@ the audit runner's backend, emulator, artifacts and UIAUDIT02 worktree.
   480dpi (426.7x952 logical pixels), plus a 320dp/2x variant. This is a reported
   display equivalent, not a claim that the emulator is Pixel 9 Pro hardware.
   `integration_test/a1_private_pairs_test.dart` exercises real OTP in both APKs;
-  `test_driver/a1_screenshots.dart` records original Android compositor bytes.
+  `capture-server.mjs` owns synchronous loopback checkpoints, original Android
+  compositor bytes and real system-setting changes. The SDK's native screenshot
+  callbacks run after test completion, so the app uses a bounded 61325 handshake;
+  no PNG bytes are retained in Flutter's test-response heap.
+  `test_driver/a1_screenshots.dart` retains only safe completion metadata.
   `diagnostics.mjs` exports only a bounded scrubbed failure tail. The workflow
   retains no raw logs, defines, signing material or APKs.
 - `report.mjs` validates the seven original captures and writes the phone-sized
