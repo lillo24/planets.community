@@ -173,10 +173,7 @@ void main() {
         final l = AppLocalizations.of(
           tester.element(find.byType(DiscussionRoomActions)),
         );
-        expect(
-          find.text(l.discussionCreatorAuthorizedView),
-          findsOneWidget,
-        );
+        expect(find.text(l.discussionCreatorAuthorizedView), findsOneWidget);
         expect(find.textContaining(id(8)), findsNothing);
         expect(
           find.byKey(const Key('discussion-join')).hitTestable(),

@@ -289,7 +289,10 @@ void main() {
       await tester.pumpAndSettle();
       (app.read(policyAcceptanceProvider.notifier) as Policy).requirePolicy();
       await tester.pumpAndSettle();
-      await tap(tester, find.widgetWithText(FilledButton, 'Close conversation'));
+      await tap(
+        tester,
+        find.widgetWithText(FilledButton, 'Close conversation'),
+      );
       expect(f.commands.single['p_operation'], 'close');
       expect(router.routeInformationProvider.value.uri.path, '/messages');
       expect(find.text('Native Messages'), findsOneWidget);

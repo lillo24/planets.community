@@ -256,8 +256,12 @@ void main() {
             ),
             findsOneWidget,
           );
-          await reveal(tester, find.textContaining('7200.125'));
-          expect(find.textContaining('7200.125'), findsOneWidget);
+          final duration = find.textContaining(
+            locale == 'it' ? 'circa 2 ore' : 'about 2 hours',
+          );
+          await reveal(tester, duration);
+          expect(duration, findsOneWidget);
+          expect(find.textContaining('7200.125'), findsNothing);
           await reveal(tester, find.byKey(const Key('template-use')));
           final semantics = tester.ensureSemantics();
           expect(
