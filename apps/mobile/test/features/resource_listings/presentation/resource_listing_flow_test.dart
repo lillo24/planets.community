@@ -1,4 +1,7 @@
 import '../../../support/fake_policy.dart';
+import '../../../support/fake_private_pairs.dart';
+
+import 'package:planets_mobile/features/messages/data/private_pair_gateway.dart';
 
 import 'dart:async';
 import 'dart:typed_data';
@@ -1602,6 +1605,8 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        privatePairGatewayProvider.overrideWithValue(emptyPrivatePairs()),
+        privatePairSignalsProvider.overrideWith((ref) => const Stream.empty()),
         preacceptedPolicyFixture,
         // Feature fixtures begin after onboarding; startup tests own first-run.
         initialStartupPreferenceProvider.overrideWithValue(
