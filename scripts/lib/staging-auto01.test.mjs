@@ -943,6 +943,43 @@ test("inspect proves client TLS without confusing pooler-to-Postgres TLS and wit
   );
 });
 
+test("connection failures expose only allowlisted network codes, including aggregate failures", () => {
+  for (const code of [
+    "ENOTFOUND",
+    "EAI_AGAIN",
+    "ECONNREFUSED",
+    "ETIMEDOUT",
+    "CONNECT_TIMEOUT",
+    "EHOSTUNREACH",
+    "ENETUNREACH",
+  ]) {
+    const error = Object.assign(new Error("postgres://private:password@host"), {
+      code,
+      address: "private-address",
+    });
+    const message = connectionFailure(error);
+    assert.match(message, new RegExp(`\\(${code}\\)`));
+    assert.doesNotMatch(message, /private|password|postgres:\/\//);
+  }
+  const aggregate = new AggregateError(
+    [
+      { code: "ENETUNREACH", message: "private-address" },
+      { code: "ETIMEDOUT", message: "private-password" },
+      { code: "ENETUNREACH" },
+      { code: "private-code", message: "private-host" },
+    ],
+    "postgres://private:password@host",
+  );
+  assert.equal(
+    connectionFailure(aggregate),
+    "Staging database network connection failed: network is unreachable (ENETUNREACH); connection timed out (ETIMEDOUT)",
+  );
+  assert.equal(
+    connectionFailure(new AggregateError([{ code: "private-code" }])),
+    "Staging database connection failed; native diagnostics withheld",
+  );
+});
+
 test("session client and migration CLI retain the same reviewed public CA with hostname verification", () => {
   const options = stagingTlsOptions();
   assert.equal(options.rejectUnauthorized, true);
