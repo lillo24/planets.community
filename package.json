@@ -149,8 +149,12 @@
     "activities:verify:local": "node scripts/verify-local-external-activities.mjs"
   },
   "devDependencies": {
-    "prettier": "3.9.6",
+    "fast-xml-parser": "5.11.2",
+    "ical.js": "2.2.1",
+    "parse5": "8.0.1",
     "postgres": "3.4.9",
-    "supabase": "2.118.0-beta.39"
+    "prettier": "3.9.6",
+    "supabase": "2.118.0-beta.39",
+    "undici": "8.12.3"
   }
 }
