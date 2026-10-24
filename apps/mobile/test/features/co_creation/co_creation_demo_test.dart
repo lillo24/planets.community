@@ -44,7 +44,12 @@ void main() {
             final router = GoRouter(
               routes: [
                 GoRoute(path: '/', builder: (_, _) => const FoundationScreen()),
-                for (final path in ['/people', '/proposals', '/resources'])
+                for (final path in [
+                  '/people',
+                  '/people/hubs',
+                  '/proposals',
+                  '/resources',
+                ])
                   GoRoute(
                     path: path,
                     builder: (_, _) => Scaffold(body: Text(path)),
@@ -100,7 +105,9 @@ void main() {
             );
             expect(
               find.text(
-                language == 'it' ? "Proponi un'idea" : 'Propose an idea',
+                language == 'it'
+                    ? 'Proponi una comunità'
+                    : 'Propose a community',
               ),
               findsOneWidget,
             );
@@ -114,10 +121,7 @@ void main() {
               findsNothing,
             );
             final semantics = tester.ensureSemantics();
-            for (final key in [
-              'find-activities-coming-soon',
-              'propose-idea-coming-soon',
-            ]) {
+            for (final key in ['find-activities-coming-soon']) {
               final placeholder = find.byKey(Key(key));
               await tester.ensureVisible(placeholder);
               await tester.pumpAndSettle();
@@ -161,7 +165,10 @@ void main() {
                 'peoplehome01-$key-$language-$dark-${scale}x',
               );
             }
-            for (final entry in {'browse-people-button': '/people'}.entries) {
+            for (final entry in {
+              'browse-people-button': '/people',
+              'propose-community-button': '/people/hubs',
+            }.entries) {
               final card = find.byKey(Key(entry.key));
               await tester.ensureVisible(card);
               await tester.pumpAndSettle();
@@ -174,10 +181,7 @@ void main() {
               }
               await tester.tap(card);
               await tester.pumpAndSettle();
-              expect(
-                router.routeInformationProvider.value.uri.path,
-                entry.value,
-              );
+              expect(router.routerDelegate.state.uri.path, entry.value);
               router.go('/');
               await tester.pumpAndSettle();
             }
