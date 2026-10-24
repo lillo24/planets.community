@@ -156,14 +156,14 @@ class FoundationScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: AppSpacing.small),
                                 _HomePillarCard(
-                                  key: const Key('find-activities-coming-soon'),
+                                  key: const Key('find-activities-button'),
                                   stackIcon:
                                       textScale >= 1.5 &&
                                       constraints.maxWidth < 400,
                                   icon: Icons.directions_run,
                                   title: l10n.coHomeActivitiesTitle,
-                                  message: l10n.coHomeActivitiesSoon,
-                                  onTap: null,
+                                  message: l10n.coHomeActivitiesMessage,
+                                  onTap: () => context.go('/proposals'),
                                 ),
                                 const SizedBox(height: AppSpacing.small),
                                 _HomePillarCard(

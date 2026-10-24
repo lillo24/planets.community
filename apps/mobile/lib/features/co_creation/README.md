@@ -9,7 +9,11 @@ CP01 makes `/people` the existing categorized Community directory. Home's
 Propose a Community action opens category selection before the existing proposal
 flow. Primary discovery no longer links to People-post browse/create/mine or
 demo; exact legacy routes and private history remain available pending CP04.
-Find activities remains deferred to CP02; native Project routes are unchanged.
+CP02 connects Find activities to native `/proposals` discovery, filters, detail
+and creation. `presentation/co_creation_project_actions.dart` opens the existing
+native creation choice from hubs and current writable rooms, with an actor-bound
+return marker. It sets no registered Group ownership or Co-Creation source link;
+the existing manager-only numbered-group source-draft flow remains separate.
 
 `domain/general_message_links.dart` owns local likely-link detection, and
 `presentation/co_creation_general_screen.dart` owns cancellable review only for
