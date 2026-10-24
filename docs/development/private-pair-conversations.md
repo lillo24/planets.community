@@ -111,8 +111,10 @@ authorization scrub removes protected widgets immediately, then restores only a
 layout origin and scroll anchor after authorized content is fetched again. These
 identities contain no message content and reset on account/realm replacement.
 
-Only actual viewport-intersecting human widgets at a settled latest boundary are
-recorded as rendered. Initial zero-origin layout is excluded. Shared
+Only actual viewport-intersecting human widgets after scroll layout settles are
+recorded as rendered. Initial zero-origin layout is excluded. Older viewing records
+only messages actually seen; it cannot ACK until the user returns to the eligible
+latest viewport. Shared
 `MessageReadViewport` retains foreground/latest/route/sheet checks and exact
 failed-token retry. Lists, context cards, older scrolling and covered routes cannot
 read other source transcripts. Missed hints are reconciled on reconnect/resume and

@@ -175,6 +175,54 @@ void main() {
     expect(acknowledgements.last['p_boundary'], pairBoundary);
   });
   testWidgets(
+    'older viewing cannot ACK until returning to latest, then retains actual seen keys',
+    (tester) async {
+      final acknowledgements = <Map<String, dynamic>>[];
+      await pumpPair(
+        tester,
+        PrivatePairGateway((name, args) async {
+          if (name == 'get_own_private_pair_page_v1') {
+            return pairPage([
+              for (var n = 30; n >= 1; n--)
+                pairMessage(
+                  n: n,
+                  body: 'History $n\nOriginal message\nPreserve its identity',
+                ),
+            ]);
+          }
+          if (name == 'list_own_private_pair_contexts_v1') {
+            return [pairContext()];
+          }
+          if (name == 'acknowledge_own_private_pair_v1') {
+            acknowledgements.add(Map.of(args));
+            return {'total': 0, 'private': 0, 'groups': 0};
+          }
+          throw StateError('Unexpected $name');
+        }),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      final firstCount = acknowledgements.length;
+      final scroll = tester
+          .widget<CustomScrollView>(find.byType(CustomScrollView))
+          .controller!;
+      scroll.jumpTo(scroll.position.minScrollExtent);
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(acknowledgements.length, firstCount);
+      scroll.jumpTo(scroll.position.maxScrollExtent);
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(acknowledgements.length, greaterThan(firstCount));
+      expect(
+        acknowledgements.last['p_rendered_keys'] as List,
+        contains('resource_message:a1080000-0000-4000-8000-000000000001'),
+      );
+    },
+  );
+
+  testWidgets(
     'older paging, polling and access scrubs retain the reading position',
     (tester) async {
       final signals = StreamController<int>();

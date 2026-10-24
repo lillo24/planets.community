@@ -43,7 +43,8 @@ class PrivatePairScreen extends ConsumerStatefulWidget {
 
 class _PrivatePairScreenState extends ConsumerState<PrivatePairScreen>
     with WidgetsBindingObserver {
-  final body = TextEditingController(), scroll = ScrollController();
+  final body = TextEditingController();
+  late final ScrollController scroll;
   final viewport = GlobalKey();
   final messageKeys = <String, GlobalKey>{};
   final seen = <String, PrivatePairItem>{};
@@ -81,8 +82,14 @@ class _PrivatePairScreenState extends ConsumerState<PrivatePairScreen>
   @override
   void initState() {
     super.initState();
+    scroll = ScrollController(
+      onAttach: (position) =>
+          position.isScrollingNotifier.addListener(scheduleVisible),
+      onDetach: (position) =>
+          position.isScrollingNotifier.removeListener(scheduleVisible),
+    );
     WidgetsBinding.instance.addObserver(this);
-    scroll.addListener(recordVisible);
+    scroll.addListener(scheduleVisible);
     actor = ref.read(authSessionProvider).identity?.id;
     peer = widget.peerProfileId;
     Future.microtask(load);
@@ -349,6 +356,12 @@ class _PrivatePairScreenState extends ConsumerState<PrivatePairScreen>
     }
   }
 
+  void scheduleVisible() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) => recordVisible());
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
   void recordVisible() {
     if (!foreground ||
         busy ||
@@ -356,7 +369,6 @@ class _PrivatePairScreenState extends ConsumerState<PrivatePairScreen>
         !readingPositionReady ||
         !scroll.hasClients ||
         !scroll.position.hasContentDimensions ||
-        scroll.position.extentAfter > 1 ||
         scroll.position.isScrollingNotifier.value) {
       return;
     }

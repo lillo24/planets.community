@@ -32,8 +32,9 @@ void main() {
             peopleSignalsProvider.overrideWith((ref) => const Stream.empty()),
             peoplePostsGatewayProvider.overrideWithValue(
               PeoplePostsGateway((name, args) async {
-                if (name == 'get_cocreate_availability')
+                if (name == 'get_cocreate_availability') {
                   return {'enabled': false};
+                }
                 throw StateError('Disabled domain must not expose $name');
               }),
             ),
@@ -41,13 +42,14 @@ void main() {
               PeoplePrivateGateway((name, args) async {
                 calls.add(name);
                 if (name == 'list_own_cocreate_interest_exits') return [];
-                if (name == 'list_own_cocreate_contact_exits')
+                if (name == 'list_own_cocreate_contact_exits') {
                   return [
                     {
                       'contact_id': 'a1080000-0000-4000-8000-000000000001',
                       'created_at': '2026-10-24T10:00:00Z',
                     },
                   ];
+                }
                 throw StateError('Recovery must not read transcripts: $name');
               }),
             ),
