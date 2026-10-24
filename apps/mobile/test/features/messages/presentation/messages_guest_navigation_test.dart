@@ -1,6 +1,6 @@
 import 'package:planets_mobile/features/messages/data/private_pair_gateway.dart';
 
-import '../../../support/fake_private_pairs.dart';
+import '../../../support/legacy_private_pair_fixture.dart';
 
 import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
 
@@ -584,7 +584,14 @@ class _Fixture {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          privatePairGatewayProvider.overrideWithValue(emptyPrivatePairs()),
+          privatePairGatewayProvider.overrideWith(
+            (ref) => legacyPrivatePairFixture(
+              actor: ref.watch(authSessionProvider).identity?.id ?? 'guest',
+              chats: chats,
+              resource: resourceChats,
+              requests: requestChats,
+            ),
+          ),
           privatePairSignalsProvider.overrideWith(
             (ref) => const Stream.empty(),
           ),
