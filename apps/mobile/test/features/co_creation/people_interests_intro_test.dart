@@ -11,7 +11,7 @@ import 'package:planets_mobile/core/theme/app_theme.dart';
 import 'package:planets_mobile/features/auth/data/auth_gateway.dart';
 import 'package:planets_mobile/features/co_creation/data/people_intro_preference.dart';
 import 'package:planets_mobile/features/co_creation/data/people_posts_gateway.dart';
-import 'package:planets_mobile/features/co_creation/presentation/people_browse_screen.dart';
+import 'package:planets_mobile/features/co_creation/presentation/co_creation_hubs_screen.dart';
 import 'package:planets_mobile/features/co_creation/presentation/people_entry_screen.dart';
 import 'package:planets_mobile/features/co_creation/presentation/people_interests_intro.dart';
 import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
@@ -238,7 +238,7 @@ void main() {
       expect(find.byType(PeopleInterestsIntro), findsOneWidget);
       await tester.tap(find.byKey(const Key('people-intro-explore')));
       await tester.pumpAndSettle();
-      expect(find.byType(PeopleBrowseScreen), findsOneWidget);
+      expect(find.byType(CoCreationHubsScreen), findsOneWidget);
       expect(
         find.text('The co-creation experiment is unavailable.'),
         findsWidgets,
