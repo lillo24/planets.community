@@ -241,6 +241,16 @@ try {
   };
   const report = await rpc(b, "submit_cocreate_room_report", reportArgs);
   equal(
+    (
+      await rpc(b, "list_own_moderation_reports_v4", {
+        p_expected_reporter_profile_id: b.id,
+      })
+    ).find((r) => r.report_id === report[0].report_id).target_summary,
+    "Find People group message",
+    "FO1 own room report has a safe readable summary",
+  );
+
+  equal(
     await rpc(b, "submit_cocreate_room_report", reportArgs),
     report,
     "Exact report retry is global and immutable",

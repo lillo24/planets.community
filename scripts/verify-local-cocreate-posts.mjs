@@ -203,6 +203,66 @@ try {
     p_category: "spam",
     p_explanation: "Synthetic test report explanation",
   });
+  // FO1: real Auth -> report receipt -> safe populated own history; no staff grant.
+  for (const [reporter, kind, target] of [
+    [b, "cocreate_post", source.post_id],
+    [a, "cocreate_interest", pending.interest_id],
+  ]) {
+    await rpc(reporter, "submit_cocreate_report", {
+      p_expected_reporter_profile_id: reporter.id,
+      p_client_submission_id: randomUUID(),
+      p_target_kind: kind,
+      p_target_id: target,
+      p_category: "other",
+      p_explanation: "Synthetic own reporter projection regression",
+    });
+  }
+  const ownParams = (person) => ({ p_expected_reporter_profile_id: person.id });
+  for (const reader of [
+    "list_own_moderation_reports",
+    "list_own_moderation_reports_v2",
+    "list_own_moderation_reports_v3",
+    "list_own_moderation_reports_v4",
+  ]) {
+    const rows = await rpc(b, reader, ownParams(b));
+    equal(
+      rows.some((r) => r.report_id === report[0].report_id),
+      true,
+      reader + " retains the receipt in populated history",
+    );
+    equal(
+      rows.every(
+        (r) =>
+          typeof r.target_summary === "string" &&
+          r.target_summary.length > 0 &&
+          r.target_summary.length <= 200,
+      ),
+      true,
+      reader + " returns bounded nonempty summaries",
+    );
+    equal(
+      rows.find((r) => r.target_kind === "cocreate_post").target_summary,
+      "Find People post",
+      "Generic post summary needs no content lookup",
+    );
+    equal(
+      await rpc(outsider, reader, ownParams(outsider)),
+      [],
+      reader + " never returns another reporter's history",
+    );
+    await denied(outsider, reader, ownParams(b));
+  }
+  equal(
+    (await rpc(a, "list_own_moderation_reports_v4", ownParams(a))).find(
+      (r) => r.target_kind === "cocreate_interest",
+    ).target_summary,
+    "Find People request",
+    "Interest report is readable by its reporter",
+  );
+  await denied(b, "get_moderation_case_cocreate", {
+    p_expected_staff_profile_id: b.id,
+    p_case_id: report[0].case_id,
+  });
   await sql`insert into private.moderation_staff_roles(profile_id,staff_role) values(${staff.id}::uuid,'moderator')`;
   const evidence = await rpc(staff, "get_moderation_case_cocreate", {
     p_expected_staff_profile_id: staff.id,
@@ -347,6 +407,17 @@ try {
   });
   await sql`update private.cocreate_settings set enabled=false where singleton`;
   await denied(a, "list_cocreate_posts", {});
+  const retained = await rpc(b, "list_own_moderation_reports_v4", ownParams(b));
+  equal(
+    retained.some(
+      (r) =>
+        r.report_id === report[0].report_id &&
+        r.target_summary === "Find People private message",
+    ),
+    true,
+    "FO1 reporter history survives blocking, post closure and gate OFF",
+  );
+
   await rpc(b, "mutate_cocreate_contact", {
     ...actor(b),
     p_command_id: randomUUID(),
