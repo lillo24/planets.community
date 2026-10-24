@@ -12,8 +12,9 @@ Future<void> loadAndroidTextFont() async {
       'Run these widget tests through flutter test (FLUTTER_ROOT).',
     );
   }
+  // Preserve the SDK artifact's exact case for Linux CI.
   final font = File(
-    '$root/bin/cache/artifacts/material_fonts/roboto-regular.ttf',
+    '$root/bin/cache/artifacts/material_fonts/Roboto-Regular.ttf',
   );
   await (FontLoader(
     'Roboto',
