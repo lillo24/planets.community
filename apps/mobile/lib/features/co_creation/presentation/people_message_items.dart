@@ -87,6 +87,9 @@ class PeopleRequestItems extends ConsumerWidget {
           ),
         ),
         const PeopleContactExits(interest: true),
+        // A1's Private list contains only authorized person pairs. Identity-only
+        // contact recovery belongs beside the other own-exit actions in Requests.
+        const PeopleContactExits(),
       ],
     );
   }

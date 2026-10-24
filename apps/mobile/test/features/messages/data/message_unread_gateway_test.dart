@@ -28,7 +28,7 @@ void main() {
           ));
           return http.Response(
             jsonEncode(
-              rpc == 'get_own_message_unread_summary_with_cocreate'
+              rpc == 'get_own_private_pair_unread_v1'
                   ? {'total': 2, 'private': 1, 'groups': 1}
                   : rpc == 'acknowledge_group_discussion_read_v2'
                   ? null
@@ -50,7 +50,7 @@ void main() {
             : kind == 'group_discussion'
             ? 'acknowledge_group_discussion_read_v2'
             : 'acknowledge_own_message_read_v3',
-        'get_own_message_unread_summary_with_cocreate',
+        'get_own_private_pair_unread_v1',
       ]);
       expect(
         calls.first.params,

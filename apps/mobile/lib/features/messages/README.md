@@ -1,5 +1,15 @@
 # Messages
 
+A1's active Private list and detail are owned by `private_pairs_list.dart` and
+`private_pair_screen.dart`, with strict `private_pair_models.dart` and
+`private_pair_gateway.dart` contracts. One canonical server-paged person row
+combines authorized Project/Tavolo, Resource, member and accepted Find People
+sources. Existing source components/readers below remain domain/compatibility
+owners; they are no longer independent visible Private entries. Groups and
+Requests retain their existing scope owners. See the
+[A1 contract](../../../../../docs/development/private-pair-conversations.md)
+for source selection, original-ID evidence, viewport-only ACK, lifecycle and rollout.
+
 This feature owns the public mobile Messages frame and authenticated content.
 It keeps canonical structured Project and Resource requests in `Requests` and a
 mixed chronological conversation projection in the `Messages` root. Chats exposes

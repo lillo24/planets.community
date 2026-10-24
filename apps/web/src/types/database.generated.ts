@@ -2810,6 +2810,15 @@ export type Database = {
         }
         Returns: Json
       }
+      acknowledge_own_private_pair_v1: {
+        Args: {
+          p_boundary: string
+          p_expected_profile_id: string
+          p_peer_profile_id: string
+          p_rendered_keys: string[]
+        }
+        Returns: Json
+      }
       acknowledge_project_requirement_attention: {
         Args: {
           p_expected_profile_id: string
@@ -4366,6 +4375,21 @@ export type Database = {
           status: string
           viewer_role: string
         }[]
+      }
+      get_own_private_pair_page_v1: {
+        Args: {
+          p_before_created_at?: string
+          p_before_item_id?: string
+          p_before_item_kind?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_peer_profile_id: string
+        }
+        Returns: Json
+      }
+      get_own_private_pair_unread_v1: {
+        Args: { p_expected_profile_id: string }
+        Returns: Json
       }
       get_own_profile_photo: {
         Args: { p_expected_profile_id: string }
@@ -6319,6 +6343,26 @@ export type Database = {
           weekday: number
         }[]
       }
+      list_own_private_pair_contexts_v1: {
+        Args: {
+          p_before_id?: string
+          p_before_kind?: string
+          p_expected_profile_id: string
+          p_limit?: number
+          p_only_writable?: boolean
+          p_peer_profile_id: string
+        }
+        Returns: Json
+      }
+      list_own_private_pairs_v1: {
+        Args: {
+          p_before_activity_at?: string
+          p_before_peer_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_own_project_chat_feed: {
         Args: {
           p_before_created_at?: string
@@ -8178,6 +8222,14 @@ export type Database = {
         Args: { p_actor: string; p_suggestion: string }
         Returns: Json
       }
+      resolve_own_private_pair_v1: {
+        Args: {
+          p_context_id: string
+          p_context_kind: string
+          p_expected_profile_id: string
+        }
+        Returns: Json
+      }
       respond_discussion_project_invitation: {
         Args: {
           p_expected_profile_id: string
@@ -8364,6 +8416,18 @@ export type Database = {
           p_chat_id: string
           p_episode_id: string
           p_expected_profile_id: string
+        }
+        Returns: Json
+      }
+      send_own_private_pair_message_v1: {
+        Args: {
+          p_body: string
+          p_command_id: string
+          p_context_id: string
+          p_context_kind: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_peer_profile_id: string
         }
         Returns: Json
       }

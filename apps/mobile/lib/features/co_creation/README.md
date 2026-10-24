@@ -1,5 +1,10 @@
 # Co-creation experiment
 
+A1 routes accepted personal contacts into the unified pair timeline. The exact
+contact `/manage` route keeps existing close/context actions in
+`PeopleContactScreen(managementOnly: true)`, without a second transcript or
+composer. Own-exit and gated-contact authorization retain their original owners.
+
 CP01 makes `/people` the existing categorized Community directory. Home's
 Propose a Community action opens category selection before the existing proposal
 flow. Primary discovery no longer links to People-post browse/create/mine or
@@ -9,6 +14,7 @@ and creation. `presentation/co_creation_project_actions.dart` opens the existing
 native creation choice from hubs and current writable rooms, with an actor-bound
 return marker. It sets no registered Group ownership or Co-Creation source link;
 the existing manager-only numbered-group source-draft flow remains separate.
+
 `domain/general_message_links.dart` owns local likely-link detection, and
 `presentation/co_creation_general_screen.dart` owns cancellable review only for
 new ordinary General messages. The optional `PeopleCommand.beforeSend` in

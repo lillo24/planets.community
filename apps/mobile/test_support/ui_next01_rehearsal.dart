@@ -1,3 +1,7 @@
+import 'package:planets_mobile/features/messages/data/private_pair_gateway.dart';
+
+import '../test/support/fake_private_pairs.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,6 +39,8 @@ void main() {
   runApp(
     ProviderScope(
       overrides: [
+        privatePairGatewayProvider.overrideWithValue(emptyPrivatePairs()),
+        privatePairSignalsProvider.overrideWith((ref) => const Stream.empty()),
         appConfigProvider.overrideWithValue(
           AppConfig.fromValues(
             appEnvironment: 'staging',

@@ -3,6 +3,10 @@
 - **Status:** Accepted
 - **Date:** 2026-10-06
 
+The participation domain decisions below remain accepted. [ADR 0009](0009-universal-private-pair-conversations.md)
+supersedes the final paragraph's separate visible Resource conversation boundary
+for the A1 client; it does not expand this participation anchor's permissions.
+
 ## Context
 
 MSG01 approves one conversation between the canonical requester and immutable

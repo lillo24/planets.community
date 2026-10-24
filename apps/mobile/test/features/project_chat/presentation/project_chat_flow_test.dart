@@ -1,3 +1,5 @@
+import 'package:planets_mobile/features/messages/data/private_pair_gateway.dart';
+
 import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
 import 'package:planets_mobile/features/project_chat/application/project_needs_controller.dart';
 import 'package:planets_mobile/features/auth/application/auth_session_controller.dart';
@@ -328,7 +330,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining(diagnostic), findsNothing);
-    expect(find.textContaining("couldn't load chats"), findsOneWidget);
+    expect(
+      find.textContaining('This conversation is unavailable'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('current member sees full returned history and sends once', (
@@ -1519,6 +1524,16 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        privatePairGatewayProvider.overrideWithValue(
+          PrivatePairGateway((name, args) async {
+            if (name == 'list_own_private_pairs_v1') {
+              if (unifiedChats?.error case final error?) throw error;
+              return [];
+            }
+            throw StateError('Unexpected personal RPC: $name');
+          }),
+        ),
+        privatePairSignalsProvider.overrideWith((ref) => const Stream.empty()),
         discussionProjectsGatewayProvider.overrideWithValue(
           EmptyDiscussionProjectsGateway(),
         ),

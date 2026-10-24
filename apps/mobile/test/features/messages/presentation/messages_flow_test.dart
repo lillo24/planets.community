@@ -1,3 +1,11 @@
+import "package:planets_mobile/features/messages/data/private_pair_gateway.dart";
+import 'package:planets_mobile/features/resource_chat/presentation/resource_chat_screen.dart';
+import 'package:planets_mobile/features/project_request_chat/presentation/project_request_chat_screen.dart';
+
+import '../../../support/legacy_private_pair_fixture.dart';
+
+import 'package:planets_mobile/features/messages/presentation/messages_screen.dart';
+import 'package:planets_mobile/features/co_creation/presentation/people_message_items.dart';
 import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
 import 'package:planets_mobile/features/project_request_chat/application/project_request_chat_controller.dart';
 import 'package:planets_mobile/features/resource_chat/application/resource_chat_controller.dart';
@@ -117,8 +125,16 @@ void main() {
         ..items = [
           for (var i = 0; i < 25; i++) ...[
             i.isEven
-                ? projectRequestMessageChatFixture(chatId: 'private-$i')
-                : resourceMessageChatFixture(chatId: 'private-$i'),
+                ? projectRequestMessageChatFixture(
+                    chatId: 'private-$i',
+                    counterpartyProfileId:
+                        '00000000-0000-4000-8000-${(2000 + i).toString().padLeft(12, '0')}',
+                  )
+                : resourceMessageChatFixture(
+                    chatId: 'private-$i',
+                    counterpartyProfileId:
+                        '00000000-0000-4000-8000-${(2000 + i).toString().padLeft(12, '0')}',
+                  ),
             projectMessageChatFixture(
               chatId: 'group-$i',
               projectKind: i.isEven
@@ -173,8 +189,16 @@ void main() {
 
       assertSlots();
       await _captureChatRows(tester, 'private-320-2x');
-      await _autoBottom(tester, const Key('message-chat-list'));
-      expect(app.read(messageChatsProvider).items, hasLength(25));
+      await _autoBottom(tester, const PageStorageKey('private-pair-list'));
+      expect(
+        tester
+            .widget<ListView>(
+              find.byKey(const PageStorageKey('private-pair-list')),
+            )
+            .childrenDelegate
+            .estimatedChildCount,
+        26,
+      );
       assertSlots();
       await tester.tap(find.byKey(const Key('message-chat-scope-groups')));
       await tester.pumpAndSettle();
@@ -228,9 +252,11 @@ void main() {
         identityId: '00000000-0000-4000-8000-000000000101',
         projectRequestChats: requests,
       );
-      app
-          .read(appRouterProvider)
-          .go('/messages/chats/request/00000000-0000-4000-8000-000000000311');
+      await _openSourceOwner(
+        tester,
+        app,
+        '/messages/chats/request/00000000-0000-4000-8000-000000000311',
+      );
       await tester.pumpAndSettle();
       expect(requests.requestedLimits, [30]);
       await tester.tap(
@@ -259,7 +285,11 @@ void main() {
       final chats = FakeMessageChatsGateway()
         ..items = [
           for (var i = 0; i < 65; i++)
-            resourceMessageChatFixture(chatId: 'private-$i'),
+            resourceMessageChatFixture(
+              chatId: 'private-$i',
+              counterpartyProfileId:
+                  '00000000-0000-4000-8000-${(2000 + i).toString().padLeft(12, '0')}',
+            ),
           for (var i = 0; i < 65; i++)
             projectMessageChatFixture(chatId: 'group-$i'),
         ];
@@ -276,10 +306,10 @@ void main() {
       expect(find.byKey(const Key('message-chats-load-more')), findsNothing);
       final privatePending = Completer<void>();
       chats.delay = privatePending.future;
-      await _autoBottom(tester, const Key('message-chat-list'));
+      await _autoBottom(tester, const PageStorageKey('private-pair-list'));
       expect(chats.requestedLimits, [20, 20, 20]);
       await tester.drag(
-        find.byKey(const Key('message-chat-list')),
+        find.byKey(const PageStorageKey('private-pair-list')),
         const Offset(0, -300),
       );
       await tester.pump();
@@ -287,7 +317,15 @@ void main() {
       chats.delay = null;
       privatePending.complete();
       await tester.pumpAndSettle();
-      expect(app.read(messageChatsProvider).items, hasLength(40));
+      expect(
+        tester
+            .widget<ListView>(
+              find.byKey(const PageStorageKey('private-pair-list')),
+            )
+            .childrenDelegate
+            .estimatedChildCount,
+        41,
+      );
       expect(app.read(groupMessageChatsProvider).items, hasLength(20));
       await tester.tap(find.byKey(const Key('message-chat-scope-groups')));
       await tester.pumpAndSettle();
@@ -347,13 +385,13 @@ void main() {
             resourceChats: resource,
             projectRequestChats: requests,
           );
-          app
-              .read(appRouterProvider)
-              .go(
-                pair
-                    ? '/messages/chats/request/00000000-0000-4000-8000-000000000311'
-                    : '/messages/chats/resource/00000000-0000-4000-8000-000000000401',
-              );
+          await _openSourceOwner(
+            tester,
+            app,
+            pair
+                ? '/messages/chats/request/00000000-0000-4000-8000-000000000311'
+                : '/messages/chats/resource/00000000-0000-4000-8000-000000000401',
+          );
           await tester.pumpAndSettle();
           final limits = pair
               ? requests.requestedLimits
@@ -424,6 +462,7 @@ void main() {
             projectRequestMessageChatFixture(
               chatId: '00000000-0000-4000-8000-000000000412',
               requestId: '00000000-0000-4000-8000-000000000312',
+              counterpartyProfileId: '00000000-0000-4000-8000-000000000104',
               senderProfileId: viewer,
               senderDisplayName: 'Me',
               messageBody: 'Own reply',
@@ -458,23 +497,19 @@ void main() {
       );
       app.read(appRouterProvider).go('/messages');
       await tester.pumpAndSettle();
-      expect(find.text('Request accepted'), findsOneWidget);
+      expect(find.text('Context updated · View conversation'), findsOneWidget);
       expect(find.text('I can bring brushes.'), findsNothing);
       expect(find.text('Paint the square'), findsNothing);
       expect(find.text('Pending request'), findsNothing);
       expect(find.text('Read-only'), findsNothing);
       expect(find.textContaining('Updated'), findsNothing);
       final card = find.byKey(
-        const Key(
-          'project-request-chat-item-00000000-0000-4000-8000-000000000411',
-        ),
+        const Key('private-pair-00000000-0000-4000-8000-000000000102'),
       );
       final time = find.descendant(
         of: card,
         matching: find.byKey(
-          const Key(
-            'chat-time-project_request_chat:00000000-0000-4000-8000-000000000411',
-          ),
+          const Key('private-pair-time-00000000-0000-4000-8000-000000000102'),
         ),
       );
       final count = find.descendant(
@@ -524,7 +559,11 @@ void main() {
         ..items = [
           projectRequestMessageChatFixture(unreadCount: 3),
           projectMessageChatFixture(unreadCount: 5),
-          resourceMessageChatFixture(unreadCount: 7, isReadOnly: true),
+          resourceMessageChatFixture(
+            unreadCount: 7,
+            isReadOnly: true,
+            counterpartyProfileId: '00000000-0000-4000-8000-000000000103',
+          ),
         ],
     );
     final router = app.read(appRouterProvider);
@@ -574,7 +613,7 @@ void main() {
       200,
       scrollable: find
           .descendant(
-            of: find.byKey(const Key('message-chat-list')),
+            of: find.byKey(const PageStorageKey('private-pair-list')),
             matching: find.byType(Scrollable),
           )
           .first,
@@ -628,7 +667,7 @@ void main() {
         messages: messages,
         projectRequestChats: chats,
       );
-      app.read(appRouterProvider).go('/messages/chats/request/$requestId');
+      await _openSourceOwner(tester, app, '/messages/chats/request/$requestId');
       await tester.pumpAndSettle();
       expect(
         find.byKey(const Key('participation-request-details')),
@@ -665,9 +704,11 @@ void main() {
         messages: FakeMessagesGateway(),
         projectRequestChats: chats,
       );
-      app
-          .read(appRouterProvider)
-          .go('/messages/chats/request/${first.requestId}');
+      await _openSourceOwner(
+        tester,
+        app,
+        '/messages/chats/request/${first.requestId}',
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.byType(ExpansionTile));
       await tester.pumpAndSettle();
@@ -733,7 +774,7 @@ void main() {
         projectRequestChats: gateway,
         triage: triage,
       );
-      app.read(appRouterProvider).go('/messages/chats/request/$firstId');
+      await _openSourceOwner(tester, app, '/messages/chats/request/$firstId');
       await tester.pumpAndSettle();
       expect(find.text('2 pending requests'), findsOneWidget);
       await tester.tap(find.byType(ExpansionTile));
@@ -813,9 +854,11 @@ void main() {
         messages: FakeMessagesGateway(),
         projectRequestChats: gateway,
       );
-      app
-          .read(appRouterProvider)
-          .go('/messages/chats/request/${incoming.requestId}');
+      await _openSourceOwner(
+        tester,
+        app,
+        '/messages/chats/request/${incoming.requestId}',
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.byType(ExpansionTile));
       await tester.pumpAndSettle();
@@ -896,6 +939,18 @@ void main() {
     expect(find.text('Resource request'), findsOneWidget);
   });
 
+  testWidgets('empty Groups never mounts a legacy personal contact list', (
+    tester,
+  ) async {
+    final app = await _pump(tester, messages: FakeMessagesGateway());
+    app.read(appRouterProvider).go('/messages');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('message-chat-scope-groups')));
+    await tester.pumpAndSettle();
+    expect(find.byType(PeopleContactItems), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Chats scopes Resource and Project cards without fake events', (
     tester,
   ) async {
@@ -904,6 +959,7 @@ void main() {
         projectRequestMessageChatFixture(),
         resourceMessageChatFixture(
           messageId: null,
+          counterpartyProfileId: '00000000-0000-4000-8000-000000000103',
           activityAt: DateTime.utc(2026, 9, 20, 12),
           lifecycle: ResourceExchangeLifecycle.completed,
           isReadOnly: true,
@@ -918,10 +974,13 @@ void main() {
     app.read(appRouterProvider).go('/messages');
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('message-chat-list')), findsOneWidget);
+    expect(
+      find.byKey(const PageStorageKey('private-pair-list')),
+      findsOneWidget,
+    );
     expect(
       find.byKey(
-        const Key('resource-chat-link-00000000-0000-4000-8000-000000000401'),
+        const Key('private-pair-link-00000000-0000-4000-8000-000000000103'),
       ),
       findsOneWidget,
     );
@@ -929,12 +988,18 @@ void main() {
     expect(find.text('Jordan'), findsOneWidget);
     expect(find.text('Garden tools'), findsNothing);
     expect(find.text('Paint the square'), findsNothing);
-    expect(find.text('No messages yet.'), findsOneWidget);
+    expect(find.text('No messages yet'), findsOneWidget);
     expect(find.text('Read-only'), findsNothing);
     expect(
       find.byKey(
+        const Key('private-pair-link-00000000-0000-4000-8000-000000000102'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
         const Key(
-          'project-request-chat-link-00000000-0000-4000-8000-000000000311',
+          'chat-thumbnail-private_pair:00000000-0000-4000-8000-000000000102',
         ),
       ),
       findsOneWidget,
@@ -942,14 +1007,8 @@ void main() {
     expect(
       find.byKey(
         const Key(
-          'project-request-chat-photo-00000000-0000-4000-8000-000000000411',
+          'chat-thumbnail-private_pair:00000000-0000-4000-8000-000000000103',
         ),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(
-        const Key('resource-chat-photo-00000000-0000-4000-8000-000000000401'),
       ),
       findsOneWidget,
     );
@@ -970,7 +1029,7 @@ void main() {
     );
     expect(
       find.byKey(
-        const Key('resource-chat-link-00000000-0000-4000-8000-000000000401'),
+        const Key('private-pair-link-00000000-0000-4000-8000-000000000103'),
       ),
       findsNothing,
     );
@@ -1018,7 +1077,7 @@ void main() {
       find.descendant(
         of: find.byKey(
           const Key(
-            'project-request-chat-photo-00000000-0000-4000-8000-000000000411',
+            'chat-thumbnail-private_pair:00000000-0000-4000-8000-000000000102',
           ),
         ),
         matching: find.byType(Image),
@@ -1028,7 +1087,9 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(
-          const Key('resource-chat-photo-00000000-0000-4000-8000-000000000401'),
+          const Key(
+            'chat-thumbnail-private_pair:00000000-0000-4000-8000-000000000103',
+          ),
         ),
         matching: find.byType(Image),
       ),
@@ -1036,13 +1097,51 @@ void main() {
     );
   });
 
-  testWidgets('Resource card routes to discriminator-safe conversation path', (
-    tester,
-  ) async {
+  testWidgets(
+    'Resource management retains agreement actions without another composer or ACK',
+    (tester) async {
+      final unread = _UnreadFixture(
+        const MessageUnreadSummary(total: 1, private: 1, groups: 0),
+      );
+      final app = await _pump(
+        tester,
+        identityId: '00000000-0000-4000-8000-000000000101',
+        messages: FakeMessagesGateway(),
+        unread: unread,
+        resourceChats: FakeResourceChatGateway()
+          ..histories['00000000-0000-4000-8000-000000000401'] = [
+            resourceChatMessageFixture(body: 'Authorized source transcript'),
+          ],
+      );
+      app
+          .read(appRouterProvider)
+          .go(
+            '/messages/chats/resource/00000000-0000-4000-8000-000000000401/manage',
+          );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('resource-exchange-primary-action')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('resource-coordination-request-detail')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('resource-chat-composer')), findsNothing);
+      expect(find.byKey(const Key('private-pair-composer')), findsNothing);
+      expect(find.text('Authorized source transcript'), findsNothing);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(unread.acknowledgements, 0);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('Person row opens the unified conversation', (tester) async {
     final resourceChats = FakeResourceChatGateway()
       ..histories['00000000-0000-4000-8000-000000000401'] = [];
     final app = await _pump(
       tester,
+      identityId: '00000000-0000-4000-8000-000000000101',
       messages: FakeMessagesGateway(),
       chats: FakeMessageChatsGateway()..items = [resourceMessageChatFixture()],
       resourceChats: resourceChats,
@@ -1051,13 +1150,13 @@ void main() {
     await tester.pumpAndSettle();
 
     final link = find.byKey(
-      const Key('resource-chat-link-00000000-0000-4000-8000-000000000401'),
+      const Key('private-pair-link-00000000-0000-4000-8000-000000000102'),
     );
     await tester.ensureVisible(link);
     await tester.tap(link.hitTestable());
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('resource-chat-composer')), findsOneWidget);
+    expect(find.byKey(const Key('private-pair-composer')), findsOneWidget);
     expect(find.byKey(const Key('project-needs-button')), findsNothing);
 
     await tester.binding.handlePopRoute();
@@ -1081,7 +1180,7 @@ void main() {
       messages: FakeMessagesGateway(),
       resourceChats: resourceChats,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
 
     expect(
@@ -1138,7 +1237,7 @@ void main() {
         messages: messages,
         projectRequestChats: requestChats,
       );
-      app.read(appRouterProvider).go('/messages/chats/request/$requestId');
+      await _openSourceOwner(tester, app, '/messages/chats/request/$requestId');
       await tester.pumpAndSettle();
 
       expect(
@@ -1206,7 +1305,7 @@ void main() {
       projectRequestChats: requestChats,
       profilePhoto: photos,
     );
-    app.read(appRouterProvider).go('/messages/chats/request/$requestId');
+    await _openSourceOwner(tester, app, '/messages/chats/request/$requestId');
     await tester.pumpAndSettle();
 
     final avatar = find.byKey(
@@ -1231,7 +1330,7 @@ void main() {
       messages: FakeMessagesGateway(),
       projectRequestChats: requestChats,
     );
-    app.read(appRouterProvider).go('/messages/chats/request/$requestId');
+    await _openSourceOwner(tester, app, '/messages/chats/request/$requestId');
     await tester.pumpAndSettle();
     final subscription = requestChats.subscriptions.single;
 
@@ -1265,7 +1364,7 @@ void main() {
       projectRequestChats: requestChats,
       triage: triage,
     );
-    app.read(appRouterProvider).go('/messages/chats/request/$requestId');
+    await _openSourceOwner(tester, app, '/messages/chats/request/$requestId');
     await tester.pumpAndSettle();
 
     await tester.tap(
@@ -1315,7 +1414,7 @@ void main() {
       messages: messages,
       projectRequestChats: requestChats,
     );
-    app.read(appRouterProvider).go('/messages/chats/request/$requestId');
+    await _openSourceOwner(tester, app, '/messages/chats/request/$requestId');
     await tester.pumpAndSettle();
 
     await tester.tap(
@@ -1367,7 +1466,7 @@ void main() {
       projectRequestChats: requestChats,
       profilePhoto: photos,
     );
-    app.read(appRouterProvider).go('/messages/chats/request/$requestId');
+    await _openSourceOwner(tester, app, '/messages/chats/request/$requestId');
     await tester.pumpAndSettle();
 
     expect(
@@ -1412,7 +1511,7 @@ void main() {
         messages: FakeMessagesGateway(),
         projectRequestChats: requestChats,
       );
-      app.read(appRouterProvider).go('/messages/chats/request/$requestId');
+      await _openSourceOwner(tester, app, '/messages/chats/request/$requestId');
       await tester.pumpAndSettle();
 
       expect(
@@ -1477,7 +1576,7 @@ void main() {
         messages: messages,
         projectRequestChats: requestChats,
       );
-      app.read(appRouterProvider).go('/messages/chats/request/$requestId');
+      await _openSourceOwner(tester, app, '/messages/chats/request/$requestId');
       await tester.pumpAndSettle();
 
       expect(
@@ -1515,7 +1614,7 @@ void main() {
       messages: FakeMessagesGateway(),
       resourceChats: resourceChats,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('resource-chat-composer')),
@@ -1556,7 +1655,7 @@ void main() {
       messages: FakeMessagesGateway(),
       resourceChats: resourceChats,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('resource-chat-composer')),
@@ -1599,7 +1698,7 @@ void main() {
       messages: FakeMessagesGateway(),
       resourceChats: resourceChats,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
 
     final first = tester.getRect(
@@ -1650,7 +1749,7 @@ void main() {
       messages: FakeMessagesGateway(),
       resourceChats: resourceChats,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
 
     await tester.pumpAndSettle();
 
@@ -1952,8 +2051,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('resource-chat-read-only')), findsOneWidget);
-    expect(find.byKey(const Key('resource-chat-composer')), findsNothing);
+    expect(find.byKey(const Key('private-pair-read-only')), findsOneWidget);
+    expect(find.byKey(const Key('private-pair-composer')), findsNothing);
   });
 
   testWidgets('Resource detail hides an absent optional message', (
@@ -2087,7 +2186,7 @@ void main() {
       resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
       resourceExchange: exchange,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
 
     expect(find.text('No terms agreed yet.'), findsOneWidget);
@@ -2181,7 +2280,7 @@ void main() {
       resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
       resourceExchange: exchange,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
 
     expect(find.text('New proposal to review.'), findsOneWidget);
@@ -2230,7 +2329,7 @@ void main() {
         resourceExchange: exchange,
         resourceLoans: loans,
       );
-      app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+      await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
       await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
@@ -2278,7 +2377,7 @@ void main() {
         resourceExchange: exchange,
         resourceLoans: loans,
       );
-      app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+      await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
       await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
@@ -2341,7 +2440,7 @@ void main() {
         resourceExchange: exchange,
         resourceLoans: loans,
       );
-      app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+      await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
       await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
@@ -2398,7 +2497,7 @@ void main() {
       resourceExchange: exchange,
       resourceLoans: loans,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
@@ -2439,7 +2538,7 @@ void main() {
       resourceExchange: exchange,
       resourceLoans: loans,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
@@ -2489,7 +2588,7 @@ void main() {
       resourceExchange: exchange,
       resourceLoans: loans,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
@@ -2521,7 +2620,7 @@ void main() {
       resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
       resourceExchange: exchange,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
@@ -2565,7 +2664,7 @@ void main() {
       resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
       resourceExchange: exchange,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
 
     expect(find.text('Terms agreed.'), findsOneWidget);
@@ -2613,7 +2712,7 @@ void main() {
       resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
       resourceExchange: exchange,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
@@ -2654,7 +2753,7 @@ void main() {
       resourceChats: resourceChats,
       resourceExchange: exchange,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
 
     expect(find.text('Exchange in progress'), findsOneWidget);
@@ -2703,7 +2802,7 @@ void main() {
       resourceChats: resourceChats,
       resourceExchange: exchange,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
 
     expect(find.text('Exchange completed'), findsOneWidget);
@@ -2750,7 +2849,7 @@ void main() {
           ..histories[chatId] = [],
         resourceExchange: exchange,
       );
-      app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+      await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
       await tester.pumpAndSettle();
 
       await tester.tap(
@@ -2830,7 +2929,7 @@ void main() {
         ..histories[chatId] = [],
       resourceExchange: exchange,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const Key('resource-exchange-progress-action')).hitTestable(),
@@ -2887,7 +2986,7 @@ void main() {
         ..histories[chatId] = [],
       resourceExchange: exchange,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
 
     await tester.tap(
@@ -2948,7 +3047,7 @@ void main() {
         ..histories[chatId] = [],
       resourceExchange: exchange,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
 
     expect(find.text('Give ↔ Nothing'), findsOneWidget);
@@ -2979,7 +3078,7 @@ void main() {
       resourceExchange: FakeResourceExchangeGateway()
         ..readError = StateError('private agreement diagnostic'),
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
 
     expect(find.text('Chat remains available'), findsOneWidget);
@@ -3006,7 +3105,7 @@ void main() {
       resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
       resourceExchange: exchange,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const Key('resource-exchange-primary-action')).hitTestable(),
@@ -3065,7 +3164,7 @@ void main() {
       resourceChats: resourceChats,
       resourceExchange: exchange,
     );
-    app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+    await _openSourceOwner(tester, app, '/messages/chats/resource/$chatId');
     await tester.pumpAndSettle();
 
     await tester.tap(
@@ -3145,6 +3244,15 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        privatePairGatewayProvider.overrideWithValue(
+          legacyPrivatePairFixture(
+            actor: identityId,
+            chats: chats ?? FakeMessageChatsGateway(),
+            resource: resourceChats ?? FakeResourceChatGateway(),
+            requests: projectRequestChats ?? FakeProjectRequestChatGateway(),
+          ),
+        ),
+        privatePairSignalsProvider.overrideWith((ref) => const Stream.empty()),
         // Native inbox fixtures model the canonical default-OFF experiment,
         // including legitimate empty own-exit metadata. Unknown reads fail.
         peoplePostsGatewayProvider.overrideWithValue(
@@ -3248,6 +3356,25 @@ Future<ProviderContainer> _pump(
   );
   await tester.pumpAndSettle();
   return ProviderScope.containerOf(tester.element(find.byType(PlanetsApp)));
+}
+
+// Retained component regressions exercise the original domain owners directly.
+// A1 routing and combined history are covered by the new pair/native tests.
+Future<void> _openSourceOwner(
+  WidgetTester tester,
+  ProviderContainer app,
+  String path,
+) async {
+  app.read(appRouterProvider).go('/messages');
+  await tester.pumpAndSettle();
+  final segments = Uri.parse(path).pathSegments;
+  final widget = segments[2] == 'request'
+      ? ProjectRequestChatScreen(requestId: segments.last)
+      : ResourceChatScreen(chatId: segments.last);
+  unawaited(
+    Navigator.of(tester.element(find.byType(MessagesScreen)))
+        .push(MaterialPageRoute<void>(builder: (_) => widget)),
+  );
 }
 
 class _UnreadFixture implements MessageUnreadGateway {

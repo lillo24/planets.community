@@ -1,3 +1,7 @@
+import 'package:planets_mobile/features/messages/data/private_pair_gateway.dart';
+
+import '../../support/fake_private_pairs.dart';
+
 import 'dart:async';
 import 'dart:io';
 
@@ -58,6 +62,10 @@ void main() {
       final store = FakeActivitiesSplitPreferenceStore(value: 'on');
       final container = ProviderContainer(
         overrides: [
+          privatePairGatewayProvider.overrideWithValue(emptyPrivatePairs()),
+          privatePairSignalsProvider.overrideWith(
+            (ref) => const Stream.empty(),
+          ),
           appConfigProvider.overrideWithValue(
             AppConfig.fromValues(
               appEnvironment: 'local',
