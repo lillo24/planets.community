@@ -44,6 +44,10 @@ run packages bash -c 'cd apps/mobile && flutter pub get && flutter gen-l10n'
 run sdk sdkmanager 'platform-tools' 'emulator' 'platforms;android-36' 'system-images;android-36;google_apis;x86_64'
 [[ -c /dev/kvm ]]
 run kvm sudo chmod a+rw /dev/kvm
+# The runner's installed SDK has Pixel 4 profiles. The capture display is set
+# explicitly below; report that real profile and geometry rather than a 9 Pro model.
+phase=avd
+echo no | avdmanager create avd --name PLANETS_A1_CI --package 'system-images;android-36;google_apis;x86_64' --device pixel_4 >"$private/avd.log" 2>&1
 run backend node scripts/a1/local-world.mjs
 world="$(cat "$A1_WORLD_POINTER")"
 [[ "$world" == "$RUNNER_TEMP"/planets-a1-* ]]
@@ -58,8 +62,7 @@ run before-build bash -c 'cd "$1/apps/mobile" && flutter pub get && flutter gen-
 cp "$before/apps/mobile/build/app/outputs/flutter-apk/app-debug.apk" "$private/before.apk"
 run after-build bash -c 'cd apps/mobile && flutter build apk --debug --no-pub --target-platform android-x64 --target=integration_test/a1_private_pairs_test.dart --dart-define-from-file="$1" && cd android && ./gradlew --stop' _ "$world/private-defines.json"
 cp apps/mobile/build/app/outputs/flutter-apk/app-debug.apk "$private/after.apk"
-phase=avd
-echo no | avdmanager create avd --name PLANETS_A1_CI --package 'system-images;android-36;google_apis;x86_64' --device pixel_9_pro >"$private/avd.log" 2>&1
+phase=emulator
 emulator -avd PLANETS_A1_CI -port 5554 -memory 2048 -cores 2 -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader >"$private/emulator.log" 2>&1 &
 emulator_started=true
 run device timeout 300 adb -s emulator-5554 wait-for-device

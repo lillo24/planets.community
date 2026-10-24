@@ -39,6 +39,9 @@ the audit runner's backend, emulator, artifacts and UIAUDIT02 worktree.
   nullability postprocessor. Run pgTAP on fresh seeded state, without populated
   A1 public posts or other verifier leftovers.
 - `run-native-ci.sh` owns the opt-in Linux hosted-runner journey and cleanup.
+  The installed SDK's Pixel 4 base profile uses explicit 1280x2856 pixels at
+  480dpi (426.7x952 logical pixels), plus a 320dp/2x variant. This is a reported
+  display equivalent, not a claim that the emulator is Pixel 9 Pro hardware.
   `integration_test/a1_private_pairs_test.dart` exercises real OTP in both APKs;
   `test_driver/a1_screenshots.dart` records original Android compositor bytes.
   `diagnostics.mjs` exports only a bounded scrubbed failure tail. The workflow

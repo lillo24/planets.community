@@ -56,6 +56,7 @@ Future<void> main() async {
           .writeAsBytes(capture.stdout as List<int>);
       metadata.add({
         'name': name,
+        'avdProfile': 'pixel_4',
         'fictional': true,
         'wmSize': await adb(['shell', 'wm', 'size']),
         'wmDensity': await adb(['shell', 'wm', 'density']),
@@ -81,7 +82,7 @@ Future<void> main() async {
         await adb(['shell', 'settings', 'put', 'system', 'font_scale', '2.0']);
       }
       if (name == 'after-en-light-narrow-2x') {
-        await adb(['shell', 'wm', 'size', 'reset']);
+        await adb(['shell', 'wm', 'size', '1280x2856']);
         await adb(['shell', 'settings', 'put', 'system', 'font_scale', '1.0']);
       }
       return true;
