@@ -32,6 +32,7 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import '../../support/rendered_evidence.dart';
 
 import 'package:planets_mobile/features/locations/data/item_location_gateway.dart';
+import 'package:planets_mobile/features/proposals/data/proposal_gateway.dart';
 
 const a = 'cc020000-0000-4000-8000-000000000001',
     b = 'cc020000-0000-4000-8000-000000000002';
@@ -255,9 +256,11 @@ Future<(ProviderContainer, GoRouter)> pump(
   String path = '/people/hubs/$hub',
   List<RouteBase> extraRoutes = const [],
   EditorPlaceGatewayFactory? placeFactory,
+  ProposalGateway? projects,
 }) async {
   final app = ProviderContainer(
     overrides: [
+      if (projects != null) proposalGatewayProvider.overrideWithValue(projects),
       if (placeFactory != null)
         editorPlaceGatewayFactoryProvider.overrideWithValue(placeFactory),
       initialCoCreationPreferenceProvider.overrideWithValue(
