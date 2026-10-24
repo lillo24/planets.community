@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/time/event_time.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../domain/external_activity.dart';
 
@@ -11,10 +12,12 @@ class ExternalActivityFilters extends StatelessWidget {
     required this.filter,
     required this.disciplines,
     required this.onChanged,
+    this.activityTypes = const [],
     super.key,
   });
   final ExternalActivityFilter filter;
   final List<String> disciplines;
+  final List<String> activityTypes;
   final ValueChanged<ExternalActivityFilter> onChanged;
 
   @override
@@ -56,6 +59,39 @@ class ExternalActivityFilters extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.small),
+        if (activityTypes.isNotEmpty || filter.activityType != null) ...[
+          DropdownButtonFormField<String>(
+            key: ValueKey('activities-type-${filter.activityType}'),
+            initialValue: filter.activityType,
+            isExpanded: true,
+            itemHeight: null,
+            decoration: InputDecoration(labelText: l.activitiesActivityType),
+            items: [
+              DropdownMenuItem(value: null, child: Text(l.activitiesAll)),
+              for (final type in {
+                ...activityTypes,
+                if (filter.activityType != null) filter.activityType!,
+              })
+                DropdownMenuItem(
+                  value: type,
+                  child: Text(externalActivityTypeLabel(type, l)),
+                ),
+            ],
+            onChanged: (type) => onChanged(
+              ExternalActivityFilter(
+                category: filter.category,
+                query: filter.query,
+                discipline: filter.discipline,
+                kind: filter.kind,
+                from: filter.from,
+                to: filter.to,
+                area: filter.area,
+                activityType: type,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.small),
+        ],
         KeyedSubtree(
           key: ValueKey('external-kind-${filter.kind}'),
           child: DropdownButtonFormField<ExternalActivityKind>(
@@ -80,6 +116,7 @@ class ExternalActivityFilters extends StatelessWidget {
             onChanged: (kind) => onChanged(
               ExternalActivityFilter(
                 category: filter.category,
+                activityType: filter.activityType,
                 area: filter.area,
                 query: filter.query,
                 discipline: filter.discipline,
@@ -130,6 +167,7 @@ class ExternalActivityFilters extends StatelessWidget {
                 onChanged: (value) => onChanged(
                   ExternalActivityFilter(
                     category: filter.category,
+                    activityType: filter.activityType,
                     area: filter.area,
                     query: filter.query,
                     kind: filter.kind,
@@ -140,6 +178,58 @@ class ExternalActivityFilters extends StatelessWidget {
                 ),
               ),
             if (filter.kind != ExternalActivityKind.place) ...[
+              Wrap(
+                spacing: AppSpacing.small,
+                children: [
+                  for (final weekend in [false, true])
+                    TextButton(
+                      key: Key(
+                        weekend ? 'activities-weekend' : 'activities-today',
+                      ),
+                      onPressed: () {
+                        final now = eventUtcToWallTime(
+                          DateTime.now().toUtc(),
+                          'Europe/Rome',
+                        );
+                        final today = DateTime.utc(
+                          now.year,
+                          now.month,
+                          now.day,
+                        );
+                        final start = weekend && now.weekday != DateTime.sunday
+                            ? today.add(
+                                Duration(
+                                  days:
+                                      (DateTime.saturday - now.weekday + 7) % 7,
+                                ),
+                              )
+                            : today;
+                        final end = start.add(
+                          Duration(
+                            days: weekend && now.weekday != DateTime.sunday
+                                ? 2
+                                : 1,
+                          ),
+                        );
+                        onChanged(
+                          ExternalActivityFilter(
+                            category: filter.category,
+                            query: filter.query,
+                            discipline: filter.discipline,
+                            kind: filter.kind,
+                            area: filter.area,
+                            activityType: filter.activityType,
+                            from: start.toIso8601String().substring(0, 10),
+                            to: end.toIso8601String().substring(0, 10),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        weekend ? l.activitiesWeekend : l.activitiesToday,
+                      ),
+                    ),
+                ],
+              ),
               Text(l.activitiesDatesScope),
               OutlinedButton.icon(
                 key: const Key('activities-dates'),
@@ -185,6 +275,7 @@ class ExternalActivityFilters extends StatelessWidget {
                   onChanged(
                     ExternalActivityFilter(
                       category: filter.category,
+                      activityType: filter.activityType,
                       area: filter.area,
                       query: filter.query,
                       discipline: filter.discipline,
@@ -217,6 +308,18 @@ class ExternalActivityFilters extends StatelessWidget {
     );
   }
 }
+
+String externalActivityTypeLabel(String type, AppLocalizations l) =>
+    switch (type) {
+      'music' => l.activitiesTypeMusic,
+      'theatre-cinema' => l.activitiesTypeTheatreCinema,
+      'talks' => l.activitiesTypeTalks,
+      'workshops' => l.activitiesTypeWorkshops,
+      'social' => l.activitiesTypeSocial,
+      'exhibitions' => l.activitiesTypeExhibitions,
+      'outings' => l.activitiesTypeOutings,
+      _ => throw const FormatException('Unknown activity type.'),
+    };
 
 String externalKindLabel(ExternalActivityKind? kind, AppLocalizations l) =>
     switch (kind) {

@@ -78,3 +78,12 @@ Selected inspected captures (synthetic public fixtures, no enabled live source):
 [partial source health](evidence/activities-sports/external-map-partial-en-light-360-2x.png).
 Real municipal source ingestion/rendering evidence is recorded separately in the
 [source contract](activities-sources.md#sportdata01-official-trento-public-sports-equipment).
+
+## RADAR01 compatibility
+
+The upgraded Flutter client uses additive list_external_activities_v4, retaining
+the V3 area/map/HMAC contract and adding server-owned p_activity_type. Full type,
+query, discipline, date, area and Map scope precede facets and paging. V3 remains
+installed. Source/qualification gates and proven aliases use the same canonical
+helper; an alias cannot refresh its authoritative source. See the
+[Radar contract](radar01-automatic-activities.md).

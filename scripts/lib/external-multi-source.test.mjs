@@ -143,7 +143,8 @@ test("CSV path has explicit MIME, UTF-8/BOM and the same byte/redirect budgets",
 
 test("source directory is code owned; blocked rights and unknown source stay failures", () => {
   assert.ok(Object.isFrozen(activityConnectorDirectory));
-  assert.ok(activityConnectorDirectory.length <= 4);
+  // RADAR01 keeps explicit code-owned sources in two opt-in batches of four.
+  assert.ok(activityConnectorDirectory.length <= 8);
   assert.throws(
     () => resolveActivityConnector("agenda-trento"),
     code("source_rights_checkpoint_blocked"),

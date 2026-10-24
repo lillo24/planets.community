@@ -5,6 +5,7 @@ import {
 } from "./transport.mjs";
 import { normalizeActivity } from "./records.mjs";
 import { resolveActivityConnector } from "./connectors.mjs";
+import { runRadarImport, radarImportStore } from "./radar-importer.mjs";
 
 const rejectionCodes = new Set([
   "invalid_record",
@@ -61,6 +62,17 @@ export async function runActivityImport({
   sleep,
   parentSignal,
 }) {
+  if (connector.radar)
+    return runRadarImport({
+      connector,
+      store,
+      apply,
+      now,
+      limits: overrides,
+      fetchImpl,
+      sleep,
+      parentSignal,
+    });
   const limits = { ...activityImportLimits, ...overrides };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), limits.runMs);
@@ -235,6 +247,7 @@ export function activityImportStore(client) {
     return data;
   }
   return {
+    ...radarImportStore(client),
     async begin(source, signal) {
       const data = await rpc(
         "begin_external_activity_import",

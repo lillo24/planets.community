@@ -261,3 +261,12 @@ Android/Play require explicit manual `build`/`publish`, independently configured
 environments and the Play reviewer. Keep `STAGING_AUTO_PUBLISH=false`. Code merge
 does not change live variables, secrets, native Supabase deployment or environment
 rules, and the SQL writer deploys no Edge functions or paid map requests.
+
+RADAR01 expands only the already opt-in external refresh job to at most eight
+explicit source IDs, in two sequential batches of four. Each batch retains its
+seven-minute parent and source limits; the job has 18 minutes for at most 14
+minutes of collection plus setup/receipts. The scheduled command explicitly uses
+--batch-size 4; selected sources still come only from ACTIVITIES_SOURCES. Default
+enablement remains OFF. This accommodates four publisher collectors plus the
+existing municipal source without dropping sources or removing bounds. See
+[activation/rights/retention](../../docs/development/radar01-automatic-activities.md).

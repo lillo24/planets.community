@@ -61,6 +61,10 @@ class ExternalActivityDetailScreen extends ConsumerWidget {
                         ),
                         Text(externalKindLabel(item.kind, l)),
                         Text(l.activitiesSourceLabel(item.sourceName)),
+                        if (item.activityType != null)
+                          Text(
+                            externalActivityTypeLabel(item.activityType!, l),
+                          ),
                         if (item.discipline != null)
                           Text(externalDisciplineLabel(item.discipline!, l)),
                         // The existing D03 handoff revalidates the event-only V1

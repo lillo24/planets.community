@@ -26,6 +26,15 @@ const safeCodes = new Set([
   "unsafe_destination",
   "pagination_loop",
   "unsupported_media_type",
+  "access_denied",
+  "robots_denied",
+  "invalid_robots",
+  "source_delay_changed",
+  "source_delay_exceeds_budget",
+  "unsafe_xml",
+  "ambiguous_schedule",
+  "invalid_jsonld",
+  "invalid_calendar",
 ]);
 
 // At most four explicit code-owned sources. No implicit directory-wide fetch.
@@ -39,6 +48,10 @@ export function activityOperationArguments(args, env = process.env) {
     } else if (arg === "--due-only") {
       if (result.dueOnly) throw new ActivityImportError("invalid_arguments");
       result.dueOnly = true;
+    } else if (arg === "--batch-size") {
+      if (result.batchSize || args[++i] !== "4")
+        throw new ActivityImportError("invalid_arguments");
+      result.batchSize = 4;
     } else if (["--sources", "--target"].includes(arg)) {
       const key = arg.slice(2);
       if (result[key] || !args[i + 1] || args[i + 1].startsWith("--"))
@@ -57,7 +70,7 @@ export function activityOperationArguments(args, env = process.env) {
   if (!sources) throw new ActivityImportError("source_set_required");
   result.sources = sources.split(",");
   if (
-    result.sources.length > 4 ||
+    result.sources.length > (result.batchSize ? 8 : 4) ||
     result.sources.some((x) => !slug.test(x) || !known.has(x)) ||
     new Set(result.sources).size !== result.sources.length
   )
@@ -134,16 +147,62 @@ export function activityOperationStore(client) {
   }
   return {
     ...activityImportStore(client),
-    inspect: (sources, signal) =>
-      rpc("inspect_external_activity_sources", sources, signal),
-    maintain: (sources, signal) =>
-      rpc("maintain_external_activity_imports", sources, signal),
+    async inspect(sources, signal) {
+      const result = await rpc(
+        "inspect_external_activity_sources",
+        sources,
+        signal,
+      );
+      const radar = sources.filter(
+        (id) =>
+          activityConnectorDirectory.find((s) => s.sourceId === id)?.status ===
+          "collection_available_publication_held",
+      );
+      if (radar.length) {
+        const { data, error } = await client
+          .rpc("inspect_external_radar_status", { p_source_ids: radar })
+          .abortSignal(signal);
+        if (error || !Array.isArray(data))
+          throw new ActivityImportError("persistence_error");
+        result.sources = result.sources.map((s) => ({
+          ...s,
+          ...data.find((r) => r.id === s.id),
+        }));
+      }
+      return result;
+    },
+    async maintain(sources, signal) {
+      const result = await rpc(
+        "maintain_external_activity_imports",
+        sources,
+        signal,
+      );
+      for (const id of sources.filter(
+        (id) =>
+          activityConnectorDirectory.find((s) => s.sourceId === id)?.status ===
+          "collection_available_publication_held",
+      )) {
+        // Bounded backlog drain: <=10,000 old evidence revisions per source/run.
+        for (let batch = 0; batch < 100; batch++) {
+          const { data, error } = await client
+            .rpc("maintain_external_radar_evidence", {
+              p_source_id: id,
+              p_limit: 100,
+            })
+            .abortSignal(signal);
+          if (error) throw new ActivityImportError("persistence_error");
+          if (data.candidates_pruned < 100 && data.documents_pruned < 100)
+            break;
+        }
+      }
+      return result;
+    },
   };
 }
 
 // Sequential source leases plus the existing target-wide Actions concurrency.
 // The seven-minute parent leaves setup/failure-receipt time within the 10m job.
-export async function runActivityOperations({
+async function runActivityOperationBatch({
   sources,
   mode,
   dueOnly = false,
@@ -209,19 +268,24 @@ export async function runActivityOperations({
         if (current) {
           const state = !current.configured
             ? "unconfigured"
-            : !current.rights_confirmed
-              ? "rights_blocked"
-              : !current.enabled
-                ? "disabled"
-                : current.lease_state === "running"
-                  ? "busy"
-                  : null;
+            : connector.radar && !current.collection_enabled
+              ? "collection_disabled"
+              : !connector.radar && !current.rights_confirmed
+                ? "rights_blocked"
+                : !connector.radar && !current.enabled
+                  ? "disabled"
+                  : current.lease_state === "running"
+                    ? "busy"
+                    : null;
           if (state) {
             results.push({ id, state });
             continue;
           }
-          if (dueOnly && current.last_success_at) {
-            const observed = Date.parse(current.last_success_at),
+          const lastComplete = connector.radar
+            ? current.last_collection_at
+            : current.last_success_at;
+          if (dueOnly && lastComplete) {
+            const observed = Date.parse(lastComplete),
               asOf = Date.parse(inspection.as_of);
             if (
               !Number.isFinite(observed) ||
@@ -243,6 +307,31 @@ export async function runActivityOperations({
           parentSignal: signal,
           fetchImpl,
         });
+        if (connector.radar) {
+          if (
+            !["collected_held", "success"].includes(result.state) ||
+            !["collected", "validated", "held", "publishable"].every(
+              (key) =>
+                Number.isSafeInteger(result[key]) &&
+                result[key] >= 0 &&
+                result[key] <= 2000,
+            )
+          )
+            throw new ActivityImportError("invalid_payload");
+          results.push({
+            id,
+            state: result.state,
+            collected: result.collected,
+            validated: result.validated,
+            held: result.held,
+            publishable: result.publishable,
+            changed: result.changed,
+            reasons: result.reasons,
+            source_reasons: result.source_reasons,
+            families: result.families,
+          });
+          continue;
+        }
         // Only counts/codes are emitted. Never connector payloads, URLs or run tokens.
         const counts = {};
         for (const key of ["fetched", "accepted", "rejected", "changed"]) {
@@ -299,7 +388,9 @@ export async function runActivityOperations({
           ? "success"
           : successes
             ? "partial"
-            : "failure",
+            : results.every((x) => x.state === "collected_held")
+              ? "held"
+              : "failure",
       ...(maintenance ? { maintenance } : {}),
       sources: results,
     };
@@ -314,4 +405,40 @@ export async function runActivityOperations({
   } finally {
     clearTimeout(timer);
   }
+}
+
+// Extra registry coverage is explicit: <=8 selected sources in <=2 sequential
+// four-source batches, each with the original seven-minute parent budget.
+export async function runActivityOperations(options) {
+  if (!Array.isArray(options.sources) || options.sources.length <= 4)
+    return runActivityOperationBatch(options);
+  if (options.batchSize !== 4 || options.sources.length > 8)
+    throw new ActivityImportError("invalid_arguments");
+  const deadline = AbortSignal.timeout(840_000);
+  const parentSignal = options.parentSignal
+    ? AbortSignal.any([options.parentSignal, deadline])
+    : deadline;
+  const batches = [];
+  for (let at = 0; at < options.sources.length; at += 4) {
+    batches.push(
+      await runActivityOperationBatch({
+        ...options,
+        sources: options.sources.slice(at, at + 4),
+        parentSignal,
+      }),
+    );
+  }
+  const states = batches.map((b) => b.status);
+  return {
+    mode: options.mode,
+    status: states.every((s) => s === "success")
+      ? "success"
+      : states.every((s) => s === "held")
+        ? "held"
+        : states.some((s) => s === "success" || s === "partial")
+          ? "partial"
+          : "failure",
+    batches,
+    sources: batches.flatMap((b) => b.sources ?? []),
+  };
 }
