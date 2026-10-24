@@ -181,10 +181,7 @@ void main() {
               }
               await tester.tap(card);
               await tester.pumpAndSettle();
-              expect(
-                router.routerDelegate.state.uri.path,
-                entry.value,
-              );
+              expect(router.routerDelegate.state.uri.path, entry.value);
               router.go('/');
               await tester.pumpAndSettle();
             }
