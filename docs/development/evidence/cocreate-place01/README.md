@@ -41,7 +41,7 @@ disposable local backend. No hosted data or phone installation was changed.
   no live provider.
 - Co-Creation/router/location/native and external geographic discovery:
   **847 Flutter tests passed**. The 32 Place tests also passed with actual render capture.
-- Root tooling: **356 passed**. Mobile analysis: no issues. Changed-file formatting,
+- Root tooling: **357 passed**. Mobile analysis: no issues. Changed-file formatting,
   Dart formatting, whitespace, SQL lint/security advisors, regenerated database types
   and web typecheck passed. The full web formatting command also reports six untouched
   baseline files; checking their `0ea1df30` contents reproduces every warning.
