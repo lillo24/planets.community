@@ -64,7 +64,10 @@ JSON and the narrow municipal CSV/text path share the existing streamed and
 decompressed byte, redirect, origin/path, request, retry and five-minute budgets.
 CSV/text requires explicitly accepted non-HTML MIME and UTF-8; invalid encoding,
 structural errors, duplicate upstream IDs or incomplete traversal fail a snapshot.
-No arbitrary uploaded CSV, archive, HTML scraper or linked-page crawling exists.
+No arbitrary uploaded CSV or archive is accepted. RADAR01 separately adds
+code-owned bounded website/feed collection under the
+[Radar contract](radar01-automatic-activities.md); it preserves this CSV contract
+and the existing source-specific rights checkpoints.
 
 Reproducible checks on a fresh task-owned non-default local stack:
 

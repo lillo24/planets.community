@@ -32,9 +32,10 @@ class SupabaseExternalActivityGateway implements ExternalActivityGateway {
     Object? result;
     try {
       result = await _client.rpc(
-        'list_external_activities_v3',
+        'list_external_activities_v4',
         params: {
           'p_category': filter.category,
+          'p_activity_type': filter.activityType,
           'p_query': filter.query,
           'p_discipline': filter.discipline,
           'p_kind': filter.kind?.name,

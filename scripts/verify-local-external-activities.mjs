@@ -347,3 +347,7 @@ try {
   }
   await sql.end({ timeout: 5 });
 }
+
+// Run Radar acceptance only after the legacy pipeline removed its fixtures.
+// Keep the existing npm/CI entrypoint so dependency and product SQL PRs separate.
+await import("./verify-local-external-radar.mjs");
