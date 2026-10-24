@@ -3,6 +3,11 @@
 - **Status:** Accepted
 - **Date:** 2026-10-06
 
+[ADR 0009](0009-universal-private-pair-conversations.md) changes the A1 client's
+Private badge to distinct people across authorized sources and composes rendered
+source prefixes. The source receipt/ordinal rules and installed RPC contracts
+recorded here remain intact.
+
 ## Decision
 
 Human messages alone contribute to unread. The account badge counts distinct
