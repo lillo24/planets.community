@@ -5,6 +5,7 @@ import 'package:planets_mobile/features/project_request_chat/presentation/projec
 import '../../../support/legacy_private_pair_fixture.dart';
 
 import 'package:planets_mobile/features/messages/presentation/messages_screen.dart';
+import 'package:planets_mobile/features/co_creation/presentation/people_message_items.dart';
 import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
 import 'package:planets_mobile/features/project_request_chat/application/project_request_chat_controller.dart';
 import 'package:planets_mobile/features/resource_chat/application/resource_chat_controller.dart';
@@ -936,6 +937,18 @@ void main() {
     pending.complete();
     await tester.pumpAndSettle();
     expect(find.text('Resource request'), findsOneWidget);
+  });
+
+  testWidgets('empty Groups never mounts a legacy personal contact list', (
+    tester,
+  ) async {
+    final app = await _pump(tester, messages: FakeMessagesGateway());
+    app.read(appRouterProvider).go('/messages');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('message-chat-scope-groups')));
+    await tester.pumpAndSettle();
+    expect(find.byType(PeopleContactItems), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Chats scopes Resource and Project cards without fake events', (

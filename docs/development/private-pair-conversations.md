@@ -93,6 +93,9 @@ resolve into it. Requests and member info remain in their original owners;
 Resource agreement progression and Find People management have management-only
 routes with no second transcript, composer or read acknowledgement. Resource
 management also links to its exact original request details.
+Identity-only Find People contact close recovery remains in Requests alongside
+interest withdrawal when the experiment is OFF or policy is stale. It exposes no
+peer, post title, transcript or unread count and retains its exact own-exit route.
 
 One writable context is selected transparently. Multiple contexts require a
 choice, except for an authorized exact-source entry. Lost selection cannot switch

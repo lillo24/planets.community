@@ -260,7 +260,8 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                         ),
                         child: Column(
                           children: [
-                            const PeopleContactItems(),
+                            if (scope == MessageChatScope.private)
+                              const PeopleContactItems(),
                             EmptyState(
                               title: scope == MessageChatScope.private
                                   ? l10n.messageChatsPrivateEmptyTitle
