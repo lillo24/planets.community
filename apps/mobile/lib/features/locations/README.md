@@ -150,6 +150,17 @@ The former `proposalCityOnly` adapter remains compatible for older consumers,
 but the one-time editor now uses this component. See the
 [LOCATION02 contract and staging handoff](../../../../../docs/development/location02-inline-project-place.md).
 
+## Co-creation venue selections (PLACE01)
+
+PLACE01 reuses the same editor factory/controller and `location-search` service
+for co-creation venues. Its exact scopes are current General episode/revision 0
+before group creation, or exact manager numbered episode/current room version.
+It introduces no provider/key/default/budget change and does not alter native
+Project/Tavolo/resource location data. Existing PLANETS Place reuse needs no
+provider request. [PLACE01](../../../../../docs/development/cocreate-place01.md)
+owns stable identity, private-address/publication restrictions and atomic schedule
+receipts; this folder continues to own normalized provider transport/attribution.
+
 ## Released-build diagnosis (MAPFIX01)
 
 Source merge, staging geometry, compiled flags and installed distribution are

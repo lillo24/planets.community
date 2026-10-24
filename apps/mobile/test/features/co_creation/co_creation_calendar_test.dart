@@ -162,7 +162,9 @@ void main() {
         'p_limit': 25,
         'p_cursor': null,
       });
-      return calendarPage(window, [calendarMeeting()]);
+      return calendarPage(window, [
+        {...calendarMeeting(), 'place': null},
+      ]);
     });
     expect(
       (await gateway.calendar(
@@ -173,7 +175,7 @@ void main() {
       )).meetings,
       hasLength(1),
     );
-    expect(calls, ['get_cocreate_calendar_v1']);
+    expect(calls, ['get_cocreate_calendar_v2']);
     await expectLater(
       CoCreationRoomsGateway((_, _) async => throw StateError('Offline'))
           .calendar(actor, HubId.parse(hub), membership, window),

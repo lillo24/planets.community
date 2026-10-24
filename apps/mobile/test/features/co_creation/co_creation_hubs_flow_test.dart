@@ -31,6 +31,8 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 
 import '../../support/rendered_evidence.dart';
 
+import 'package:planets_mobile/features/locations/data/item_location_gateway.dart';
+
 const a = 'cc020000-0000-4000-8000-000000000001',
     b = 'cc020000-0000-4000-8000-000000000002';
 const hub = 'cc020000-0000-4000-8000-000000000003',
@@ -111,6 +113,25 @@ class Fixture {
     calls.add(name);
     final actor = args['p_expected_profile_id'] as String?;
     switch (name) {
+      case 'get_cocreate_place_context_v1':
+        return {
+          'profile_id': actor,
+          'hub_id': args['p_hub_id'],
+          'room_id': args['p_room_id'],
+          'episode_id': args['p_episode_id'] ?? episode(actor!),
+          'version': args['p_room_id'] == null ? 0 : 1,
+          'is_manager': actor == a,
+          'usual_place': null,
+          'usual_discoverable': false,
+        };
+      case 'list_cocreate_places_v1':
+        return {
+          'profile_id': actor,
+          'hub_id': args['p_hub_id'],
+          'episode_id': args['p_episode_id'],
+          'places': <Object?>[],
+          'next_cursor': null,
+        };
       case 'list_cocreate_numbered_groups':
         return [];
       case 'get_cocreate_contact_group':
@@ -233,9 +254,12 @@ Future<(ProviderContainer, GoRouter)> pump(
   bool coCreation = false,
   String path = '/people/hubs/$hub',
   List<RouteBase> extraRoutes = const [],
+  EditorPlaceGatewayFactory? placeFactory,
 }) async {
   final app = ProviderContainer(
     overrides: [
+      if (placeFactory != null)
+        editorPlaceGatewayFactoryProvider.overrideWithValue(placeFactory),
       initialCoCreationPreferenceProvider.overrideWithValue(
         CoCreationPreferenceState(
           mode: coCreation ? CoCreationMode.on : CoCreationMode.off,

@@ -19,7 +19,7 @@ class MeetingsFixture extends f.Fixture {
   String currentMeeting = c.proposalId;
   @override
   Future<Object?> rpc(String name, Map<String, dynamic> args) async {
-    if (name == 'schedule_cocreate_meeting') {
+    if (name == 'schedule_cocreate_meeting_v2') {
       calls.add(name);
       scheduled.add(Map.of(args));
       if (loseSchedule && scheduled.length == 1) {
@@ -33,9 +33,11 @@ class MeetingsFixture extends f.Fixture {
         'meeting_id': c.proposalId,
         'recruitment_id': cards.cardId,
         'message_id': cards.messageId,
+        'place_id': args['p_place_id'],
+        'discoverable': args['p_discoverable'],
       };
     }
-    if (name == 'get_cocreate_current_meeting') {
+    if (name == 'get_cocreate_current_meeting_v2') {
       calls.add(name);
       return {
         'meeting_id': currentMeeting,
@@ -45,6 +47,7 @@ class MeetingsFixture extends f.Fixture {
         'attending': attending,
         'cancelled': false,
         'recruitment': null,
+        'place': null,
       };
     }
     if (name == 'mutate_cocreate_meeting') {

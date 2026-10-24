@@ -1,5 +1,12 @@
 # MAP01 shared location foundation
 
+[PLACE01](cocreate-place01.md) adds exact co-creation selection scopes to the same
+server-only adapter and meters. An existing General membership episode scopes
+pre-group scheduling; a current manager numbered episode/version scopes group
+selection. The PLANETS-owned Place UUID is separate from the stripped provider
+identifiers. No other location domain, provider, budget, activation default or
+native selected-place contract changes.
+
 LOCATION02 adds the one-time mixed `place` slot, revision-bound visibility and
 participants-only arrival directions. Its current editor/public projection
 contract supersedes the older one-time two-slot presentation described here;
