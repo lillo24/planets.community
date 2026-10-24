@@ -14,6 +14,7 @@ import 'co_creation_community_screens.dart';
 import 'people_widgets.dart';
 import 'co_creation_numbered_screen.dart';
 import 'co_creation_places_screen.dart';
+import 'co_creation_project_actions.dart';
 
 class CoCreationHubsScreen extends ConsumerStatefulWidget {
   const CoCreationHubsScreen({super.key});
@@ -92,6 +93,9 @@ class CoCreationHubScreen extends StatelessWidget {
     final l = AppLocalizations.of(context);
     return PeoplePage(
       title: l.coCreationHubs,
+      actions: [
+        CoNativeProjectAction(returnPath: '/people/hubs/${hubId.value}'),
+      ],
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [

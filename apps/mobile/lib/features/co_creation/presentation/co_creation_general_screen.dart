@@ -24,6 +24,7 @@ import '../application/people_signals.dart';
 import 'people_widgets.dart';
 import 'co_creation_recruitment_screen.dart';
 import 'co_creation_meeting_screen.dart';
+import 'co_creation_project_actions.dart';
 
 import 'package:go_router/go_router.dart';
 
@@ -287,6 +288,14 @@ class _CoCreationGeneralScreenState
     final l = AppLocalizations.of(context),
         actor = ref.watch(authSessionProvider).identity?.id;
     return PeoplePage(
+      actions: [
+        if (!closed && !busy && !failed)
+          CoNativeProjectAction(
+            returnPath: widget.numbered
+                ? coNumberedRoute(widget.hubId, widget.roomId, widget.episodeId)
+                : coGeneralRoute(widget.hubId, widget.roomId, widget.episodeId),
+          ),
+      ],
       title: widget.numbered
           ? roomContext == null
                 ? l.coGroupsTitle

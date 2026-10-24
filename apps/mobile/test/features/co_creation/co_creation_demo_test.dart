@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'dart:ui' show SemanticsAction, Tristate;
+import 'dart:ui' show Tristate;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -121,52 +121,9 @@ void main() {
               findsNothing,
             );
             final semantics = tester.ensureSemantics();
-            for (final key in ['find-activities-coming-soon']) {
-              final placeholder = find.byKey(Key(key));
-              await tester.ensureVisible(placeholder);
-              await tester.pumpAndSettle();
-              final node = tester.getSemantics(placeholder);
-              expect(node.flagsCollection.isButton, isTrue);
-              expect(node.flagsCollection.isEnabled, Tristate.isFalse);
-              expect(
-                node.getSemanticsData().hasAction(SemanticsAction.tap),
-                isFalse,
-              );
-              expect(
-                find.descendant(
-                  of: placeholder,
-                  matching: find.textContaining(
-                    language == 'it' ? 'In arrivo' : 'Coming soon',
-                  ),
-                ),
-                findsOneWidget,
-              );
-              expect(
-                tester
-                    .widget<InkWell>(
-                      find.descendant(
-                        of: placeholder,
-                        matching: find.byType(InkWell),
-                      ),
-                    )
-                    .onTap,
-                isNull,
-              );
-              final visible = tester
-                  .getRect(placeholder)
-                  .intersect(
-                    tester.getRect(find.byType(SingleChildScrollView)),
-                  );
-              await tester.tapAt(visible.center);
-              await tester.pumpAndSettle();
-              expect(router.routeInformationProvider.value.uri.path, '/');
-              await RenderedEvidence.capture(
-                tester,
-                'peoplehome01-$key-$language-$dark-${scale}x',
-              );
-            }
             for (final entry in {
               'browse-people-button': '/people',
+              'find-activities-button': '/proposals',
               'propose-community-button': '/people/hubs',
             }.entries) {
               final card = find.byKey(Key(entry.key));
@@ -179,6 +136,10 @@ void main() {
                   'peoplehome01-home-$language-$dark-${scale}x',
                 );
               }
+              expect(
+                tester.getSemantics(card).flagsCollection.isEnabled,
+                Tristate.isTrue,
+              );
               await tester.tap(card);
               await tester.pumpAndSettle();
               expect(router.routerDelegate.state.uri.path, entry.value);
