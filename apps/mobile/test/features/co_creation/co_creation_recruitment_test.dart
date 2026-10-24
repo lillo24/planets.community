@@ -31,7 +31,7 @@ class CardFixture extends n.NumberedFixture {
   bool eligible = true;
   @override
   Future<Object?> rpc(String name, Map<String, dynamic> args) async {
-    if (name == 'get_cocreate_recruitment_review_v1') {
+    if (name == 'get_cocreate_recruitment_review_v2') {
       calls.add(name);
       return {
         'profile_id': args['p_expected_profile_id'],
@@ -40,6 +40,7 @@ class CardFixture extends n.NumberedFixture {
         'episode_id': args['p_episode_id'],
         'recruitment': card(state: state),
         'can_join': eligible && state == 'open',
+        'place': null,
       };
     }
     if (name == 'get_cocreate_recruitment_v2' ||
@@ -136,7 +137,7 @@ void main() {
           findsOneWidget,
         );
         expect(fixture.commands, isEmpty);
-        expect(fixture.calls, contains('get_cocreate_recruitment_review_v1'));
+        expect(fixture.calls, contains('get_cocreate_recruitment_review_v2'));
         await RenderedEvidence.capture(
           tester,
           'cal01-fix01-ineligible-${reason.replaceAll(' ', '-')}',

@@ -7,6 +7,7 @@ export async function signInLocalOtpUser({
   email,
   verifierName,
   shouldCreateUser = true,
+  dataFetch = /** @type {typeof globalThis.fetch | undefined} */ (undefined),
 }) {
   const authClient = createClient(apiUrl, publishableKey, {
     auth: {
@@ -65,6 +66,9 @@ export async function signInLocalOtpUser({
       apiUrl,
       publishableKey,
       accessToken,
+      // Verifiers can exercise a local Edge handler with SDK-supplied Auth
+      // headers without extracting/logging the verified session token.
+      fetch: dataFetch,
     }),
   };
 }

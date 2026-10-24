@@ -17,6 +17,7 @@ import '../domain/co_creation_identity.dart';
 import '../domain/co_creation_rooms.dart';
 import 'co_creation_calendar_month.dart';
 import 'co_creation_meeting_screen.dart';
+import 'co_creation_places_screen.dart';
 import 'people_widgets.dart';
 
 class CoCreationCalendarScreen extends ConsumerWidget {
@@ -452,6 +453,8 @@ class _CalendarState extends ConsumerState<_CalendarBody>
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               Text(coMeetingTime(context, m.startsAt)),
+              if (m.place != null)
+                CoPlaceLink(hub: widget.hub, place: m.place!),
               Text(l.coMeetingPlaces(m.occupied, m.capacity)),
               Text(label, style: TextStyle(color: color)),
             ],

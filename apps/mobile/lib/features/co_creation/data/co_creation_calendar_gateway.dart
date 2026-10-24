@@ -13,7 +13,7 @@ extension CoCreationCalendarGateway on CoCreationRoomsGateway {
     CoCalendarWindow window, {
     String? cursor,
   }) async => CoCalendarPage.parse(
-    await rpc('get_cocreate_calendar_v1', {
+    await rpc('get_cocreate_calendar_v2', {
       'p_expected_profile_id': peopleUuid(actor),
       'p_hub_id': hub.value,
       'p_general_room_id': membership.roomId.value,
@@ -27,5 +27,6 @@ extension CoCreationCalendarGateway on CoCreationRoomsGateway {
     hub,
     membership,
     window,
+    withPlace: true,
   );
 }

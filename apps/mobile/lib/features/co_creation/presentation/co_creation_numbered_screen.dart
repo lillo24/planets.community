@@ -14,6 +14,7 @@ import '../domain/people_post.dart';
 import '../domain/people_private.dart';
 import 'people_widgets.dart';
 import 'co_creation_meeting_screen.dart';
+import 'co_creation_places_screen.dart';
 import 'co_creation_sources_screen.dart';
 
 /// Public aggregate discovery; no roster/history fetch occurs here.
@@ -420,6 +421,12 @@ class _ControlsState extends State<CoNumberedControls> {
             'mute',
             m.muted ? l.coGroupsUnmute : l.coGroupsMute,
             extra: {'p_muted': !m.muted},
+          ),
+        if (!m.closed)
+          CoGroupPlaceSection(
+            hub: widget.hub,
+            room: widget.room,
+            episode: widget.episode,
           ),
         if (!m.closed)
           CoMeetingPanel(

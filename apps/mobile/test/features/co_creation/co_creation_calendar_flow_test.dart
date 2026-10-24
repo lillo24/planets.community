@@ -39,6 +39,7 @@ class CalendarFixture extends f.Fixture {
     55,
   );
   Map<String, Object?> row(int index) => {
+    'place': null,
     ...contract.calendarMeeting(
       id: 'ca020000-0000-4000-8000-${(index + 1).toString().padLeft(12, '0')}',
       time: date,
@@ -72,7 +73,7 @@ class CalendarFixture extends f.Fixture {
 
   @override
   Future<Object?> rpc(String name, Map<String, dynamic> args) async {
-    if (name == 'get_cocreate_calendar_v1') {
+    if (name == 'get_cocreate_calendar_v2') {
       calls.add(name);
       requests.add(Map.of(args));
       if (fail) throw StateError('Synthetic backend failure');
@@ -86,7 +87,7 @@ class CalendarFixture extends f.Fixture {
       delayed = null;
       return pending == null ? response(args) : pending.future;
     }
-    if (name == 'get_cocreate_current_meeting') {
+    if (name == 'get_cocreate_current_meeting_v2') {
       calls.add(name);
       return {
         'meeting_id': currentMeeting ?? row(0)['meeting_id'],
@@ -96,6 +97,7 @@ class CalendarFixture extends f.Fixture {
         'cancelled': false,
         'attending': attending,
         'recruitment': null,
+        'place': null,
       };
     }
     if (name == 'mutate_cocreate_meeting') {

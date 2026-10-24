@@ -433,3 +433,43 @@ test("slow JSON bodies have a deadline before metering or forwarding", async () 
     fails("timeout"),
   );
 });
+
+test("co-creation uses only exact episode scopes and preserves disabled zero-traffic behavior", async () => {
+  for (const item_kind of ["cocreate_hub", "cocreate_room"]) {
+    let reservations = 0;
+    const handler = createHandler({
+      enabled: true,
+      key: "fake",
+      authenticate: async () => actor,
+      rpc: async (name, args) => {
+        reservations++;
+        assert.equal(name, "reserve_location_search_v1");
+        assert.equal(args.p_kind, item_kind);
+        assert.equal(args.p_item, item);
+        assert.equal(args.p_slot, "exact");
+        return { status: "disabled" };
+      },
+      fetcher: () => assert.fail("disabled scope reached provider"),
+    });
+    assert.equal(
+      (
+        await (
+          await handler(request(input({ item_kind, slot: "exact" })))
+        ).json()
+      ).status,
+      "disabled",
+    );
+    assert.equal(reservations, 1);
+    for (const slot of ["area", "public", "place"]) {
+      assert.equal(
+        (await handler(request(input({ item_kind, slot })))).status,
+        400,
+      );
+    }
+    assert.equal(
+      reservations,
+      1,
+      "invalid scope never reserves provider units",
+    );
+  }
+});

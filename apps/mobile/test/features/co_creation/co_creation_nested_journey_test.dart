@@ -50,7 +50,7 @@ class NestedFixture extends n.NumberedFixture {
         return [group()];
       case 'get_cocreate_numbered_group':
         return group();
-      case 'get_cocreate_current_meeting':
+      case 'get_cocreate_current_meeting_v2':
         return null;
     }
     final result = await super.rpc(name, args);

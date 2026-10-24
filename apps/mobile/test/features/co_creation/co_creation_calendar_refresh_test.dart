@@ -37,11 +37,11 @@ class PagesFixture extends c.CalendarFixture {
   final reviewFixture = r.CardFixture();
   @override
   Future<Object?> rpc(String name, Map<String, dynamic> args) async {
-    if (name == 'get_cocreate_recruitment_review_v1' ||
+    if (name == 'get_cocreate_recruitment_review_v2' ||
         name == 'join_cocreate_recruitment') {
       return reviewFixture.rpc(name, args);
     }
-    if (name == 'get_cocreate_calendar_v1' &&
+    if (name == 'get_cocreate_calendar_v2' &&
         args['p_cursor'] != null &&
         (staleCursor || denyContinuation)) {
       requests.add(Map.of(args));
@@ -146,7 +146,7 @@ void main() {
       );
       expect(
         fixture.reviewFixture.calls,
-        contains('get_cocreate_recruitment_review_v1'),
+        contains('get_cocreate_recruitment_review_v2'),
       );
       expect(find.byType(FilledButton), findsNothing);
       expect(fixture.reviewFixture.commands, isEmpty);
