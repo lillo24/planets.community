@@ -52,10 +52,15 @@ class PublicProposalsScreen extends ConsumerStatefulWidget {
   const PublicProposalsScreen({
     this.tutorialPlaceholder,
     this.activitiesSplitPreview,
+    this.onSelect,
     super.key,
   });
 
   final bool? activitiesSplitPreview;
+
+  /// Opt-in public Project picker. It reuses discovery but exposes no creation,
+  /// ownership or participation action; the caller must revalidate its context.
+  final ValueChanged<ProposalSummary>? onSelect;
 
   /// Labelled, read-only illustration used only by the tutorial after its
   /// bounded public read fails. It is never inserted into public state.
@@ -103,29 +108,33 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
     return Scaffold(
       appBar: pageAppBar(
         context,
-        title: Text(l10n.proposalsTitle),
-        actions: [
-          if (widget.tutorialPlaceholder == null)
-            IconButton(
-              key: const Key('browse-groups'),
-              tooltip: l10n.groupsTitle,
-              onPressed: () => context.push('/groups'),
-              icon: const Icon(Icons.groups_outlined),
-            ),
-          IconButton(
-            key: const Key('template-workshop-action'),
-            tooltip: l10n.workshopTitle,
-            onPressed: () => context.push(WorkshopRoutes.catalog),
-            icon: const Icon(Icons.auto_stories_outlined),
-          ),
-          IconButton(
-            key: const Key('my-proposals-action'),
-            tooltip: l10n.draftsTitle,
-            onPressed: () =>
-                context.push(DraftRoutes.contextual({DraftKind.project})),
-            icon: const Icon(Icons.folder_outlined),
-          ),
-        ],
+        title: Text(
+          widget.onSelect == null ? l10n.proposalsTitle : l10n.coShareProject,
+        ),
+        actions: widget.onSelect != null
+            ? const []
+            : [
+                if (widget.tutorialPlaceholder == null)
+                  IconButton(
+                    key: const Key('browse-groups'),
+                    tooltip: l10n.groupsTitle,
+                    onPressed: () => context.push('/groups'),
+                    icon: const Icon(Icons.groups_outlined),
+                  ),
+                IconButton(
+                  key: const Key('template-workshop-action'),
+                  tooltip: l10n.workshopTitle,
+                  onPressed: () => context.push(WorkshopRoutes.catalog),
+                  icon: const Icon(Icons.auto_stories_outlined),
+                ),
+                IconButton(
+                  key: const Key('my-proposals-action'),
+                  tooltip: l10n.draftsTitle,
+                  onPressed: () =>
+                      context.push(DraftRoutes.contextual({DraftKind.project})),
+                  icon: const Icon(Icons.folder_outlined),
+                ),
+              ],
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -156,17 +165,19 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(AppSpacing.medium),
               children: [
-                BrowseActivitySwitcher(
-                  splitMode: widget.activitiesSplitPreview,
-                  selected: BrowseActivityType.proposals,
-                ),
-                // Groups navigation lives in the page toolbar.
-                const SizedBox(height: AppSpacing.medium),
-                MapViewButton(
-                  origin: MapDiscoveryOrigin.projects,
-                  prepare: _flushQuery,
-                ),
-                const SizedBox(height: AppSpacing.medium),
+                if (widget.onSelect == null) ...[
+                  BrowseActivitySwitcher(
+                    splitMode: widget.activitiesSplitPreview,
+                    selected: BrowseActivityType.proposals,
+                  ),
+                  // Groups navigation lives in the page toolbar.
+                  const SizedBox(height: AppSpacing.medium),
+                  MapViewButton(
+                    origin: MapDiscoveryOrigin.projects,
+                    prepare: _flushQuery,
+                  ),
+                  const SizedBox(height: AppSpacing.medium),
+                ],
                 Row(
                   children: [
                     Expanded(
@@ -306,9 +317,16 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                         builder: (context) => ProposalCard(
                           proposal: requested.proposal,
                           isRequested: true,
-                          onTap: () => context.push(
-                            '/proposals/${requested.proposal.id}',
-                          ),
+                          onTap: () {
+                            final select = widget.onSelect;
+                            if (select != null) {
+                              select(requested.proposal);
+                            } else {
+                              context.push(
+                                '/proposals/${requested.proposal.id}',
+                              );
+                            }
+                          },
                         ),
                       ),
                       const SizedBox(height: AppSpacing.medium),
@@ -327,7 +345,14 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
                     Builder(
                       builder: (context) => ProposalCard(
                         proposal: proposal,
-                        onTap: () => context.push('/proposals/${proposal.id}'),
+                        onTap: () {
+                          final select = widget.onSelect;
+                          if (select != null) {
+                            select(proposal);
+                          } else {
+                            context.push('/proposals/${proposal.id}');
+                          }
+                        },
                       ),
                     ),
                     const SizedBox(height: AppSpacing.medium),
@@ -381,12 +406,14 @@ class _PublicProposalsScreenState extends ConsumerState<PublicProposalsScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const Key('proposal-create-action'),
-        onPressed: () => context.push('/proposals/create'),
-        icon: const Icon(Icons.add),
-        label: Text(l10n.proposalCreateTitle),
-      ),
+      floatingActionButton: widget.onSelect != null
+          ? null
+          : FloatingActionButton.extended(
+              key: const Key('proposal-create-action'),
+              onPressed: () => context.push('/proposals/create'),
+              icon: const Icon(Icons.add),
+              label: Text(l10n.proposalCreateTitle),
+            ),
     );
   }
 
