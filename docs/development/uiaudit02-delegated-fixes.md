@@ -1,0 +1,50 @@
+# UIAUDIT02 delegated fixes — completion ledger
+
+24 October 2026. **19 fixed / 0 already satisfied / 0 blocked**, out of 19.
+A1 and DE1 are excluded. Source baseline: main 3bffe586; newest main d1f21390 integrated before final validation.
+
+All file owners below are under apps/mobile/lib/features unless a localization key or migration is named.
+Capture IDs refer to originals/<ID>.png in the private source ZIP. The PDF contains labelled enlarged crops; originals retain their captured bytes and SHA-256 values.
+
+| ID  | Status | Changed owner                                                                       | Verification                                                                                                      | Native before → after                                  |
+| --- | ------ | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| P1  | Fixed  | l10n/app_it.arb + app_en.arb                                                        | Guest/member native setting and unchanged toggle; English/light BS.                                               | AB → AH; BS English/light member                       |
+| AA1 | Fixed  | l10n projectManageStructuralTitle/Description                                       | Native Project AK and Tavolo BW; same management destination.                                                     | I → AK; BW Tavolo                                      |
+| AU1 | Fixed  | l10n resourceSearchLabel                                                            | Native AL; all shared consumers inspected; existing saved-search regressions.                                     | K → AL                                                 |
+| BL1 | Fixed  | resource_exchange/presentation/resource_exchange_widgets.dart                       | 320dp/IME widget cases; native AY/AZ/BC at 1/1.3/2x.                                                              | N → AY; AZ 1.3x, BC 2x/IME                             |
+| BL2 | Fixed  | l10n resourceExchangeOwnerProvides                                                  | Shared current/history terms renderer; native M/AX.                                                               | M → AX                                                 |
+| CQ1 | Fixed  | co_creation contact/general/numbered presentation                                   | Locale/date tests; same message instant P/BF; numbered BP, English/light BR.                                      | P → BF; BP/BR numbered IT/EN                           |
+| DK1 | Fixed  | co_creation/presentation/people_exit_screens.dart; discussion_group_screen.dart     | Identity-only Auth/navigation tests; native BG/BK/BN; cancellation without mutation.                              | Q → BG; T→BK withdrawal, BN server OFF                 |
+| DU1 | Fixed  | messages/presentation/inbox_content.dart + existing section loaders                 | State matrix, delayed/failure/retry, identities/scopes, refresh/paging; native BE/BL/BM.                          | O → BE; U→BL requests, BM server OFF                   |
+| DY1 | Fixed  | co_creation_numbered_screen.dart + people_exit_screens.dart                         | Typed route/control inspection; native BP/BQ; creator archive warning unchanged.                                  | V → BP; W→BQ leave                                     |
+| FW1 | Fixed  | template_workshop/presentation/template_duration.dart                               | Duration precision/plural tests and narrow layouts; native H/AM.                                                  | H → AM                                                 |
+| GI1 | Fixed  | moderation/presentation/moderation_target_label.dart                                | Typed shared evidence/own-report rendering; native D/AN.                                                          | D → AN                                                 |
+| GL1 | Fixed  | moderation/presentation/corroboration_screens.dart                                  | IT/EN 320dp at 1/1.3/2x with selection/submit; native AO/AP/AR.                                                   | J → AO; AP 1.3x, AR 2x                                 |
+| FO1 | Fixed  | 20261024105252_uiaudit02_people_report_summaries.sql + moderation_target_label.dart | 13 new pgTAP assertions; ordinary Auth/RPC and populated upgrade; native BH/BI/BJ/BO.                             | S → BI; R→BH receipt, BJ refresh/reopen, BO server OFF |
+| HS1 | Fixed  | group_discussions/presentation/discussion_chat_screen.dart                          | General/Idea/read-only tests; settled native Z/BV.                                                                | Z → BV                                                 |
+| IR1 | Fixed  | group_discussions/presentation/discussion_room_actions.dart                         | IT/EN tests assert no UUID and zero profile/roster/history reads; native X/AV.                                    | X → AV                                                 |
+| KT1 | Fixed  | l10n authExpiredCode                                                                | Real local wrong 000000 then delivered valid code succeeds, before/after; specific other error mappings retained. | AC → AI                                                |
+| KX1 | Fixed  | profile/presentation/profile_edit_screen.dart                                       | IT/EN 320dp IME at 1/1.3/2x; native AE/AF/BU with real keyboard.                                                  | AD → AE; AF 1.3x, BU 2x/IME                            |
+| MT1 | Fixed  | blocking/presentation/blocking_action.dart                                          | IT/EN named/unnamed dialog tests; native AA/AW; cancelled, no block mutation.                                     | AA → AW                                                |
+| OA1 | Fixed  | groups/presentation/group_editor_screen.dart                                        | Published/draft save/discard/cancel tests; native L/AU; discarded fictional edit.                                 | L → AU                                                 |
+
+## Verification and limits
+
+- Localization generation, mobile formatting and static analysis passed. The Android profile audit APK built successfully.
+- The full local mobile run exercised 4,404 tests (plus two existing skips): 4,397 passed initially; seven assertions still expected the deliberately replaced Close label, creator UUID, or raw seconds. Those expectations were updated to the approved behavior; all 34 tests in the three affected files passed on rerun. Existing no-extra-read and authorization assertions remain. Required final CI is recorded on the implementation PR.
+- Fresh-database pgTAP: 179 files, 8,655 assertions passed. Strict public/private lint and security-advisor checks passed. Generated public TypeScript contracts are unchanged after canonical nullability postprocessing.
+- Ordinary-Auth HTTP checks: post/contact verifier 107 assertions; hub/General 79; bounded community reporter proof 22. Full canonical verifier execution belongs to required PR CI. A separate populated Mock upgrade verified native-submitted People reports, legacy reports, pagination, denied actors/private reads, and retained gate-OFF access.
+- Current native evidence uses the existing audit harness with real application bootstrap/Auth/backend, canonical Mock relationships, a guest, and an ordinary local OTP/profile account. Pixel 9 Pro AVD, Android 16/API 36, 1280×2856 px, 480 dpi, 426.67×952 dp, GMT, gesture navigation. BL1/GL1/KX1: native 1×, 1.3×, 2×; narrower 320dp and IT/EN cases are separate widget tests. Representative native English/light checks are BS and BR.
+- Native QA is Android-only. This is focused verification of these 19 findings, not a complete product or iOS audit. Initial emulator System UI ANR, pending-loader, session-prompt and unsuccessful scrolling attempts are excluded from delivered originals.
+- BL2 originals show the same pre-existing local realtime connection warning before and after; this fix changes agreement terminology only. Loaded message metadata may retain an existing background refresh indicator.
+- No release or store submission was performed. Only task-owned local APKs/stacks were used; no shared gate, hosted Mock activation, provider, signing, billing or production setting was changed.
+
+## Behavioral boundaries
+
+DU1 registers status from the existing mounted section owners, scoped to actor, realm and selected tab/scope. It adds no second fetcher, polling, cached domain rows or A1 conversation grouping. The existing Project-invitation loader settles while its disclosure remains collapsed inside Messages; outside Messages it stays lazy. Pending/error sources cannot prove an empty inbox. Refresh delegates to mounted existing owners; native paging and row identities are preserved.
+
+FO1 extends only the existing private safe-summary chain for five typed People report targets. All supported own-report readers, ownership/cursor behavior and strict client parsing remain. Generic labels require no hidden target-content lookup. See authorization-verification.md in the source ZIP and the new pgTAP/ordinary-Auth regressions.
+
+FW1 retains stored seconds. Non-minute values round to the nearest minute with explicit circa/about; sub-minute values say less than a minute. Extremely large finite values use approximate scientific hours rather than saturating an integer.
+
+All copy is generated from the authoritative Italian/English ARB catalogs. Data, publication, membership, privacy, OTP and moderation policy semantics are preserved.
