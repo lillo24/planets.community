@@ -18,6 +18,16 @@ enum ExternalActivityKind { event, course, place }
 
 enum ExternalActivityLinkScope { item, dataset }
 
+const externalActivityTypes = [
+  'music',
+  'theatre-cinema',
+  'talks',
+  'workshops',
+  'social',
+  'exhibitions',
+  'outings',
+];
+
 class ExternalActivityFilter {
   const ExternalActivityFilter({
     this.category,
@@ -28,6 +38,7 @@ class ExternalActivityFilter {
     this.to,
     this.area,
     this.mappedOnly = false,
+    this.activityType,
   });
   final String? category, discipline;
   final String query;
@@ -36,9 +47,11 @@ class ExternalActivityFilter {
   final String? from, to;
   final GeoArea? area;
   final bool mappedOnly;
+  final String? activityType;
 
   ExternalActivityFilter withArea(GeoArea? value) => ExternalActivityFilter(
     category: category,
+    activityType: activityType,
     query: query,
     discipline: discipline,
     kind: kind,
@@ -49,6 +62,7 @@ class ExternalActivityFilter {
   );
   ExternalActivityFilter forMap() => ExternalActivityFilter(
     category: category,
+    activityType: activityType,
     query: query,
     discipline: discipline,
     kind: kind,
@@ -62,6 +76,7 @@ class ExternalActivityFilter {
   bool operator ==(Object other) =>
       other is ExternalActivityFilter &&
       category == other.category &&
+      activityType == other.activityType &&
       query == other.query &&
       discipline == other.discipline &&
       kind == other.kind &&
@@ -73,6 +88,7 @@ class ExternalActivityFilter {
   @override
   int get hashCode => Object.hash(
     category,
+    activityType,
     query,
     discipline,
     kind,
@@ -170,6 +186,7 @@ class ExternalActivity {
     this.linkScope = ExternalActivityLinkScope.item,
     this.discipline,
     this.distanceMeters,
+    this.activityType,
   });
   final String id, title, category, status;
   final String? description;
@@ -181,6 +198,7 @@ class ExternalActivity {
   final ExternalActivityLinkScope linkScope;
   final String? discipline;
   final double? distanceMeters;
+  final String? activityType;
   String get mapIdentity => 'external_activity:$id';
   final PublicExternalLink officialLink, licenseLink;
   final String sourceName, attribution;
@@ -258,6 +276,11 @@ class ExternalActivity {
     return ExternalActivity(
       id: id,
       title: activityString(row, 'title', max: 300),
+      activityType: row['activity_type'] == null
+          ? null
+          : externalActivityTypes.contains(row['activity_type'])
+          ? row['activity_type'] as String
+          : throw const FormatException('Invalid activity type.'),
       description: activityOptionalString(row, 'description', max: 12000),
       kind: kind,
       linkScope: switch (row['link_scope']) {
@@ -473,6 +496,7 @@ class ExternalActivityPage {
     this.disciplines = const [],
     this.kinds = const [],
     this.categories = const [],
+    this.activityTypes = const [],
     this.nextCursor,
     this.lastSuccessAt,
   });
@@ -483,6 +507,7 @@ class ExternalActivityPage {
   final List<String> disciplines;
   final List<ExternalActivityKind> kinds;
   final List<String> categories;
+  final List<String> activityTypes;
   final Map<String, dynamic>? nextCursor;
 
   factory ExternalActivityPage.parse(Object? value) {
@@ -542,6 +567,14 @@ class ExternalActivityPage {
       facets?['categories'] ?? const [],
       max: 3,
     );
+    final activityTypes = activityStrings(
+      facets?['activity_types'] ?? const [],
+      max: externalActivityTypes.length,
+    );
+    if (activityTypes.toSet().length != activityTypes.length ||
+        activityTypes.any((type) => !externalActivityTypes.contains(type))) {
+      throw const FormatException('Invalid activity type facets.');
+    }
     if (kinds.toSet().length != kinds.length ||
         categories.toSet().length != categories.length ||
         categories.any(
@@ -556,6 +589,7 @@ class ExternalActivityPage {
       disciplines: activityStrings(row['disciplines'], max: 2000),
       kinds: kinds,
       categories: categories,
+      activityTypes: activityTypes,
       nextCursor: cursor,
       lastSuccessAt: row['last_success_at'] == null
           ? null

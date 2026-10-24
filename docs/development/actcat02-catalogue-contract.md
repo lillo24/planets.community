@@ -177,3 +177,12 @@ and grant migration. Its approval object is tied to the final PR head, SQL hash
 and predecessor inventory; ordinary implementation authorization cannot replace
 the required owner-authored GitHub review comment. See the
 [queue progress](activities-sports-progress.md) for the merge/resume status.
+
+## RADAR01 compatibility
+
+RADAR01 retains V1/V2/V3 signatures and adds V4 type filtering and nullable
+activity_type: music, theatre-cinema, talks, workshops, social, exhibitions,
+outings. External families remain distinct from sports disciplines, native topics
+and competences. The new client requires the Radar migration before rollout.
+Private evidence, source approval, exact aliases and bounded batches are defined
+in the [Radar contract](radar01-automatic-activities.md).

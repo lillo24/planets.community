@@ -3,6 +3,7 @@ import { normalizeGeometry, normalizeSchedule } from "./catalogue.mjs";
 
 const fields = [
   "kind",
+  "activity_type",
   "schedule",
   "geometry",
   "level",
@@ -159,6 +160,19 @@ export function normalizeActivity(input, officialOrigin) {
   if (discipline != null && !slug.test(discipline)) invalid();
   const kind = input.kind ?? "event";
   if (
+    input.activity_type != null &&
+    ![
+      "music",
+      "theatre-cinema",
+      "talks",
+      "workshops",
+      "social",
+      "exhibitions",
+      "outings",
+    ].includes(input.activity_type)
+  )
+    invalid();
+  if (
     !["event", "course", "place"].includes(kind) ||
     (kind !== "course" && input.schedule != null) ||
     (kind === "place" && input.occurrences.length !== 0)
@@ -178,6 +192,9 @@ export function normalizeActivity(input, officialOrigin) {
     .map(([, value]) => value);
   return {
     kind,
+    ...(input.activity_type == null
+      ? {}
+      : { activity_type: input.activity_type }),
     ...(input.link_scope == null ? {} : { link_scope: input.link_scope }),
     schedule: normalizeSchedule(input.schedule, text),
     geometry,

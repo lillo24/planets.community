@@ -89,6 +89,7 @@ class _ExternalActivitiesScreenState
     _apply(
       ExternalActivityFilter(
         category: filter.category,
+        activityType: filter.activityType,
         area: filter.area,
         discipline: filter.discipline,
         kind: filter.kind,
@@ -174,6 +175,7 @@ class _ExternalActivitiesScreenState
                   ExternalActivityFilters(
                     filter: state.filter,
                     disciplines: page?.disciplines ?? const [],
+                    activityTypes: page?.activityTypes ?? const [],
                     onChanged: _apply,
                   ),
                   if (state.filter.category != 'sports') ...[

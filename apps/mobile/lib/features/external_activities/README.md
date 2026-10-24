@@ -12,8 +12,8 @@ attendance/capacity inference is added.
 - `domain/external_activity.dart` owns strict public payloads, filter state,
   event/course/place kinds, bounded course schedules, published geometry,
   exact occurrences, complete server facets and observation freshness.
-- `data/external_activity_gateway.dart` calls only canonical public list/detail
-  V2 RPCs and translates an invalidated continuation into an explicit refresh.
+- `data/external_activity_gateway.dart` calls canonical public V4 list/Map and
+  V2 detail RPCs and translates an invalidated continuation into an explicit refresh.
 - `application/external_activities_controller.dart` owns retained pages, filter
   resets and stale-request fencing. Construction does no IO; screens activate
   reads only while visible, enabled and foreground. No background polling.
@@ -29,6 +29,14 @@ attendance/capacity inference is added.
   account, route, record replacement and Mock guards discard stale completions.
 - `presentation/external_activity_widgets.dart` renders text-only cards and
   schedule labels. Dates without times stay dates; all-day ends are exclusive.
+- `presentation/external_activity_filters.dart` owns broad categories, source-backed
+  activity types, sports discipline, shared List/Map state and Europe/Rome
+  Today/Weekend/chosen date windows. It performs no independent filtering or reads.
+
+RADAR01's type is nullable and distinct from sports discipline. Selected types
+survive search/area/date changes; unknown source types never fabricate facets.
+Source approval, private evidence and collector timing remain entirely in the
+[canonical worker/backend contract](../../../../../docs/development/radar01-automatic-activities.md).
 
 `activities_sandbox` retains its own example list, filters and detail. Its
 fixtures are never a fallback here. The router and Settings keep the experiment

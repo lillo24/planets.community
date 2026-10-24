@@ -2780,5 +2780,15 @@
   "activitiesMapReference": "Riferimento selezionato: {coordinates} · {kilometers} km",
   "activitiesMapDistance": "Circa {km} km dal riferimento selezionato.",
   "activitiesMapRefresh": "Aggiorna risultati",
-  "activitiesShow": "Mostra"
+  "activitiesShow": "Mostra",
+  "activitiesActivityType": "Tipo di attività",
+  "activitiesToday": "Oggi",
+  "activitiesWeekend": "Fine settimana",
+  "activitiesTypeMusic": "Musica",
+  "activitiesTypeTheatreCinema": "Teatro / Cinema",
+  "activitiesTypeTalks": "Incontri",
+  "activitiesTypeWorkshops": "Laboratori",
+  "activitiesTypeSocial": "Socialità / Vita notturna",
+  "activitiesTypeExhibitions": "Mostre",
+  "activitiesTypeOutings": "Escursioni"
 }
