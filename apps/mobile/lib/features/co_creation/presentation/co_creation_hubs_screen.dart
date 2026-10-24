@@ -13,6 +13,7 @@ import '../domain/co_creation_calendar.dart';
 import 'co_creation_community_screens.dart';
 import 'people_widgets.dart';
 import 'co_creation_numbered_screen.dart';
+import 'co_creation_places_screen.dart';
 
 class CoCreationHubsScreen extends ConsumerStatefulWidget {
   const CoCreationHubsScreen({super.key});
@@ -113,6 +114,7 @@ class CoCreationHubScreen extends StatelessWidget {
                   icon: const Icon(Icons.calendar_month),
                   label: Text(l.coCalendarTitle),
                 ),
+                CoPlacesEntry(hub: hubId),
                 CoNumberedList(hub: hubId),
               ],
             ),

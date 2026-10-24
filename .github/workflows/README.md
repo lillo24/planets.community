@@ -13,6 +13,12 @@ only a bounded scrubbed diagnostic is exported; private defines, raw logs, keys
 and APKs are excluded. This occasional review supplements required Validation
 and performs no hosted deployment, experiment activation or store submission.
 
+PLACE01 adds real OTP/HTTP Place selection, explicit publication, last-seat and
+retry checks plus a rollback-only populated CAL01-FIX01 upgrade to the existing
+COMM01/FILL01 step. Provider bytes are synthetic and no activation occurs.
+It adds no workflow trigger or separate runner job; manual full validation and
+the existing area/status behavior stay intact.
+
 CAL01 extends the existing community/meeting HTTP step with actor-bound calendar
 reads, a genuine last-seat race and a bounded rollback-only populated rehearsal
 over 3,000 historical meetings. It preserves installed function/reader contracts

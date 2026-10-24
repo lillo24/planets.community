@@ -93,7 +93,17 @@ export async function inspectSessionConnection(
   }
 }
 
-// Only fixed labels enter public artifacts; native diagnostics can contain URLs.
+// Only fixed labels/codes enter public artifacts; native diagnostics can contain
+// credentials and URLs. Node may wrap dual-stack failures in AggregateError.
+const networkFailures = new Map([
+  ["ENOTFOUND", "hostname resolution failed"],
+  ["EAI_AGAIN", "hostname resolution temporarily failed"],
+  ["ECONNREFUSED", "connection was refused"],
+  ["ETIMEDOUT", "connection timed out"],
+  ["CONNECT_TIMEOUT", "connection timed out"],
+  ["EHOSTUNREACH", "host is unreachable"],
+  ["ENETUNREACH", "network is unreachable"],
+]);
 export function connectionFailure(error) {
   if (error instanceof ReleaseError) return error.message;
   if (["28P01", "28000"].includes(error?.code))
@@ -108,17 +118,13 @@ export function connectionFailure(error) {
     ].includes(error?.code)
   )
     return "Staging database TLS certificate validation failed";
-  if (
-    [
-      "ENOTFOUND",
-      "ECONNREFUSED",
-      "ETIMEDOUT",
-      "CONNECT_TIMEOUT",
-      "EHOSTUNREACH",
-      "ENETUNREACH",
-    ].includes(error?.code)
-  )
-    return "Staging database network connection failed";
+  const errors = [error];
+  if (error instanceof AggregateError) errors.push(...error.errors.slice(0, 8));
+  const codes = [...new Set(errors.map((e) => e?.code))]
+    .filter((code) => networkFailures.has(code))
+    .sort();
+  if (codes.length)
+    return `Staging database network connection failed: ${codes.map((code) => `${networkFailures.get(code)} (${code})`).join("; ")}`;
   return "Staging database connection failed; native diagnostics withheld";
 }
 

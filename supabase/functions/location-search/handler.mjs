@@ -57,15 +57,23 @@ export function createHandler({
         Object.keys(body).some((k) => !allowed.includes(k)) ||
         body.expected_profile_id !== actor ||
         !uuid.test(body.item_id) ||
-        !["one_time", "recurring", "resource"].includes(body.item_kind) ||
+        ![
+          "one_time",
+          "recurring",
+          "resource",
+          "cocreate_hub",
+          "cocreate_room",
+        ].includes(body.item_kind) ||
         !Number.isSafeInteger(body.revision) ||
         body.revision < 0 ||
-        !(body.item_kind === "resource"
-          ? body.slot === "public"
-          : (body.item_kind === "one_time"
-              ? ["area", "exact", "place"]
-              : ["area", "exact"]
-            ).includes(body.slot)) ||
+        !(body.item_kind.startsWith("cocreate_")
+          ? body.slot === "exact"
+          : body.item_kind === "resource"
+            ? body.slot === "public"
+            : (body.item_kind === "one_time"
+                ? ["area", "exact", "place"]
+                : ["area", "exact"]
+              ).includes(body.slot)) ||
         typeof body.session_token !== "string" ||
         !uuid.test(body.session_token)
       )

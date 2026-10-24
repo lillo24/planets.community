@@ -1,4 +1,5 @@
 import 'co_creation_identity.dart';
+import 'co_creation_place.dart';
 import 'people_post.dart';
 import 'people_private.dart';
 
@@ -341,8 +342,9 @@ class CoRecruitmentReview {
     HubId hub,
     CoRoomId general,
     CoEpisodeId episode,
-    String id,
-  ) {
+    String id, {
+    bool withPlace = false,
+  }) {
     final r = coCreationObject(value, {
       'profile_id',
       'hub_id',
@@ -350,9 +352,11 @@ class CoRecruitmentReview {
       'episode_id',
       'recruitment',
       'can_join',
+      if (withPlace) 'place',
     });
     card = CoRecruitment.parse(r['recruitment']);
     canJoin = peopleBool(r['can_join']);
+    place = withPlace && r['place'] != null ? CoPlace.parse(r['place']) : null;
     if (peopleUuid(r['profile_id']) != actor ||
         HubId.parse(r['hub_id']).value != hub.value ||
         CoRoomId.parse(r['general_room_id']).value != general.value ||
@@ -367,10 +371,11 @@ class CoRecruitmentReview {
   }
   late final CoRecruitment card;
   late final bool canJoin;
+  late final CoPlace? place;
 }
 
 class CoCurrentMeeting {
-  CoCurrentMeeting.parse(Object? value) {
+  CoCurrentMeeting.parse(Object? value, {bool withPlace = false}) {
     final r = coCreationObject(value, {
       'meeting_id',
       'starts_at',
@@ -379,6 +384,7 @@ class CoCurrentMeeting {
       'cancelled',
       'attending',
       'recruitment',
+      if (withPlace) 'place',
     });
     id = peopleUuid(r['meeting_id']);
     startsAt = coCreationDate(r['starts_at']);
@@ -386,6 +392,7 @@ class CoCurrentMeeting {
     occupied = peopleCount(r['occupied']);
     cancelled = peopleBool(r['cancelled']);
     attending = peopleBool(r['attending']);
+    place = withPlace && r['place'] != null ? CoPlace.parse(r['place']) : null;
     card = r['recruitment'] == null
         ? null
         : CoRecruitment.parse(r['recruitment']);
@@ -398,6 +405,7 @@ class CoCurrentMeeting {
   late final int capacity, occupied;
   late final bool cancelled, attending;
   late final CoRecruitment? card;
+  late final CoPlace? place;
 }
 
 /// Contact payloads stay human-only. Only the versioned room reader accepts

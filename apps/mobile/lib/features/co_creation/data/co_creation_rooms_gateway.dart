@@ -139,7 +139,7 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     CoEpisodeId episode,
     String id,
   ) async => CoRecruitmentReview.parse(
-    await rpc('get_cocreate_recruitment_review_v1', {
+    await rpc('get_cocreate_recruitment_review_v2', {
       'p_expected_profile_id': peopleUuid(actor),
       'p_general_room_id': general.value,
       'p_episode_id': episode.value,
@@ -150,6 +150,7 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     general,
     episode,
     id,
+    withPlace: true,
   );
 
   Future<CoRecruitment?> recruitment(
@@ -319,23 +320,48 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     Map<String, dynamic> args,
   ) async {
     final raw = await rpc(name, args);
-    if (name == 'schedule_cocreate_meeting' ||
-        name == 'mutate_cocreate_meeting') {
+    final scheduling =
+        name == 'schedule_cocreate_meeting' ||
+        name == 'schedule_cocreate_meeting_v2';
+    if (name == 'set_cocreate_usual_place_v1') {
+      final r = coCreationObject(raw, {
+        'operation',
+        'hub_id',
+        'room_id',
+        'episode_id',
+        'place_id',
+        'discoverable',
+        'version',
+      });
+      if (r['operation'] != 'usual_place' ||
+          r['hub_id'] != args['p_hub_id'] ||
+          r['room_id'] != args['p_room_id'] ||
+          r['episode_id'] != args['p_episode_id'] ||
+          peopleBool(r['discoverable']) != args['p_discoverable'] ||
+          coPositive(r['version']) != (args['p_expected_version'] as int) + 1 ||
+          (args['p_place_id'] != null && r['place_id'] != args['p_place_id']) ||
+          (args['p_place_id'] == null &&
+              args['p_selection_receipt'] == null &&
+              r['place_id'] != null)) {
+        throw const FormatException('Usual-place command receipt mismatch.');
+      }
+      if (r['place_id'] != null) peopleUuid(r['place_id']);
+      return r;
+    }
+    if (scheduling || name == 'mutate_cocreate_meeting') {
       final r = coCreationObject(raw, {
         'operation',
         'hub_id',
         'room_id',
         'episode_id',
         'meeting_id',
-        if (name == 'schedule_cocreate_meeting') ...[
-          'recruitment_id',
-          'message_id',
+        if (scheduling) ...['recruitment_id', 'message_id'],
+        if (name == 'schedule_cocreate_meeting_v2') ...[
+          'place_id',
+          'discoverable',
         ],
       });
-      if (r['operation'] !=
-              (name == 'schedule_cocreate_meeting'
-                  ? 'schedule'
-                  : args['p_operation']) ||
+      if (r['operation'] != (scheduling ? 'schedule' : args['p_operation']) ||
           HubId.parse(r['hub_id']).value != args['p_hub_id'] ||
           args['p_room_id'] != null && r['room_id'] != args['p_room_id'] ||
           args['p_episode_id'] != null &&
@@ -347,9 +373,20 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
       CoRoomId.parse(r['room_id']);
       CoEpisodeId.parse(r['episode_id']);
       peopleUuid(r['meeting_id']);
-      if (name == 'schedule_cocreate_meeting') {
+      if (scheduling) {
         peopleUuid(r['recruitment_id']);
         peopleUuid(r['message_id']);
+      }
+      if (name == 'schedule_cocreate_meeting_v2') {
+        if (r['place_id'] != null) peopleUuid(r['place_id']);
+        if (peopleBool(r['discoverable']) != args['p_discoverable'] ||
+            (args['p_place_id'] != null &&
+                r['place_id'] != args['p_place_id']) ||
+            (args['p_place_id'] == null &&
+                args['p_selection_receipt'] == null &&
+                r['place_id'] != null)) {
+          throw const FormatException('Scheduled-place receipt mismatch.');
+        }
       }
       return r;
     }
@@ -442,12 +479,14 @@ class CoCreationRoomsGateway implements CoCreationCommandGateway {
     CoRoomId room,
     CoEpisodeId episode,
   ) async {
-    final raw = await rpc('get_cocreate_current_meeting', {
+    final raw = await rpc('get_cocreate_current_meeting_v2', {
       'p_expected_profile_id': peopleUuid(actor),
       'p_room_id': room.value,
       'p_episode_id': episode.value,
     });
-    final result = raw == null ? null : CoCurrentMeeting.parse(raw);
+    final result = raw == null
+        ? null
+        : CoCurrentMeeting.parse(raw, withPlace: true);
     if (result?.card != null && result!.card!.room.value != room.value) {
       throw const FormatException('Foreign current meeting.');
     }

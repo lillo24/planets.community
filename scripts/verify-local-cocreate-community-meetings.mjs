@@ -4,7 +4,20 @@ import { execFileSync } from "node:child_process";
 import { openCocreateLocalBackend } from "./lib/cocreate-local-backend.mjs";
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 import { verifyCocreateCalendar } from "./lib/cocreate-calendar-verifier.mjs";
+import { verifyCocreatePlaces } from "./lib/cocreate-places-verifier.mjs";
 
+// Match the child CAL01/PLACE01 readers on an owned alternative local OTP port.
+const mailpit = new URL(process.env.MAILPIT_URL ?? "http://127.0.0.1:54324");
+assert.ok(
+  mailpit.protocol === "http:" &&
+    ["localhost", "127.0.0.1", "[::1]"].includes(mailpit.hostname) &&
+    !mailpit.username &&
+    !mailpit.password &&
+    mailpit.pathname === "/" &&
+    !mailpit.search &&
+    !mailpit.hash,
+  "MAILPIT_URL must be an owned loopback HTTP origin.",
+);
 const { sql, status } = openCocreateLocalBackend();
 const run = randomUUID().slice(0, 8);
 let checks = 0;
@@ -30,7 +43,7 @@ async function denied(p, name, args, code = "42501") {
 async function person(key) {
   const p = await signInLocalOtpUser({
     ...status,
-    mailpitUrl: "http://127.0.0.1:54324",
+    mailpitUrl: mailpit.toString().replace(/\/$/, ""),
     email: `cocreate-comm-${run}-${key}@planets.invalid`,
     verifierName: "cocreate-community-meetings",
   });
@@ -581,12 +594,18 @@ try {
     p_operation: "decline",
   });
   await verifyCocreateCalendar({ sql, status });
+  await verifyCocreatePlaces({ sql, status });
   execFileSync(
     process.execPath,
     ["scripts/verify-local-cocreate-calendar-upgrade.mjs"],
     {
       stdio: "inherit",
     },
+  );
+  execFileSync(
+    process.execPath,
+    ["scripts/verify-local-cocreate-places-upgrade.mjs"],
+    { stdio: "inherit" },
   );
   console.log(
     `COCREATE COMM01/FILL01 real Auth verification passed (${checks} assertions).`,

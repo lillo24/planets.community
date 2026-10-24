@@ -6,6 +6,8 @@ import '../../features/co_creation/presentation/co_creation_hubs_screen.dart';
 import '../../features/co_creation/presentation/co_creation_community_screens.dart';
 import '../../features/co_creation/presentation/co_creation_meeting_screen.dart';
 import '../../features/co_creation/presentation/co_creation_calendar_screen.dart';
+import '../../features/co_creation/presentation/co_creation_places_screen.dart';
+import '../../features/co_creation/presentation/co_creation_place_editor.dart';
 import '../../features/co_creation/presentation/co_creation_general_screen.dart';
 import '../../features/co_creation/presentation/co_creation_room_items.dart';
 import '../../features/co_creation/domain/co_creation_rooms.dart';
@@ -982,6 +984,17 @@ RoutingConfig _routingConfig(
                         ),
                       ),
                       GoRoute(
+                        path: 'place',
+                        builder: (_, state) => CoUsualPlaceScreen(
+                          key: state.pageKey,
+                          hub: HubId.parse(state.pathParameters['hubId']),
+                          room: CoRoomId.parse(state.pathParameters['roomId']),
+                          episode: CoEpisodeId.parse(
+                            state.pathParameters['episodeId'],
+                          ),
+                        ),
+                      ),
+                      GoRoute(
                         path: 'leave',
                         builder: (_, state) => CoNumberedLeaveScreen(
                           key: ValueKey((
@@ -1553,6 +1566,21 @@ RoutingConfig _routingConfig(
                     builder: (_, state) => CoCreationCalendarScreen(
                       key: state.pageKey,
                       hub: HubId.parse(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'hubs/:id/places',
+                    builder: (_, state) => CoPlacesScreen(
+                      key: state.pageKey,
+                      hub: HubId.parse(state.pathParameters['id']),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'hubs/:id/places/:placeId',
+                    builder: (_, state) => CoPlaceDetailScreen(
+                      key: state.pageKey,
+                      hub: HubId.parse(state.pathParameters['id']),
+                      placeId: peopleUuid(state.pathParameters['placeId']),
                     ),
                   ),
                   GoRoute(

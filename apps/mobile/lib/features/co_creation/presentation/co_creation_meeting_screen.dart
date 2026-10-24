@@ -10,6 +10,8 @@ import '../domain/co_creation_identity.dart';
 import '../domain/co_creation_rooms.dart';
 import 'co_creation_recruitment_screen.dart';
 import 'people_widgets.dart';
+import 'co_creation_place_editor.dart';
+import 'co_creation_places_screen.dart';
 
 String coMeetingTime(BuildContext context, DateTime instant) {
   final local = instant.toLocal(), material = MaterialLocalizations.of(context);
@@ -45,6 +47,8 @@ class _ScheduleState extends ConsumerState<CoMeetingScheduleScreen> {
   DateTime? startsAt;
   int capacity = 5;
   bool invalidTime = false;
+  Map<String, dynamic>? placeIntent;
+  bool placeReady = true;
   @override
   void initState() {
     super.initState();
@@ -102,10 +106,20 @@ class _ScheduleState extends ConsumerState<CoMeetingScheduleScreen> {
           startsAt = null;
           capacity = 5;
           invalidTime = false;
+          placeIntent = null;
+          placeReady = true;
         });
       }
     });
-    final pending = ref.watch(peopleAttemptsProvider)[slot]?.pending == true;
+    final attempt = ref.watch(peopleAttemptsProvider)[slot];
+    final pending = attempt?.pending == true;
+    ref.listen(
+      coCreationRoomsGatewayProvider,
+      (_, _) => setState(() {
+        placeReady = placeIntent == null;
+        placeIntent = null;
+      }),
+    );
     return PeoplePage(
       title: l.coMeetingSchedule,
       child: ListView(
@@ -141,20 +155,42 @@ class _ScheduleState extends ConsumerState<CoMeetingScheduleScreen> {
             ],
             onChanged: pending ? null : (n) => setState(() => capacity = n!),
           ),
-          if (startsAt != null)
+          if (!pending)
+            PeopleAccess(
+              child: CoMeetingPlaceOptions(
+                hub: widget.hub,
+                room: widget.room,
+                episode: widget.episode,
+                onChanged: (value, valid) {
+                  if (mounted) {
+                    setState(() {
+                      placeReady = valid || placeIntent == null && placeReady;
+                      placeIntent = value;
+                    });
+                  }
+                },
+              ),
+            ),
+          if (!placeReady && !pending) Text(l.coPlaceExpired),
+          if (startsAt != null && (placeReady || pending))
             PeopleAccess(
               child: PeopleCommand(
                 slot: slot,
-                rpc: 'schedule_cocreate_meeting',
+                rpc: pending ? attempt!.rpc : 'schedule_cocreate_meeting_v2',
                 gateway: (ref) => ref.read(coCreationRoomsGatewayProvider),
-                intent: {
-                  'p_hub_id': widget.hub.value,
-                  'p_starts_at': startsAt!.toIso8601String(),
-                  'p_capacity': capacity,
-                  if (widget.room != null) 'p_room_id': widget.room!.value,
-                  if (widget.episode != null)
-                    'p_episode_id': widget.episode!.value,
-                },
+                intent: pending
+                    ? Map<String, dynamic>.from(attempt!.intent)
+                    : {
+                        'p_hub_id': widget.hub.value,
+                        'p_starts_at': startsAt!.toIso8601String(),
+                        'p_capacity': capacity,
+                        if (widget.room != null)
+                          'p_room_id': widget.room!.value,
+                        if (widget.episode != null)
+                          'p_episode_id': widget.episode!.value,
+                        ...?placeIntent,
+                        if (placeIntent == null) 'p_discoverable': false,
+                      },
                 label: l.coMeetingPublish,
                 onSuccess: (r) async {
                   await context.push(
@@ -240,6 +276,7 @@ class CoMeetingPanel extends ConsumerWidget {
           children: [
             if (m != null) ...[
               Text(coMeetingTime(context, m.startsAt)),
+              if (m.place != null) CoPlaceLink(hub: hub, place: m.place!),
               Text(l.coMeetingPlaces(m.occupied, m.capacity)),
               if (m.cancelled) Text(l.coMeetingCancelled),
               if (m.attending && !m.cancelled) Text(l.coMeetingAttending),

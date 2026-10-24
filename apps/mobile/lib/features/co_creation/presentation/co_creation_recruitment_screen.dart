@@ -9,6 +9,7 @@ import '../domain/co_creation_rooms.dart';
 import '../application/people_attempt.dart';
 import 'people_widgets.dart';
 import 'co_creation_meeting_screen.dart';
+import 'co_creation_places_screen.dart';
 
 class CoRecruitmentCard extends StatelessWidget {
   const CoRecruitmentCard({required this.card, this.onOpen, super.key});
@@ -86,6 +87,8 @@ class CoRecruitmentJoinScreen extends ConsumerWidget {
                   return Column(
                     children: [
                       CoRecruitmentCard(card: c),
+                      if (review.place != null)
+                        CoPlaceLink(hub: hub, place: review.place!),
                       if (c.available && !review.canJoin && !pending)
                         Text(l.coCalendarNoRecruitment),
                       if (review.canJoin || pending)

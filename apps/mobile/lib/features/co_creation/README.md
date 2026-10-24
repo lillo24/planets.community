@@ -64,6 +64,18 @@ no backend effect. Native routes and the bottom-right shortcut are unchanged.
 
 See [programme progress](../../../../../docs/development/cocreate-progress.md).
 
+PLACE01 adds optional stable venues without assigning a community one permanent
+location. `domain/co_creation_place.dart` owns strict PLANETS identity/provenance;
+`domain/co_creation_places.dart` owns bounded context/summary/detail contracts and
+routes. `data/co_creation_places_gateway.dart` uses the canonical room gateway/realm.
+Calendar, current meeting and review use new nullable-Place versions; installed
+DTO parsers remain closed. `presentation/co_creation_place_reads.dart` owns volatile
+authorized paging and late-response fencing. `co_creation_places_screen.dart` owns
+community/detail views, venue links and compact group controls;
+`co_creation_place_editor.dart` owns deliberate usual/scheduling choices, shared
+receipt search, expiry and frozen recovery. Publication defaults OFF and addresses
+stay with current numbered members. See [PLACE01](../../../../../docs/development/cocreate-place01.md).
+
 COMM01/FILL01 adds `domain/co_creation_communities.dart` and
 `data/co_creation_communities_gateway.dart` for strict category, normalized
 proposal, support and private ready-to-join projections. The community screens
