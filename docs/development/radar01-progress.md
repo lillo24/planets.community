@@ -2,6 +2,8 @@
 
 Branch: `codex/radar01-automatic-local`, initially based on pulled main `4a1003c5`. Delivery is tracked by the [branch PR](https://github.com/lillo24/planets.community/pulls?q=is%3Apr+head%3Acodex%2Fradar01-automatic-local) and protected Validation. Source merge and hosted activation are separate.
 
+Pinned parser/transport packages are delivered separately in [dependency prerequisite #319](https://github.com/lillo24/planets.community/pull/319), as required by the trusted staging policy's separation of dependencies and product SQL. No release policy was changed. The existing activity-verification entrypoint runs legacy and Radar acceptance in sequence.
+
 ## Implemented
 
 - Four actual publisher collectors, bounded HTML/JSON-LD/RSS, safe Atom and finite iCalendar/exception adapters, robots, DNS/TLS, delays, deadlines and exact representation validators.
@@ -38,4 +40,4 @@ The owned backend is `planets-radar01`, ports 62821–62829, with process-only P
 
 No hosted source registration/import, hosted SQL application, scheduler, paid service or public release was performed. Follow the [single activation sequence](radar01-automatic-activities.md#reproduction-and-exact-activation-sequence): authorized migrations, applicable source/field rights, exact parser/policy qualification, disabled registration and private inspection, genuine attribution/licence and public enablement, anonymous acceptance, then separately authorized target/secrets/source-set and schedule activation. Hosted application remains review-required under the existing policy.
 
-The repository-wide Prettier check also reported six untouched pre-existing Markdown files; changed-file formatting is checked separately. No unrelated reformatting was included.
+The repository-wide Prettier check also reported six untouched pre-existing files (five Markdown files and one verifier); changed-file formatting is checked separately. No unrelated reformatting was included.

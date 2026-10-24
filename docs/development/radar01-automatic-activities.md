@@ -226,10 +226,16 @@ Deterministic checks and actual local acceptance are separate:
 ```text
 node --test scripts/lib/external-radar.test.mjs scripts/lib/external-activities.test.mjs scripts/lib/external-catalogue.test.mjs scripts/lib/external-multi-source.test.mjs scripts/lib/external-operations.test.mjs
 supabase test db --local supabase/tests/165_external_radar.test.sql
-PLANETS_DISPOSABLE_QA=1 npm run activities:radar:verify:local
+PLANETS_DISPOSABLE_QA=1 node scripts/verify-local-external-radar.mjs
 PLANETS_DISPOSABLE_QA=1 node scripts/verify-local-external-radar.mjs --live --evidence <new-private-json-path>
 flutter test test/features/external_activities/external_radar_test.dart --dart-define=UI_POLISH_CAPTURE_DIR=<absolute-local-directory>
 ```
+
+`npm run activities:verify:local` runs legacy acceptance and then Radar acceptance
+after removing legacy fixtures. Synthetic checks allow the ephemeral CI stack at
+its default local ports, following the existing verifier. Human local QA still
+requires `PLANETS_DISPOSABLE_QA=1` and a non-default owned stack; all target URLs
+must remain loopback. Live publisher fetching is forbidden in CI.
 
 The live command requires a fresh owned non-default disposable backend, imports
 real facts privately with all public rights/qualification OFF, repeats the same

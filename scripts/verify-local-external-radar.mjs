@@ -13,7 +13,8 @@ import {
   radarImportStore,
 } from "./lib/external-activities/radar-importer.mjs";
 
-if (process.env.PLANETS_DISPOSABLE_QA !== "1")
+const ci = process.env.CI === "true";
+if (!ci && process.env.PLANETS_DISPOSABLE_QA !== "1")
   throw Error("Explicit disposable local QA required.");
 const args = process.argv.slice(2);
 if (
@@ -28,9 +29,15 @@ if (
     "Use no arguments for synthetic HTTP/SQL, or --live --evidence <new private local JSON path> [--source <known source>].",
   );
 const live = args.length > 0;
+if (live && (ci || process.env.PLANETS_DISPOSABLE_QA !== "1"))
+  throw Error("Live publisher checks require explicit owned local QA, not CI.");
 const status = readLocalSupabaseStatus(process.cwd());
-assertSafeLocalDemoTarget({ ...status, mailpitUrl: process.env.MAILPIT_URL });
-if (new URL(status.apiUrl).port === "54321")
+assertSafeLocalDemoTarget({
+  ...status,
+  mailpitUrl: process.env.MAILPIT_URL ?? "http://127.0.0.1:54324",
+});
+// Ephemeral hosted CI owns its default local stack; human QA must use isolation.
+if (!ci && new URL(status.apiUrl).port === "54321")
   throw Error("Default stack is not disposable.");
 const sql = postgres(status.databaseUrl, { max: 2, onnotice: () => {} });
 const options = { auth: { persistSession: false, autoRefreshToken: false } };

@@ -146,8 +146,7 @@
     "group:ideas:upgrade:verify:local": "node scripts/verify-local-group-ideas-upgrade.mjs",
     "contact:discussions:upgrade:verify:local": "node scripts/verify-local-contact-discussion-upgrades.mjs",
     "activities:import": "node scripts/import-external-activities.mjs",
-    "activities:verify:local": "node scripts/verify-local-external-activities.mjs && node scripts/verify-local-external-radar.mjs",
-    "activities:radar:verify:local": "node scripts/verify-local-external-radar.mjs"
+    "activities:verify:local": "node scripts/verify-local-external-activities.mjs"
   },
   "devDependencies": {
     "fast-xml-parser": "5.11.2",
