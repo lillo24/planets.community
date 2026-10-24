@@ -5,9 +5,12 @@ contact `/manage` route keeps existing close/context actions in
 `PeopleContactScreen(managementOnly: true)`, without a second transcript or
 composer. Own-exit and gated-contact authorization retain their original owners.
 
-PEOPLEHOME01 changes the experimental Home to Find your people (real `/people`),
-Find activities (Coming soon), and Propose an idea (Coming soon). Only the first
-acts; native Projects/Resources/Activities routes remain available elsewhere.
+CP01 makes `/people` the existing categorized Community directory. Home's
+Propose a Community action opens category selection before the existing proposal
+flow. Primary discovery no longer links to People-post browse/create/mine or
+demo; exact legacy routes and private history remain available pending CP04.
+Find activities remains deferred to CP02; native Project routes are unchanged.
+
 `domain/general_message_links.dart` owns local likely-link detection, and
 `presentation/co_creation_general_screen.dart` owns cancellable review only for
 new ordinary General messages. The optional `PeopleCommand.beforeSend` in

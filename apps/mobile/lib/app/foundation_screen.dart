@@ -167,14 +167,14 @@ class FoundationScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: AppSpacing.small),
                                 _HomePillarCard(
-                                  key: const Key('propose-idea-coming-soon'),
+                                  key: const Key('propose-community-button'),
                                   stackIcon:
                                       textScale >= 1.5 &&
                                       constraints.maxWidth < 400,
                                   icon: Icons.lightbulb_outline,
-                                  title: l10n.coHomeIdeaTitle,
-                                  message: l10n.coHomeIdeaSoon,
-                                  onTap: null,
+                                  title: l10n.coCommunityPropose,
+                                  message: l10n.coHomeCommunityMessage,
+                                  onTap: () => context.push('/people/hubs'),
                                 ),
                               ] else ...[
                                 _HomePillarCard(

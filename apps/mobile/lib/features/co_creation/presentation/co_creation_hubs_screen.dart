@@ -36,6 +36,13 @@ class _CoHubsState extends ConsumerState<CoCreationHubsScreen> {
     final l = AppLocalizations.of(context);
     return PeoplePage(
       title: l.coCreationHubs,
+      actions: [
+        IconButton(
+          tooltip: l.coIntroReplay,
+          onPressed: () => context.push('/people/intro'),
+          icon: const Icon(Icons.info_outline),
+        ),
+      ],
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -43,19 +50,12 @@ class _CoHubsState extends ConsumerState<CoCreationHubsScreen> {
             spacing: 8,
             children: [
               TextButton(
-                onPressed: () => context.go('/people'),
-                child: Text(l.coCreationPosts),
-              ),
-              TextButton(
-                onPressed: () => context.push('/people/demo'),
-                child: Text(l.coPeopleDemo),
-              ),
-              TextButton(
                 onPressed: () => context.push('/people/community-interests'),
                 child: Text(l.coCommunityYourInterests),
               ),
             ],
           ),
+          Text(l.coHomeCommunityMessage),
           TextField(
             controller: search,
             maxLength: 120,
