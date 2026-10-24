@@ -18,12 +18,17 @@ import '../data/co_creation_rooms_gateway.dart';
 import '../domain/co_creation_rooms.dart';
 import '../domain/co_creation_identity.dart';
 import '../domain/general_message_links.dart';
+import '../domain/co_creation_project_share.dart';
+import '../../proposals/data/proposal_gateway.dart';
+import '../../proposals/domain/proposal_models.dart';
+import '../../proposals/presentation/public_proposals_screen.dart';
 import '../../messages/application/message_unread_controller.dart';
 import '../application/people_signals.dart';
 import 'people_widgets.dart';
 import 'co_creation_recruitment_screen.dart';
 import 'co_creation_meeting_screen.dart';
 import 'co_creation_project_actions.dart';
+import 'co_creation_project_card.dart';
 
 import 'package:go_router/go_router.dart';
 
@@ -59,6 +64,10 @@ class _CoCreationGeneralScreenState
       closed = true;
   int epoch = 0;
   int reviewGeneration = 0;
+  String? selectedProjectId;
+  bool pickingProject = false,
+      projectUnavailable = false,
+      projectPickFailed = false;
   Timer? timer;
   @override
   void initState() {
@@ -82,6 +91,9 @@ class _CoCreationGeneralScreenState
     token = null;
     roomContext = null;
     closed = true;
+    selectedProjectId = null;
+    projectUnavailable = false;
+    projectPickFailed = false;
   }
 
   @override
@@ -108,6 +120,105 @@ class _CoCreationGeneralScreenState
         !failed &&
         !closed &&
         roomContext?.closed == false;
+  }
+
+  Future<void> pickProject() async {
+    final actor = ref.read(authSessionProvider).identity?.id;
+    if (actor == null || !canReview(actor) || pickingProject) return;
+    // Sharing owns the composer only after the person's unfinished prose has
+    // been sent or cleared; selecting a Project never overwrites that input.
+    if (selectedProjectId == null && body.text.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).coShareProjectDraft),
+        ),
+      );
+      return;
+    }
+    final revision = reviewGeneration;
+    setState(() {
+      pickingProject = true;
+      projectUnavailable = false;
+      projectPickFailed = false;
+    });
+    try {
+      final selected = await Navigator.of(context).push<ProposalSummary>(
+        MaterialPageRoute(
+          builder: (context) => PublicProposalsScreen(
+            onSelect: (project) => Navigator.of(context).pop(project),
+          ),
+        ),
+      );
+      if (!mounted ||
+          revision != reviewGeneration ||
+          !canReview(actor) ||
+          !(ModalRoute.of(context)?.isCurrent ?? false) ||
+          selected == null) {
+        return;
+      }
+      final current = await ref
+          .read(proposalGatewayProvider)
+          .getPublicProposal(selected.id);
+      if (!mounted ||
+          revision != reviewGeneration ||
+          !canReview(actor) ||
+          !(ModalRoute.of(context)?.isCurrent ?? false)) {
+        return;
+      }
+      if (current == null) {
+        setState(() => projectUnavailable = true);
+        return;
+      }
+      if (current.summary.id != selected.id ||
+          coSharedProjectId(coProjectShareUrl(selected.id)) != selected.id) {
+        throw const FormatException('Invalid public Project selection.');
+      }
+      setState(() {
+        selectedProjectId = selected.id;
+        body.text = coProjectShareUrl(selected.id);
+      });
+    } catch (_) {
+      if (mounted && ref.read(authSessionProvider).identity?.id == actor) {
+        setState(() => projectPickFailed = true);
+      }
+    } finally {
+      if (mounted) setState(() => pickingProject = false);
+    }
+  }
+
+  Future<bool> reviewProject(String id, String text) async {
+    final actor = ref.read(authSessionProvider).identity?.id;
+    if (actor == null ||
+        !canReview(actor) ||
+        body.text != text ||
+        selectedProjectId != id ||
+        coSharedProjectId(text) != id) {
+      return false;
+    }
+    final revision = reviewGeneration;
+    final detail = await ref
+        .read(proposalGatewayProvider)
+        .getPublicProposal(id);
+    if (!mounted ||
+        revision != reviewGeneration ||
+        !canReview(actor) ||
+        body.text != text ||
+        selectedProjectId != id ||
+        !(ModalRoute.of(context)?.isCurrent ?? false)) {
+      return false;
+    }
+    if (detail == null) {
+      setState(() {
+        selectedProjectId = null;
+        body.clear();
+        projectUnavailable = true;
+      });
+      return false;
+    }
+    if (detail.summary.id != id) {
+      throw const FormatException('Shared Project identity differs.');
+    }
+    return true;
   }
 
   Future<bool> reviewLink(String text) async {
@@ -288,6 +399,13 @@ class _CoCreationGeneralScreenState
         actor = ref.watch(authSessionProvider).identity?.id;
     return PeoplePage(
       actions: [
+        if (!widget.numbered && !closed && !busy && !failed)
+          IconButton(
+            key: const Key('co-share-project'),
+            tooltip: l.coShareProject,
+            onPressed: locked || pickingProject ? null : pickProject,
+            icon: const Icon(Icons.ios_share),
+          ),
         if (!closed && !busy && !failed)
           CoNativeProjectAction(
             returnPath: widget.numbered
@@ -378,7 +496,12 @@ class _CoCreationGeneralScreenState
                   itemKey: (m) => m.id,
                   itemBuilder: (context, m) => ListTile(
                     title: m.recruitment == null
-                        ? Text(m.body)
+                        ? !widget.numbered && coSharedProjectId(m.body) != null
+                              ? CoSharedProjectCard(
+                                  projectId: coSharedProjectId(m.body)!,
+                                  revision: epoch,
+                                )
+                              : Text(m.body)
                         : CoRecruitmentCard(
                             card: m.recruitment!,
                             onOpen: () => context.push(
@@ -434,18 +557,35 @@ class _CoCreationGeneralScreenState
                         icon: const Icon(Icons.group_add_outlined),
                         label: Text(l.coMeetingPublish),
                       ),
-                    TextField(
-                      controller: body,
-                      enabled: !locked,
-                      maxLength: 2000,
-                      minLines: 1,
-                      maxLines: 4,
-                      decoration: InputDecoration(labelText: l.coPeopleMessage),
-                    ),
+                    if (projectUnavailable) Text(l.coShareProjectUnavailable),
+                    if (projectPickFailed) Text(l.coPeopleError),
+                    if (selectedProjectId case final project?) ...[
+                      CoSharedProjectCard(projectId: project, revision: epoch),
+                      TextButton(
+                        onPressed: locked
+                            ? null
+                            : () => setState(() {
+                                selectedProjectId = null;
+                                body.clear();
+                              }),
+                        child: Text(l.coShareProjectCancel),
+                      ),
+                    ] else
+                      TextField(
+                        controller: body,
+                        enabled: !locked,
+                        maxLength: 2000,
+                        minLines: 1,
+                        maxLines: 4,
+                        decoration: InputDecoration(
+                          labelText: l.coPeopleMessage,
+                        ),
+                      ),
                     ListenableBuilder(
                       listenable: body,
                       builder: (context, _) {
                         final text = body.text;
+                        final project = selectedProjectId;
                         return PeopleCommand(
                           slot:
                               'room/${widget.roomId.value}/${widget.episodeId.value}/send',
@@ -459,10 +599,13 @@ class _CoCreationGeneralScreenState
                           },
                           beforeSend: widget.numbered
                               ? null
+                              : project != null
+                              ? () => reviewProject(project, text)
                               : () => reviewLink(text),
                           label: l.coPeopleSend,
                           onSuccess: (_) async {
                             body.clear();
+                            selectedProjectId = null;
                             await load();
                           },
                         );

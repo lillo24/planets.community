@@ -1,5 +1,12 @@
 # Co-creation experiment
 
+CP03 shares current public native Projects in General as canonical human-message
+links. `domain/co_creation_project_share.dart` owns the strict first-party shape;
+`presentation/co_creation_project_card.dart` resolves fresh public titles and
+revalidates on open. General owns selection/send review and uses the existing
+native discovery picker. No snapshot, participation or ownership is copied. See
+the [CP03 authorization and compatibility contract](../../../../../docs/implementation/cp03-general-project-sharing.md).
+
 CP01 makes `/people` the existing categorized Community directory. Home's
 Propose a Community action opens category selection before the existing proposal
 flow. Primary discovery no longer links to People-post browse/create/mine or
