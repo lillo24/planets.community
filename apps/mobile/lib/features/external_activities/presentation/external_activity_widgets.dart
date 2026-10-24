@@ -103,6 +103,8 @@ class ExternalActivityCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.labelLarge,
               ),
               Text(item.title, style: Theme.of(context).textTheme.titleMedium),
+              if (item.activityType != null)
+                Text(externalActivityTypeLabel(item.activityType!, l)),
               const SizedBox(height: AppSpacing.small),
               if (item.kind != ExternalActivityKind.place)
                 Text(

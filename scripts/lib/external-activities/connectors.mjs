@@ -1,4 +1,5 @@
 import { ActivityImportError } from "./transport.mjs";
+import { radarSources, radarConnector } from "./radar-sources.mjs";
 import {
   trentoFacilitiesConnector,
   trentoFacilitiesSource,
@@ -7,6 +8,14 @@ import {
 // Source identities/capabilities/transport and public link policies are code
 // owned. Nothing here enables hosted publication or grants source configuration.
 export const activityConnectorDirectory = Object.freeze([
+  ...radarSources.map((source) =>
+    Object.freeze({
+      sourceId: source.sourceId,
+      kinds: Object.freeze(["event"]),
+      parserVersion: source.parserVersion,
+      status: "collection_available_publication_held",
+    }),
+  ),
   Object.freeze({
     sourceId: "agenda-trento",
     kinds: Object.freeze(["event"]),
@@ -28,6 +37,8 @@ export const activityConnectorDirectory = Object.freeze([
 ]);
 
 export function resolveActivityConnector(sourceId) {
+  if (radarSources.some((source) => source.sourceId === sourceId))
+    return radarConnector(sourceId);
   if (sourceId === "odh-trento-sports")
     throw new ActivityImportError("source_coverage_checkpoint_blocked");
   if (sourceId === trentoFacilitiesSource.sourceId)

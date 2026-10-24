@@ -558,9 +558,11 @@ void main() {
       'https://planets.example.org',
       'test-key',
       httpClient: MockClient((request) async {
-        expect(request.url.path, '/rest/v1/rpc/list_external_activities_v3');
+        // RADAR01 switches the upgraded client to additive V4; legacy RPCs remain.
+        expect(request.url.path, '/rest/v1/rpc/list_external_activities_v4');
         final params = jsonDecode(request.body) as Map<String, dynamic>;
         expect(params['p_category'], 'culture');
+        expect(params['p_activity_type'], 'workshops');
         expect(params['p_query'], 'source text');
         expect(params['p_limit'], 20);
         expect(params['p_kind'], 'course');
@@ -582,6 +584,7 @@ void main() {
     const filter = ExternalActivityFilter(
       category: 'culture',
       query: 'source text',
+      activityType: 'workshops',
       kind: ExternalActivityKind.course,
       from: '2026-10-20',
       to: '2026-10-25',

@@ -32,6 +32,10 @@ export function createActivityTransport({
   sleep = (ms) => delay(ms, undefined, { signal }),
   now = Date.now,
   limits: overrides = {},
+  allowedPaths,
+  minDelayMs = 0,
+  userAgent,
+  allowDocuments = false,
 }) {
   const limits = { ...activityImportLimits, ...overrides };
   if (
@@ -53,8 +57,12 @@ export function createActivityTransport({
   }
   const counts = { pages: 0, related: 0, requests: 0, bytes: 0 };
   const visitedPages = new Set();
+  let lastRequest = null;
   function destination(input) {
-    if (typeof input !== "string" || /[\u0000-\u0020\u007f]/.test(input)) {
+    if (
+      typeof input !== "string" ||
+      /[\u0000-\u0020\u007f\\]|%(?:2f|5c|2e)/i.test(input)
+    ) {
       throw new ActivityImportError("unsafe_destination");
     }
     let url;
@@ -70,13 +78,22 @@ export function createActivityTransport({
       url.password ||
       url.hash ||
       !url.pathname.startsWith(apiPathPrefix) ||
+      (allowedPaths &&
+        !allowedPaths.some((path) =>
+          path !== "/" && path.endsWith("/")
+            ? url.pathname.startsWith(path)
+            : url.pathname === path,
+        )) ||
       url.href.length > 4096
     ) {
       throw new ActivityImportError("unsafe_destination");
     }
     return url;
   }
-  async function read(input, { kind, etag, lastModified, textTypes } = {}) {
+  async function read(
+    input,
+    { kind, etag, lastModified, textTypes, form } = {},
+  ) {
     if (!["pages", "related"].includes(kind)) {
       throw new ActivityImportError("invalid_request_kind");
     }
@@ -92,15 +109,43 @@ export function createActivityTransport({
       textTypes != null &&
       (!Array.isArray(textTypes) ||
         !textTypes.length ||
-        textTypes.length > 3 ||
+        textTypes.length > 8 ||
         textTypes.some(
           (type) =>
-            !["text/csv", "application/csv", "text/plain"].includes(type),
+            !(
+              allowDocuments
+                ? [
+                    "text/csv",
+                    "application/csv",
+                    "text/plain",
+                    "text/html",
+                    "application/xhtml+xml",
+                    "application/rss+xml",
+                    "application/atom+xml",
+                    "application/xml",
+                    "text/xml",
+                    "text/calendar",
+                  ]
+                : ["text/csv", "application/csv", "text/plain"]
+            ).includes(type),
         ))
     ) {
       throw new ActivityImportError("invalid_transport_configuration");
     }
     const headers = { accept: textTypes?.join(", ") ?? "application/json" };
+    // Only a code-owned recipe may submit a bounded public calendar query.
+    // Never use feed values to select a method, endpoint or form field.
+    if (form != null) {
+      if (
+        typeof form !== "string" ||
+        form.length > 4096 ||
+        etag ||
+        lastModified
+      )
+        throw new ActivityImportError("invalid_transport_configuration");
+      headers["content-type"] = "application/x-www-form-urlencoded";
+    }
+    if (userAgent) headers["user-agent"] = userAgent;
     for (const [key, value] of [
       ["if-none-match", etag],
       ["if-modified-since", lastModified],
@@ -128,9 +173,13 @@ export function createActivityTransport({
         AbortSignal.timeout(limits.requestMs),
       ]);
       let response;
+      if (lastRequest != null && minDelayMs > 0)
+        await sleep(Math.max(0, minDelayMs - (now() - lastRequest)));
+      lastRequest = now();
       try {
         response = await fetchImpl(url.href, {
-          method: "GET",
+          method: form == null ? "GET" : "POST",
+          ...(form == null ? {} : { body: form }),
           headers,
           redirect: "manual",
           signal: requestSignal,
@@ -146,6 +195,7 @@ export function createActivityTransport({
         if (++redirects > limits.redirects)
           throw new ActivityImportError("redirect_limit");
         const location = response.headers.get("location");
+        if (form != null) throw new ActivityImportError("unsafe_destination");
         if (!location) throw new ActivityImportError("unsafe_destination");
         url = destination(new URL(location, url).href);
         continue;
@@ -185,7 +235,11 @@ export function createActivityTransport({
       }
       if (response.status !== 200) {
         await response.body?.cancel();
-        throw new ActivityImportError("upstream_error");
+        throw new ActivityImportError(
+          [401, 403].includes(response.status)
+            ? "access_denied"
+            : "upstream_error",
+        );
       }
       const mime = (response.headers.get("content-type") ?? "")
         .split(";")[0]
@@ -256,6 +310,7 @@ export function createActivityTransport({
         value,
         etag: response.headers.get("etag"),
         lastModified: response.headers.get("last-modified"),
+        fetchedAt: new Date(now()).toISOString(),
       };
     }
   }

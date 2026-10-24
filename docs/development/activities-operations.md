@@ -13,6 +13,12 @@ freshness and public visibility. The [map contract](activities-map.md) owns V3.
 Unknown IDs are rejected. Agenda Trento and ODH return their existing separate
 rights/coverage errors before provider traffic. Other selected sources continue.
 
+RADAR01 adds opt-in `--batch-size 4` for five to eight explicit sources (two
+seven-minute batches, 14 minutes total), private collection/qualification and
+held outcomes. One-to-four-source defaults retain the original bounds. The
+[Radar runbook](radar01-automatic-activities.md) owns the added flags, source
+cadence/retention and activation steps; all hosted gates remain unchanged.
+
 ```text
 node scripts/operate-external-activities.mjs --sources trento-open-sports-facilities --dry-run
 node scripts/operate-external-activities.mjs --sources trento-open-sports-facilities --inspect --target <target-id>

@@ -1,0 +1,168 @@
+{
+  "observed_at": "2026-10-24T08:35:55.793Z",
+  "kind": "actual_private_publisher_collection; not a public integration",
+  "collection_window": "Per-source observations, not one simultaneous snapshot; each source run start through +90 days. Publisher coverage differs as declared.",
+  "sources": [
+    {
+      "source_id": "muse-events",
+      "parser": "muse-semantic-v1",
+      "coverage": "Published calendar entries; Trento venue only",
+      "state": "collected_held",
+      "collected": 32,
+      "validated": 5,
+      "public_eligible": 0,
+      "held": 32,
+      "candidate_bearing_representations": 32,
+      "first_candidate_retrieval": "2026-10-24T07:55:17.050Z",
+      "last_candidate_retrieval": "2026-10-24T07:55:48.068Z",
+      "source_holds": ["public_disabled", "rights_held", "parser_unqualified"],
+      "validation_reasons": {
+        "outside_area": 15,
+        "ambiguous_schedule": 6,
+        "unverified_locality": 4,
+        "missing_stable_item_identity": 2
+      },
+      "families": {
+        "unknown": {
+          "collected": 20,
+          "validated": 1,
+          "public_eligible": 0,
+          "held": 20
+        },
+        "workshops": {
+          "collected": 3,
+          "validated": 0,
+          "public_eligible": 0,
+          "held": 3
+        },
+        "talks": {
+          "collected": 2,
+          "validated": 1,
+          "public_eligible": 0,
+          "held": 2
+        },
+        "exhibitions": {
+          "collected": 6,
+          "validated": 3,
+          "public_eligible": 0,
+          "held": 6
+        },
+        "theatre-cinema": {
+          "collected": 1,
+          "validated": 0,
+          "public_eligible": 0,
+          "held": 1
+        }
+      },
+      "public_updates": 0,
+      "live_alias_promotion": "withheld; only synthetic public alias proof was performed"
+    },
+    {
+      "source_id": "santa-chiara-events",
+      "parser": "santa-calendar-v1",
+      "coverage": "Published calendar query, explicit 90-day window; Trento venues only",
+      "state": "collected_held",
+      "collected": 106,
+      "validated": 48,
+      "public_eligible": 0,
+      "held": 106,
+      "candidate_bearing_representations": 1,
+      "first_candidate_retrieval": "2026-10-24T08:35:48.134Z",
+      "last_candidate_retrieval": "2026-10-24T08:35:48.134Z",
+      "source_holds": ["public_disabled", "rights_held", "parser_unqualified"],
+      "validation_reasons": {
+        "outside_area": 38,
+        "missing_stable_item_link": 19,
+        "outside_window": 1
+      },
+      "families": {
+        "unknown": {
+          "collected": 89,
+          "validated": 43,
+          "public_eligible": 0,
+          "held": 89
+        },
+        "music": {
+          "collected": 6,
+          "validated": 5,
+          "public_eligible": 0,
+          "held": 6
+        },
+        "theatre-cinema": {
+          "collected": 11,
+          "validated": 0,
+          "public_eligible": 0,
+          "held": 11
+        }
+      },
+      "public_updates": 0,
+      "live_alias_promotion": "withheld; only synthetic public alias proof was performed"
+    },
+    {
+      "source_id": "arci-trentino-events",
+      "parser": "arci-jsonld-v1",
+      "coverage": "Events linked by publisher homepage, not entire regional archive",
+      "state": "collected_held",
+      "collected": 6,
+      "validated": 2,
+      "public_eligible": 0,
+      "held": 6,
+      "candidate_bearing_representations": 6,
+      "first_candidate_retrieval": "2026-10-24T07:56:09.444Z",
+      "last_candidate_retrieval": "2026-10-24T07:56:14.441Z",
+      "source_holds": ["public_disabled", "rights_held", "parser_unqualified"],
+      "validation_reasons": {
+        "unverified_locality": 3,
+        "ambiguous_schedule": 1
+      },
+      "families": {
+        "exhibitions": {
+          "collected": 5,
+          "validated": 2,
+          "public_eligible": 0,
+          "held": 5
+        },
+        "unknown": {
+          "collected": 1,
+          "validated": 0,
+          "public_eligible": 0,
+          "held": 1
+        }
+      },
+      "public_updates": 0,
+      "live_alias_promotion": "withheld; only synthetic public alias proof was performed"
+    },
+    {
+      "source_id": "susat-outings",
+      "parser": "susat-rss-v1",
+      "coverage": "Current RSS entries; explicit outings with local departure, no destination pin",
+      "state": "collected_held",
+      "collected": 10,
+      "validated": 1,
+      "public_eligible": 0,
+      "held": 10,
+      "candidate_bearing_representations": 1,
+      "first_candidate_retrieval": "2026-10-24T07:56:16.254Z",
+      "last_candidate_retrieval": "2026-10-24T07:56:16.254Z",
+      "source_holds": ["public_disabled", "rights_held", "parser_unqualified"],
+      "validation_reasons": {
+        "outside_window": 5,
+        "ambiguous_schedule": 4
+      },
+      "families": {
+        "outings": {
+          "collected": 10,
+          "validated": 1,
+          "public_eligible": 0,
+          "held": 10
+        }
+      },
+      "public_updates": 0,
+      "live_alias_promotion": "withheld; only synthetic public alias proof was performed"
+    }
+  ],
+  "hosted_sources_changed": false,
+  "scheduler_enabled": false,
+  "raw_pages_committed": false,
+  "benchmark": "RadarTN CSV/ZIP unavailable; no row parity or complete coverage claim"
+}

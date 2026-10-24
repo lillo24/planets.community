@@ -117,6 +117,7 @@ class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
         await this.filter(
           ExternalActivityFilter(
             category: filter.category,
+            activityType: filter.activityType,
             query: filter.query,
             kind: filter.kind,
             from: filter.from,
@@ -143,6 +144,7 @@ class ExternalActivitiesController extends Notifier<ExternalActivitiesState> {
           disciplines: page.disciplines,
           kinds: page.kinds,
           categories: page.categories,
+          activityTypes: page.activityTypes,
           nextCursor: page.nextCursor,
           lastSuccessAt: page.lastSuccessAt,
         ),
