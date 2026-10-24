@@ -127,7 +127,7 @@ Future<ProviderContainer> _pumpPeople(
 void main() {
   for (final language in ['en', 'it']) {
     testWidgets(
-      '$language discovery identifies the creator without profile or roster reads',
+      '$language discovery explains creator availability without UUID or profile reads',
       (tester) async {
         tester.view.physicalSize = const Size(320, 800);
         tester.view.devicePixelRatio = 1;
@@ -174,9 +174,10 @@ void main() {
           tester.element(find.byType(DiscussionRoomActions)),
         );
         expect(
-          find.text('${l.discussionIdeaCreator}: ${id(8)}'),
+          find.text(l.discussionCreatorAuthorizedView),
           findsOneWidget,
         );
+        expect(find.textContaining(id(8)), findsNothing);
         expect(
           find.byKey(const Key('discussion-join')).hitTestable(),
           findsOneWidget,

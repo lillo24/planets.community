@@ -432,6 +432,7 @@ class _ProfileEditFormState extends ConsumerState<_ProfileEditForm> {
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
                                 labelText: l10n.profileDisplayNameLabel,
+                                errorMaxLines: 12,
                               ),
                               validator: (value) =>
                                   isValidDisplayName(value ?? '')

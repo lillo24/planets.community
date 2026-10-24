@@ -1,3 +1,5 @@
+import 'moderation_target_label.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -135,7 +137,11 @@ class _EvidenceRequestCard extends StatelessWidget {
             children: [
               Text(kindLabel, style: Theme.of(context).textTheme.labelLarge),
               Text(
-                request.targetSummary,
+                moderationTargetLabel(
+                  l10n,
+                  request.targetKind,
+                  request.targetSummary,
+                ),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               if (request.contextSummary case final contextSummary?)

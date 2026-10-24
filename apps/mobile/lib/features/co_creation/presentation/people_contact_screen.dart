@@ -1,3 +1,4 @@
+import '../../messages/presentation/messages_formatters.dart';
 import '../application/people_attempt.dart';
 
 import 'dart:async';
@@ -194,7 +195,7 @@ class _PeopleContactScreenState extends ConsumerState<PeopleContactScreen>
                   itemKey: (m) => m.id,
                   itemBuilder: (context, m) => ListTile(
                     title: Text(m.body),
-                    subtitle: Text(m.createdAt.toLocal().toString()),
+                    subtitle: Text(messageDate(context, m.createdAt)),
                     trailing: m.senderId == actor
                         ? null
                         : IconButton(

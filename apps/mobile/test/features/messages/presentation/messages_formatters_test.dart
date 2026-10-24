@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:planets_mobile/features/messages/presentation/messages_formatters.dart';
@@ -10,6 +12,34 @@ void main() {
     await initializeDateFormatting('en');
     await initializeDateFormatting('it');
   });
+  for (final language in ['it', 'en']) {
+    testWidgets(
+      'CQ1 full message metadata omits seconds and fractions in $language',
+      (tester) async {
+        final instant = DateTime(2026, 10, 24, 13, 14, 45, 123, 456);
+        final original = instant.microsecondsSinceEpoch;
+        late String formatted;
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: Locale(language),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Builder(
+              builder: (context) {
+                formatted = messageDate(context, instant);
+                return Text(formatted);
+              },
+            ),
+          ),
+        );
+        expect(formatted, contains('13:14'));
+        expect(formatted, isNot(contains('13:14:45')));
+        expect(formatted, isNot(contains('123456')));
+        expect(instant.microsecondsSinceEpoch, original);
+        expect(formatted, contains(language == 'it' ? 'ott' : 'Oct'));
+      },
+    );
+  }
   test(
     'local calendar day chooses time, localized weekday, then compact date',
     () {

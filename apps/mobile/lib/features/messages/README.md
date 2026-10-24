@@ -309,3 +309,18 @@ canonical RPCs union all kinds before ordering/paging; member chats stay Private
 and do not enter the unrelated profile-photo batching grant. The M access hint
 clears only M list bodies plus the shared unread summary before refresh.
 `member_contact/README.md` documents the isolated review policy and client owners.
+
+## UIAUDIT02 composite empty states
+
+`presentation/inbox_content.dart` collects presentation results from the existing
+native, People and Discussion owners. Each actor/realm/tab/scope has a fresh
+registry; a global empty claim requires every mounted applicable source to finish
+successfully with no items. Loading, errors, invitations and identity-only recovery
+anchors suppress that claim. The registry stores statuses and refresh callbacks,
+not rows, and adds no polling or parallel data store. Pull-to-refresh invokes the
+existing mounted owners while canonical pagination/stable row identities remain.
+
+The existing Project-invitation loader settles while its disclosure is collapsed
+inside Messages, so those results participate in completeness. Other surfaces
+retain their lazy disclosure reads; default collapsed/open behavior is unchanged.
+Groups also mounts People rooms and retained exits when native chats are empty.

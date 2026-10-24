@@ -17,6 +17,57 @@ import '../../../support/fake_auth.dart';
 import '../../../support/fake_blocking.dart';
 
 void main() {
+  for (final language in ['it', 'en']) {
+    for (final name in [null, 'Taylor']) {
+      testWidgets(
+        'MT1 named/unnamed blocking confirmation is localized ($language/$name)',
+        (tester) async {
+          final gateway = FakeBlockingGateway();
+          final session = _readyContainer(gateway);
+          addTearDown(session.dispose);
+          await tester.pumpWidget(
+            UncontrolledProviderScope(
+              container: session.container,
+              child: MaterialApp(
+                locale: Locale(language),
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+                home: Scaffold(
+                  body: BlockingActionButton(
+                    targetProfileId: blockedProfileId,
+                    targetDisplayName: name,
+                    buttonKey: const Key('generic-block'),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const Key('generic-block')));
+          await tester.pumpAndSettle();
+          final l = lookupAppLocalizations(Locale(language));
+          expect(
+            find.text(
+              l.blockingBlockConfirmTitle(name ?? l.blockingGenericTarget),
+            ),
+            findsOneWidget,
+          );
+          if (language == 'it') {
+            expect(find.textContaining('this user'), findsNothing);
+          }
+          await tester.tap(
+            find.text(
+              MaterialLocalizations.of(tester.element(find.byType(AlertDialog)))
+                  .cancelButtonLabel,
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(gateway.blockCalls, 0);
+        },
+      );
+    }
+  }
+
   testWidgets('block confirmation explains every durable consequence', (
     tester,
   ) async {

@@ -217,7 +217,7 @@
   "authCodeLabel": "Codice a 6 cifre",
   "authCodeHint": "000000",
   "authInvalidCode": "Inserisci il codice a 6 cifre più recente ricevuto via email.",
-  "authExpiredCode": "Il codice è scaduto. Richiedine uno nuovo e riprova.",
+  "authExpiredCode": "Il codice non è valido o è scaduto. Controllalo o richiedine uno nuovo.",
   "authRateLimited": "Attendi prima di richiedere o verificare un nuovo codice.",
   "authNetworkUnavailable": "Controlla la connessione e riprova.",
   "authServiceUnavailable": "Al momento non è possibile accedere. Riprova più tardi.",
@@ -591,7 +591,7 @@
   "resourceForbidden": "Questo annuncio non è disponibile per questo account.",
   "resourceInvalidState": "Questo annuncio non può più essere modificato in questo modo.",
   "resourceNotFound": "Questo annuncio non è più disponibile.",
-  "resourceSearchLabel": "Cerca nel titolo e nella descrizione",
+  "resourceSearchLabel": "Cerca un annuncio",
   "resourceLocalityLabel": "Località",
   "resourceSearchAction": "Cerca",
   "resourceEmptyTitle": "Nessun annuncio in Scambio-Dona",
@@ -1035,7 +1035,7 @@
   "resourceExchangePendingTerms": "Termini proposti",
   "resourceExchangeProposedByYou": "Proposto da te",
   "resourceExchangeProposedBy": "Proposto da {name}",
-  "resourceExchangeOwnerProvides": "Il proprietario della lista fornisce",
+  "resourceExchangeOwnerProvides": "Il proprietario dell’annuncio offre",
   "resourceExchangeRequesterProvides": "Fornisce il richiedente",
   "resourceExchangeGivePermanently": "Dare in modo permanente",
   "resourceExchangeLendTemporarily": "Presta temporaneamente",
@@ -1306,8 +1306,8 @@
   "projectManageTitle": "Gestisci progetto",
   "projectManageParticipationTitle": "Partecipazione",
   "projectManageParticipationDescription": "Revisione delle richieste e gestione dei partecipanti",
-  "projectManageStructuralTitle": "Dettagli del progetto e ciclo di vita",
-  "projectManageStructuralDescription": "Modifica i dettagli del progetto e utilizza le azioni del ciclo di vita disponibili ora",
+  "projectManageStructuralTitle": "Dettagli e stato del progetto",
+  "projectManageStructuralDescription": "Modifica i dettagli del progetto e gestisci il suo stato con le azioni disponibili",
   "projectCoorganizersTitle": "Gestisci organizzatori",
   "projectCoorganizersDescription": "Invita le persone e gestisci ruoli di progetto delegati",
   "projectManageUnavailable": "La gestione del progetto non è disponibile.",
@@ -1474,10 +1474,10 @@
   "workshopLoadMore": "Carica altri",
   "workshopRefresh": "Aggiorna disponibilità",
   "workshopUnavailable": "Questo modello non è più disponibile per nuovi utilizzi o segnalazioni.",
-  "workshopDuration": "Durata indicativa: {seconds} secondi. Scegli nuove date e orari per la tua bozza.",
+  "workshopDuration": "Durata indicativa: {duration}. Scegli nuove date e orari per la tua bozza.",
   "@workshopDuration": {
     "placeholders": {
-      "seconds": {
+      "duration": {
         "type": "String"
       }
     }
@@ -2471,7 +2471,7 @@
   "personPreviewNoDetails": "Non sono disponibili altri dettagli pubblici del profilo.",
   "personPreviewReadError": "Impossibile caricare questo profilo.",
   "personPreviewBlocked": "Hai bloccato questa persona.",
-  "coCreationSetting": "Modalità Co-creazione",
+  "coCreationSetting": "Trova persone (sperimentale)",
   "coCreationHelp": "Mostra Trova persone sperimentale in Home e disattiva la modalità Attività. La modalità Mock resta indipendente e offre account dedicati in Aiuto. Iscrizioni e Messaggi restano accessibili quando è OFF.",
   "coCreationSaveError": "Salvataggio non riuscito. La scelta precedente resta attiva.",
   "coCreationRestoreError": "Ripristino non riuscito. Modalità Co-creazione è disattivata; salva una scelta per recuperare.",
@@ -2790,5 +2790,65 @@
   "activitiesTypeWorkshops": "Laboratori",
   "activitiesTypeSocial": "Socialità / Vita notturna",
   "activitiesTypeExhibitions": "Mostre",
-  "activitiesTypeOutings": "Escursioni"
+  "activitiesTypeOutings": "Escursioni",
+  "blockingGenericTarget": "questo utente",
+  "coNumberedLeave": "Lascia il gruppo",
+  "coPeopleCloseTitle": "Chiudi la conversazione",
+  "coPeopleCloseExplanation": "Chiudendo questa conversazione di Trova persone, entrambe le persone non potranno più inviare messaggi.",
+  "coPeopleWithdrawTitle": "Ritira la richiesta",
+  "coPeopleWithdrawExplanation": "Ritira la tua richiesta di partecipazione a questo annuncio di Trova persone. La richiesta non potrà più essere accettata.",
+  "discussionDeclineTitle": "Rifiuta l’invito all’Idea",
+  "discussionDeclineExplanation": "Rifiutando questo invito non entrerai nella discussione dell’Idea.",
+  "discussionGeneralHistory": "Cronologia completa di Generale · Accessibile ai responsabili del Gruppo",
+  "discussionCreatorAuthorizedView": "Creatore: disponibile nella vista Persone autorizzata",
+  "moderationPeoplePost": "Annuncio Trova persone",
+  "moderationPeopleInterest": "Richiesta Trova persone",
+  "moderationPeopleContactMessage": "Messaggio privato Trova persone",
+  "moderationPeopleRoomMessage": "Messaggio di gruppo Trova persone",
+  "moderationPeopleCommunityProposal": "Proposta di comunità Trova persone",
+  "moderationResourceRequest": "Richiesta Scambio-Dona",
+  "workshopHours": "{hours, plural, one{1 ora} other{{hours} ore}}",
+  "workshopMinutes": "{minutes, plural, one{1 minuto} other{{minutes} minuti}}",
+  "workshopHoursAndMinutes": "{hours} e {minutes}",
+  "workshopApproximateDuration": "circa {duration}",
+  "workshopLessThanMinute": "meno di un minuto",
+  "@workshopHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "@workshopMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@workshopHoursAndMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "@workshopApproximateDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopLargeHours": "{hours} ore",
+  "@workshopLargeHours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  }
 }

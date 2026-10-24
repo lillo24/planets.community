@@ -1,3 +1,5 @@
+import 'moderation_target_label.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -94,7 +96,12 @@ class _CounterstatementDetailScreenState
                 padding: const EdgeInsets.all(AppSpacing.large),
                 children: [
                   Text(
-                    detail.contextSummary ?? detail.targetSummary,
+                    detail.contextSummary ??
+                        moderationTargetLabel(
+                          l10n,
+                          detail.targetKind,
+                          detail.targetSummary,
+                        ),
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: AppSpacing.small),

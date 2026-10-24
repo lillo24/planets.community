@@ -1,3 +1,5 @@
+import '../../messages/presentation/inbox_content.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +22,7 @@ class DiscussionProjectInvitations extends ConsumerStatefulWidget {
 
 class _InvitationsState extends ConsumerState<DiscussionProjectInvitations> {
   final items = <DiscussionProjectInvitation>[];
-  bool busy = false, more = false;
+  bool busy = false, more = false, loaded = false;
   Object? error;
   int generation = 0;
   bool get current =>
@@ -39,6 +41,7 @@ class _InvitationsState extends ConsumerState<DiscussionProjectInvitations> {
     if (oldWidget.actor != widget.actor) {
       generation++;
       items.clear();
+      loaded = false;
       busy = false;
       error = null;
       Future.microtask(() => load(reset: true));
@@ -64,6 +67,7 @@ class _InvitationsState extends ConsumerState<DiscussionProjectInvitations> {
       setState(() {
         items.addAll(rows.where((r) => !items.any((i) => i.id == r.id)));
         more = rows.length == 25;
+        loaded = true;
       });
     } catch (e) {
       if (current && ticket == generation) setState(() => error = e);
@@ -110,54 +114,69 @@ class _InvitationsState extends ConsumerState<DiscussionProjectInvitations> {
     ref.watch(authSessionProvider);
     if (!current) return const SizedBox.shrink();
     final l = AppLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (busy) const LinearProgressIndicator(),
-        if (error != null)
-          DiscussionError(error!, retry: busy ? null : () => load(reset: true)),
-        for (final item in items)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l.discussionProjectInvitation,
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  Text(
-                    item.title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  Text(item.summary),
-                  Text(l.discussionProjectInvitationHelp),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      TextButton(
-                        onPressed: busy ? null : () => respond(item, 'opened'),
-                        child: Text(l.discussionConversionOpen),
-                      ),
-                      TextButton(
-                        onPressed: busy
-                            ? null
-                            : () => respond(item, 'declined'),
-                        child: Text(l.discussionProjectInvitationDecline),
-                      ),
-                    ],
-                  ),
-                ],
+    return InboxSource(
+      content: items.isNotEmpty
+          ? InboxContent.present
+          : error != null
+          ? InboxContent.failure
+          : !loaded || busy
+          ? InboxContent.pending
+          : InboxContent.empty,
+      onRefresh: () => load(reset: true),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (busy) const LinearProgressIndicator(),
+          if (error != null)
+            DiscussionError(
+              error!,
+              retry: busy ? null : () => load(reset: true),
+            ),
+          for (final item in items)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l.discussionProjectInvitation,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    Text(
+                      item.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(item.summary),
+                    Text(l.discussionProjectInvitationHelp),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        TextButton(
+                          onPressed: busy
+                              ? null
+                              : () => respond(item, 'opened'),
+                          child: Text(l.discussionConversionOpen),
+                        ),
+                        TextButton(
+                          onPressed: busy
+                              ? null
+                              : () => respond(item, 'declined'),
+                          child: Text(l.discussionProjectInvitationDecline),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        if (more)
-          TextButton(
-            onPressed: busy ? null : load,
-            child: Text(l.discussionLoadMore),
-          ),
-      ],
+          if (more)
+            TextButton(
+              onPressed: busy ? null : load,
+              child: Text(l.discussionLoadMore),
+            ),
+        ],
+      ),
     );
   }
 }

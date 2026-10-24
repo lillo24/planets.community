@@ -333,7 +333,7 @@
   "@authInvalidCode": {
     "description": "Safe invalid OTP message."
   },
-  "authExpiredCode": "That code has expired. Request a new one and try again.",
+  "authExpiredCode": "That code is invalid or has expired. Check it or request a new one.",
   "@authExpiredCode": {
     "description": "Safe expired OTP message."
   },
@@ -1257,7 +1257,7 @@
   "resourceForbidden": "This listing is not available for the current account.",
   "resourceInvalidState": "This listing can no longer be changed that way.",
   "resourceNotFound": "This listing is no longer available.",
-  "resourceSearchLabel": "Search title and description",
+  "resourceSearchLabel": "Search listings",
   "resourceLocalityLabel": "Locality",
   "resourceSearchAction": "Search",
   "resourceSavedSearchesTitle": "Saved searches",
@@ -1627,7 +1627,7 @@
   "@resourceExchangeProposedBy": {
     "placeholders": { "name": { "type": "String" } }
   },
-  "resourceExchangeOwnerProvides": "Listing owner provides",
+  "resourceExchangeOwnerProvides": "Listing owner offers",
   "resourceExchangeRequesterProvides": "Requester provides",
   "resourceExchangeGivePermanently": "Give permanently",
   "resourceExchangeLendTemporarily": "Lend temporarily",
@@ -2013,8 +2013,8 @@
   "projectManageTitle": "Manage project",
   "projectManageParticipationTitle": "Participation",
   "projectManageParticipationDescription": "Review requests and manage participants",
-  "projectManageStructuralTitle": "Project details & lifecycle",
-  "projectManageStructuralDescription": "Edit Project details and use the lifecycle actions available now",
+  "projectManageStructuralTitle": "Project details and status",
+  "projectManageStructuralDescription": "Edit Project details and manage its status with the available actions",
   "projectCoorganizersTitle": "Manage organizers",
   "projectCoorganizersDescription": "Invite people and manage delegated Project roles",
   "projectManageUnavailable": "Project management is unavailable.",
@@ -2211,10 +2211,10 @@
   "workshopLoadMore": "Load more",
   "workshopRefresh": "Refresh availability",
   "workshopUnavailable": "This template is no longer available for new use or reporting.",
-  "workshopDuration": "Duration guidance: {seconds} seconds. Choose new dates and times for your draft.",
+  "workshopDuration": "Duration guidance: {duration}. Choose new dates and times for your draft.",
   "@workshopDuration": {
     "placeholders": {
-      "seconds": {
+      "duration": {
         "type": "String"
       }
     }
@@ -3209,7 +3209,7 @@
   "personPreviewNoDetails": "No further public profile details are available.",
   "personPreviewReadError": "Could not load this profile.",
   "personPreviewBlocked": "You have blocked this person.",
-  "coCreationSetting": "Co-Creation Mode",
+  "coCreationSetting": "Find People (experimental)",
   "coCreationHelp": "Show experimental Find people on Home and turn Activities mode off. Mock Mode stays independent and offers Find people test accounts in Help. Existing memberships and Messages remain available when OFF.",
   "coCreationSaveError": "Could not save. The previous choice remains active.",
   "coCreationRestoreError": "Could not restore Co-Creation Mode. It is OFF; save a choice to recover.",
@@ -3531,5 +3531,65 @@
   "activitiesTypeWorkshops": "Workshops",
   "activitiesTypeSocial": "Social / Nightlife",
   "activitiesTypeExhibitions": "Exhibitions",
-  "activitiesTypeOutings": "Outings"
+  "activitiesTypeOutings": "Outings",
+  "blockingGenericTarget": "this user",
+  "coNumberedLeave": "Leave group",
+  "coPeopleCloseTitle": "Close conversation",
+  "coPeopleCloseExplanation": "Closing this Find People conversation stops both people from sending messages.",
+  "coPeopleWithdrawTitle": "Withdraw request",
+  "coPeopleWithdrawExplanation": "Withdraw your request to join this Find People post. This request can no longer be accepted.",
+  "discussionDeclineTitle": "Decline Idea invitation",
+  "discussionDeclineExplanation": "Declining this invitation means you will not join the Idea discussion.",
+  "discussionGeneralHistory": "Full General history · Group managers have oversight",
+  "discussionCreatorAuthorizedView": "Creator: available in the authorized People view",
+  "moderationPeoplePost": "Find People post",
+  "moderationPeopleInterest": "Find People request",
+  "moderationPeopleContactMessage": "Find People private message",
+  "moderationPeopleRoomMessage": "Find People group message",
+  "moderationPeopleCommunityProposal": "Find People community proposal",
+  "moderationResourceRequest": "Exchange-Donate request",
+  "workshopHours": "{hours, plural, one{1 hour} other{{hours} hours}}",
+  "workshopMinutes": "{minutes, plural, one{1 minute} other{{minutes} minutes}}",
+  "workshopHoursAndMinutes": "{hours} and {minutes}",
+  "workshopApproximateDuration": "about {duration}",
+  "workshopLessThanMinute": "less than a minute",
+  "@workshopHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "@workshopMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@workshopHoursAndMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "@workshopApproximateDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "workshopLargeHours": "{hours} hours",
+  "@workshopLargeHours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  }
 }

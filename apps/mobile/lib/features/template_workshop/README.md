@@ -104,3 +104,10 @@ without being advertised on every catalog visit. The separate Drafts loading
 failure is unchanged; a receipt or editor read proves no Drafts-list success.
 
 See [UIPOLISH02 validation](../../../../../docs/development/uipolish02-workshop-feedback.md).
+
+`presentation/template_duration.dart` displays the stored positive finite seconds
+as localized hours/minutes. Non-minute values round to the nearest minute and
+explicitly say about/circa; sub-minute values say less than a minute. Durations
+beyond exact integer-minute precision use explicitly approximate scientific hours
+rather than saturating an integer. The original seconds, fractions and fresh-date
+instruction are preserved; no scheduling value is rounded or rewritten.

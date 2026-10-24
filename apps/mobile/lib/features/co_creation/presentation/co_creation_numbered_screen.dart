@@ -480,7 +480,7 @@ class CoNumberedLeaveScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return PeoplePage(
-      title: l.coRoomsLeave,
+      title: l.coNumberedLeave,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -497,7 +497,7 @@ class CoNumberedLeaveScreen extends StatelessWidget {
                 'p_episode_id': episode.value,
                 'p_operation': 'leave',
               },
-              label: l.coRoomsLeave,
+              label: l.coNumberedLeave,
               onSuccess: (_) async => context.go('/messages'),
             ),
           ),
@@ -588,7 +588,7 @@ class CoNumberedExits extends ConsumerWidget {
           return rows;
         },
         row: (context, r, refresh) => ListTile(
-          title: Text(AppLocalizations.of(context).coGroupsLeave),
+          title: Text(AppLocalizations.of(context).coNumberedLeave),
           onTap: () =>
               context.push(coNumberedLeaveRoute(r.hub, r.room, r.episode)),
         ),

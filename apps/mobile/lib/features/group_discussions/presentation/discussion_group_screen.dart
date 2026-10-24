@@ -1,3 +1,5 @@
+import '../../../core/widgets/page_app_bar.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -438,8 +440,10 @@ class DiscussionExitScreen extends ConsumerWidget {
               !await confirmGroupAction(
                 context,
                 actor,
-                decline ? l.discussionDecline : l.discussionLeave,
-                explanation: decline ? null : l.discussionLeaveConfirm,
+                decline ? l.discussionDeclineTitle : l.discussionLeave,
+                explanation: decline
+                    ? l.discussionDeclineExplanation
+                    : l.discussionLeaveConfirm,
               )) {
             return;
           }
@@ -469,11 +473,13 @@ class DiscussionExitScreen extends ConsumerWidget {
         return PopScope(
           canPop: attempt?.busy != true && attempt?.uncertain != true,
           child: Scaffold(
-            appBar: groupAppBar(
+            appBar: pageAppBar(
               context,
-              decline ? l.discussionDecline : l.discussionLeave,
-              fallback: '/messages',
-              close: () {
+              title: Text(
+                decline ? l.discussionDeclineTitle : l.discussionLeave,
+              ),
+              closeLabel: MaterialLocalizations.of(context).cancelButtonLabel,
+              onClose: () {
                 if (attempt?.busy != true && attempt?.uncertain != true) {
                   closeGroups(context, '/messages');
                 }
@@ -483,7 +489,11 @@ class DiscussionExitScreen extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.all(24),
                 children: [
-                  if (!decline) Text(l.discussionLeaveConfirm),
+                  Text(
+                    decline
+                        ? l.discussionDeclineExplanation
+                        : l.discussionLeaveConfirm,
+                  ),
                   if (attempt?.error != null) DiscussionError(attempt!.error!),
                   if (attempt?.uncertain == true) Text(l.discussionUncertain),
                   FilledButton(
@@ -494,7 +504,7 @@ class DiscussionExitScreen extends ConsumerWidget {
                       attempt?.uncertain == true
                           ? l.discussionRetry
                           : decline
-                          ? l.discussionDecline
+                          ? l.discussionDeclineTitle
                           : l.discussionLeave,
                     ),
                   ),

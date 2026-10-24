@@ -1,7 +1,10 @@
+import '../../../support/android_text_font.dart';
+
+import 'package:flutter/rendering.dart';
+
 import '../../../support/fake_policy.dart';
 
 import 'dart:async';
-import 'dart:ui' show SemanticsAction;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,6 +36,50 @@ import '../../../support/fake_profile_photo.dart';
 import '../../../support/fake_recurring_activity.dart';
 
 void main() {
+  setUpAll(loadAndroidTextFont);
+  for (final language in [
+    LanguagePreference.italian,
+    LanguagePreference.english,
+  ]) {
+    for (final scale in [1.0, 1.3, 2.0]) {
+      testWidgets(
+        'KX1 complete name restriction at 320dp $language/$scale with IME',
+        (tester) async {
+          tester.view.physicalSize = const Size(320, 900);
+          tester.view.devicePixelRatio = 1;
+          tester.platformDispatcher.textScaleFactorTestValue = scale;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+          addTearDown(tester.view.resetViewInsets);
+          final auth = FakeAuthGateway(
+            snapshot: const AuthSnapshot(identity: AuthIdentity(id: 'user-1')),
+          );
+          final anchor = FakeProfileAnchorGateway()
+            ..readiness = ProfileAnchorReadiness.incomplete;
+          final profile = FakeProfileGateway();
+          addTearDown(auth.close);
+          await _pumpApp(tester, auth, anchor, profile, language: language);
+          await tester.tap(find.byKey(const Key('nav-profile')));
+          await tester.pumpAndSettle();
+          final field = find.byKey(const Key('profile-display-name-field'));
+          await tester.enterText(field, 'X');
+          tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+          await tester.tap(find.byKey(const Key('profile-save-button')));
+          await tester.pumpAndSettle();
+          final l = lookupAppLocalizations(Locale(language.storageValue));
+          final error = find.text(l.profileDisplayNameError);
+          await tester.ensureVisible(error);
+          await tester.pumpAndSettle();
+          final paragraph = tester.renderObject<RenderParagraph>(error);
+          expect(paragraph.didExceedMaxLines, isFalse);
+          expect(paragraph.size.width, lessThanOrEqualTo(320));
+          expect(profile.updateCount, 0);
+        },
+      );
+    }
+  }
+
   for (final failure in ['write', 'reload']) {
     testWidgets(
       'unconfirmed setup $failure never offers; exact retry offers once',

@@ -1,3 +1,5 @@
+import '../../messages/presentation/inbox_content.dart';
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -33,23 +35,29 @@ class CoCreationInboxGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    return ref
-        .watch(coCreationInboxAvailabilityProvider)
-        .when(
-          loading: () => const SizedBox.shrink(),
-          data: (enabled) => enabled ? child : const SizedBox.shrink(),
-          error: (_, _) => Row(
-            children: [
-              Expanded(child: Text(l.coPeopleContacts)),
-              IconButton(
-                tooltip: l.coPeopleError,
-                onPressed: () =>
-                    ref.invalidate(coCreationInboxAvailabilityProvider),
-                icon: const Icon(Icons.refresh),
-              ),
-            ],
-          ),
-        );
+    final availability = ref.watch(coCreationInboxAvailabilityProvider);
+    return InboxSource(
+      content: availability.isLoading
+          ? InboxContent.pending
+          : availability.hasError
+          ? InboxContent.failure
+          : InboxContent.inapplicable,
+      child: availability.when(
+        loading: () => const SizedBox.shrink(),
+        data: (enabled) => enabled ? child : const SizedBox.shrink(),
+        error: (_, _) => Row(
+          children: [
+            Expanded(child: Text(l.coPeopleContacts)),
+            IconButton(
+              tooltip: l.coPeopleError,
+              onPressed: () =>
+                  ref.invalidate(coCreationInboxAvailabilityProvider),
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -58,14 +66,21 @@ class PeoplePage extends StatelessWidget {
     required this.title,
     required this.child,
     this.actions,
+    this.closeLabel,
     super.key,
   });
   final String title;
   final List<Widget>? actions;
+  final String? closeLabel;
   final Widget child;
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: pageAppBar(context, title: Text(title), actions: actions),
+    appBar: pageAppBar(
+      context,
+      title: Text(title),
+      actions: actions,
+      closeLabel: closeLabel,
+    ),
     body: SafeArea(
       child: Align(
         alignment: Alignment.topCenter,
@@ -253,35 +268,47 @@ class _PeopleListState<T> extends ConsumerState<PeopleList<T>>
       });
     }
     final l = AppLocalizations.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        widget.header,
-        if (busy) const LinearProgressIndicator(),
-        if (error != null) Text(l.coPeopleError),
-        if (!busy && error == null && !available && widget.emptyVisible)
-          Text(l.coPeopleBackendOff),
-        if (!busy &&
-            error == null &&
-            available &&
-            items.isEmpty &&
-            widget.emptyVisible)
-          Text(l.coPeopleEmpty),
-        for (final item in items) widget.row(context, item, refresh),
-        if (error != null)
-          TextButton(onPressed: refresh, child: Text(l.coPeopleRetry)),
-        if (more)
-          TextButton(
-            onPressed: busy ? null : () => load(true),
-            child: Text(l.coPeopleMore),
-          ),
-        if (widget.emptyVisible && error == null)
-          TextButton(
-            onPressed: busy ? null : refresh,
-            child: Text(l.coPeopleRefresh),
-          ),
-      ],
+    return InboxSource(
+      content: items.isNotEmpty
+          ? InboxContent.present
+          : error != null
+          ? InboxContent.failure
+          : busy
+          ? InboxContent.pending
+          : available
+          ? InboxContent.empty
+          : InboxContent.inapplicable,
+      onRefresh: refresh,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          widget.header,
+          if (busy) const LinearProgressIndicator(),
+          if (error != null) Text(l.coPeopleError),
+          if (!busy && error == null && !available && widget.emptyVisible)
+            Text(l.coPeopleBackendOff),
+          if (!busy &&
+              error == null &&
+              available &&
+              items.isEmpty &&
+              widget.emptyVisible)
+            Text(l.coPeopleEmpty),
+          for (final item in items) widget.row(context, item, refresh),
+          if (error != null)
+            TextButton(onPressed: refresh, child: Text(l.coPeopleRetry)),
+          if (more)
+            TextButton(
+              onPressed: busy ? null : () => load(true),
+              child: Text(l.coPeopleMore),
+            ),
+          if (widget.emptyVisible && error == null)
+            TextButton(
+              onPressed: busy ? null : refresh,
+              child: Text(l.coPeopleRefresh),
+            ),
+        ],
+      ),
     );
   }
 

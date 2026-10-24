@@ -30,6 +30,7 @@ import '../../proposals/domain/proposal_models.dart';
 import '../../proposals/presentation/skill_filter.dart';
 import '../application/template_controllers.dart';
 import '../domain/template_models.dart';
+import 'template_duration.dart';
 
 abstract final class WorkshopRoutes {
   static const catalog = '/proposals/workshop';
@@ -699,7 +700,9 @@ class _TemplateWorkshopDetailScreenState
               Text(detail.summary),
               Text(detail.description),
               _TemplateSkills(skills: detail.skills),
-              Text(l.workshopDuration(detail.durationSeconds.toString())),
+              Text(
+                l.workshopDuration(templateDuration(l, detail.durationSeconds)),
+              ),
               if (detail.capacity != null)
                 CheckboxListTile(
                   key: const Key('template-capacity'),

@@ -197,6 +197,19 @@ void main() {
                 tester.element(find.byType(DiscussionChatScreen)),
               );
               _expectReadableTitle(tester, title, scale, ellipsized: !general);
+              expect(
+                find.text(
+                  general ? l.discussionGeneralHistory : l.discussionHistory,
+                ),
+                findsOneWidget,
+              );
+              expect(
+                find.text(
+                  general ? l.discussionHistory : l.discussionGeneralHistory,
+                ),
+                findsNothing,
+              );
+
               if (general && scale > 1) {
                 final hint = find.byKey(const Key('discussion-context-scroll'));
                 final hintScroll = tester.state<ScrollableState>(

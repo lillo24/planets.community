@@ -1,3 +1,5 @@
+import 'inbox_content.dart';
+import '../../mock_mode/application/mock_mode_coordinator.dart';
 import '../../co_creation/presentation/co_creation_room_items.dart';
 import '../../co_creation/presentation/people_message_items.dart';
 import '../../member_contact/presentation/member_contact_widgets.dart';
@@ -130,16 +132,25 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
 
   @override
   Widget build(BuildContext context) {
+    final actor = ref.watch(authSessionProvider).identity?.id;
+    final realm = ref.watch(activeMockRealmProvider);
+    final scope = ref.watch(messagesNavigationProvider).scope;
     return MessagesFrame(
-      chats: _ChatsTab(
-        expectedProfileId: _expectedProfileId,
-        onRefresh: _loadChats,
-        onLoadMore: _loadMoreChats,
+      chats: InboxContentScope(
+        key: ValueKey((actor, realm, scope)),
+        child: _ChatsTab(
+          expectedProfileId: _expectedProfileId,
+          onRefresh: _loadChats,
+          onLoadMore: _loadMoreChats,
+        ),
       ),
-      requests: _RequestsTab(
-        expectedProfileId: _expectedProfileId,
-        onRefresh: _loadRequests,
-        onLoadMore: _loadMoreRequests,
+      requests: InboxContentScope(
+        key: ValueKey((actor, realm, 'requests')),
+        child: _RequestsTab(
+          expectedProfileId: _expectedProfileId,
+          onRefresh: _loadRequests,
+          onLoadMore: _loadMoreRequests,
+        ),
       ),
     );
   }
@@ -175,6 +186,9 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
     final initialLoading =
         !belongs || (state.phase == MessageChatsPhase.loading && items.isEmpty);
 
+    Future<void> refresh() =>
+        Future.wait([widget.onRefresh(), InboxContentScope.refresh(context)]);
+
     Widget content(List<MessageChatItem> items, Widget? folders) => Column(
       children: [
         MessageChatScopeToggle(
@@ -196,12 +210,20 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                   items.isEmpty &&
                   !state.hasMore
               ? RefreshIndicator(
-                  onRefresh: widget.onRefresh,
+                  onRefresh: refresh,
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(AppSpacing.medium),
                     children: [
                       folders!,
+                      const CoCreationRoomItems(),
+                      InboxEmpty(
+                        child: EmptyState(
+                          title: l10n.projectChatsEmptyTitle,
+                          message: l10n.projectChatsEmptyMessage,
+                          icon: Icons.groups_outlined,
+                        ),
+                      ),
                       if (initialLoading)
                         LoadingState(message: l10n.messageChatsLoading)
                       else if (state.phase == MessageChatsPhase.failure)
@@ -210,21 +232,14 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                             l10n,
                             state.failure!,
                           ),
-                          onRetry: widget.onRefresh,
+                          onRetry: refresh,
                         ),
                     ],
                   ),
                 )
-              : initialLoading
-              ? LoadingState(message: l10n.messageChatsLoading)
-              : state.phase == MessageChatsPhase.failure && items.isEmpty
-              ? ErrorState(
-                  message: messageChatsFailureMessage(l10n, state.failure!),
-                  onRetry: widget.onRefresh,
-                )
               : items.isEmpty && scope != MessageChatScope.groups
               ? RefreshIndicator(
-                  onRefresh: widget.onRefresh,
+                  onRefresh: refresh,
                   child: LayoutBuilder(
                     builder: (context, constraints) => SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -234,17 +249,29 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                         ),
                         child: Column(
                           children: [
+                            if (initialLoading)
+                              LoadingState(message: l10n.messageChatsLoading)
+                            else if (state.phase == MessageChatsPhase.failure)
+                              ErrorState(
+                                message: messageChatsFailureMessage(
+                                  l10n,
+                                  state.failure!,
+                                ),
+                                onRetry: refresh,
+                              ),
                             const PeopleContactItems(),
-                            EmptyState(
-                              title: scope == MessageChatScope.private
-                                  ? l10n.messageChatsPrivateEmptyTitle
-                                  : l10n.projectChatsEmptyTitle,
-                              message: scope == MessageChatScope.private
-                                  ? l10n.messageChatsPrivateEmptyMessage
-                                  : l10n.projectChatsEmptyMessage,
-                              icon: scope == MessageChatScope.private
-                                  ? Icons.lock_outline
-                                  : Icons.groups_outlined,
+                            InboxEmpty(
+                              child: EmptyState(
+                                title: scope == MessageChatScope.private
+                                    ? l10n.messageChatsPrivateEmptyTitle
+                                    : l10n.projectChatsEmptyTitle,
+                                message: scope == MessageChatScope.private
+                                    ? l10n.messageChatsPrivateEmptyMessage
+                                    : l10n.projectChatsEmptyMessage,
+                                icon: scope == MessageChatScope.private
+                                    ? Icons.lock_outline
+                                    : Icons.groups_outlined,
+                              ),
                             ),
                           ],
                         ),
@@ -253,7 +280,7 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
                   ),
                 )
               : RefreshIndicator(
-                  onRefresh: widget.onRefresh,
+                  onRefresh: refresh,
                   child: UserScrollPagination(
                     enabled:
                         belongs &&
@@ -408,14 +435,26 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
         ),
       ],
     );
-    return scope == MessageChatScope.groups
-        ? DiscussionGroupConversations(
-            items: items,
-            expectedActor: widget.expectedProfileId,
-            refreshKey: (state.phase, state.hasConnectionIssue),
-            builder: content,
-          )
-        : content(items, null);
+    return InboxSource(
+      content: items.isNotEmpty
+          ? InboxContent.present
+          : state.failure != null
+          ? InboxContent.failure
+          : !belongs ||
+                state.isBusy ||
+                state.phase == MessageChatsPhase.idle ||
+                state.hasMore
+          ? InboxContent.pending
+          : InboxContent.empty,
+      child: scope == MessageChatScope.groups
+          ? DiscussionGroupConversations(
+              items: items,
+              expectedActor: widget.expectedProfileId,
+              refreshKey: (state.phase, state.hasConnectionIssue),
+              builder: content,
+            )
+          : content(items, null),
+    );
   }
 }
 
@@ -647,109 +686,130 @@ class _RequestsTab extends ConsumerWidget {
         !belongs ||
         (state.phase == MessagesInboxPhase.loading && items.isEmpty);
 
-    if (initialLoading) return LoadingState(message: l10n.messagesLoading);
-    if (state.phase == MessagesInboxPhase.failure && items.isEmpty) {
-      return ErrorState(
-        message: messagesFailureMessage(l10n, state.failure!),
-        onRetry: onRefresh,
-      );
-    }
-    if (items.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: onRefresh,
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Column(
-                children: [
-                  const PeopleRequestItems(),
-                  const DiscussionRequests(),
-                  EmptyState(
-                    title: l10n.messagesEmptyTitle,
-                    message: l10n.messagesEmptyMessage,
-                    icon: Icons.mail_outline,
-                  ),
-                ],
+    Future<void> refresh() =>
+        Future.wait([onRefresh(), InboxContentScope.refresh(context)]);
+    Widget content() {
+      if (items.isEmpty) {
+        return RefreshIndicator(
+          onRefresh: refresh,
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Column(
+                  children: [
+                    if (initialLoading)
+                      LoadingState(message: l10n.messagesLoading)
+                    else if (state.phase == MessagesInboxPhase.failure)
+                      ErrorState(
+                        message: messagesFailureMessage(l10n, state.failure!),
+                        onRetry: refresh,
+                      ),
+                    const PeopleRequestItems(),
+                    const DiscussionRequests(),
+                    InboxEmpty(
+                      child: EmptyState(
+                        title: l10n.messagesEmptyTitle,
+                        message: l10n.messagesEmptyMessage,
+                        icon: Icons.mail_outline,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
+          ),
+        );
+      }
+      return RefreshIndicator(
+        onRefresh: refresh,
+        child: UserScrollPagination(
+          enabled:
+              belongs &&
+              ref.watch(authSessionProvider).identity?.id ==
+                  expectedProfileId &&
+              state.hasMore &&
+              !state.isBusy &&
+              state.failure == null,
+          requestKey: (expectedProfileId, items.length),
+          onLoad: onLoadMore,
+          builder: (context, showFallback) => StableListView(
+            key: const Key('messages-request-list'),
+            storageKey: ('messages-request-list', expectedProfileId),
+            rowIds: [
+              'idea-invitations',
+              if (state.failure != null) 'error',
+              for (final item in items) item.compositeId,
+              if (state.hasMore) 'more',
+            ],
+            rowValues: [
+              expectedProfileId,
+              if (state.failure != null) state.failure,
+              ...items,
+              if (state.hasMore) (state.phase, state.failure, showFallback),
+            ],
+            padding: const EdgeInsets.all(AppSpacing.medium),
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return const Column(
+                  children: [PeopleRequestItems(), DiscussionRequests()],
+                );
+              }
+              index--;
+              if (state.failure != null && index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.small),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      messagesFailureMessage(l10n, state.failure!),
+                      key: const Key('messages-inline-error'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                );
+              }
+              final itemIndex = index - (state.failure != null ? 1 : 0);
+              if (itemIndex == items.length) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.medium,
+                  ),
+                  child: PaginationControl(
+                    buttonKey: const Key('messages-load-more'),
+                    loading: state.isBusy,
+                    failed: state.failure != null,
+                    showFallback: showFallback,
+                    onLoad: onLoadMore,
+                    fallbackLabel: l10n.messagesLoadMore,
+                  ),
+                );
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.small),
+                child: _StructuredRequestCard(item: items[itemIndex]),
+              );
+            },
           ),
         ),
       );
     }
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      child: UserScrollPagination(
-        enabled:
-            belongs &&
-            ref.watch(authSessionProvider).identity?.id == expectedProfileId &&
-            state.hasMore &&
-            !state.isBusy &&
-            state.failure == null,
-        requestKey: (expectedProfileId, items.length),
-        onLoad: onLoadMore,
-        builder: (context, showFallback) => StableListView(
-          key: const Key('messages-request-list'),
-          storageKey: ('messages-request-list', expectedProfileId),
-          rowIds: [
-            'idea-invitations',
-            if (state.failure != null) 'error',
-            for (final item in items) item.compositeId,
-            if (state.hasMore) 'more',
-          ],
-          rowValues: [
-            expectedProfileId,
-            if (state.failure != null) state.failure,
-            ...items,
-            if (state.hasMore) (state.phase, state.failure, showFallback),
-          ],
-          padding: const EdgeInsets.all(AppSpacing.medium),
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              return const Column(
-                children: [PeopleRequestItems(), DiscussionRequests()],
-              );
-            }
-            index--;
-            if (state.failure != null && index == 0) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.small),
-                child: Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    messagesFailureMessage(l10n, state.failure!),
-                    key: const Key('messages-inline-error'),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ),
-              );
-            }
-            final itemIndex = index - (state.failure != null ? 1 : 0);
-            if (itemIndex == items.length) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.medium,
-                ),
-                child: PaginationControl(
-                  buttonKey: const Key('messages-load-more'),
-                  loading: state.isBusy,
-                  failed: state.failure != null,
-                  showFallback: showFallback,
-                  onLoad: onLoadMore,
-                  fallbackLabel: l10n.messagesLoadMore,
-                ),
-              );
-            }
-            return Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.small),
-              child: _StructuredRequestCard(item: items[itemIndex]),
-            );
-          },
-        ),
-      ),
+
+    return InboxSource(
+      content: items.isNotEmpty
+          ? InboxContent.present
+          : state.failure != null
+          ? InboxContent.failure
+          : !belongs ||
+                state.isBusy ||
+                state.phase == MessagesInboxPhase.idle ||
+                state.hasMore
+          ? InboxContent.pending
+          : InboxContent.empty,
+      child: content(),
     );
   }
 }

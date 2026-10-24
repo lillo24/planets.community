@@ -27,20 +27,25 @@ class PeopleContactCloseScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return PeoplePage(
-      title: l.coPeopleClose,
+      title: l.coPeopleCloseTitle,
+      closeLabel: MaterialLocalizations.of(context).cancelButtonLabel,
       child: PeopleAccess(
         requirePolicy: false,
-        child: Padding(
+        child: ListView(
           padding: const EdgeInsets.all(16),
-          child: PeopleCommand(
-            slot: 'contact/$contactId/close',
-            rpc: 'mutate_cocreate_contact',
-            intent: {'p_operation': 'close', 'p_contact_id': contactId},
-            label: l.coPeopleClose,
-            onSuccess: (_) async {
-              context.go('/messages');
-            },
-          ),
+          children: [
+            Text(l.coPeopleCloseExplanation),
+            const SizedBox(height: 16),
+            PeopleCommand(
+              slot: 'contact/$contactId/close',
+              rpc: 'mutate_cocreate_contact',
+              intent: {'p_operation': 'close', 'p_contact_id': contactId},
+              label: l.coPeopleCloseTitle,
+              onSuccess: (_) async {
+                context.go('/messages');
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -149,24 +154,29 @@ class PeopleInterestWithdrawScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return PeoplePage(
-      title: l.coPeopleWithdraw,
+      title: l.coPeopleWithdrawTitle,
+      closeLabel: MaterialLocalizations.of(context).cancelButtonLabel,
       child: PeopleAccess(
         requirePolicy: false,
-        child: Padding(
+        child: ListView(
           padding: const EdgeInsets.all(16),
-          child: PeopleCommand(
-            slot: 'interest/${postId.value}',
-            rpc: 'mutate_cocreate_interest',
-            intent: {
-              'p_operation': 'withdraw',
-              'p_post_id': postId.value,
-              'p_interest_id': interestId,
-            },
-            label: l.coPeopleWithdraw,
-            onSuccess: (_) async {
-              context.go('/messages');
-            },
-          ),
+          children: [
+            Text(l.coPeopleWithdrawExplanation),
+            const SizedBox(height: 16),
+            PeopleCommand(
+              slot: 'interest/${postId.value}',
+              rpc: 'mutate_cocreate_interest',
+              intent: {
+                'p_operation': 'withdraw',
+                'p_post_id': postId.value,
+                'p_interest_id': interestId,
+              },
+              label: l.coPeopleWithdrawTitle,
+              onSuccess: (_) async {
+                context.go('/messages');
+              },
+            ),
+          ],
         ),
       ),
     );
