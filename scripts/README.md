@@ -5,6 +5,8 @@
   synthetic provider bytes. `verify-local-cocreate-places-upgrade.mjs` owns the
   rollback-only populated CAL01-FIX01-installed predecessor rehearsal. Existing
   COMM01/FILL01 Database CI calls both; no additional runner job is introduced.
+  COMM01 and its CAL01/PLACE01 readers share `MAILPIT_URL` (default
+  `http://127.0.0.1:54324`); overrides must be a bare loopback HTTP origin.
   See [PLACE01](../docs/development/cocreate-place01.md) for scope and activation.
 
 - `ui-audit/` owns the explicitly invoked UIAUDIT01 disposable Mock worlds,

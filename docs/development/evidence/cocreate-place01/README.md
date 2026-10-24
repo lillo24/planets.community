@@ -34,17 +34,18 @@ disposable local backend. No hosted data or phone installation was changed.
 
 ## Validation actually run
 
-- Clean canonical migrations and seed replay: passed.
-- Affected location/provider/numbered/recruitment/meeting/calendar/Place SQL:
-  **8 files / 772 assertions**, including 61 Place assertions.
-- Real authenticated HTTP: **98 CAL01 + 135 PLACE01 assertions**; no live provider.
+- Clean canonical migrations and seed replay with RADAR01 main `04c63e5f`: passed.
+- Affected location/provider/numbered/recruitment/meeting/calendar/RADAR/Place SQL:
+  **9 files / 826 assertions**, including 61 Place assertions.
+- Real authenticated HTTP: **112 COMM01 + 98 CAL01 + 135 PLACE01 assertions**;
+  no live provider.
 - Co-Creation/router/location/native and external geographic discovery:
-  **838 Flutter tests passed**. The 32 Place tests also passed with actual render capture.
-- Root tooling: **344 passed**. Mobile analysis: no issues. Changed-file formatting,
+  **847 Flutter tests passed**. The 32 Place tests also passed with actual render capture.
+- Root tooling: **356 passed**. Mobile analysis: no issues. Changed-file formatting,
   Dart formatting, whitespace, SQL lint/security advisors, regenerated database types
   and web typecheck passed. The full web formatting command also reports six untouched
   baseline files; checking their `0ea1df30` contents reproduces every warning.
-- [Populated upgrade](populated-upgrade.json): **198 installed tables, 559 public
+- [Populated upgrade](populated-upgrade.json): **202 installed tables, 567 public
   functions and eight warmed readers** preserved, including old calendar cursor,
   OIDs/ACLs/signatures/defaults/results, closed nine/eleven-field cards and FIX01
   six-field review. Old schedule/Join exact receipts and null-Place behavior remain

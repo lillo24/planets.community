@@ -1,10 +1,10 @@
 {
   "plan": "COCREATE-PLACE01",
-  "predecessor": "0ea1df307faecf0e4dfe53bd41e200c4d6af68a8",
+  "predecessor": "04c63e5fb6ac08fb72a2b395f247be5bcdc3cb3c",
   "source": "supabase/migrations/20261024072459_cocreate_reusable_places.sql",
   "sha256": "ddd4d78ec22f3f1dbe36eb490162e092b71f187bba94af0738ed75315698ac00",
-  "populatedTablesPreserved": 198,
-  "installedPublicFunctionsPreserved": 559,
+  "populatedTablesPreserved": 202,
+  "installedPublicFunctionsPreserved": 567,
   "allowedExistingBodyChange": "reserve_location_search_v1 (same OID/ACL/signature; co-creation scope only)",
   "warmedReaders": 8,
   "oldCalendarCursorRetained": true,

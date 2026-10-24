@@ -139,7 +139,9 @@ node scripts/verify-local-cocreate-places-upgrade.mjs
 ```
 
 Upgrade requires `PLANETS_DISPOSABLE_QA=1`; tools refuse non-loopback targets.
-`MAILPIT_URL` selects an owned local OTP port. HTTP uses real OTP/Auth and client/
+`MAILPIT_URL` selects an owned local OTP port for COMM01 and its CAL01/PLACE01
+children. It defaults to `http://127.0.0.1:54324` and requires a bare loopback HTTP
+origin without credentials, path, query or fragment. HTTP uses real OTP/Auth and client/
 service REST; only Geoapify bytes are synthetic, through the actual handler and
 normalizer. Synthetic meter/experiment settings are restored. Upgrade restores
 actual pinned CAL01-FIX01-installed main scope bodies, warms installed readers and

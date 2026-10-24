@@ -10,7 +10,7 @@ assert.equal(
   "Explicit owned-local populated upgrade opt-in required.",
 );
 const { sql } = openCocreateLocalBackend();
-const predecessor = "0ea1df307faecf0e4dfe53bd41e200c4d6af68a8"; // PLACE01 handoff main, CAL01-FIX01 installed.
+const predecessor = "04c63e5fb6ac08fb72a2b395f247be5bcdc3cb3c"; // Current main: CAL01-FIX01 and RADAR01 installed.
 const migrationPath =
   "supabase/migrations/20261024072459_cocreate_reusable_places.sql";
 const migration = readFileSync(migrationPath, "utf8");
