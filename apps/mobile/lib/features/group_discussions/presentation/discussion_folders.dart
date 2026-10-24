@@ -1,3 +1,5 @@
+import '../../messages/presentation/inbox_content.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -58,26 +60,39 @@ class _DiscussionFoldersState extends ConsumerState<DiscussionFolders>
     final commands = ref.watch(discussionCommandsProvider);
     return ListenableBuilder(
       listenable: Listenable.merge([g, commands]),
-      builder: (context, _) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (!g.loaded && g.error == null || g.busy)
-            const LinearProgressIndicator(),
-          if (g.error != null)
-            DiscussionError(g.error!, retry: () => unawaited(g.refresh())),
-          if (g.loaded && g.rows.isEmpty && g.error == null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(l.discussionNoGroups),
-            ),
-          for (final group in g.rows)
-            _DiscussionFolder(group, key: ValueKey(group.id)),
-          if (g.loaded && g.more)
-            TextButton(
-              onPressed: g.busy ? null : () => unawaited(g.load()),
-              child: Text(l.discussionLoadMore),
-            ),
-        ],
+      builder: (context, _) => InboxSource(
+        content: g.rows.isNotEmpty
+            ? InboxContent.present
+            : g.error != null
+            ? InboxContent.failure
+            : !g.loaded || g.busy
+            ? InboxContent.pending
+            : InboxContent.empty,
+        onRefresh: g.refresh,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (!g.loaded && g.error == null || g.busy)
+              const LinearProgressIndicator(),
+            if (g.error != null)
+              DiscussionError(g.error!, retry: () => unawaited(g.refresh())),
+            if (g.loaded &&
+                g.rows.isEmpty &&
+                g.error == null &&
+                InboxContentScope.maybeOf(context) == null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(l.discussionNoGroups),
+              ),
+            for (final group in g.rows)
+              _DiscussionFolder(group, key: ValueKey(group.id)),
+            if (g.loaded && g.more)
+              TextButton(
+                onPressed: g.busy ? null : () => unawaited(g.load()),
+                child: Text(l.discussionLoadMore),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -416,47 +431,71 @@ class _DiscussionRequestsState extends ConsumerState<DiscussionRequests> {
     }
     return ListenableBuilder(
       listenable: Listenable.merge([p, commands]),
-      builder: (context, _) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (p.rows.isNotEmpty)
-            Text(
-              l.discussionInvitations,
-              style: Theme.of(context).textTheme.titleMedium,
+      builder: (context, _) => InboxSource(
+        content:
+            p.rows.isNotEmpty ||
+                commands.attempts.values.any(
+                  (a) =>
+                      a.action == DiscussionAction.respond &&
+                      a.intent['p_response'] == 'accepted' &&
+                      a.receipt == null,
+                )
+            ? InboxContent.present
+            : p.error != null
+            ? InboxContent.failure
+            : !p.loaded || p.busy
+            ? InboxContent.pending
+            : InboxContent.empty,
+        onRefresh: p.refresh,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (p.rows.isNotEmpty)
+              Text(
+                l.discussionInvitations,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ExpansionTile(
+              title: Text(l.discussionProjectInvitation),
+              // The same loader settles while collapsed, so empty-state claims
+              // include these invitations. Expansion/selection behavior is unchanged.
+              maintainState: InboxContentScope.maybeOf(context) != null,
+              onExpansionChanged: (open) =>
+                  setState(() => projectInvitationsOpen = open),
+              children: [
+                if ((projectInvitationsOpen ||
+                        InboxContentScope.maybeOf(context) != null) &&
+                    ref.watch(authSessionProvider).identity != null)
+                  DiscussionProjectInvitations(
+                    actor: ref.watch(authSessionProvider).identity!.id,
+                  ),
+              ],
             ),
-          ExpansionTile(
-            title: Text(l.discussionProjectInvitation),
-            onExpansionChanged: (open) =>
-                setState(() => projectInvitationsOpen = open),
-            children: [
-              if (projectInvitationsOpen &&
-                  ref.watch(authSessionProvider).identity != null)
-                DiscussionProjectInvitations(
-                  actor: ref.watch(authSessionProvider).identity!.id,
-                ),
-            ],
-          ),
-          for (final invitation in p.rows)
-            DiscussionInvitationTile(invitation, key: ValueKey(invitation.id)),
-          if (p.busy) const LinearProgressIndicator(),
-          if (p.error != null)
-            DiscussionError(p.error!, retry: () => unawaited(p.refresh())),
-          for (final entry in commands.attempts.entries.where(
-            (e) =>
-                e.value.action == DiscussionAction.respond &&
-                e.value.intent['p_response'] == 'accepted' &&
-                e.value.receipt == null &&
-                !p.rows.any(
-                  (row) => row.id == e.value.intent['p_invitation_id'],
-                ),
-          ))
-            _InvitationRecovery(slot: entry.key, attempt: entry.value),
-          if (p.loaded && p.more)
-            TextButton(
-              onPressed: p.busy ? null : () => unawaited(p.load()),
-              child: Text(l.discussionLoadMore),
-            ),
-        ],
+            for (final invitation in p.rows)
+              DiscussionInvitationTile(
+                invitation,
+                key: ValueKey(invitation.id),
+              ),
+            if (p.busy) const LinearProgressIndicator(),
+            if (p.error != null)
+              DiscussionError(p.error!, retry: () => unawaited(p.refresh())),
+            for (final entry in commands.attempts.entries.where(
+              (e) =>
+                  e.value.action == DiscussionAction.respond &&
+                  e.value.intent['p_response'] == 'accepted' &&
+                  e.value.receipt == null &&
+                  !p.rows.any(
+                    (row) => row.id == e.value.intent['p_invitation_id'],
+                  ),
+            ))
+              _InvitationRecovery(slot: entry.key, attempt: entry.value),
+            if (p.loaded && p.more)
+              TextButton(
+                onPressed: p.busy ? null : () => unawaited(p.load()),
+                child: Text(l.discussionLoadMore),
+              ),
+          ],
+        ),
       ),
     );
   }

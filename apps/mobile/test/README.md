@@ -16,3 +16,9 @@ Animation-specific tests must opt in this way rather than wait for an endless
 animation to settle. `app/foundation_screen_test.dart` checks card readability
 and interaction across theme, narrow-screen and large-text configurations;
 `app/startup/` covers Welcome, logout, Auth and external routing.
+
+`support/android_text_font.dart` loads Roboto from the pinned Flutter SDK's
+`bin/cache/artifacts/material_fonts/roboto-regular.ttf` using `FLUTTER_ROOT`, which
+`flutter test` supplies. Whole-profile narrow/keyboard layout tests use Android
+text metrics instead of Ahem's synthetic toolbar widths. Missing SDK font setup
+fails explicitly. These remain widget checks, separate from native screenshots.

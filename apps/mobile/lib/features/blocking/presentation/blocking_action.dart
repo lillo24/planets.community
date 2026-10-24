@@ -127,7 +127,7 @@ class BlockingActionButton extends ConsumerWidget {
     required bool isBlocked,
   }) async {
     final l10n = AppLocalizations.of(context);
-    final name = _safeName(targetDisplayName) ?? 'this user';
+    final name = _safeName(targetDisplayName) ?? l10n.blockingGenericTarget;
     final consequenceCopy = switch (consequence) {
       BlockingContextConsequence.none => null,
       BlockingContextConsequence.groupContact => l10n.contactBlockConsequence,

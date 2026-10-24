@@ -16,6 +16,76 @@ import 'package:planets_mobile/l10n/generated/app_localizations.dart';
 import '../../../support/fake_moderation.dart';
 
 void main() {
+  for (final language in ['it', 'en']) {
+    testWidgets(
+      'FO1 strict People projection parses, renders, refreshes and reopens in $language',
+      (tester) async {
+        const kinds = [
+          ModerationTargetKind.cocreatePost,
+          ModerationTargetKind.cocreateInterest,
+          ModerationTargetKind.cocreateContactMessage,
+          ModerationTargetKind.cocreateRoomMessage,
+          ModerationTargetKind.cocreateCommunityProposal,
+        ];
+        final payloads = [
+          for (var index = 0; index < kinds.length; index++)
+            {
+              'report_id':
+                  '00000000-0000-4000-8000-${(index + 901).toString().padLeft(12, '0')}',
+              'case_id': '00000000-0000-4000-8000-000000000800',
+              'category': 'other',
+              'explanation': 'Fictional reporter explanation.',
+              'target_kind': kinds[index].wireValue,
+              'target_summary': 'Find People safe type summary',
+              'context_summary': null,
+              'state': 'received',
+              'created_at': '2026-10-24T10:00:00Z',
+            },
+        ];
+        const parser = ModerationPayloadParser();
+        final gateway = FakeModerationGateway()
+          ..items = payloads.map(parser.ownReport).toList();
+        final container = _container(gateway);
+        addTearDown(container.dispose);
+        Future<void> open() => tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              locale: Locale(language),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: const OwnReportsScreen(),
+            ),
+          ),
+        );
+        await open();
+        await tester.pumpAndSettle();
+        final l = lookupAppLocalizations(Locale(language));
+        expect(find.text(l.moderationPeoplePost), findsOneWidget);
+        expect(find.text(l.moderationPeopleInterest), findsOneWidget);
+        expect(find.textContaining('safe type summary'), findsNothing);
+        await tester
+            .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+            .onRefresh();
+        await tester.pumpAndSettle();
+        expect(find.text(l.moderationPeoplePost), findsOneWidget);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await open();
+        await tester.pumpAndSettle();
+        expect(find.text(l.moderationPeoplePost), findsOneWidget);
+        for (final invalid in [null, '', ' ']) {
+          expect(
+            () => parser.ownReport({
+              ...payloads.first,
+              'target_summary': invalid,
+            }),
+            throwsFormatException,
+          );
+        }
+      },
+    );
+  }
+
   for (final locale in ['en', 'it']) {
     testWidgets(
       'contact reports keep long categories inside 320dp at 2x in $locale',

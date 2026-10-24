@@ -121,6 +121,24 @@ try {
     "Duplicate supporter does not add a person",
   );
   equal(proposal.state, "pending", "Two is insufficient");
+  const [ownReport] = await rpc(b, "submit_cocreate_report", {
+    p_expected_reporter_profile_id: b.id,
+    p_client_submission_id: randomUUID(),
+    p_target_kind: "cocreate_community_proposal",
+    p_target_id: id,
+    p_category: "other",
+    p_explanation: "Synthetic community report projection check",
+  });
+  equal(
+    (
+      await rpc(b, "list_own_moderation_reports_v4", {
+        p_expected_reporter_profile_id: b.id,
+      })
+    ).find((r) => r.report_id === ownReport.report_id).target_summary,
+    "Find People community proposal",
+    "FO1 own community report is readable",
+  );
+
   const last = await Promise.all(
     [c, d].map((p) =>
       p.client.rpc("mutate_cocreate_community_interest", interest(p)),

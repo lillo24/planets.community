@@ -68,12 +68,11 @@ class DiscussionRoomActions extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Discovery exposes the canonical creator ID, not a display-name
-            // projection. Show that identity without fetching a profile/roster
-            // or implying Group authority; authorized People supplies names.
+            // Discovery has no authorized display-name projection. Keep identity
+            // internal; the existing authorized People view supplies names.
             if (!room.isGeneral && room.creatorId != null)
               Text(
-                '${l.discussionIdeaCreator}: ${room.creatorId}',
+                l.discussionCreatorAuthorizedView,
                 key: const Key('discussion-creator-context'),
                 softWrap: true,
               ),

@@ -1,3 +1,5 @@
+import 'moderation_target_label.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -123,7 +125,14 @@ class _EvidencePromptDialog extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(request.contextSummary ?? request.targetSummary),
+            Text(
+              request.contextSummary ??
+                  moderationTargetLabel(
+                    l10n,
+                    request.targetKind,
+                    request.targetSummary,
+                  ),
+            ),
             const SizedBox(height: 12),
             Text(
               isGroup

@@ -444,6 +444,8 @@ class _DiscussionChatScreenState extends ConsumerState<DiscussionChatScreen>
                                               ? (room.isFormer
                                                     ? l.discussionFormerHistory
                                                     : l.discussionReadOnly)
+                                              : room.isGeneral
+                                              ? l.discussionGeneralHistory
                                               : l.discussionHistory,
                                           style: Theme.of(context)
                                               .textTheme

@@ -62,3 +62,8 @@ kept visible and milestone controls stay disabled until a later canonical
 refresh succeeds. Resource chat continues to own the single private Realtime
 subscription and coalesces its exchange signals through the shared refresh
 revision.
+
+UIAUDIT02 renders the existing private-note audience disclosure as ordinary
+wrapping content directly below its field, so helper/counter line limits cannot
+hide its audience statement. Agreement labels consistently use the listing noun;
+no stored term, private-note permission or negotiation rule changes.

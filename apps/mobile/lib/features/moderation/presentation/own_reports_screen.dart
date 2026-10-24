@@ -1,3 +1,5 @@
+import 'moderation_target_label.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -112,9 +114,11 @@ class _OwnReportCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              report.targetKind == ModerationTargetKind.groupDiscussionMessage
-                  ? l10n.discussionReportLabel
-                  : report.targetSummary,
+              moderationTargetLabel(
+                l10n,
+                report.targetKind,
+                report.targetSummary,
+              ),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: AppSpacing.xSmall),

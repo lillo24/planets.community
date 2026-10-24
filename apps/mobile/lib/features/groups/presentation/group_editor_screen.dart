@@ -199,7 +199,11 @@ class _GroupEditorState extends ConsumerState<_GroupEditor> {
                     editor.failure != GroupFailure.stale
                 ? () => Navigator.pop(context, 'save')
                 : null,
-            child: Text(l.groupsSave),
+            child: Text(
+              editor.own?.publication == GroupPublication.published
+                  ? l.groupsSaveLive
+                  : l.groupsSave,
+            ),
           ),
         ],
       ),

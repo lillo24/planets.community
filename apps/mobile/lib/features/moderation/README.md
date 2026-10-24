@@ -61,3 +61,17 @@ bind `member_contact_chat` context. Own report history uses the additive v4
 projection, preserving Project, Resource, D and coordination report kinds.
 Known received-note/message IDs remain reportable through canonical evidence
 projection after ordinary read access ends. No manager chat access is added.
+
+## UIAUDIT02 reporter projection and labels
+
+The additive `uiaudit02_people_report_summaries` migration extends the private
+summary chain with bounded generic labels for all five supported People targets.
+All supported own-report readers retain identity, ownership, pagination, grants
+and legacy summaries. The extension reads no target bodies, profiles or evidence;
+own retained reading still uses the existing canonical identity rules with the
+People gate OFF. The strict mobile parser continues to reject malformed summaries.
+
+`presentation/moderation_target_label.dart` localizes typed People/Resource-request
+summaries at the presentation boundary. Persisted wire kinds and historical terms
+remain unchanged. Witness choices use a single RadioGroup with wrapping labels;
+selection, submission locking and the existing response contract remain.

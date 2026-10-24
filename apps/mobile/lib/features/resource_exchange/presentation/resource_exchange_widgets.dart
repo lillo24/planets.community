@@ -1208,13 +1208,20 @@ class _ResourceExchangeTermsEditorState
               onChanged: (value) => controller.updateDraft(privateNote: value),
               decoration: InputDecoration(
                 labelText: l10n.resourceExchangePrivateNote,
-                helperText: l10n.resourceExchangePrivateNoteHelp,
                 errorText:
                     state.draftIssues.contains(
                       ResourceExchangeDraftIssue.privateNote,
                     )
                     ? l10n.resourceExchangePrivateNoteError
                     : null,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+              // Audience disclosure is content, not a line-limited input helper.
+              child: Text(
+                l10n.resourceExchangePrivateNoteHelp,
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
             if (state.failure case final failure?) ...[

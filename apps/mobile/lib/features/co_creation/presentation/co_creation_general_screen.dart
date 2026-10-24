@@ -1,3 +1,4 @@
+import '../../messages/presentation/messages_formatters.dart';
 import '../application/people_attempt.dart';
 
 import 'dart:async';
@@ -441,7 +442,9 @@ class _CoCreationGeneralScreenState
                           )
                         : coHubLeaveRoute(widget.hubId, widget.episodeId),
                   ),
-                  child: Text(l.coRoomsLeave),
+                  child: Text(
+                    widget.numbered ? l.coNumberedLeave : l.coRoomsLeave,
+                  ),
                 ),
                 if (!closed)
                   TextButton(
@@ -514,7 +517,7 @@ class _CoCreationGeneralScreenState
                             ),
                           ),
                     subtitle: Text(
-                      '${m.name ?? l.coGroupsErasedSender} · ${m.createdAt.toLocal()}',
+                      '${m.name ?? l.coGroupsErasedSender} · ${messageDate(context, m.createdAt)}',
                     ),
                     trailing: m.senderId == actor
                         ? null

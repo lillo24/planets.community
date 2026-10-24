@@ -1,3 +1,5 @@
+import 'moderation_target_label.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -121,7 +123,11 @@ class _CorroborationRequestCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                request.targetSummary,
+                moderationTargetLabel(
+                  l10n,
+                  request.targetKind,
+                  request.targetSummary,
+                ),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               if (request.contextSummary case final contextSummary?)
@@ -232,7 +238,11 @@ class _CorroborationDetailScreenState
                 padding: const EdgeInsets.all(AppSpacing.large),
                 children: [
                   Text(
-                    detail.targetSummary,
+                    moderationTargetLabel(
+                      l10n,
+                      detail.targetKind,
+                      detail.targetSummary,
+                    ),
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   if (detail.contextSummary case final contextSummary?)
@@ -265,23 +275,30 @@ class _CorroborationDetailScreenState
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: AppSpacing.small),
-                    for (final choice in CorroborationChoice.values) ...[
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: ChoiceChip(
-                          key: Key('corroboration-choice-${choice.wireValue}'),
-                          label: Text(_choiceLabel(l10n, choice)),
-                          selected: _choice == choice,
-                          onSelected: state.isSubmitting
-                              ? null
-                              : (_) => setState(() {
-                                  _choice = choice;
-                                  _choiceError = null;
-                                }),
-                        ),
+                    RadioGroup<CorroborationChoice>(
+                      groupValue: _choice,
+                      onChanged: (choice) {
+                        if (state.isSubmitting) return;
+                        setState(() {
+                          _choice = choice;
+                          _choiceError = null;
+                        });
+                      },
+                      child: Column(
+                        children: [
+                          for (final choice in CorroborationChoice.values)
+                            RadioListTile<CorroborationChoice>(
+                              key: Key(
+                                'corroboration-choice-${choice.wireValue}',
+                              ),
+                              value: choice,
+                              enabled: !state.isSubmitting,
+                              title: Text(_choiceLabel(l10n, choice)),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                        ],
                       ),
-                      const SizedBox(height: AppSpacing.small),
-                    ],
+                    ),
                     if (_choiceError case final error?)
                       Text(error, style: _errorStyle(context)),
                     TextField(

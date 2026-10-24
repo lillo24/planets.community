@@ -82,6 +82,70 @@ Future<ProviderContainer> pumpGroups(
 }
 
 void main() {
+  for (final publication in ['draft', 'published']) {
+    for (final saveChanges in [false, true]) {
+      testWidgets(
+        'OA1 $publication departure labels preserve cancel/discard/save ($saveChanges)',
+        (tester) async {
+          var writes = 0;
+          var version = 1;
+          var title = 'Fictional garden';
+          final c = await pumpGroups(
+            tester,
+            ready: true,
+            path: '/groups/$id/edit',
+            gateway: GroupGateway((name, args) async {
+              if (name == 'get_own_group') {
+                return [row(state: publication, version: version, name: title)];
+              }
+              if (name == 'recover_group_command') return [];
+              if (name == 'update_group') {
+                expect(args.containsKey('p_publication_state'), isFalse);
+                writes++;
+                title = (args['p_content'] as Map)['name'] as String;
+                return ++version;
+              }
+              if (name == 'get_public_group' || name == 'list_public_groups') {
+                return [];
+              }
+              throw StateError(name);
+            }),
+          );
+          await tester.enterText(
+            find.byKey(const Key('group-name')),
+            'Changed fictional group',
+          );
+          await tester.tap(find.byKey(const Key('page-close')));
+          await tester.pumpAndSettle();
+          final label = publication == 'published'
+              ? 'Save live changes'
+              : 'Save draft';
+          expect(find.widgetWithText(FilledButton, label).last, findsOneWidget);
+          await tester.tap(find.text('Keep editing'));
+          await tester.pumpAndSettle();
+          expect(writes, 0);
+          expect(
+            c.read(appRouterProvider).routerDelegate.state.uri.path,
+            '/groups/$id/edit',
+          );
+          await tester.tap(find.byKey(const Key('page-close')));
+          await tester.pumpAndSettle();
+          if (saveChanges) {
+            await tester.tap(find.widgetWithText(FilledButton, label).last);
+          } else {
+            await tester.tap(find.text('Discard changes'));
+          }
+          await tester.pumpAndSettle();
+          expect(writes, saveChanges ? 1 : 0);
+          expect(
+            title,
+            saveChanges ? 'Changed fictional group' : 'Fictional garden',
+          );
+        },
+      );
+    }
+  }
+
   test('group cancel destinations are public and cannot repeat protected continuations', () {
     for (final path in ['/groups/create', '/groups/mine']) {
       expect(authCancelDestination(path), '/groups');

@@ -1,3 +1,4 @@
+import 'package:planets_mobile/features/group_discussions/data/discussion_conversion_gateway.dart';
 import 'package:planets_mobile/features/group_discussions/data/discussion_projects_gateway.dart';
 import 'package:planets_mobile/features/project_request_chat/application/project_request_chat_controller.dart';
 import 'package:planets_mobile/features/resource_chat/application/resource_chat_controller.dart';
@@ -1706,6 +1707,115 @@ void main() {
     expect(find.text('I can bring paint brushes.'), findsNWidgets(2));
   });
 
+  testWidgets('DU1 People contacts and requests suppress native empty claims', (
+    tester,
+  ) async {
+    const who = 'cb020000-0000-4000-8000-000000000001';
+    const target = 'cb020000-0000-4000-8000-000000000002';
+    final app = await _pump(
+      tester,
+      identityId: who,
+      messages: FakeMessagesGateway()..items = [],
+      chats: FakeMessageChatsGateway()..items = [],
+      peoplePosts: PeoplePostsGateway((name, args) async {
+        if (name == 'get_cocreate_availability') return {'enabled': true};
+        throw StateError(name);
+      }),
+      peoplePrivate: PeoplePrivateGateway((name, args) async {
+        if (name == 'list_own_cocreate_contacts_v2') {
+          return [
+            {
+              'contact_id': target,
+              'post_id': target,
+              'post_title': 'Drawing together',
+              'created_at': '2026-10-24T10:00:00Z',
+              'closed_at': null,
+              'unread_count': 1,
+            },
+          ];
+        }
+        if (name == 'list_own_cocreate_interests_v2') {
+          return [
+            {
+              'interest_id': target,
+              'post_id': target,
+              'post_title': 'Games together',
+              'requester_id': who,
+              'note': '',
+              'state': 'pending',
+              'created_at': '2026-10-24T10:00:00Z',
+              'contact_id': null,
+            },
+          ];
+        }
+        if (name.startsWith('list_own_cocreate_') && name.endsWith('_exits')) {
+          return [];
+        }
+        throw StateError(name);
+      }),
+    );
+    app.read(appRouterProvider).go('/messages');
+    await tester.pumpAndSettle();
+    expect(find.text('Drawing together'), findsOneWidget);
+    expect(find.text('No private chats yet'), findsNothing);
+    await tester.tap(find.byKey(const Key('messages-requests-action')));
+    await tester.pumpAndSettle();
+    expect(find.text('Games together'), findsOneWidget);
+    expect(find.text('No messages yet'), findsNothing);
+  });
+
+  testWidgets(
+    'DU1 delayed OFF recovery, failure and retry keep emptiness honest',
+    (tester) async {
+      const who = 'cb020000-0000-4000-8000-000000000001';
+      final delayed = Completer<List<Object?>>();
+      var calls = 0;
+      var failed = false;
+      var recovered = false;
+      final app = await _pump(
+        tester,
+        identityId: who,
+        messages: FakeMessagesGateway()..items = [],
+        chats: FakeMessageChatsGateway()..items = [],
+        peoplePrivate: PeoplePrivateGateway((name, args) async {
+          if (name == 'list_own_cocreate_interest_exits') return [];
+          if (name != 'list_own_cocreate_contact_exits') throw StateError(name);
+          calls++;
+          if (calls == 1) return delayed.future;
+          if (failed) throw StateError('Synthetic read failure');
+          return recovered
+              ? [
+                  {
+                    'contact_id': 'cb020000-0000-4000-8000-000000000002',
+                    'created_at': '2026-10-24T10:00:00Z',
+                  },
+                ]
+              : [];
+        }),
+      );
+      app.read(appRouterProvider).go('/messages');
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('No private chats yet'), findsNothing);
+      delayed.complete([]);
+      await tester.pumpAndSettle();
+      expect(find.text('No private chats yet'), findsOneWidget);
+      failed = true;
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator).hitTestable())
+          .onRefresh();
+      await tester.pumpAndSettle();
+      expect(find.text('No private chats yet'), findsNothing);
+      expect(find.text('Retry'), findsWidgets);
+      failed = false;
+      recovered = true;
+      await tester.tap(find.text('Retry').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Close'), findsWidgets);
+      expect(find.text('No private chats yet'), findsNothing);
+    },
+  );
+
   testWidgets('request inbox exposes empty and pull-to-refresh states', (
     tester,
   ) async {
@@ -2075,6 +2185,58 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('message-item-request-1')), findsOneWidget);
   });
+
+  for (final scale in [1.0, 1.3, 2.0]) {
+    testWidgets(
+      'BL1 full private-note audience statement at 320dp/$scale with IME',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 900);
+        tester.view.devicePixelRatio = 1;
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        addTearDown(tester.view.resetViewInsets);
+        const chatId = '00000000-0000-4000-8000-000000000401';
+        final app = await _pump(
+          tester,
+          messages: FakeMessagesGateway(),
+          resourceChats: FakeResourceChatGateway()..histories[chatId] = [],
+          resourceExchange: FakeResourceExchangeGateway(),
+        );
+        app.read(appRouterProvider).go('/messages/chats/resource/$chatId');
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find
+              .byKey(const Key('resource-exchange-primary-action'))
+              .hitTestable(),
+        );
+        await tester.pumpAndSettle();
+        final note = find.byKey(const Key('resource-exchange-private-note'));
+        final scroll = find
+            .descendant(
+              of: find.byKey(const Key('resource-exchange-editor')),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        await tester.scrollUntilVisible(note, 200, scrollable: scroll);
+        await Scrollable.ensureVisible(tester.element(note), alignment: 0.1);
+        await tester.pumpAndSettle();
+        await tester.tap(note);
+        tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+        await tester.pumpAndSettle();
+        final l = AppLocalizations.of(tester.element(note));
+        final text = find.text(l.resourceExchangePrivateNoteHelp);
+        await tester.scrollUntilVisible(text, 100, scrollable: scroll);
+        await tester.ensureVisible(text);
+        await tester.pumpAndSettle();
+        final paragraph = tester.renderObject<RenderParagraph>(text);
+        expect(paragraph.didExceedMaxLines, isFalse);
+        expect(paragraph.size.width, lessThanOrEqualTo(320));
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   testWidgets('Resource agreement requires explicit choices before proposal', (
     tester,
@@ -3137,6 +3299,9 @@ Future<ProviderContainer> _pump(
   FakeProfilePhotoGateway? profilePhoto,
   FakeCoverMediaGateway? cover,
   MessageUnreadGateway? unread,
+  PeoplePostsGateway? peoplePosts,
+  PeoplePrivateGateway? peoplePrivate,
+  DiscussionGateway? discussions,
 }) async {
   final auth = FakeAuthGateway(
     snapshot: AuthSnapshot(identity: AuthIdentity(id: identityId)),
@@ -3148,21 +3313,25 @@ Future<ProviderContainer> _pump(
         // Native inbox fixtures model the canonical default-OFF experiment,
         // including legitimate empty own-exit metadata. Unknown reads fail.
         peoplePostsGatewayProvider.overrideWithValue(
-          PeoplePostsGateway((name, args) async {
-            if (name == 'get_cocreate_availability') return {'enabled': false};
-            throw StateError('Disabled co-creation public read: $name');
-          }),
+          peoplePosts ??
+              PeoplePostsGateway((name, args) async {
+                if (name == 'get_cocreate_availability') {
+                  return {'enabled': false};
+                }
+                throw StateError('Disabled co-creation public read: $name');
+              }),
         ),
         peoplePrivateGatewayProvider.overrideWithValue(
-          PeoplePrivateGateway((name, args) async {
-            if ({
-              'list_own_cocreate_contact_exits',
-              'list_own_cocreate_interest_exits',
-            }.contains(name)) {
-              return [];
-            }
-            throw StateError('Disabled co-creation private read: $name');
-          }),
+          peoplePrivate ??
+              PeoplePrivateGateway((name, args) async {
+                if ({
+                  'list_own_cocreate_contact_exits',
+                  'list_own_cocreate_interest_exits',
+                }.contains(name)) {
+                  return [];
+                }
+                throw StateError('Disabled co-creation private read: $name');
+              }),
         ),
         coCreationRoomsGatewayProvider.overrideWithValue(
           CoCreationRoomsGateway((name, args) async {
@@ -3176,7 +3345,12 @@ Future<ProviderContainer> _pump(
         discussionProjectsGatewayProvider.overrideWithValue(
           EmptyDiscussionProjectsGateway(),
         ),
-        discussionGatewayProvider.overrideWithValue(EmptyDiscussionGateway()),
+        discussionGatewayProvider.overrideWithValue(
+          discussions ?? EmptyDiscussionGateway(),
+        ),
+        discussionConversionGatewayProvider.overrideWithValue(
+          emptyDiscussionConversionGateway(),
+        ),
         preacceptedPolicyFixture,
         coverMediaGatewayProvider.overrideWithValue(
           cover ?? FakeCoverMediaGateway(),
