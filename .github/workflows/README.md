@@ -1,5 +1,18 @@
 # Validation workflow
 
+`a1-native.yml` is an opt-in `qa-a1-native` same-repository label operation
+(remove/reapply after executable changes), or manual dispatch after merge. It
+builds the exact PR head and base before starting one CI-owned Android emulator.
+The 50-minute job owns an independently keyed loopback Supabase stack, uses real
+OTP and canonical fictional source fixtures, checks the populated forward/no-op
+migration and HTTP authorization/race behavior, then stops only its resources.
+Italian/dark, English/light, real keyboard, narrow 2x text and recipient captures
+are original Android compositor PNGs. A phone-sized before/after PDF, hashes and
+safe proof metadata remain accessible as a 30-day workflow artifact. On failure
+only a bounded scrubbed diagnostic is exported; private defines, raw logs, keys
+and APKs are excluded. This occasional review supplements required Validation
+and performs no hosted deployment, experiment activation or store submission.
+
 CAL01 extends the existing community/meeting HTTP step with actor-bound calendar
 reads, a genuine last-seat race and a bounded rollback-only populated rehearsal
 over 3,000 historical meetings. It preserves installed function/reader contracts

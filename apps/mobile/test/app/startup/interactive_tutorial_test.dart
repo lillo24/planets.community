@@ -1,3 +1,7 @@
+import 'package:planets_mobile/features/messages/data/private_pair_gateway.dart';
+
+import '../../support/fake_private_pairs.dart';
+
 import 'package:planets_mobile/features/proposals/presentation/public_proposals_screen.dart';
 import 'package:planets_mobile/features/settings/application/activities_split_preference_controller.dart';
 import 'package:planets_mobile/features/settings/domain/activities_split_preference.dart';
@@ -1633,6 +1637,8 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        privatePairGatewayProvider.overrideWithValue(emptyPrivatePairs()),
+        privatePairSignalsProvider.overrideWith((ref) => const Stream.empty()),
         initialActivitiesSplitPreferenceProvider.overrideWithValue(
           ActivitiesSplitPreferenceState(
             mode: split ? ActivitiesSplitMode.on : ActivitiesSplitMode.off,

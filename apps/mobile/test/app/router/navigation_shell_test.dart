@@ -1,3 +1,7 @@
+import 'package:planets_mobile/features/messages/data/private_pair_gateway.dart';
+
+import '../../support/fake_private_pairs.dart';
+
 import 'package:planets_mobile/features/settings/application/co_creation_preference_controller.dart';
 import 'package:planets_mobile/features/settings/data/co_creation_preference_store.dart';
 import 'package:planets_mobile/features/settings/domain/co_creation_preference.dart';
@@ -2298,6 +2302,8 @@ Future<ProviderContainer> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        privatePairGatewayProvider.overrideWithValue(emptyPrivatePairs()),
+        privatePairSignalsProvider.overrideWith((ref) => const Stream.empty()),
         externalActivityGatewayProvider.overrideWithValue(
           FakeExternalActivityGateway(),
         ),

@@ -1,3 +1,7 @@
+import 'package:planets_mobile/features/messages/data/private_pair_gateway.dart';
+
+import 'fake_private_pairs.dart';
+
 import 'package:planets_mobile/features/policies/data/policy_acceptance_store.dart';
 
 import 'fake_policy.dart';
@@ -74,6 +78,8 @@ Future<ProviderContainer> pumpHelp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        privatePairGatewayProvider.overrideWithValue(emptyPrivatePairs()),
+        privatePairSignalsProvider.overrideWith((ref) => const Stream.empty()),
         // Ordinary Help fixtures represent accounts that already acknowledged policies.
         policyAcceptanceStoreProvider.overrideWithValue(
           policyStore ?? FakePolicyAcceptanceStore(preaccepted: true),

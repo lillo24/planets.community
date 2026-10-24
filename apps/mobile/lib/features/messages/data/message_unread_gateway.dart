@@ -41,7 +41,7 @@ class SupabaseMessageUnreadGateway implements MessageUnreadGateway {
   Future<MessageUnreadSummary> summary(String profileId) async =>
       MessageUnreadSummary.parse(
         await client.rpc<Object?>(
-          'get_own_message_unread_summary_with_cocreate',
+          'get_own_private_pair_unread_v1',
           params: {'p_expected_profile_id': profileId},
         ),
       );

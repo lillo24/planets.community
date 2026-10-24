@@ -21,6 +21,7 @@ class ConversationHistoryList<T> extends StatefulWidget {
     required this.fallbackLabel,
     required this.buttonKey,
     required this.empty,
+    this.initialOriginKey,
     super.key,
   });
 
@@ -34,6 +35,10 @@ class ConversationHistoryList<T> extends StatefulWidget {
   final Key buttonKey;
   final Widget empty;
 
+  /// Retained layout identity after an authorization scrub recreates the tree.
+  /// It never retains message content; a missing authorized item resets to zero.
+  final Object? initialOriginKey;
+
   @override
   State<ConversationHistoryList<T>> createState() =>
       _ConversationHistoryListState<T>();
@@ -46,6 +51,7 @@ class _ConversationHistoryListState<T>
 
   @override
   Widget build(BuildContext context) {
+    _origin ??= widget.initialOriginKey;
     var origin = widget.items.indexWhere(
       (item) => widget.itemKey(item) == _origin,
     );

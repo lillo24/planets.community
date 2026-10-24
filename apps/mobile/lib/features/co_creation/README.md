@@ -1,5 +1,10 @@
 # Co-creation experiment
 
+A1 routes accepted personal contacts into the unified pair timeline. The exact
+contact `/manage` route keeps existing close/context actions in
+`PeopleContactScreen(managementOnly: true)`, without a second transcript or
+composer. Own-exit and gated-contact authorization retain their original owners.
+
 PEOPLEHOME01 changes the experimental Home to Find your people (real `/people`),
 Find activities (Coming soon), and Propose an idea (Coming soon). Only the first
 acts; native Projects/Resources/Activities routes remain available elsewhere.

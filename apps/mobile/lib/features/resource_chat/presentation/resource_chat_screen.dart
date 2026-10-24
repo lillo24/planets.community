@@ -2,12 +2,14 @@ import '../../profile/presentation/person_preview_sheet.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/widgets/page_app_bar.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../messages/presentation/message_read_viewport.dart';
 import '../../messages/presentation/conversation_history_list.dart';
+import '../../messages/presentation/messages_routes.dart';
 import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/loading_state.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -23,9 +25,17 @@ import '../domain/resource_chat_models.dart';
 import 'resource_chat_failure_message.dart';
 
 class ResourceChatScreen extends ConsumerStatefulWidget {
-  const ResourceChatScreen({required this.chatId, super.key});
+  const ResourceChatScreen({
+    required this.chatId,
+    this.managementOnly = false,
+    super.key,
+  });
 
   final String chatId;
+
+  /// A1 keeps agreement/request actions in their original owner, without a
+  /// second personal transcript, composer or read acknowledgement.
+  final bool managementOnly;
 
   @override
   ConsumerState<ResourceChatScreen> createState() => _ResourceChatScreenState();
@@ -183,7 +193,8 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
       kind: 'resource_chat',
       chatId: summary?.chatId,
       boundary:
-          belongs &&
+          !widget.managementOnly &&
+              belongs &&
               state.phase == ResourceChatDetailPhase.ready &&
               state.failure == null &&
               !state.isLoadingOlder
@@ -218,7 +229,9 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
                       // full content scrolls independently of message read/paging.
                       ConstrainedBox(
                         constraints: BoxConstraints(
-                          maxHeight: constraints.maxHeight * .45,
+                          maxHeight:
+                              constraints.maxHeight *
+                              (widget.managementOnly ? 1 : .45),
                         ),
                         child: Scrollbar(
                           controller: _summaryScrollController,
@@ -282,76 +295,95 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
                                     requesterDisplayName:
                                         summary.requesterDisplayName,
                                   ),
+                                if (widget.managementOnly && summary != null)
+                                  TextButton(
+                                    key: const Key(
+                                      'resource-coordination-request-detail',
+                                    ),
+                                    onPressed: () => context.push(
+                                      resourceRequestMessageRoute(
+                                        summary.requestId,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      l10n.resourceRequestDetailTitle,
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
                         ),
                       ),
-                      Expanded(
-                        child: RefreshIndicator(
-                          onRefresh: _refresh,
-                          child: ConversationHistoryList<ResourceChatMessage>(
-                            key: const Key('resource-chat-history'),
-                            controller: _scrollController,
-                            items: messages,
-                            itemKey: (item) => item.messageId,
-                            itemBuilder: (context, message) => _MessageBubble(
-                              message: message,
-                              isMine:
-                                  message.senderProfileId == _expectedProfileId,
-                              onReport:
-                                  message.senderProfileId == _expectedProfileId
-                                  ? null
-                                  : () => ModerationRoutes.openReport(
-                                      context,
-                                      resourceMessageReportTarget(
-                                        message.messageId,
-                                        l10n.moderationResourceMessageTarget,
+                      if (!widget.managementOnly)
+                        Expanded(
+                          child: RefreshIndicator(
+                            onRefresh: _refresh,
+                            child: ConversationHistoryList<ResourceChatMessage>(
+                              key: const Key('resource-chat-history'),
+                              controller: _scrollController,
+                              items: messages,
+                              itemKey: (item) => item.messageId,
+                              itemBuilder: (context, message) => _MessageBubble(
+                                message: message,
+                                isMine:
+                                    message.senderProfileId ==
+                                    _expectedProfileId,
+                                onReport:
+                                    message.senderProfileId ==
+                                        _expectedProfileId
+                                    ? null
+                                    : () => ModerationRoutes.openReport(
+                                        context,
+                                        resourceMessageReportTarget(
+                                          message.messageId,
+                                          l10n.moderationResourceMessageTarget,
+                                        ),
                                       ),
-                                    ),
-                            ),
-                            enabled:
-                                belongs &&
-                                summary != null &&
-                                _hasExpectedIdentity,
-                            hasMore: state.hasMoreOlder,
-                            loading: state.isLoadingOlder,
-                            failed: state.failure != null,
-                            onLoadOlder: _loadOlder,
-                            fallbackLabel: l10n.resourceChatLoadOlder,
-                            buttonKey: const Key('resource-chat-load-older'),
-                            empty: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.medium,
                               ),
-                              child: Column(
-                                children: [
-                                  const Icon(
-                                    Icons.chat_bubble_outline,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(height: AppSpacing.small),
-                                  Text(
-                                    l10n.resourceChatNoMessages,
-                                    key: const Key('resource-chat-empty'),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium,
-                                  ),
-                                  if (summary?.hasSendEntitlement == true) ...[
+                              enabled:
+                                  belongs &&
+                                  summary != null &&
+                                  _hasExpectedIdentity,
+                              hasMore: state.hasMoreOlder,
+                              loading: state.isLoadingOlder,
+                              failed: state.failure != null,
+                              onLoadOlder: _loadOlder,
+                              fallbackLabel: l10n.resourceChatLoadOlder,
+                              buttonKey: const Key('resource-chat-load-older'),
+                              empty: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: AppSpacing.medium,
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Icon(
+                                      Icons.chat_bubble_outline,
+                                      size: 24,
+                                    ),
                                     const SizedBox(height: AppSpacing.small),
                                     Text(
-                                      l10n.resourceChatEmptyGuidance,
-                                      textAlign: TextAlign.center,
+                                      l10n.resourceChatNoMessages,
+                                      key: const Key('resource-chat-empty'),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
                                     ),
+                                    if (summary?.hasSendEntitlement ==
+                                        true) ...[
+                                      const SizedBox(height: AppSpacing.small),
+                                      Text(
+                                        l10n.resourceChatEmptyGuidance,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
                                   ],
-                                ],
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      if (summary?.hasSendEntitlement == true)
+                      if (!widget.managementOnly &&
+                          summary?.hasSendEntitlement == true)
                         ConstrainedBox(
                           constraints: BoxConstraints(
                             maxHeight: constraints.maxHeight * .45,
@@ -367,7 +399,7 @@ class _ResourceChatScreenState extends ConsumerState<ResourceChatScreen>
                             ),
                           ),
                         )
-                      else if (summary != null)
+                      else if (!widget.managementOnly && summary != null)
                         ConstrainedBox(
                           constraints: BoxConstraints(
                             maxHeight: constraints.maxHeight * .45,

@@ -21,7 +21,7 @@ import '../../features/co_creation/domain/people_private.dart';
 import '../../features/member_contact/presentation/member_contact_routes.dart';
 import '../../features/member_contact/presentation/member_contact_compose_screen.dart';
 import '../../features/member_contact/presentation/member_contact_request_screen.dart';
-import '../../features/member_contact/presentation/member_contact_chat_screen.dart';
+import '../../features/messages/presentation/private_pair_screen.dart';
 import '../../features/member_contact/presentation/member_contact_info_screen.dart';
 
 import 'package:flutter/material.dart';
@@ -101,7 +101,6 @@ import '../../features/project_delegates/presentation/project_manage_screen.dart
 import '../../features/project_participant_invites/presentation/participant_invitation_routes.dart';
 import '../../features/project_participant_invites/presentation/participant_invite_screen.dart';
 import '../../features/project_participant_invites/presentation/participant_link_management_screen.dart';
-import '../../features/project_request_chat/presentation/project_request_chat_screen.dart';
 import '../../features/project_resource_needs/presentation/project_resource_need_routes.dart';
 import '../../features/project_resource_needs/presentation/project_resource_matches_screen.dart';
 import '../../features/project_resource_needs/presentation/project_resource_needs_screen.dart';
@@ -1085,10 +1084,19 @@ RoutingConfig _routingConfig(
                     ),
                   ),
                   GoRoute(
-                    path: 'cocreate/contacts/:id',
+                    path: 'cocreate/contacts/:id/manage',
                     builder: (_, state) => PeopleContactScreen(
-                      key: ValueKey(state.pathParameters['id']),
+                      key: state.pageKey,
                       contactId: peopleUuid(state.pathParameters['id']),
+                      managementOnly: true,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'cocreate/contacts/:id',
+                    builder: (_, state) => PrivatePairScreen(
+                      key: state.pageKey,
+                      contextKind: 'cocreate_contact',
+                      contextId: peopleUuid(state.pathParameters['id']),
                     ),
                   ),
                   GoRoute(
@@ -1192,9 +1200,10 @@ RoutingConfig _routingConfig(
                     path: 'chats/member-contact/:chatId',
                     builder: (context, state) =>
                         isMemberContactContinuation(state.uri.toString())
-                        ? MemberContactChatScreen(
+                        ? PrivatePairScreen(
                             key: state.pageKey,
-                            chatId: state.pathParameters['chatId']!,
+                            contextKind: 'member_contact_chat',
+                            contextId: state.pathParameters['chatId']!,
                           )
                         : const _UnknownRouteScreen(),
                     routes: [
@@ -1245,17 +1254,34 @@ RoutingConfig _routingConfig(
                     ],
                   ),
                   GoRoute(
-                    path: 'chats/resource/:chatId',
-                    builder: (context, state) => ResourceChatScreen(
+                    path: 'private/:peerId',
+                    builder: (_, state) => PrivatePairScreen(
+                      key: state.pageKey,
+                      peerProfileId: state.pathParameters['peerId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'chats/resource/:chatId/manage',
+                    builder: (_, state) => ResourceChatScreen(
                       key: state.pageKey,
                       chatId: state.pathParameters['chatId']!,
+                      managementOnly: true,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'chats/resource/:chatId',
+                    builder: (context, state) => PrivatePairScreen(
+                      key: state.pageKey,
+                      contextKind: 'resource_chat',
+                      contextId: state.pathParameters['chatId']!,
                     ),
                   ),
                   GoRoute(
                     path: 'chats/request/:requestId',
-                    builder: (context, state) => ProjectRequestChatScreen(
+                    builder: (context, state) => PrivatePairScreen(
                       key: state.pageKey,
-                      requestId: state.pathParameters['requestId']!,
+                      contextKind: 'participation_request',
+                      contextId: state.pathParameters['requestId']!,
                     ),
                   ),
                   GoRoute(

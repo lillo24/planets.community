@@ -1,0 +1,64 @@
+name: A1 Android review
+
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      before_sha:
+        description: Exact pre-A1 main commit for the before capture
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a1-native-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  a1-native:
+    name: A1 Android review
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.label.name == 'qa-a1-native' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      PLANETS_DISPOSABLE_QA: "1"
+      A1_BEFORE_SHA: ${{ github.event.pull_request.base.sha || inputs.before_sha }}
+    steps:
+      - name: Check out the exact reviewed source
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24.20.0
+          cache: npm
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.2
+          cache: true
+
+      - name: Restore locked packages
+        run: npm ci
+
+      - name: Run owned predecessor and A1 Android journeys
+        run: bash scripts/a1/run-native-ci.sh
+
+      - name: Retain fictional review evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: a1-android-${{ github.event.pull_request.head.sha || github.sha }}
+          path: a1-native-evidence/
+          if-no-files-found: warn
+          retention-days: 30

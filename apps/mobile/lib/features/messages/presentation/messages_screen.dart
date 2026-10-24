@@ -37,6 +37,7 @@ import 'messages_failure_message.dart';
 import 'messages_routes.dart';
 import 'messages_navigation.dart';
 import 'message_unread_badge.dart';
+import 'private_pairs_list.dart';
 import 'participation_request_details.dart';
 import '../../group_contact/presentation/group_contact_widgets.dart';
 import '../../group_contact/presentation/group_contact_routes.dart';
@@ -95,11 +96,9 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
     if (profileId == null || !_hasExpectedIdentity) return;
     await Future.wait([
       ref.read(messageUnreadProvider.notifier).refresh(profileId),
-      _privateChatListController.load(profileId, refresh: true),
       _groupChatListController.load(profileId, refresh: true),
     ]);
     if (!mounted || !_hasExpectedIdentity) return;
-    _privateChatListController.startSignals(profileId);
     _groupChatListController.startSignals(profileId);
   }
 
@@ -165,6 +164,33 @@ class _ChatsTabState extends ConsumerState<_ChatsTab> {
   Widget build(BuildContext context) {
     final scope = ref.watch(messagesNavigationProvider).scope;
     final l10n = AppLocalizations.of(context);
+    if (scope == MessageChatScope.private && widget.expectedProfileId != null) {
+      return Column(
+        children: [
+          MessageChatScopeToggle(
+            scope: scope,
+            onChanged: ref
+                .read(messagesNavigationProvider.notifier)
+                .selectScope,
+            privateLabel: MessageScopeLabel(
+              scope: MessageChatScope.private,
+              label: l10n.messageChatsPrivate,
+            ),
+            groupsLabel: MessageScopeLabel(
+              scope: MessageChatScope.groups,
+              label: l10n.messageChatsGroups,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.small),
+          Expanded(
+            child: PrivatePairsList(
+              key: ValueKey(widget.expectedProfileId),
+              actor: widget.expectedProfileId!,
+            ),
+          ),
+        ],
+      );
+    }
     final state = switch (scope) {
       MessageChatScope.private => ref.watch(messageChatsProvider),
       MessageChatScope.groups => ref.watch(groupMessageChatsProvider),

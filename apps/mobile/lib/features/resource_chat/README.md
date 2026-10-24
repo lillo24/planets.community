@@ -1,5 +1,11 @@
 # Resource chat
 
+A1 routes personal messages into the unified pair timeline. The exact
+`/messages/chats/resource/:chatId/manage` route reuses this feature's agreement
+negotiation/progression and request-detail link with `managementOnly: true`.
+It exposes no second transcript/composer and has no read boundary. Original
+source screens/contracts remain available for compatibility and owner tests.
+
 UIPOLISH03 gives summary and composer independently scrollable maximum shares
 of available height, preserving the separate message scroll/read controller.
 Scaffold owns IME resizing; composer padding must not add keyboard height again.

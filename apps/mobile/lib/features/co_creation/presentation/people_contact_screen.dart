@@ -21,8 +21,13 @@ import 'co_creation_sources_screen.dart';
 import 'package:go_router/go_router.dart';
 
 class PeopleContactScreen extends ConsumerStatefulWidget {
-  const PeopleContactScreen({required this.contactId, super.key});
+  const PeopleContactScreen({
+    required this.contactId,
+    this.managementOnly = false,
+    super.key,
+  });
   final String contactId;
+  final bool managementOnly;
   @override
   ConsumerState<PeopleContactScreen> createState() =>
       _PeopleContactScreenState();
@@ -182,50 +187,51 @@ class _PeopleContactScreenState extends ConsumerState<PeopleContactScreen>
                 ),
               ],
             ),
-            Expanded(
-              child: MessageReadViewport(
-                profileId: actor,
-                kind: 'cocreate_contact',
-                chatId: widget.contactId,
-                boundary: olderBusy ? null : token,
-                scrollController: scroll,
-                child: ConversationHistoryList<PeopleMessage>(
-                  items: messages,
-                  itemKey: (m) => m.id,
-                  itemBuilder: (context, m) => ListTile(
-                    title: Text(m.body),
-                    subtitle: Text(m.createdAt.toLocal().toString()),
-                    trailing: m.senderId == actor
-                        ? null
-                        : IconButton(
-                            tooltip: l.coPeopleReport,
-                            icon: const Icon(Icons.flag_outlined),
-                            onPressed: () => ModerationRoutes.openReport(
-                              context,
-                              ModerationReportTarget(
-                                kind:
-                                    ModerationTargetKind.cocreateContactMessage,
-                                id: m.id,
-                                label: l.coPeopleChat,
+            if (!widget.managementOnly)
+              Expanded(
+                child: MessageReadViewport(
+                  profileId: actor,
+                  kind: 'cocreate_contact',
+                  chatId: widget.contactId,
+                  boundary: olderBusy ? null : token,
+                  scrollController: scroll,
+                  child: ConversationHistoryList<PeopleMessage>(
+                    items: messages,
+                    itemKey: (m) => m.id,
+                    itemBuilder: (context, m) => ListTile(
+                      title: Text(m.body),
+                      subtitle: Text(m.createdAt.toLocal().toString()),
+                      trailing: m.senderId == actor
+                          ? null
+                          : IconButton(
+                              tooltip: l.coPeopleReport,
+                              icon: const Icon(Icons.flag_outlined),
+                              onPressed: () => ModerationRoutes.openReport(
+                                context,
+                                ModerationReportTarget(
+                                  kind: ModerationTargetKind
+                                      .cocreateContactMessage,
+                                  id: m.id,
+                                  label: l.coPeopleChat,
+                                ),
                               ),
                             ),
-                          ),
+                    ),
+                    controller: scroll,
+                    enabled: !busy,
+                    hasMore: more,
+                    loading: olderBusy,
+                    failed: olderFailed,
+                    onLoadOlder: () => load(older: true),
+                    fallbackLabel: l.coPeopleMore,
+                    buttonKey: const Key('people-contact-older'),
+                    empty: Text(l.coPeopleEmpty),
                   ),
-                  controller: scroll,
-                  enabled: !busy,
-                  hasMore: more,
-                  loading: olderBusy,
-                  failed: olderFailed,
-                  onLoadOlder: () => load(older: true),
-                  fallbackLabel: l.coPeopleMore,
-                  buttonKey: const Key('people-contact-older'),
-                  empty: Text(l.coPeopleEmpty),
                 ),
               ),
-            ),
-            if (closed)
+            if (!widget.managementOnly && closed)
               Text(l.coPeopleClosed)
-            else
+            else if (!widget.managementOnly)
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
