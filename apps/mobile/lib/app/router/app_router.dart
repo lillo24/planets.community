@@ -1499,7 +1499,7 @@ RoutingConfig _routingConfig(
                   child: PeopleEntryScreen(
                     ordinaryEntry:
                         state.uri.path == '/people' && !state.uri.hasQuery,
-                    child: const PeopleBrowseScreen(),
+                    child: const CoCreationHubsScreen(),
                   ),
                 ),
                 routes: [
