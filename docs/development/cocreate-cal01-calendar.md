@@ -1,5 +1,12 @@
 # Community calendar (COCREATE-CAL01)
 
+[PLACE01](cocreate-place01.md) adds authorized venue links through calendar v2,
+current-meeting v2 and review v2. The installed v1 contracts and signed cursor
+are unchanged. Place is nullable: private/off/address associations require current
+numbered membership; card-only venue links require explicit eligible amenity
+publication. Occupancy, fresh viewer eligibility, loaded-extent refresh and exact
+occurrence review remain the CAL01/FIX01 rules. No map widget is added here.
+
 Open **Find people → Communities → a named community → Calendar / Calendario**.
 The device's Find People preference and the canonical server experiment gate
 remain independent and unchanged. Calendar entry never enrolls a viewer.

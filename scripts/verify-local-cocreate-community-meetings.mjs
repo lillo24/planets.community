@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import { openCocreateLocalBackend } from "./lib/cocreate-local-backend.mjs";
 import { signInLocalOtpUser } from "./lib/local-authenticated-user.mjs";
 import { verifyCocreateCalendar } from "./lib/cocreate-calendar-verifier.mjs";
+import { verifyCocreatePlaces } from "./lib/cocreate-places-verifier.mjs";
 
 const { sql, status } = openCocreateLocalBackend();
 const run = randomUUID().slice(0, 8);
@@ -581,12 +582,18 @@ try {
     p_operation: "decline",
   });
   await verifyCocreateCalendar({ sql, status });
+  await verifyCocreatePlaces({ sql, status });
   execFileSync(
     process.execPath,
     ["scripts/verify-local-cocreate-calendar-upgrade.mjs"],
     {
       stdio: "inherit",
     },
+  );
+  execFileSync(
+    process.execPath,
+    ["scripts/verify-local-cocreate-places-upgrade.mjs"],
+    { stdio: "inherit" },
   );
   console.log(
     `COCREATE COMM01/FILL01 real Auth verification passed (${checks} assertions).`,

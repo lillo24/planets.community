@@ -3707,6 +3707,19 @@ export type Database = {
         }
         Returns: Json
       }
+      get_cocreate_calendar_v2: {
+        Args: {
+          p_cursor?: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_general_room_id: string
+          p_hub_id: string
+          p_limit?: number
+          p_window_end: string
+          p_window_start: string
+        }
+        Returns: Json
+      }
       get_cocreate_community_proposal: {
         Args: { p_proposal_id: string }
         Returns: Json
@@ -3725,6 +3738,14 @@ export type Database = {
         Returns: Json
       }
       get_cocreate_current_meeting: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_room_id: string
+        }
+        Returns: Json
+      }
+      get_cocreate_current_meeting_v2: {
         Args: {
           p_episode_id: string
           p_expected_profile_id: string
@@ -3759,6 +3780,26 @@ export type Database = {
         Args: { p_room_id: string }
         Returns: Json
       }
+      get_cocreate_place_context_v1: {
+        Args: {
+          p_episode_id?: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_room_id?: string
+        }
+        Returns: Json
+      }
+      get_cocreate_place_detail_v1: {
+        Args: {
+          p_after_number?: number
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_limit?: number
+          p_place_id: string
+        }
+        Returns: Json
+      }
       get_cocreate_post: { Args: { p_post_id: string }; Returns: Json }
       get_cocreate_post_event: { Args: { p_post_id: string }; Returns: Json }
       get_cocreate_recruitment: {
@@ -3771,6 +3812,15 @@ export type Database = {
         Returns: Json
       }
       get_cocreate_recruitment_review_v1: {
+        Args: {
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_general_room_id: string
+          p_recruitment_id: string
+        }
+        Returns: Json
+      }
+      get_cocreate_recruitment_review_v2: {
         Args: {
           p_episode_id: string
           p_expected_profile_id: string
@@ -5188,6 +5238,16 @@ export type Database = {
         }
         Returns: Json
       }
+      list_cocreate_places_v1: {
+        Args: {
+          p_after_id?: string
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       list_cocreate_posts: {
         Args: {
           p_before_created_at?: string
@@ -5247,6 +5307,14 @@ export type Database = {
           profile_id: string
           role_rank: number
         }[]
+      }
+      list_discoverable_cocreate_places_v1: {
+        Args: {
+          p_after_id?: string
+          p_expected_profile_id: string
+          p_limit?: number
+        }
+        Returns: Json
       }
       list_external_activities: {
         Args: {
@@ -8192,6 +8260,23 @@ export type Database = {
         }
         Returns: Json
       }
+      schedule_cocreate_meeting_v2: {
+        Args: {
+          p_capacity: number
+          p_command_id: string
+          p_discoverable?: boolean
+          p_episode_id?: string
+          p_expected_profile_id: string
+          p_hub_id: string
+          p_place_id?: string
+          p_room_id?: string
+          p_scope_episode_id?: string
+          p_scope_revision?: number
+          p_selection_receipt?: string
+          p_starts_at: string
+        }
+        Returns: Json
+      }
       search_public_geography_v1: {
         Args: { p_cursor?: Json; p_limit?: number; p_query: Json }
         Returns: Json
@@ -8289,6 +8374,20 @@ export type Database = {
           message_id: string
           sender_profile_id: string
         }[]
+      }
+      set_cocreate_usual_place_v1: {
+        Args: {
+          p_command_id: string
+          p_discoverable?: boolean
+          p_episode_id: string
+          p_expected_profile_id: string
+          p_expected_version: number
+          p_hub_id: string
+          p_place_id?: string
+          p_room_id: string
+          p_selection_receipt?: string
+        }
+        Returns: Json
       }
       set_group_contact_muted: {
         Args: {

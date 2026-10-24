@@ -1,5 +1,6 @@
 import 'co_creation_identity.dart';
 import 'co_creation_rooms.dart';
+import 'co_creation_place.dart';
 import 'people_post.dart';
 import 'people_private.dart';
 
@@ -23,7 +24,7 @@ bool coCalendarSameDay(DateTime a, DateTime b) =>
 String coCalendarRoute(HubId hub) => '/people/hubs/${hub.value}/calendar';
 
 class CoCalendarMeeting {
-  CoCalendarMeeting.parse(Object? value) {
+  CoCalendarMeeting.parse(Object? value, {bool withPlace = false}) {
     final r = coCreationObject(value, {
       'meeting_id',
       'room_id',
@@ -37,6 +38,7 @@ class CoCalendarMeeting {
       'recruitment_id',
       'can_confirm',
       'can_join',
+      if (withPlace) 'place',
     });
     id = peopleUuid(r['meeting_id']);
     room = CoRoomId.parse(r['room_id']);
@@ -54,6 +56,7 @@ class CoCalendarMeeting {
         : peopleUuid(r['recruitment_id']);
     canConfirm = peopleBool(r['can_confirm']);
     canJoin = peopleBool(r['can_join']);
+    place = withPlace && r['place'] != null ? CoPlace.parse(r['place']) : null;
     if (occupied > capacity ||
         (episode == null && recruitment == null) ||
         (attending && (episode == null || occupied == 0)) ||
@@ -74,6 +77,7 @@ class CoCalendarMeeting {
   late final DateTime startsAt;
   late final int number, capacity, occupied;
   late final bool attending, canConfirm, canJoin;
+  late final CoPlace? place;
   bool get full => occupied == capacity;
   bool get available => canConfirm || canJoin;
   String reviewRoute(HubId hub, CoHubMembership membership) => episode != null
@@ -92,8 +96,9 @@ class CoCalendarPage {
     String actor,
     HubId hub,
     CoHubMembership membership,
-    CoCalendarWindow window,
-  ) {
+    CoCalendarWindow window, {
+    bool withPlace = false,
+  }) {
     final r = coCreationObject(value, {
       'profile_id',
       'hub_id',
@@ -117,7 +122,9 @@ class CoCalendarPage {
     if (raw is! List || raw.length > 25) {
       throw const FormatException('Invalid calendar page.');
     }
-    meetings = List.unmodifiable(raw.map(CoCalendarMeeting.parse));
+    meetings = List.unmodifiable(
+      raw.map((m) => CoCalendarMeeting.parse(m, withPlace: withPlace)),
+    );
     final ids = <String>{};
     CoCalendarMeeting? prior;
     for (final m in meetings) {

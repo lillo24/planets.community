@@ -1,5 +1,12 @@
 # Repository scripts
 
+- `verify-local-cocreate-places.mjs` and `lib/cocreate-places-verifier.mjs` own
+  real OTP/HTTP Place qualification through the actual location handler and
+  synthetic provider bytes. `verify-local-cocreate-places-upgrade.mjs` owns the
+  rollback-only populated CAL01-FIX01-installed predecessor rehearsal. Existing
+  COMM01/FILL01 Database CI calls both; no additional runner job is introduced.
+  See [PLACE01](../docs/development/cocreate-place01.md) for scope and activation.
+
 - `ui-audit/` owns the explicitly invoked UIAUDIT01 disposable Mock worlds,
   native capture bridge, route/state inventory and portrait review generation.
   Its [README](ui-audit/README.md) records isolation, private inputs, actual
