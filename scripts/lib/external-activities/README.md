@@ -2,6 +2,7 @@
 
 - `transport.mjs` owns explicit code-owned HTTPS API origins, redirect checks,
   streamed byte/request/page/lookup budgets, deadlines and capped Retry-After.
+  Document MIME is an explicit Radar opt-in; the CSV MIME contract stays narrow.
 - `records.mjs` validates already mapped canonical plain-text records and exact
   occurrences. It does not parse municipal responses, HTML or recurrence prose.
 - `catalogue.mjs` validates bounded course terms/weekly rules/exceptions and
@@ -34,3 +35,22 @@ sports types, published Item identity and one safe anchor-field extraction. It
 never scrapes linked HTML or manufactures course/event data. The explicit local
 `verify-local-trento-facilities.mjs` command qualifies real ingestion separately
 from deterministic CI; captured anonymous DTOs can drive opt-in widget evidence.
+
+RADAR01 adds these responsibility boundaries:
+
+- `extraction.mjs`: non-executing HTML/JSON-LD, safe RSS/Atom, finite iCalendar and
+  explicit calendar/timezone facts. Synthetic fixtures live in `../external-radar.test.mjs`.
+- `radar-sources.mjs`: the four code-owned publisher registries and inspected
+  semantic recipes. Access, parser qualification and publication are separate.
+- `network.mjs`: DNS validation inside the actual TLS connection lookup; private
+  and reserved destinations cannot be selected by provider material.
+- `radar-importer.mjs`: robots, exact representation validators, complete traversal,
+  private evidence and owner-gated canonical promotion. The existing importer
+  delegates here only for a registered Radar connector.
+- `../../operate-radar-candidates.mjs`: bounded private inspection, exact-revision
+  rejection, retention and separate owner-only qualification; no admin portal.
+- `../../verify-local-external-radar.mjs`: guarded synthetic real SQL/HTTP acceptance
+  and a separate opt-in live private-source proof. Ordinary CI never fetches publishers.
+
+The [Radar contract/runbook](../../../docs/development/radar01-automatic-activities.md)
+owns defaults, flags, retention, source coverage, V4, batching and activation.

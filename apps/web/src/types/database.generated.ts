@@ -2880,6 +2880,10 @@ export type Database = {
         Args: { p_source_id: string }
         Returns: Json
       }
+      begin_external_radar_collection: {
+        Args: { p_parser_version: string; p_source_id: string }
+        Returns: Json
+      }
       block_user: {
         Args: {
           p_blocked_profile_id: string
@@ -3645,6 +3649,10 @@ export type Database = {
         }
         Returns: string
       }
+      fail_external_radar_collection: {
+        Args: { p_error_code: string; p_run_id: string }
+        Returns: undefined
+      }
       finish_basemap_tile_v2: {
         Args: {
           p_image_base64?: string
@@ -3664,6 +3672,10 @@ export type Database = {
           p_run_id: string
           p_state: string
         }
+        Returns: Json
+      }
+      finish_external_radar_collection: {
+        Args: { p_candidates: Json; p_documents: Json; p_run_id: string }
         Returns: Json
       }
       finish_location_preview_v1: {
@@ -5105,6 +5117,14 @@ export type Database = {
         Args: { p_source_ids: string[] }
         Returns: Json
       }
+      inspect_external_radar_candidates: {
+        Args: { p_limit?: number; p_source_id: string }
+        Returns: Json
+      }
+      inspect_external_radar_status: {
+        Args: { p_source_ids: string[] }
+        Returns: Json
+      }
       invite_group_discussion_member: {
         Args: {
           p_client_request_id: string
@@ -5341,6 +5361,22 @@ export type Database = {
       }
       list_external_activities_v3: {
         Args: {
+          p_area?: Json
+          p_category?: string
+          p_cursor?: Json
+          p_discipline?: string
+          p_from?: string
+          p_kind?: string
+          p_limit?: number
+          p_map_only?: boolean
+          p_query?: string
+          p_to?: string
+        }
+        Returns: Json
+      }
+      list_external_activities_v4: {
+        Args: {
+          p_activity_type?: string
           p_area?: Json
           p_category?: string
           p_cursor?: Json
@@ -7448,6 +7484,10 @@ export type Database = {
         Args: { p_limit?: number; p_source_ids: string[] }
         Returns: Json
       }
+      maintain_external_radar_evidence: {
+        Args: { p_limit?: number; p_source_id: string }
+        Returns: Json
+      }
       mark_all_notifications_read: {
         Args: { p_expected_profile_id: string }
         Returns: number
@@ -7879,6 +7919,14 @@ export type Database = {
           platform: string
           provider: string
         }[]
+      }
+      reject_external_radar_candidate: {
+        Args: {
+          p_revision_digest: string
+          p_source_id: string
+          p_upstream_id: string
+        }
+        Returns: boolean
       }
       reject_group_join_request: {
         Args: {

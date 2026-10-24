@@ -425,7 +425,9 @@ test("workflow remains gated to main/owner, least privilege, serial target and b
   assert.match(yaml, /contents: read/);
   assert.doesNotMatch(yaml, /pull_request|contents: write|id-token: write/);
   assert.match(yaml, /cancel-in-progress: false/);
-  assert.match(yaml, /timeout-minutes: 10/);
+  // RADAR01 permits two seven-minute source batches, plus setup and receipts.
+  assert.match(yaml, /timeout-minutes: 18/);
+  assert.match(yaml, /--batch-size 4/);
   assert.match(
     yaml,
     /ACTIVITIES_SOURCES: \$\{\{ vars\.ACTIVITIES_SOURCES \}\}/,

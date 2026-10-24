@@ -23,7 +23,8 @@ jobs:
     # independent database/code gates. No implicit fetch of every known source.
     if: ${{ github.repository == 'lillo24/planets.community' && github.ref == 'refs/heads/main' && vars.ACTIVITIES_IMPORT_ENABLED == 'true' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # At most two explicit 4-source/7-minute batches plus setup/receipts.
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.0.0
@@ -46,7 +47,7 @@ jobs:
           if [[ "$IMPORT_APPLY" == 'true' ]]; then
             extra=()
             if [[ "$IMPORT_DUE_ONLY" == 'true' ]]; then extra+=(--due-only); fi
-            node scripts/operate-external-activities.mjs --apply --target "$ACTIVITIES_TARGET" "${extra[@]}"
+            node scripts/operate-external-activities.mjs --apply --batch-size 4 --target "$ACTIVITIES_TARGET" "${extra[@]}"
           else
-            node scripts/operate-external-activities.mjs --dry-run
+            node scripts/operate-external-activities.mjs --dry-run --batch-size 4
           fi

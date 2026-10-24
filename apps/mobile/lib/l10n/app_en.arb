@@ -3540,5 +3540,15 @@
   "@activitiesMapReference": {"placeholders": {"coordinates": {"type": "String"}, "kilometers": {"type": "String"}}},
   "@activitiesMapDistance": {"placeholders": {"km": {"type": "String"}}},
   "activitiesMapRefresh": "Refresh results",
-  "activitiesShow": "Show"
+  "activitiesShow": "Show",
+  "activitiesActivityType": "Activity type",
+  "activitiesToday": "Today",
+  "activitiesWeekend": "Weekend",
+  "activitiesTypeMusic": "Music",
+  "activitiesTypeTheatreCinema": "Theatre / Cinema",
+  "activitiesTypeTalks": "Talks",
+  "activitiesTypeWorkshops": "Workshops",
+  "activitiesTypeSocial": "Social / Nightlife",
+  "activitiesTypeExhibitions": "Exhibitions",
+  "activitiesTypeOutings": "Outings"
 }
