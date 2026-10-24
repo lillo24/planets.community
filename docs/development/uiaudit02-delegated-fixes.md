@@ -1,7 +1,7 @@
 # UIAUDIT02 delegated fixes — completion ledger
 
 24 October 2026. **19 fixed / 0 already satisfied / 0 blocked**, out of 19.
-A1 and DE1 are excluded. Source baseline: main 3bffe586; newest main d1f21390 integrated before final validation.
+A1 and DE1 are excluded. Native capture baseline: main 3bffe586; client repairs 8849f1b4 and backend repairs 8343925b, with main d1f21390 integrated. Final source integration also preserves main 545c9e11 (PLACE01 and CP01). Captures remain pinned to the earlier recorded native build; they do not represent a later merge build.
 
 All file owners below are under apps/mobile/lib/features unless a localization key or migration is named.
 Capture IDs refer to originals/<ID>.png in the private source ZIP. The PDF contains labelled enlarged crops; originals retain their captured bytes and SHA-256 values.
@@ -32,7 +32,8 @@ Capture IDs refer to originals/<ID>.png in the private source ZIP. The PDF conta
 
 - Localization generation, mobile formatting and static analysis passed. The Android profile audit APK built successfully.
 - The full local mobile run exercised 4,404 tests (plus two existing skips): 4,397 passed initially; seven assertions still expected the deliberately replaced Close label, creator UUID, or raw seconds. Those expectations were updated to the approved behavior; all 34 tests in the three affected files passed on rerun. Existing no-extra-read and authorization assertions remain. Required final CI is recorded on the implementation PR.
-- Fresh-database pgTAP: 179 files, 8,655 assertions passed. Strict public/private lint and security-advisor checks passed. Generated public TypeScript contracts are unchanged after canonical nullability postprocessing.
+- Fresh combined-database pgTAP: 180 files, 8,873 assertions passed. Strict public/private lint and security-advisor checks passed. Generated public TypeScript contracts are unchanged after canonical nullability postprocessing.
+- After PLACE01 integration, 127 overlapping mobile tests and the combined Android profile build passed. The Linux font-path correction passed all 60 profile/corroboration tests locally. Integrated staging/release unit tests passed all 49 tests. Required final CI validates the combined source, including CP01 navigation.
 - Ordinary-Auth HTTP checks: post/contact verifier 107 assertions; hub/General 79; bounded community reporter proof 22. Full canonical verifier execution belongs to required PR CI. A separate populated Mock upgrade verified native-submitted People reports, legacy reports, pagination, denied actors/private reads, and retained gate-OFF access.
 - Current native evidence uses the existing audit harness with real application bootstrap/Auth/backend, canonical Mock relationships, a guest, and an ordinary local OTP/profile account. Pixel 9 Pro AVD, Android 16/API 36, 1280×2856 px, 480 dpi, 426.67×952 dp, GMT, gesture navigation. BL1/GL1/KX1: native 1×, 1.3×, 2×; narrower 320dp and IT/EN cases are separate widget tests. Representative native English/light checks are BS and BR.
 - Native QA is Android-only. This is focused verification of these 19 findings, not a complete product or iOS audit. Initial emulator System UI ANR, pending-loader, session-prompt and unsuccessful scrolling attempts are excluded from delivered originals.
