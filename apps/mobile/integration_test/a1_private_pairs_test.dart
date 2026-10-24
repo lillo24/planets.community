@@ -115,7 +115,9 @@ void main() {
 
     Future<void> capture(String name) async {
       await tester.pump(const Duration(milliseconds: 500));
-      await binding.takeScreenshot(name, {'fictional': true, 'before': before});
+      // The locked native binding accepts only the checkpoint name. The host
+      // records fictional provenance and actual display metadata separately.
+      await binding.takeScreenshot(name);
       expect(tester.takeException(), isNull);
     }
 
