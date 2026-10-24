@@ -124,6 +124,17 @@ admin bypass. Recheck live settings before activation; code merge changes none.
    staging dashboard's SSL configuration link. `transport.mjs` verifies its file
    SHA-256 before connecting; the CLI receives `PGSSLROOTCERT` and `verify-full`.
    No system trust-store change or disabled certificate validation is needed.
+   Network failures expose only allowlisted error codes: `ENOTFOUND`/`EAI_AGAIN`
+   identify DNS failures; `ENETUNREACH`/`EHOSTUNREACH` identify unreachable
+   routes; `ECONNREFUSED` identifies a refused connection and `ETIMEDOUT`/
+   `CONNECT_TIMEOUT` a timeout. Native error messages, addresses and database
+   URLs remain withheld. If the direct IPv6 endpoint is unreachable from the
+   runner, the owner must set `STAGING_DB_URL` to the verified project's
+   IPv4-capable **session** pooler on port 5432 using the original database
+   password ([Supabase connection modes](https://supabase.com/docs/guides/database/connecting-to-postgres));
+   do not substitute the transaction pooler, guess its regional
+   hostname, move a credential or relax TLS. Repeat protected `inspect` after
+   changing the secret.
    On CA rotation, review the dashboard certificate, update the public file/hash
    together, and repeat strict connection verification.
    Inspect remains protected by the same environment and main-only restrictions.

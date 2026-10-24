@@ -9,7 +9,7 @@ import {
   rmSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve, dirname, basename } from "node:path";
 import { spawnSync } from "node:child_process";
 import {
   readMigrations,
@@ -296,42 +296,84 @@ test("missing deployment credentials fail before any request; errors never forwa
 });
 
 test("changed deployed Edge bundle or unreviewed source blocks delivery", () => {
-  const p = JSON.parse(readFileSync("scripts/release/policy.json", "utf8"));
-  const functions = p.approved_functions.map((f) => ({
-    ...f,
-    status: "ACTIVE",
-  }));
-  assert.equal(verifyFunctions(process.cwd(), p, functions), true);
-  // Mock-disabled releases retain the installed normal dependencies. The new
-  // mock-only route must be explicitly deployed/reviewed before its variant.
-  assert.ok(
-    requiredEdgeFunctions(process.cwd(), "closed-test-mock").includes(
-      "mock-basemap",
-    ),
-  );
-  assert.equal(
-    verifyFunctions(process.cwd(), p, functions, "closed-test-mock"),
-    false,
-  );
-  assert.equal(
-    verifyFunctions(
-      process.cwd(),
-      p,
-      functions.map((f) => ({ ...f, version: f.version + 1 })),
-    ),
-    false,
-  );
-  assert.equal(
-    verifyFunctions(
-      process.cwd(),
-      {
-        ...p,
-        approved_function_source_sha256: { "map-provider/index.ts": "changed" },
-      },
-      functions,
-    ),
-    false,
-  );
+  // Source implementation may intentionally precede deployment approval. Test
+  // a reviewed snapshot separately; NEVER rewrite the real release policy to
+  // make an unreviewed working-tree Edge change pass this unit test.
+  const root = mkdtempSync(join(tmpdir(), "release01-reviewed-edge-"));
+  try {
+    const p = JSON.parse(readFileSync("scripts/release/policy.json", "utf8"));
+    mkdirSync(
+      join(root, "apps/mobile/lib/features/geographic_discovery/data"),
+      { recursive: true },
+    );
+    writeFileSync(
+      join(
+        root,
+        "apps/mobile/lib/features/geographic_discovery/data/mock_public_basemap_gateway.dart",
+      ),
+      "client.functions.invoke('mock-basemap');",
+    );
+    const reviewed = {};
+    for (const path of Object.keys(p.approved_function_source_sha256)) {
+      assert.match(
+        path,
+        /^(?:map-provider|mock-basemap|location-search|location-preview)\/[a-z-]+\.(?:mjs|ts)$/,
+      );
+      const source = readFileSync(join("supabase/functions", path));
+      const target = join(root, "supabase/functions", path);
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, source);
+      reviewed[path] = sha256(source);
+    }
+    p.approved_function_source_sha256 = reviewed;
+    const functions = p.approved_functions.map((f) => ({
+      ...f,
+      status: "ACTIVE",
+    }));
+    assert.equal(verifyFunctions(root, p, functions), true);
+    assert.ok(
+      requiredEdgeFunctions(root, "closed-test-mock").includes("mock-basemap"),
+    );
+    assert.equal(
+      verifyFunctions(root, p, functions, "closed-test-mock"),
+      false,
+    );
+    assert.equal(
+      verifyFunctions(
+        root,
+        p,
+        functions.map((f) => ({ ...f, version: f.version + 1 })),
+      ),
+      false,
+    );
+    assert.equal(
+      verifyFunctions(
+        root,
+        {
+          ...p,
+          approved_function_source_sha256: {
+            "map-provider/index.ts": "changed",
+          },
+        },
+        functions,
+      ),
+      false,
+    );
+    const changed = Object.keys(reviewed)[0];
+    writeFileSync(
+      join(root, "supabase/functions", changed),
+      "// unreviewed fixture source\n",
+    );
+    assert.equal(
+      verifyFunctions(root, p, functions),
+      false,
+      "actual changed bytes cannot inherit a reviewed hash",
+    );
+  } finally {
+    assert.equal(dirname(resolve(root)), resolve(tmpdir()));
+    assert.ok(basename(root).startsWith("release01-reviewed-edge-"));
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("a newly added mobile Edge dependency cannot pass an older release policy", () => {
